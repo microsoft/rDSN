@@ -32,6 +32,7 @@ private:
     {
         handle_t hfile;
         std::string file_name;
+		std::string dst_dir;
         blob bb;
         int32_t offset;
         int32_t size;
