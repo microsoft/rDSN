@@ -2,7 +2,6 @@
 # include <dsn/internal/nfs.h>
 # include <queue>
 # include <boost/filesystem.hpp>
-#include <vld.h> //visual leak detector
 
 namespace dsn {
 	namespace service {
