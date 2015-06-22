@@ -6,7 +6,6 @@
 namespace dsn {
 	namespace service {
 
-
         void nfs_client_impl::begin_remote_copy(std::shared_ptr<remote_copy_request>& rci, aio_task_ptr nfs_task)
         {
             user_request* req = new user_request();
@@ -137,12 +136,8 @@ namespace dsn {
 
                 {
                     zauto_lock l(req->lock);
-                    if (!req->is_valid)
-                    {
-                        req = nullptr;
-                    }
 
-                    if (req != nullptr)
+                    if (req != nullptr && req->is_valid && !req->file_ctx->user_req->is_finished)
                     {
                         req->add_ref();
                         req->remote_copy_task = begin_copy(req->copy_req, req.get(), 0, 0, 0, &req->file_ctx->user_req->file_size_req.source);
@@ -169,6 +164,9 @@ namespace dsn {
             reqc->release_ref();
 
             continue_copy(1);
+
+			if (!reqc->is_valid)
+				return;
 
             if (err == ERR_SUCCESS)
             {
@@ -244,10 +242,10 @@ namespace dsn {
 
                 {
                     zauto_lock l(reqc->lock);
-                    if (reqc->is_valid)
-                        break;
-                    else
-                        reqc = nullptr;
+					if (reqc->is_valid)
+						break;
+					//else
+					//	reqc = nullptr; // nullptr debug error, TODO
                 }
             }
 
@@ -308,10 +306,13 @@ namespace dsn {
 
         void nfs_client_impl::local_write_callback(error_code err, uint32_t sz, boost::intrusive_ptr<copy_request_ex> reqc)
         {
-            //dassert(reqc->local_write_task == task::get_current_task(), "");
+            //dassert(reqc->local_write_task == task::get_current_task(), ""); // debug error with linux kernel aio function
             --_concurrent_local_write_count;
 
             continue_write();
+
+			if (!reqc->is_valid)
+				return;
 
             bool completed = false;
             if (err != ERR_SUCCESS)
@@ -355,28 +356,6 @@ namespace dsn {
             {
                 for (auto& rc : f.second->copy_requests)
                 {
-                    auto task = rc->remote_copy_task;
-                    bool succ;
-
-                    if (task != nullptr)
-                    {
-                        task->cancel(true, &succ);
-                        if (succ)
-                        {
-                            _concurrent_copy_request_count--;
-                        }
-                    }   
-
-                    task = rc->local_write_task;
-                    if (task != nullptr)
-                    {
-                        task->cancel(true, &succ);
-                        if (succ)
-                        {
-                            _concurrent_local_write_count--;
-                        }
-                    }
-
                     {
                         zauto_lock l(rc->lock);
                         rc->is_valid = false;
@@ -404,6 +383,5 @@ namespace dsn {
 
             delete req;
 		}
-
 	}
 }
