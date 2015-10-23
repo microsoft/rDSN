@@ -742,6 +742,76 @@ extern DSN_API void         dsn_file_task_enqueue(
 
 //------------------------------------------------------------------------------
 //
+// zookeeper operation
+//
+//------------------------------------------------------------------------------
+typedef enum {
+    dsn_zoo_create,
+    dsn_zoo_delete,
+    dsn_zoo_set,
+    dsn_zoo_get,
+    dsn_zoo_get_children,
+    dsn_zoo_exist,
+    dsn_zoo_add_watch
+}dsn_zoo_optype_t;
+
+typedef enum {
+    dsn_zoo_node_create,
+    dsn_zoo_node_delete,
+    dsn_zoo_node_change,
+    dsn_zoo_child
+}dsn_zoo_event_t;
+
+typedef struct {
+    char* znode_path;
+    union {
+        struct {
+            int create_flags;
+            unsigned char* znode_data;
+            int data_length;
+        } create_op;
+        struct {
+            unsigned char* znode_data;
+            int data_length;
+        } set_op;
+        dsn_zoo_event_t event_watch_type;
+    } option_data;
+}dsn_zoo_request_t;
+
+typedef union{
+    struct {
+        char* znode_path;
+    } create_op;
+    struct {
+        unsigned char* znode_data;
+        int data_length;
+    } getdata_op;
+    struct {
+        char** str_vec;
+        int vec_size;
+    } getchildren_op;
+} dsn_zoo_response_t;
+
+typedef struct {
+    dsn_zoo_optype_t op_type;
+    dsn_zoo_request_t request;
+    dsn_zoo_response_t response;
+} dsn_zoo_visit_ctx;
+
+typedef void (*dsn_zoo_handler_t)(dsn_error_t error_code,
+                                  dsn_zoo_visit_ctx* ctx,
+                                  void* param);
+extern DSN_API dsn_handle_t dsn_zoo_connect(const char* zoo_hosts,
+                                            int timeout_ms,
+                                            dsn_task_t connection_loss);
+extern DSN_API void dsn_zoo_disconnect(dsn_handle_t zoo_handle);
+extern DSN_API dsn_task_t dsn_zoo_create_task(dsn_task_code_t task_code,
+                                                  dsn_zoo_handler_t callback,
+                                                  void* param,
+                                                  int hash);
+extern DSN_API void dsn_zoo_async_visit(dsn_handle_t zoo_handle, dsn_task_t zoo_task);
+//------------------------------------------------------------------------------
+//
 // environment inputs
 //
 //------------------------------------------------------------------------------
