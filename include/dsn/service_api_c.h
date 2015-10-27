@@ -841,6 +841,9 @@ extern DSN_API void dsn_zoo_fill_exist_request(dsn_zoo_visitor_t visitor,
 /*
  * if is_node_watch==true, then the watcher is set for the creation/deletion/modification of znode
  * or-else, the watcher is set for children event of znode
+
+ * In add watch request, the callback will be called when the watch event is happened
+ * Or the add watch request is failed
  */
 extern DSN_API void dsn_zoo_fill_add_watch_request(dsn_zoo_visitor_t visitor,
                                                    const char* znode,
