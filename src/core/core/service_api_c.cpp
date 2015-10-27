@@ -33,6 +33,7 @@
 # include <dsn/internal/zlock_provider.h>
 # include <dsn/internal/nfs.h>
 # include <dsn/internal/env_provider.h>
+# include <dsn/internal/zookeeper_provider.h>
 # include <dsn/internal/factory_store.h>
 # include <dsn/internal/task.h>
 # include <dsn/internal/singleton_store.h>
@@ -704,6 +705,106 @@ DSN_API void dsn_file_task_enqueue(dsn_task_t cb_task, dsn_error_t err, size_t s
     ((::dsn::aio_task*)task)->enqueue(err, size);
 }
 
+//------------------------------------------------------------------------------
+//
+// zookeeper operations
+//
+//------------------------------------------------------------------------------
+DSN_API dsn_zoo_visitor_t dsn_zoo_visitor(dsn_task_t zoo_tsk)
+{
+    return (dsn_zoo_visitor_t)(reinterpret_cast<dsn::zoo_task*>(zoo_tsk)->visitor());
+}
+
+DSN_API void dsn_zoo_fill_create_request(dsn_zoo_visitor_t visitor,
+                                         const char* znode,
+                                         int create_flags,
+                                         const char* data,
+                                         int data_length)
+{
+    dsn::zoo_visitor* v = reinterpret_cast<dsn::zoo_visitor*>(visitor);
+    dassert(znode!=nullptr&&data_length>=0, "invalid parameter");
+
+    v->_optype = dsn::ZOO_create;
+    v->fill_znode_req(znode);
+    v->fill_create(create_flags, data, data_length);
+}
+
+#define FILL_ZNODE(visitor, znode, optype) do{\
+    dsn::zoo_visitor* v = reinterpret_cast<dsn::zoo_visitor*>(visitor);\
+    dassert(znode != nullptr, "invalid parameter");\
+    v->_optype = optype;\
+    v->fill_znode_req(znode);\
+}while(false)
+
+DSN_API void dsn_zoo_fill_delete_request(dsn_zoo_visitor_t visitor,
+                                         const char* znode)
+{
+    FILL_ZNODE(visitor, znode, dsn::ZOO_delete);
+}
+
+DSN_API void dsn_zoo_fill_set_request(dsn_zoo_visitor_t visitor, const char* znode, const char* data, int data_length)
+{
+    dsn::zoo_visitor* v = reinterpret_cast<dsn::zoo_visitor*>(visitor);
+    dassert(znode != nullptr&&data_length>=0, "invalid parameter");
+
+    v->_optype = dsn::ZOO_set;
+    v->fill_znode_req(znode);
+    v->fill_set(data, data_length);
+}
+
+DSN_API void dsn_zoo_fill_get_request(dsn_zoo_visitor_t visitor,
+                                         const char* znode)
+{
+    FILL_ZNODE(visitor, znode, dsn::ZOO_get);
+}
+
+DSN_API void dsn_zoo_fill_get_children_request(dsn_zoo_visitor_t visitor, const char* znode)
+{
+    FILL_ZNODE(visitor, znode, dsn::ZOO_get_children);
+}
+
+DSN_API void dsn_zoo_fill_exist_request(dsn_zoo_visitor_t visitor,
+                                        const char* znode)
+{
+    FILL_ZNODE(visitor, znode, dsn::ZOO_exist);
+}
+
+DSN_API void dsn_zoo_fill_add_watch_request(dsn_zoo_visitor_t visitor,
+                                            const char* znode,
+                                            bool is_node_watch)
+{
+    if (is_node_watch)
+    {
+        FILL_ZNODE(visitor, znode, dsn::ZOO_add_watch_for_node);
+    }
+    else
+    {
+        FILL_ZNODE(visitor, znode, dsn::ZOO_add_watch_for_dir);
+    }
+}
+
+DSN_API dsn_handle_t dsn_zoo_connect(const char* zoo_hosts, int timeout_ms, dsn_task_t timeout_cb)
+{
+    dsn::task::get_current_zookeeper()->connect(zoo_hosts, timeout_ms, timeout_cb);
+}
+
+DSN_API void dsn_zoo_disconnect(dsn_handle_t zoo_handle)
+{
+    dsn::task::get_current_zookeeper()->disconnect(zoo_handle);
+}
+
+DSN_API dsn_handle_t dsn_zoo_create_task(dsn_task_code_t task_code,
+                                         dsn_zoo_handler_t callback,
+                                         void* param,
+                                         int hash)
+{
+    return new dsn::zoo_task(task_code, callback, param, hash);
+}
+
+DSN_API dsn_error_t dsn_zoo_async_visit(dsn_handle_t zoo_handle, dsn_task_t zoo_tsk)
+{
+    return dsn::task::get_current_zookeeper()->async_visit(zoo_handle, zoo_tsk);
+}
 //------------------------------------------------------------------------------
 //
 // env

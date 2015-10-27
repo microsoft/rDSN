@@ -45,6 +45,7 @@ class task_queue;
 class task_worker_pool;
 class timer_service;
 class aio_provider;
+class zookeeper_provider;
 
 class service_node
 {
@@ -78,7 +79,6 @@ public:
     disk_engine* node_disk() const { return _per_node_io.disk; }
     nfs_node* node_nfs() const { return _per_node_io.nfs; }
     timer_service* node_tsvc() const { return _per_node_io.tsvc; }
-
     task_engine* computation() const { return _computation; }
     const std::list<io_engine>& ios() const { return _ios; }
     void get_runtime_info(const std::string& indent, const std::vector<std::string>& args, /*out*/ std::stringstream& ss);
@@ -121,6 +121,8 @@ public:
     env_provider* env() const { return _env; }
     logging_provider* logging() const { return _logging; }
     memory_provider* memory() const { return _memory; }
+    zookeeper_provider* zookeeper() { return _zookeeper; }
+
     static std::string get_runtime_info(const std::vector<std::string>& args);
         
     void init_before_toollets(const service_spec& spec);
@@ -136,6 +138,7 @@ private:
     env_provider*                   _env;
     logging_provider*               _logging;
     memory_provider*                _memory;
+    zookeeper_provider*             _zookeeper;
 
     // <port, servicenode>    
     typedef std::map<int, service_node*> node_engines_by_port; // multiple ports may share the same node

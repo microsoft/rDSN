@@ -377,6 +377,8 @@ void service_engine::init_before_toollets(const service_spec& spec)
     _memory = factory_store<memory_provider>::create(
         spec.memory_factory_name.c_str(), PROVIDER_TYPE_MAIN
         );
+    _zookeeper = factory_store<zookeeper_provider>::create(spec.zookeeper_factory_name.c_str(), PROVIDER_TYPE_MAIN);
+
     perf_counters::instance().register_factory(
         factory_store<perf_counter>::get_factory<perf_counter_factory>(
         spec.perf_counter_factory_name.c_str(), PROVIDER_TYPE_MAIN

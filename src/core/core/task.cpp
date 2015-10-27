@@ -26,6 +26,7 @@
 # include <dsn/service_api_c.h>
 # include <dsn/internal/task.h>
 # include <dsn/internal/env_provider.h>
+# include <dsn/internal/zookeeper_provider.h>
 # include <dsn/cpp/utils.h>
 # include <dsn/internal/synchronize.h>
 # include <dsn/tool/node_scoper.h>
@@ -85,6 +86,7 @@ __thread struct __tls_dsn__ tls_dsn;
         tls_dsn.env = service_engine::fast_instance().env();
         tls_dsn.nfs = node->nfs(queue ? queue : (worker ? worker->queue() : nullptr));
         tls_dsn.tsvc = node->tsvc(queue ? queue : (worker ? worker->queue() : nullptr));
+        tls_dsn.zookeeper = service_engine::fast_instance().zookeeper();
     }
 
     tls_dsn.node_pool_thread_ids = (node ? ((uint64_t)(uint8_t)node->id()) : 0) << (64 - 8); // high 8 bits for node id
@@ -541,6 +543,75 @@ void aio_task::enqueue(error_code err, size_t transferred_size)
     spec().on_aio_enqueue.execute(this);
 
     task::enqueue(node()->computation()->get_pool(spec().pool_code));
+}
+
+zoo_visitor::~zoo_visitor()
+{
+    //base class is responsible for the free of request data
+    if ( _req.znode_path)
+        ::free(_req.znode_path);
+    switch (_optype)
+    {
+    case ZOO_create:
+        if (_req.create_op.znode_data)
+            ::free(_req.create_op.znode_data);
+        break;
+    case ZOO_set:
+        if (_req.set_op.znode_data)
+            ::free(_req.set_op.znode_data);
+        break;
+    default:
+        break;
+    }
+    memset(&_req, 0, sizeof(_req));
+}
+
+void zoo_visitor::fill_create(int create_flags, const char *data, int data_length)
+{
+    /*we assume the data_length>=0*/
+    dassert(data_length>=0, "invalid parameter");
+    _req.create_op.create_flags = create_flags;
+
+    _req.create_op.znode_data = nullptr;
+    _req.create_op.data_length = data_length;
+    if (data_length > 0) {
+        _req.create_op.znode_data = (char*)::malloc(data_length);
+        ::memcpy(_req.create_op.znode_data, data, data_length);
+    }
+}
+
+void zoo_visitor::fill_set(const char *data, int data_length)
+{
+    _req.set_op.znode_data = nullptr;
+    _req.set_op.data_length = data_length;
+    if (data_length > 0) {
+        _req.create_op.znode_data = (char*)::malloc(data_length);
+        ::memcpy(_req.create_op.znode_data, data, data_length);
+    }
+}
+
+zoo_task::zoo_task(dsn_task_code_t code, dsn_zoo_handler_t cb, void *param, int hash, service_node *node):
+    task(code, hash, node),
+    _cb(cb),
+    _callback_param(param)
+{
+    _is_null = (cb == nullptr);
+    dassert(TASK_TYPE_AIO == spec().type, "task must be of AIO type, please use DEFNE_TASK_CODE_ZOO to define the task code");
+    set_error_code(ERR_IO_PENDING);
+    _visitor = task::get_current_zookeeper()->prepare_zoo_visitor(this);
+}
+
+void zoo_task::enqueue(error_code err)
+{
+    set_error_code(err);
+    //TODO, on zoo_task enqueue
+    task::enqueue(node()->computation()->get_pool(spec().pool_code));
+}
+
+zoo_task::~zoo_task()
+{
+    task::get_current_zookeeper()->destroy_zoo_visitor(_visitor);
+    _visitor = nullptr;
 }
 
 } // end namespace

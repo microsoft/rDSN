@@ -57,6 +57,7 @@ class env_provider;
 class nfs_node;
 class timer_service;
 class task;
+class zookeeper_provider;
 
 struct __tls_dsn__
 {
@@ -71,6 +72,7 @@ struct __tls_dsn__
     env_provider  *env;
     nfs_node      *nfs;
     timer_service *tsvc;
+    zookeeper_provider* zookeeper;
 
     uint64_t      node_pool_thread_ids; // 8,8,16 bits
     int           last_lower32_task_id; // 32bits
@@ -124,6 +126,7 @@ public:
     static env_provider*    get_current_env();
     static nfs_node*        get_current_nfs();
     static timer_service*   get_current_tsvc();
+    static zookeeper_provider* get_current_zookeeper();
 
     static void             set_tls_dsn_context(
                                 service_node* node,  // cannot be null
@@ -338,6 +341,61 @@ private:
     void*             _param;
 };
 
+//--------------------------zookeeper visit task----------------------------------
+enum zoo_operation_type{
+    ZOO_create,
+    ZOO_delete,
+    ZOO_set,
+    ZOO_get,
+    ZOO_get_children,
+    ZOO_exist,
+    ZOO_add_watch_for_node,
+    ZOO_add_watch_for_dir,
+    ZOO_op_count,
+    ZOO_invalid_op
+};
+
+class zoo_visitor
+{
+public:
+    zoo_operation_type _optype;
+    dsn_zoo_request _req;
+    dsn_zoo_response _resp;
+
+    zoo_visitor()
+    {
+        _optype = ZOO_invalid_op;
+        memset(&_req, 0, sizeof(_req));
+        memset(&_resp, 0, sizeof(_resp));
+    }
+    virtual ~zoo_visitor();
+
+    void fill_znode_req(const char* zpath) { _req.znode_path = strdup(zpath); }
+    void fill_create(int create_flags, const char* data, int data_length);
+    void fill_set(const char* data, int data_length);
+};
+
+class zoo_task: public task
+{
+public:
+    zoo_task(dsn_task_code_t code, dsn_zoo_handler_t cb, void* param, int hash = 0, service_node* node = nullptr);
+    ~zoo_task();
+
+    void enqueue(error_code err);
+    zoo_visitor* visitor() { return _visitor; }
+    void exec()
+    {
+        if (nullptr != _cb)
+            _cb(_error.get(), &(_visitor->_req), &(_visitor->_resp), _callback_param);
+        else
+            _error.end_tracking();
+    }
+private:
+    zoo_visitor* _visitor;
+    dsn_zoo_handler_t _cb;
+    void* _callback_param;
+};
+
 // ------------------------ inline implementations --------------------
 __inline /*static*/ task* task::get_current_task()
 {
@@ -408,6 +466,12 @@ __inline /*static*/ timer_service* task::get_current_tsvc()
 {
     dassert(tls_dsn.magic == 0xdeadbeef, "tls_dsn not inited properly");
     return tls_dsn.tsvc;
+}
+
+__inline /*static*/ zookeeper_provider* task::get_current_zookeeper()
+{
+    dassert(tls_dsn.magic == 0xdeadbeef, "tls_dsn not inited properly");
+    return tls_dsn.zookeeper;
 }
 
 } // end namespace
