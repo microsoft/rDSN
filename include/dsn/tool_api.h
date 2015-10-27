@@ -108,6 +108,7 @@ typedef aio_provider*    (*aio_factory)(disk_engine*, aio_provider*);
 typedef env_provider*    (*env_factory)(env_provider*);
 typedef nfs_node*        (*nfs_factory)(service_node*);
 typedef message_parser*  (*message_parser_factory)(int);
+typedef zookeeper_provider* (*zookeeper_factory)(service_node*, zookeeper_provider*);
 
 typedef perf_counter*    (*perf_counter_factory)(const char *, const char *, perf_counter_type);
 typedef logging_provider* (*logging_factory)();
@@ -133,7 +134,7 @@ namespace internal_use_only
     bool register_component_provider(const char* name, memory_factory f, int type);
     bool register_component_provider(const char* name, nfs_factory f, int type);
     bool register_component_provider(const char* name, message_parser_factory f, int type);
-    
+    bool register_component_provider(const char* name, zookeeper_factory f, int type);
     bool register_toollet(const char* name, toollet_factory f, int type);
     bool register_tool(const char* name, tool_app_factory f, int type);
     toollet* get_toollet(const char* name, int type);

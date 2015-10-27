@@ -748,71 +748,133 @@ extern DSN_API void         dsn_file_task_enqueue(
 // zookeeper operation
 //
 //------------------------------------------------------------------------------
-typedef enum {
-    dsn_zoo_create,
-    dsn_zoo_delete,
-    dsn_zoo_set,
-    dsn_zoo_get,
-    dsn_zoo_get_children,
-    dsn_zoo_exist,
-    dsn_zoo_add_watch
-}dsn_zoo_optype_t;
-
-typedef enum {
-    dsn_zoo_node_create,
-    dsn_zoo_node_delete,
-    dsn_zoo_node_change,
-    dsn_zoo_child
-}dsn_zoo_event_t;
-
+/**
+ * an example of the api:
+ *
+ * void timeout_callback_func(dsn_error_t error, dsn_zoo_request_t req, dsn_zoo_response_t resp, void* param)
+ * {
+ *     dinfo("session timeout");
+ * }
+ *
+ * void op_callback_func(dsn_error_t error, dsn_zoo_request_t req, dsn_zoo_response_t resp, void* param)
+ * {
+ *      //some opeartion
+ * }
+ *
+ * dsn_task_t timeout_task = dsn_zoo_create_task(TASK_CODE, timeout_callback_func, param, hash_value);
+ * dsn_handle_t handle = dsn_zoo_connect("ip:port,ip:port,ip:port", 30000, timeout_task);
+ *
+ * dsn_task_t operation_task = dsn_zoo_create_task(TASK_CODE, callback_func, param, hash_value);
+ * dsn_zoo_visitor_t visitor = dsn_zoo_visitor(operation_task);
+ *
+ * dsn_zoo_fill_create_request(visitor, "/testnode", ZOO_EPHEMERAL|ZOO_SEQUENCE, "hello", 5);
+ *
+ * dsn_zoo_async_visit(handle, operation_task);
+ */
 typedef struct {
-    char* znode_path;
+    char* znode_path; /*should be a null-terminated string*/
     union {
         struct {
-            int create_flags;
-            unsigned char* znode_data;
+            int create_flags; /* create flags according to zookeeper c api */
+            char* znode_data;
             int data_length;
         } create_op;
         struct {
             unsigned char* znode_data;
             int data_length;
         } set_op;
-        dsn_zoo_event_t event_watch_type;
-    } option_data;
-}dsn_zoo_request_t;
+    };
+}dsn_zoo_request, *dsn_zoo_request_t;
 
-typedef union{
-    struct {
-        char* znode_path;
-    } create_op;
-    struct {
-        unsigned char* znode_data;
-        int data_length;
-    } getdata_op;
-    struct {
-        char** str_vec;
-        int vec_size;
-    } getchildren_op;
-} dsn_zoo_response_t;
+typedef struct{
+    int zerror; /* error according to zookeeper c api error numbers */
+    union {
+        struct {
+            char* znode_path;
+        } create_op;
+        struct {
+            char* znode_data;
+            int data_length;
+        } getdata_op;
+        struct {
+            char** str_vec;
+            int vec_size;
+        } getchildren_op;
+        int event_watch_type;
+    };
+} dsn_zoo_response, *dsn_zoo_response_t;
 
-typedef struct {
-    dsn_zoo_optype_t op_type;
-    dsn_zoo_request_t request;
-    dsn_zoo_response_t response;
-} dsn_zoo_visit_ctx;
+typedef void* dsn_zoo_visitor_t;
 
-typedef void (*dsn_zoo_handler_t)(dsn_error_t error_code,
-                                  dsn_zoo_visit_ctx* ctx,
+/*
+ * the zookeeper call back
+ * error message should be set in resp->zerror,
+ * if resp->zerror = ZOK,
+ * the returning value is set in other fields of resp
+ *
+ * the memory of znode_path/znode_data is allocated and freed
+ * by the library
+ */
+typedef void (*dsn_zoo_handler_t)(dsn_error_t error,
+                                  dsn_zoo_request_t req,
+                                  dsn_zoo_response_t resp,
                                   void* param);
+extern DSN_API dsn_zoo_visitor_t dsn_zoo_visitor(dsn_task_t zoo_task);
+/* fill the request according to zookeeper*/
+extern DSN_API void dsn_zoo_fill_create_request(dsn_zoo_visitor_t visitor,
+                                                const char* znode,
+                                                int create_flags,
+                                                const char* data,
+                                                int data_length);
+extern DSN_API void dsn_zoo_fill_set_request(dsn_zoo_visitor_t visitor,
+                                             const char* znode,
+                                             const char* data,
+                                             int data_length);
+extern DSN_API void dsn_zoo_fill_delete_request(dsn_zoo_visitor_t visitor,
+                                                const char* znode);
+extern DSN_API void dsn_zoo_fill_get_request(dsn_zoo_visitor_t visitor,
+                                             const char* znode);
+extern DSN_API void dsn_zoo_fill_get_children_request(dsn_zoo_visitor_t visitor,
+                                                      const char* znode);
+extern DSN_API void dsn_zoo_fill_exist_request(dsn_zoo_visitor_t visitor,
+                                               const char* znode);
+/*
+ * if is_node_watch==true, then the watcher is set for the creation/deletion/modification of znode
+ * or-else, the watcher is set for children event of znode
+ */
+extern DSN_API void dsn_zoo_fill_add_watch_request(dsn_zoo_visitor_t visitor,
+                                                   const char* znode,
+                                                   bool is_node_watch);
+/*
+ * async connect to zookeeper server-quorum,
+ * zoo_hosts: "xxx.xxx.xx.xxx:port,xxx.xx.xx.x:port"
+ * timeout_cb: A task created by dsn_zoo_create_task
+ *    if the zookeeper session timeout, the timeout_cb
+ *    is called, the reason of timeout is returned in resp->zerror
+ *    other fields should be ignored by user
+ *
+ * return value: the session_handle, if NULL is returned,
+ *     then the timeout task should never be called and the memory is
+ *     freed by the library
+ */
 extern DSN_API dsn_handle_t dsn_zoo_connect(const char* zoo_hosts,
                                             int timeout_ms,
-                                            dsn_task_t connection_loss);
+                                            dsn_task_t timeout_cb);
+/*
+ * call disconnect to disconnect the zookeeper sesssion
+ * after disconnected, the timeout_cb will not executed
+ */
 extern DSN_API void dsn_zoo_disconnect(dsn_handle_t zoo_handle);
 extern DSN_API dsn_task_t dsn_zoo_create_task(dsn_task_code_t task_code,
-                                                  dsn_zoo_handler_t callback,
-                                                  void* param,
-                                                  int hash);
-extern DSN_API void dsn_zoo_async_visit(dsn_handle_t zoo_handle, dsn_task_t zoo_task);
+                                              dsn_zoo_handler_t callback,
+                                              void* param,
+                                              int hash);
+/*
+ * async visit zookeeper
+ * return error for invalid input parameter
+ * Or-else return ERR_OK
+ */
+extern DSN_API dsn_error_t dsn_zoo_async_visit(dsn_handle_t zoo_handle, dsn_task_t zoo_task);
 //------------------------------------------------------------------------------
 //
 // environment inputs

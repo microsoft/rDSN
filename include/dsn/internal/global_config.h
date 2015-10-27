@@ -135,6 +135,7 @@ struct service_spec
     std::string                  perf_counter_factory_name;
     std::string                  logging_factory_name;
     std::string                  memory_factory_name; // for upper applications
+    std::string                  zookeeper_factory_name;
     std::string                  tools_memory_factory_name; // for rDSN itself and lower tools
 
     std::list<std::string>       network_aspects; // toollets compatible to the above network main providers in network configs
