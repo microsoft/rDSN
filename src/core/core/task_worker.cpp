@@ -51,6 +51,10 @@
 # include <mach/thread_policy.h>
 # endif
 
+# ifdef __NetBSD__
+# include <sched.h>
+# endif
+
 # endif
 
 
@@ -156,6 +160,8 @@ void task_worker::set_name(const char* name)
     err = pthread_setname_np(tid, thread_name.c_str());
     # elif defined(__APPLE__)
     err = pthread_setname_np(thread_name.c_str());
+    # elif defined(__NetBSD__)
+    err = pthread_setname_np(tid, "%s", (void*)thread_name.c_str());
     # endif
     if (err != 0)
     {
@@ -254,6 +260,20 @@ void task_worker::set_affinity(uint64_t affinity)
         (thread_policy_t)&policy,
         THREAD_AFFINITY_POLICY_COUNT
         ));
+# elif defined(__NetBSD__)
+    cpuset_t *cpuset;
+    int nr_bits = std::min(nr_cpu, static_cast<int>(sizeof(affinity) * 8));
+
+    cpuset = cpuset_create();
+    cpuset_zero(cpuset);
+    for (int i = 0; i < nr_bits; i++)
+    {
+        if ((affinity & ((uint64_t)1 << i)) != 0)
+        {
+            cpuset_set(i, cpuset);
+        }
+    }
+    err = pthread_setaffinity_np(pthread_self(), cpuset_size(cpuset), cpuset);
 # else
     # ifdef __FreeBSD__
         # ifndef cpu_set_t

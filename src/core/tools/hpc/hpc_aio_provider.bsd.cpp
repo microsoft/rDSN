@@ -34,7 +34,7 @@
  */
 
 
-# if defined(__APPLE__) || defined(__FreeBSD__)
+# if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__)
 
 # include "hpc_aio_provider.h"
 # include <fcntl.h>
