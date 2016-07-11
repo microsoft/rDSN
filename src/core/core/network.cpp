@@ -47,6 +47,9 @@
 
 namespace dsn 
 {
+    /*static*/ join_point<void, rpc_session*> rpc_session::on_rpc_session_connected("rpc.session.connected");
+    /*static*/ join_point<void, rpc_session*> rpc_session::on_rpc_session_disconnected("rpc.session.disconnected");
+
     rpc_session::~rpc_session()
     {
         clear_send_queue(false);
@@ -86,20 +89,26 @@ namespace dsn
 
         rpc_session_ptr sp = this;
         _net.on_client_session_connected(sp);
+
+        on_rpc_session_connected.execute(this);
     }
 
     bool rpc_session::set_disconnected()
     {
-        utils::auto_lock<utils::ex_lock_nr> l(_lock);
-        if (_connect_state != SS_DISCONNECTED)
         {
-            _connect_state = SS_DISCONNECTED;
-            return true;
+            utils::auto_lock<utils::ex_lock_nr> l(_lock);
+            if (_connect_state != SS_DISCONNECTED)
+            {
+                _connect_state = SS_DISCONNECTED;
+            }
+            else
+            {
+                return false;
+            }
         }
-        else
-        {
-            return false;
-        }
+        
+        on_rpc_session_disconnected.execute(this);
+        return true;
     }
 
     void rpc_session::clear_send_queue(bool resend_msgs)
@@ -187,10 +196,8 @@ namespace dsn
 
         while (n != &_messages)
         {
-            dbg_dassert(_parser, "parser should not be null when send");
-
             auto lmsg = CONTAINING_RECORD(n, message_ex, dl);
-            auto lcount = _parser->prepare_on_send(lmsg);
+            auto lcount = _parser->get_buffer_count_on_send(lmsg);
             if (bcount > 0 && bcount + lcount > _max_buffer_block_count_per_send)
             {
                 break;
@@ -253,15 +260,16 @@ namespace dsn
 
     int rpc_session::prepare_parser()
     {
-        if (_reader._buffer_occupied < sizeof(header_type))
-            return sizeof(header_type) - _reader._buffer_occupied;
+        if (_reader._buffer_occupied < sizeof(uint32_t))
+            return sizeof(uint32_t) - _reader._buffer_occupied;
 
-        header_type hdr_type(_reader._buffer.data());
-        network_header_format hdr_format(NET_HDR_DSN);
-        if (!header_type::header_type_to_format(hdr_type, hdr_format))
+        auto hdr_format = message_parser::get_header_type(_reader._buffer.data());
+        if (hdr_format == NET_HDR_INVALID)
         {
             derror("invalid header type, remote_client = %s, header_type = '%s'",
-                   _remote_addr.to_string(), hdr_type.debug_string().c_str());
+                _remote_addr.to_string(),
+                message_parser::get_debug_string(_reader._buffer.data()).c_str()
+            );
             return -1;
         }
 
@@ -275,6 +283,11 @@ namespace dsn
     void rpc_session::send_message(message_ex* msg)
     {
         msg->add_ref(); // released in on_send_completed
+
+        msg->io_session = this;
+
+        dassert(_parser, "parser should not be null when send");
+        _parser->prepare_on_send(msg);
 
         uint64_t sig;
         {
@@ -386,6 +399,10 @@ namespace dsn
         _message_sent(0),
         _delay_server_receive_ms(0)
     {
+        if (!is_client)
+        {
+            on_rpc_session_connected.execute(this);
+        }
     }
 
     bool rpc_session::on_disconnected(bool is_write)

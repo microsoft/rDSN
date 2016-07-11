@@ -45,6 +45,8 @@
 
 namespace dsn
 {
+    DEFINE_CUSTOMIZED_ID(network_header_format, NET_HDR_HTTP)
+
     class http_message_parser : public message_parser
     {
     public:
@@ -55,7 +57,9 @@ namespace dsn
 
         virtual message_ex* get_message_on_receive(message_reader* reader, /*out*/ int& read_next) override;
 
-        virtual int prepare_on_send(message_ex* msg) override;
+        virtual void prepare_on_send(message_ex *msg) override;
+
+        virtual int get_buffer_count_on_send(message_ex* msg) override;
 
         virtual int get_buffers_on_send(message_ex* msg, /*out*/ send_buf* buffers) override;
 

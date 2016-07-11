@@ -44,7 +44,7 @@ namespace dsn
     // request header (in big-endian)
     struct thrift_message_header
     {
-        header_type    hdr_type; ///< must be "THFT"
+        uint32_t       hdr_type; ///< must be "THFT"
         uint32_t       hdr_version; ///< must be 0
         uint32_t       hdr_length; ///< must be sizeof(thrift_message_header)
         uint32_t       hdr_crc32;
@@ -58,8 +58,11 @@ namespace dsn
     };
 
     // response format:
-    //     <total_len(int32)> <thrift_string> <body_data(bytes)>
-    //    |-----------response header--------|
+    //     <total_len(int32)> <thrift_string> <thrift_message_begin> <body_data(bytes)> <thrift_message_end>
+
+# define THRIFT_HDR_SIG (*(uint32_t*)"THFT")
+
+    DEFINE_CUSTOMIZED_ID(network_header_format, NET_HDR_THRIFT)       
 
     class thrift_message_parser : public message_parser
     {
@@ -71,7 +74,9 @@ namespace dsn
 
         virtual message_ex* get_message_on_receive(message_reader* reader, /*out*/ int& read_next) override;
 
-        virtual int prepare_on_send(message_ex* msg) override;
+        virtual void prepare_on_send(message_ex* msg) override;
+
+        virtual int get_buffer_count_on_send(message_ex* msg) override;
 
         virtual int get_buffers_on_send(message_ex* msg, /*out*/ send_buf* buffers) override;
 

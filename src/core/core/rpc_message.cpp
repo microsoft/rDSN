@@ -199,89 +199,13 @@ DSN_API void dsn_msg_get_options(
     opts->gpid = hdr->gpid;
 }
 
-DSN_API dsn_msg_header_type dsn_msg_get_header_type(
-    dsn_message_t msg
-    )
-{
-    auto hdr = ((::dsn::message_ex*)msg)->header;
-    return dsn::header_type::header_type_to_c_type(hdr->hdr_type);
-}
-
 namespace dsn {
 
 std::atomic<uint64_t> message_ex::_id(0);
 uint32_t message_ex::s_local_hash = 0;
 
-header_type header_type::hdr_type_dsn("RDSN");
-header_type header_type::hdr_type_thrift("THFT");
-header_type header_type::hdr_type_http_get("GET ");
-header_type header_type::hdr_type_http_post("POST");
-header_type header_type::hdr_type_http_options("OPTI"); 
-header_type header_type::hdr_type_http_response("HTTP");
-
-std::string header_type::debug_string() const
-{
-    char buf[20];
-    char* ptr = buf;
-    for (int i = 0; i < 4; ++i) {
-        auto& c = type.stype[i];
-        if (isprint(c)) {
-            *ptr++ = c;
-        }
-        else {
-            sprintf(ptr, "\\%02X", c);
-            ptr += 3;
-        }
-    }
-    *ptr = '\0';
-    return std::string(buf);
-}
-
-bool header_type::header_type_to_format(const header_type& hdr_type, /*out*/ network_header_format& hdr_format)
-{
-    if (hdr_type == hdr_type_dsn)
-    {
-        hdr_format = NET_HDR_DSN;
-        return true;
-    }
-    else if (hdr_type == hdr_type_thrift)
-    {
-        hdr_format = NET_HDR_THRIFT;
-        return true;
-    }
-    else if (hdr_type == hdr_type_http_options
-        || hdr_type == hdr_type_http_get 
-        || hdr_type == hdr_type_http_post 
-        || hdr_type == hdr_type_http_response
-        )
-    {
-        hdr_format = NET_HDR_HTTP;
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-dsn_msg_header_type header_type::header_type_to_c_type(const header_type& hdr_type)
-{
-    if (hdr_type == hdr_type_dsn)
-        return DHT_DEFAULT;
-    else if (hdr_type == hdr_type_thrift)
-        return DHT_THRIFT;
-    else if (hdr_type == hdr_type_http_get 
-        || hdr_type == hdr_type_http_post 
-        || hdr_type == hdr_type_http_options
-        || hdr_type == hdr_type_http_response
-        )
-        return DHT_HTTP;
-    else
-        return DHT_INVALID;
-}
-
 message_ex::message_ex()
-    : header(nullptr), local_rpc_code(::dsn::TASK_CODE_INVALID), hdr_format(NET_HDR_DSN),
+    : header(nullptr), local_rpc_code(::dsn::TASK_CODE_INVALID), hdr_format(NET_HDR_DSN), send_retry_count(0),
       _rw_index(-1), _rw_offset(0), _rw_committed(true), _is_read(false)
 {
 }
@@ -291,164 +215,6 @@ message_ex::~message_ex()
     if (!_is_read)
     {
         dassert(_rw_committed, "message write is not committed");
-    }
-}
-
-void message_ex::seal(bool fill_crc)
-{
-    dassert  (!_is_read && _rw_committed, "seal can only be applied to write mode messages");
-    //dbg_dassert(header->body_length > 0, "message %s is empty!", header->rpc_name);
-
-    if (hdr_format != NET_HDR_DSN)
-        return;
-
-    if (fill_crc)
-    {
-        // compute data crc if necessary
-        if (header->body_crc32 == CRC_INVALID)
-        {
-            int i_max = (int)buffers.size() - 1;
-            uint32_t crc32 = 0;
-            size_t len = 0;
-            for (int i = 0; i <= i_max; i++)
-            {
-                uint32_t lcrc;
-                const void* ptr;
-                size_t sz;
-
-                if (i == 0)
-                {
-                    ptr = (const void*)(buffers[i].data() + sizeof(message_header));
-                    sz = (size_t)buffers[i].length() - sizeof(message_header);
-                }
-                else
-                {
-                    ptr = (const void*)buffers[i].data();
-                    sz = (size_t)buffers[i].length();
-                }
-
-                lcrc = dsn_crc32_compute(ptr, sz, crc32);
-                crc32 = dsn_crc32_concatenate(
-                    0,
-                    0, crc32, len, 
-                    crc32, lcrc, sz
-                    );
-
-                len += sz;
-            }
-
-            dassert  (len == (size_t)header->body_length, "data length is wrong");
-            header->body_crc32 = crc32;
-        }
-
-        header->hdr_crc32 = CRC_INVALID;
-        header->hdr_crc32 = dsn_crc32_compute(header, sizeof(message_header), 0);
-    }
-    else
-    {
-#ifndef NDEBUG
-        int i_max = (int)buffers.size() - 1;
-        size_t len = 0;
-        for (int i = 0; i <= i_max; i++)
-        {
-            len += (size_t)buffers[i].length();
-        }
-        dassert(len == (size_t)header->body_length + sizeof(message_header), 
-            "data length is wrong");
-#endif
-    }
-}
-
-bool message_ex::is_right_header() const
-{
-    dassert(hdr_format == NET_HDR_DSN, "only valid for dsn mssage header");
-
-    if (header->hdr_crc32 != CRC_INVALID)
-    {
-        return is_right_header((char*)header);
-    }
-
-    // crc is not enabled
-    else
-    {
-        return true;
-    }
-}
-
-/*static*/ bool message_ex::is_right_header(char* hdr)
-{
-    uint32_t* pcrc = reinterpret_cast<uint32_t*>(hdr + FIELD_OFFSET(message_header, hdr_crc32));
-    uint32_t crc32 = *pcrc;
-    if (crc32 != CRC_INVALID)
-    {
-        //dassert  (*(int32_t*)data == hdr_crc32, "HeaderCrc must be put at the beginning of the buffer");
-        *pcrc = CRC_INVALID;
-        bool r = (crc32 == dsn_crc32_compute(hdr, sizeof(message_header), 0));
-        *pcrc = crc32;
-        if (!r)
-        {
-            derror("header crc check failed");
-        }
-        return r;
-    }
-
-    // crc is not enabled
-    else
-    {
-        return true;
-    }
-}
-
-bool message_ex::is_right_body(bool is_write_msg) const
-{
-    dassert(hdr_format == NET_HDR_DSN, "only valid for dsn mssage header");
-
-    if (header->body_crc32 != CRC_INVALID)
-    {
-        int i_max = (int)buffers.size() - 1;
-        uint32_t crc32 = 0;
-        size_t len = 0;
-        for (int i = 0; i <= i_max; i++)
-        {
-            uint32_t lcrc;
-            const void* ptr;
-            size_t sz;
-
-            if (i == 0 && is_write_msg)
-            {
-                ptr = (const void*)(buffers[i].data() + sizeof(message_header));
-                sz = (size_t)buffers[i].length() - sizeof(message_header);
-            }
-            else
-            {
-                ptr = (const void*)buffers[i].data();
-                sz = (size_t)buffers[i].length();
-            }
-
-            lcrc = dsn_crc32_compute(ptr, sz, crc32);
-            crc32 = dsn_crc32_concatenate(
-                0,
-                0, crc32, len,
-                crc32, lcrc, sz
-                );
-
-            len += sz;
-        }
-
-        dassert(len == (size_t)header->body_length, "data length is wrong");
-
-        bool r = (header->body_crc32 == crc32);
-        if (!r)
-        {
-            derror("body crc check failed");
-        }
-        return r;
-    }
-
-    // crc is not enabled
-    else
-    {
-        return true;
     }
 }
 
@@ -560,7 +326,7 @@ message_ex* message_ex::copy(bool clone_content, bool copy_for_receive)
     else
     {
         int total_length = body_size() + sizeof(dsn::message_header);
-        std::shared_ptr<char> recv_buffer(new char[total_length], std::default_delete<char[]>());
+        std::shared_ptr<char> recv_buffer(dsn::make_shared_array<char>(total_length));
         char* ptr = recv_buffer.get();
         int i=0;
 
@@ -617,7 +383,7 @@ message_ex* message_ex::create_request(dsn_task_code_t rpc_code, int timeout_mil
     // init header
     auto& hdr = *msg->header;
     memset(&hdr, 0, sizeof(hdr));
-    hdr.hdr_type = header_type::hdr_type_dsn;
+    hdr.hdr_type = *(uint32_t*)"RDSN";
     hdr.hdr_length = sizeof(message_header);
     hdr.hdr_crc32 = hdr.body_crc32 = CRC_INVALID;
 

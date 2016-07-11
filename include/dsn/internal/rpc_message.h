@@ -64,54 +64,9 @@ namespace dsn
                              // we leverage for optimization (fast rpc handler lookup)
     };
 
-    struct header_type
-    {
-    public:
-        union
-        {
-            char stype[4];
-            int32_t itype;
-        } type;
-        header_type()
-        {
-            type.itype = -1;
-        }
-        header_type(const char* str)
-        {
-            memcpy(type.stype, str, sizeof(int32_t));
-        }
-        header_type(const header_type& another)
-        {
-            type.itype = another.type.itype;
-        }
-        header_type& operator=(const header_type& another)
-        {
-            type.itype = another.type.itype;
-            return *this;
-        }
-        bool operator==(const header_type& other) const
-        {
-            return type.itype == other.type.itype;
-        }
-        bool operator!=(const header_type& other) const
-        {
-            return type.itype != other.type.itype;
-        }
-        std::string debug_string() const;
-    public:
-        static header_type hdr_type_dsn;
-        static header_type hdr_type_thrift;
-        static header_type hdr_type_http_get;
-        static header_type hdr_type_http_post;
-        static header_type hdr_type_http_options;
-        static header_type hdr_type_http_response;
-        static bool header_type_to_format(const header_type& hdr_type, /*out*/ network_header_format& hdr_format);
-        static dsn_msg_header_type header_type_to_c_type(const header_type& hdr_type);
-    };
-
     typedef struct message_header
     {
-        header_type    hdr_type;
+        uint32_t       hdr_type;
         uint32_t       hdr_version;
         uint32_t       hdr_length;
         uint32_t       hdr_crc32;
@@ -150,7 +105,7 @@ namespace dsn
     public:
         message_header         *header;
         std::vector<blob>      buffers; // header included for *send* message, 
-                                        // header not included for *recieved* 
+                                        // header not included for *recieved*
 
         // by rpc and network
         rpc_session_ptr        io_session;     // send/recv session        
@@ -158,6 +113,7 @@ namespace dsn
         rpc_address            server_address; // used by requests, and may be of uri/group address
         dsn_task_code_t        local_rpc_code;
         network_header_format  hdr_format;
+        int                    send_retry_count;
 
         // by message queuing
         dlink                  dl;
@@ -169,12 +125,9 @@ namespace dsn
         //
         // utility routines
         //
-        bool is_right_header() const;
-        bool is_right_body(bool is_write_msg) const;
         error_code error();
         task_code rpc_code();
         static uint64_t new_id() { return ++_id; }
-        static bool is_right_header(char* hdr);
         static unsigned int get_body_length(char* hdr) { return ((message_header*)hdr)->body_length; }
 
         //
@@ -201,7 +154,6 @@ namespace dsn
         void read_commit(size_t size);        
         size_t body_size() { return (size_t)header->body_length; }
         void* rw_ptr(size_t offset_begin);
-        void seal(bool crc_required);
     private:
         message_ex();
         void prepare_buffer_header();

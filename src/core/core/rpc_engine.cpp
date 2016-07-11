@@ -589,10 +589,11 @@ namespace dsn {
         _client_nets.resize(network_header_format::max_value() + 1);
 
         // for each format
-        for (int i = 0; i <= network_header_format::max_value(); i++)
+        for (int i = NET_HDR_INVALID + 1; i <= network_header_format::max_value(); i++)
         {
             std::vector<network*>& pnet = _client_nets[i];
             pnet.resize(rpc_channel::max_value() + 1);
+            auto client_hdr_format = network_header_format(network_header_format::to_string(i));
 
             // for each channel
             for (int j = 0; j <= rpc_channel::max_value(); j++)
@@ -616,8 +617,6 @@ namespace dsn {
                 network_server_config cs(aspec.id, c);
                 cs.factory_name = factory;
                 cs.message_buffer_block_size = blk_size;
-
-                auto client_hdr_format = network_header_format(network_header_format::to_string(i));
 
                 auto net = create_network(cs, true, client_hdr_format, ctx);
                 if (!net) return ERR_NETWORK_INIT_FAILED;
@@ -695,7 +694,7 @@ namespace dsn {
         _uri_resolver_mgr.reset(new uri_resolver_manager(
             service_engine::fast_instance().spec().config.get()));
 
-        _local_primary_address = _client_nets[0][0]->address();
+        _local_primary_address = _client_nets[NET_HDR_DSN][0]->address();
         _local_primary_address.c_addr_ptr()->u.v4.port = aspec.ports.size() > 0 ? *aspec.ports.begin() : aspec.id + ctx.port_shift_value;
 
         ddebug("=== service_node=[%s], primary_address=[%s] ===",
@@ -794,14 +793,11 @@ namespace dsn {
     void rpc_engine::call(message_ex* request, rpc_response_task* call)
     {
         auto& hdr = *request->header;
-        task_spec* sp = task_spec::get(request->local_rpc_code);
-
         hdr.from_address = primary_address();
         hdr.trace_id = dsn_random64(
             std::numeric_limits<decltype(hdr.trace_id)>::min(),
             std::numeric_limits<decltype(hdr.trace_id)>::max()
             );
-        request->seal(sp->rpc_message_crc_required);
 
         call_address(request->server_address, request, call);
     }
@@ -852,9 +848,13 @@ namespace dsn {
 
                                 // still got time, retry
                                 uint64_t nms = dsn_now_ms();
-                                if (nms + 10 < timeout_ts_ms)
+                                uint64_t gap = 8 << req2->send_retry_count;
+                                if (gap > 1000)
+                                    gap = 1000;
+                                if (nms + gap < timeout_ts_ms)
                                 {
-                                    req2->header->client.timeout_ms = static_cast<int>(timeout_ts_ms - nms);
+                                    req2->send_retry_count++;
+                                    req2->header->client.timeout_ms = static_cast<int>(timeout_ts_ms - nms - gap);
                                     auto ctask = dynamic_cast<rpc_response_task*>(task::get_current_task());
                                     ctask->reset_callback();
                                     ctask->set_retry(false);
@@ -870,7 +870,7 @@ namespace dsn {
                                             ctask->release_ref(); // added when set-retry
                                         },
                                         0,
-                                        std::chrono::milliseconds(10)
+                                        std::chrono::milliseconds(gap)
                                         );
                                     return;
                                 }
@@ -904,7 +904,6 @@ namespace dsn {
                             dassert(hdr2->gpid.value == 0, "");
                             hdr2->gpid = result.pid;
                             hdr2->client.hash = dsn_gpid_to_hash(result.pid);
-                            request->seal(task_spec::get(request->local_rpc_code)->rpc_message_crc_required);
                         }
 
                         call_address(result.address, request, call);
@@ -981,24 +980,18 @@ namespace dsn {
             hdr.rpc_name
             );
 
-        dinfo("rpc_name = %s, remote_addr = %s, header_format = %s, channel = %s, trace_id = %016" PRIx64,
+        dinfo("rpc_name = %s, remote_addr = %s, header_format = %s, channel = %s, seq_id = %" PRIu64 ", trace_id = %016" PRIx64,
               hdr.rpc_name, addr.to_string(), request->hdr_format.to_string(),
-              sp->rpc_call_channel.to_string(), hdr.trace_id);
+              sp->rpc_call_channel.to_string(), hdr.id, hdr.trace_id);
 
-        bool need_seal = false;
         if (reset_request_id)
         {
             hdr.id = message_ex::new_id();
-            need_seal = true;
         }
+
         if (set_forwarded && request->header->context.u.is_forwarded == false)
         {
             request->header->context.u.is_forwarded = true;
-            need_seal = true;
-        }
-        if (need_seal)
-        {
-            request->seal(sp->rpc_message_crc_required);
         }
 
         // join point and possible fault injection
@@ -1041,7 +1034,6 @@ namespace dsn {
         response->header->server.error_code.local_code = err;
         response->header->server.error_code.local_hash = message_ex::s_local_hash;
         auto sp = task_spec::get(response->local_rpc_code);
-        response->seal(sp->rpc_message_crc_required);
 
         bool no_fail = sp->on_rpc_reply.execute(task::get_current_task(), response, true);
         
