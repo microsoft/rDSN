@@ -134,6 +134,7 @@ namespace dsn {
         rpc_engine* engine() const { return _engine; }
         int max_buffer_block_count_per_send() const { return _max_buffer_block_count_per_send; }
         network_header_format client_hdr_format() const { return _client_hdr_format; }
+        network_header_format unknown_msg_hdr_format() const { return _unknown_msg_header_format; }
         int message_buffer_block_size() const { return _message_buffer_block_size; }
 
     protected:
@@ -142,6 +143,7 @@ namespace dsn {
     protected:
         rpc_engine                    *_engine;
         network_header_format         _client_hdr_format;
+        network_header_format         _unknown_msg_header_format; // default is NET_HDR_INVALID
         int                           _message_buffer_block_size;
         int                           _max_buffer_block_count_per_send;
         int                           _send_queue_threshold;

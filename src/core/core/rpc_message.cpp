@@ -205,7 +205,7 @@ std::atomic<uint64_t> message_ex::_id(0);
 uint32_t message_ex::s_local_hash = 0;
 
 message_ex::message_ex()
-    : header(nullptr), local_rpc_code(::dsn::TASK_CODE_INVALID), hdr_format(NET_HDR_DSN), send_retry_count(0),
+    : header(nullptr), local_rpc_code(::dsn::TASK_CODE_INVALID), hdr_format(NET_HDR_INVALID), send_retry_count(0),
       _rw_index(-1), _rw_offset(0), _rw_committed(true), _is_read(false)
 {
 }
@@ -276,9 +276,14 @@ message_ex* message_ex::create_receive_message_with_standalone_header(const blob
     std::shared_ptr<char> header_holder(static_cast<char*>(dsn_transient_malloc(sizeof(message_header))), [](char* c) {dsn_transient_free(c);});
     msg->header = reinterpret_cast<message_header*>(header_holder.get());
     memset(msg->header, 0, sizeof(message_header));
-    msg->buffers.push_back(data);
     msg->buffers.emplace_back(blob(std::move(header_holder), sizeof(message_header)));
+    msg->buffers.push_back(data);
+
+    msg->header->body_length = data.length();
     msg->_is_read = true;
+    //we skip the message header
+    msg->_rw_index = 1;
+
     return msg;
 }
 
