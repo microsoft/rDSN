@@ -54,6 +54,7 @@ public:
     void add_checker(const char* name, dsn_checker_create create, dsn_checker_apply apply);
 
 private:
+    static void on_system_init_for_add_global_checker();
     static void on_system_exit(sys_exit_type st);
 };
 

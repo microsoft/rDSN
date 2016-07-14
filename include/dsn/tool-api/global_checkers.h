@@ -26,37 +26,27 @@
 
 /*
  * Description:
- *     What is this file about?
+ *     interface for global checkers (tool side)
  *
  * Revision history:
- *     xxxx-xx-xx, author, first version
+ *     May, 2015, @imzhenyu (Zhenyu Guo), first version
  *     xxxx-xx-xx, author, fix bug about xxx
  */
-
 #pragma once
 
-# include <dsn/tool_api.h>
+# include <string>
+# include <list>
+# include <dsn/utility/dlib.h>
+# include <dsn/service_api_c.h>
 
-namespace dsn { namespace tools {
-
-    class node_scoper
+namespace dsn {
+    
+    struct global_checker
     {
-    public:
-        node_scoper(service_node* node)
-        {
-            task::get_tls_dsn(&_old);
-            task::set_tls_dsn_context(node, nullptr, nullptr);
-        }
-
-        ~node_scoper()
-        {
-            task::set_tls_dsn(&_old);
-        }
-
-    private:
-        struct __tls_dsn__ _old;
+        std::string        name;
+        dsn_checker_create create;
+        dsn_checker_apply  apply;
     };
 
-// ---- inline implementation ------
-
-}} // end namespace dsn::tools
+    DSN_API void get_registered_checkers(/*out*/ std::list<global_checker>& checkers);
+}

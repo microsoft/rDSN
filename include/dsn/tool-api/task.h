@@ -137,26 +137,29 @@ public:
     bool                    is_empty() const { return _is_null; }
 
     // static helper utilities
-    static task*            get_current_task();
-    static uint64_t         get_current_task_id();
-    static task_worker*     get_current_worker();
-    static task_worker*     get_current_worker2();
-    static service_node*    get_current_node();
-    static service_node*    get_current_node2();
-    static int              get_current_node_id();
-    static int              get_current_worker_index();
-    static const char*      get_current_node_name();
-    static rpc_engine*      get_current_rpc();
-    static disk_engine*     get_current_disk();
-    static env_provider*    get_current_env();
-    static nfs_node*        get_current_nfs();
-    static timer_service*   get_current_tsvc();
+    DSN_API static task*            get_current_task();
+    DSN_API static uint64_t         get_current_task_id();
+    DSN_API static task_worker*     get_current_worker();
+    DSN_API static task_worker*     get_current_worker2();
+    DSN_API static service_node*    get_current_node();
+    DSN_API static service_node*    get_current_node2();
+    DSN_API static int              get_current_node_id();
+    DSN_API static int              get_current_worker_index();
+    DSN_API static const char*      get_current_node_name();
+    DSN_API static rpc_engine*      get_current_rpc();
+    DSN_API static disk_engine*     get_current_disk();
+    DSN_API static env_provider*    get_current_env();
+    DSN_API static nfs_node*        get_current_nfs();
+    DSN_API static timer_service*   get_current_tsvc();
+    DSN_API static int              get_current_queue_length();
 
     DSN_API static void     set_tls_dsn_context(
                                 service_node* node,  // cannot be null
                                 task_worker* worker, // null for io or timer threads if they are not worker threads
                                 task_queue* queue   // owner queue if io_mode == IOE_PER_QUEUE
                                 );
+    DSN_API static void     set_tls_dsn(const __tls_dsn__* ctx);
+    DSN_API static void     get_tls_dsn(/*out*/ __tls_dsn__* ctx);
 
 protected:
     DSN_API void            signal_waiters();
@@ -539,6 +542,12 @@ __inline /*static*/ timer_service* task::get_current_tsvc()
 {
     check_tls_dsn();
     return tls_dsn.tsvc;
+}
+
+__inline /*static*/ int task::get_current_queue_length()
+{
+    check_tls_dsn();
+    return tls_dsn.last_worker_queue_size;
 }
 
 } // end namespace

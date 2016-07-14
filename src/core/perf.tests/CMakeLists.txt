@@ -1,3 +1,5 @@
+add_definitions(-DDSN_IN_CORE)
+set(DSN_IN_CORE "TRUE")
 set(MY_PROJ_NAME dsn.core.perf.tests)
 
 # Source files under CURRENT project directory will be automatically included.
@@ -19,10 +21,8 @@ set(MY_BOOST_PACKAGES system)
 
 set(MY_PROJ_LIBS gtest
                  dsn.dist.providers.common
-                 dsn.tools.nfs
                  dsn.dev.cpp.core.use
                  dsn.tools.hpc
-                 dsn.tools.simulator
                  dsn.tools.common
                  dsn.corelib
                  dsn.dev.utility

@@ -35,19 +35,16 @@
 
 # pragma once
 
-#pragma once
-
-# if defined(DSN_IN_CORE)
 # if defined(_WIN32)
+# if defined(DSN_IN_CORE)
 # define DSN_API __declspec(dllexport)
 # else
-# define DSN_API __attribute__((visibility("default")))
-# endif
-# else
-# if defined(_WIN32)
 # define DSN_API __declspec(dllimport)
-# else
+# endif
+# endif // end _WIN32
+
+# ifndef DSN_API
 # define DSN_API
 # endif
-# endif
+
 

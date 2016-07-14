@@ -50,8 +50,8 @@ namespace dsn {
             ddebug("%s ENQUEUE, task_id = %016llx, delay = %d ms, queue size = %d",
                 callee->spec().name.c_str(),
                 callee->id(),
-                callee->delay_milliseconds(),
-                tls_dsn.last_worker_queue_size
+                callee->delay_milliseconds(),                
+                task::get_current_queue_length()
                 );
         }
 
@@ -143,7 +143,7 @@ namespace dsn {
             ddebug("%s AIO.ENQUEUE, task_id = %016llx, queue size = %d",
                 this_->spec().name.c_str(),
                 this_->id(),
-                tls_dsn.last_worker_queue_size
+                task::get_current_queue_length()
                 );
         }
 
@@ -171,7 +171,7 @@ namespace dsn {
                 callee->get_request()->header->from_address.to_string(),
                 callee->get_request()->to_address.to_string(),
                 callee->get_request()->header->trace_id,
-                tls_dsn.last_worker_queue_size
+                task::get_current_queue_length()
                 );
         }
 
@@ -197,7 +197,7 @@ namespace dsn {
                 resp->get_request()->to_address.to_string(),
                 resp->get_request()->header->from_address.to_string(),
                 resp->get_request()->header->trace_id,
-                tls_dsn.last_worker_queue_size
+                task::get_current_queue_length()
                 );
         }
 

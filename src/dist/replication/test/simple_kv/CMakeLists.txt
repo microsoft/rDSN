@@ -1,6 +1,6 @@
 set(MY_PROJ_NAME dsn.rep_tests.simple_kv)
-add_definitions(-DDSN_IN_CORE)
-set(DSN_IN_CORE "TRUE")
+# add_definitions(-DDSN_IN_CORE)
+# set(DSN_IN_CORE "TRUE")
 
 # Source files under CURRENT project directory will be automatically included.
 # You can manually set MY_PROJ_SRC to include source files under other directories.
@@ -16,13 +16,6 @@ set(MY_PROJ_INC_PATH ../../client_lib)
 set(MY_BOOST_PACKAGES system)
 
 set(MY_PROJ_LIBS gtest
-                 dsn.dist.providers.common
-                 dsn.tools.nfs
-                 dsn.dev.cpp.core.use
-                 dsn.tools.hpc
-                 dsn.tools.simulator
-                 dsn.tools.common
-                 dsn.corelib
                  dsn.replication
                  dsn.replication.meta_server
                  dsn.replication.clientlib

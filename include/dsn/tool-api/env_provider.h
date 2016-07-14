@@ -55,7 +55,7 @@ public:
 
     typedef env_provider* (*factory)(env_provider*);
 
-    env_provider(env_provider* inner_provider);
+    DSN_API env_provider(env_provider* inner_provider);
 
     DSN_API virtual uint64_t now_ns() const;
 
