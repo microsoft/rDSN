@@ -37,11 +37,13 @@
 # include <dsn/tool_api.h>
 # include <dsn/tool-api/task.h>
 # include <dsn/cpp/auto_codes.h>
-# include <dsn/utility/utils.h>
+# include <dsn/cpp/utils.h>
 # include <dsn/utility/synchronize.h>
 # include <gtest/gtest.h>
 # include <thread>
 # include "../core/service_engine.h"
+
+// TODO: move to tools.common
 //# include "../tools/simulator/task_engine.sim.h"
 //# include "../tools/simulator/scheduler.h"
 //

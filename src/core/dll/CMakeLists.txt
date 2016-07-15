@@ -15,7 +15,7 @@ set(MY_SRC_SEARCH_MODE "GLOB")
 
 set(MY_PROJ_INC_PATH "")
 
-set(MY_BOOST_PACKAGES system)
+set(MY_BOOST_PACKAGES "")
 
 set(MY_PROJ_LIBS dsn.dev.cpp.core.use
                  dsn.dev.utility

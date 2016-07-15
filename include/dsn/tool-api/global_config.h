@@ -118,7 +118,7 @@ struct service_app_spec
 
     service_app_spec() : role(nullptr) {}
     /*service_app_spec(const service_app_spec& r);*/
-    DSN_API bool init(const char* section,
+    bool init(const char* section,
         const char* role_name_,
         service_app_spec* default_value,
         network_client_configs* default_client_nets = nullptr,
@@ -202,10 +202,9 @@ struct service_spec
     std::string                   dir_log;
 
     service_spec() {}
-    DSN_API bool init();
-    DSN_API bool init_app_specs();
-    DSN_API int get_ports_delta(int app_id, dsn_threadpool_code_t pool, int queue_index) const;
-    DSN_API static void load_app_shared_libraries();
+    bool init();
+    bool init_app_specs();
+    int get_ports_delta(int app_id, dsn_threadpool_code_t pool, int queue_index) const;
 };
 
 CONFIG_BEGIN(service_spec)

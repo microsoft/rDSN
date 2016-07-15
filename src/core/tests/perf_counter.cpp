@@ -89,7 +89,7 @@ static void test_perf_counter(perf_counter::factory f)
         ans+=vec[i];
     }
     std::vector<int> gen_numbers{1, 5, 1043};
-    int sleep_interval = (int)dsn_config_get_value_uint64("components.simple_perf_counter", "counter_computation_interval_seconds", 3, "period");
+    int sleep_interval = (int)dsn_config_get_value_uint64("components.simple_perf_counter", "counter_computation_interval_seconds", 30, "period");
 
     perf_counter_ptr counter = f("", "", "", dsn_perf_counter_type_t::COUNTER_TYPE_NUMBER, "");
     perf_counter_inc_dec(counter);
@@ -112,18 +112,15 @@ static void test_perf_counter(perf_counter::factory f)
     }
 }
 
-TEST(tools_common, simple_perf_counter)
+TEST(tools_common, all_perf_counter_types)
 {
-    test_perf_counter(simple_perf_counter_factory);
+    auto fs = dsn::utils::factory_store<perf_counter>::get_all_factories<perf_counter::factory>();
+    for (auto& f : fs)
+    {
+        if (f.type == ::dsn::provider_type::PROVIDER_TYPE_MAIN)
+        {
+            dwarn("test %s ...", f.name.c_str());
+            test_perf_counter(f.factory);
+        }   
+    }
 }
-
-TEST(tools_common, simple_perf_counter_v2_atomic)
-{
-    test_perf_counter(simple_perf_counter_v2_atomic_factory);
-}
-
-TEST(tools_common, simple_perf_counter_v2_fast)
-{
-    test_perf_counter(simple_perf_counter_v2_fast_factory);
-}
-

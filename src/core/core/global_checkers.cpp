@@ -32,16 +32,33 @@
  *     xxxx-xx-xx, author, first version
  *     xxxx-xx-xx, author, fix bug about xxx
  */
+ 
+# include <dsn/tool-api/global_checkers.h>
+# include <dsn/utility/singleton.h>
+# include <dsn/tool_api.h>
 
-// apps
-# include "nfs_test.app.example.h"
-
-int main(int argc, char** argv)
+namespace dsn 
 {
-    dsn::register_app< ::dsn::replication::application::nfs_client_app>("client");
-    dsn::register_app< ::dsn::replication::application::nfs_server_app>("server");
-    
-    // specify what services and tools will run in config file, then run
-    dsn_run_config("config.ini", true);
-    return 0;
+    class global_checker_store : public ::dsn::utils::singleton< global_checker_store >
+    {
+    public:
+        std::list<global_checker> checkers;
+    };
+
+    void get_registered_checkers(/*out*/ std::list<global_checker>& checkers)
+    {
+        checkers = ::dsn::global_checker_store::instance().checkers;
+    }
 }
+
+
+DSN_API void dsn_register_app_checker(const char* name, dsn_checker_create create, dsn_checker_apply apply)
+{
+    ::dsn::global_checker ck;
+    ck.name = name;
+    ck.create = create;
+    ck.apply = apply;
+
+    ::dsn::global_checker_store::instance().checkers.push_back(ck);
+}
+

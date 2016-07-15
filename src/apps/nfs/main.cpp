@@ -26,39 +26,16 @@
 
 /*
  * Description:
- *     service core initialization
+ *     nfs module auto registration
  *
  * Revision history:
- *     July, 2015, @imzhenyu (Zhenyu Guo), first version
+ *     July, 2016, @imzhenyu (Zhenyu Guo), first version
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
-
-# include <dsn/service_api_c.h>
-# include <dsn/utility/ports.h>
-
-# include <dsn/tool/simulator.h>
-# include <dsn/tool/nativerun.h>
-# include <dsn/tool/fastrun.h>
-# include <dsn/toollet/tracer.h>
-# include <dsn/toollet/profiler.h>
-# include <dsn/toollet/fault_injector.h>
-# include <dsn/toollet/explorer.h>
-
-# include <dsn/tool/providers.common.h>
-# include <dsn/tool/providers.hpc.h>
 # include <dsn/tool/nfs.h>
-# include <dsn/utility/singleton.h>
+# include <dsn/utility/module_init.cpp.h>
 
-# include <dsn/dist/dist.providers.common.h>
-
-//# include <dsn/thrift_helper.h>
-
-# ifdef __TITLE__
-# undef __TITLE__
-# endif
-# define __TITLE__ "core.main"
-
-void dsn_core_init()
-{
-}
+MODULE_INIT_BEGIN(nfs_node_simple)
+    dsn::tools::register_component_provider< ::dsn::service::nfs_node_simple>("dsn::service::nfs_node_simple");
+MODULE_INIT_END

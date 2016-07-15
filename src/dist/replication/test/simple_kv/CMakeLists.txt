@@ -4,7 +4,7 @@ set(MY_PROJ_NAME dsn.rep_tests.simple_kv)
 
 # Source files under CURRENT project directory will be automatically included.
 # You can manually set MY_PROJ_SRC to include source files under other directories.
-set(MY_PROJ_SRC "../../../../core/dll/core_main.cpp")
+set(MY_PROJ_SRC "")
 
 # Search mode for source files under CURRENT project directory?
 # "GLOB_RECURSE" for recursive search

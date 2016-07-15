@@ -42,8 +42,6 @@ namespace dsn
 {
     namespace dist
     {
-        void register_partition_resolver_providers();
-
         class partition_resolver
             : public ref_counter
         {

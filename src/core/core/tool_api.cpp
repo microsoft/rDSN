@@ -154,6 +154,11 @@ namespace dsn {
                 return dsn::utils::factory_store<timer_service>::register_factory(name, f, type);
             }
 
+            bool register_component_provider(const char* name, ::dsn::dist::partition_resolver::factory f, ::dsn::provider_type type)
+            {
+                return dsn::utils::factory_store<::dsn::dist::partition_resolver>::register_factory(name, f, type);
+            }
+
             bool register_component_provider(const char* name, task_queue::factory f, ::dsn::provider_type type)
             {
                 return dsn::utils::factory_store<task_queue>::register_factory(name, f, type);

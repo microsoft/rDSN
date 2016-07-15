@@ -62,6 +62,37 @@ namespace dsn {
         }
 
         template<typename TFactory>
+        struct typed_factory_entry
+        {
+            std::string name;
+            ::dsn::provider_type type;
+            TFactory factory;
+        };
+
+        template<typename TFactory>
+        static std::vector<typed_factory_entry<TFactory> > get_all_factories()
+        {
+            std::vector<std::string> keys;
+            singleton_store<std::string, factory_entry>::instance().get_all_keys(keys);
+
+            std::vector<typed_factory_entry<TFactory> > fs;
+            for (auto& k : keys)
+            {                
+                factory_entry fe;
+                singleton_store<std::string, factory_entry>::instance().get(k, fe);
+
+                typed_factory_entry<TFactory> f;
+                f.name = k;
+                f.type = fe.type;
+                f.factory = *(TFactory*)&fe.factory;;
+
+                fs.push_back(f);
+            }
+
+            return fs;
+        }
+
+        template<typename TFactory>
         static TFactory get_factory(const char* name, ::dsn::provider_type type)
         {
             factory_entry entry;
@@ -148,6 +179,8 @@ namespace dsn {
                 printf("\t\t%s (type: %s)\n", it->c_str(), entry.type == PROVIDER_TYPE_MAIN ? "provider" : "aspect");
             }
             printf ("\tPlease specify the correct factory name in your tool_app or in configuration file\n");
+
+            std::abort();
         }
 
     private:

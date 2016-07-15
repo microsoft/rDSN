@@ -66,6 +66,7 @@
 # include <dsn/tool-api/logging_provider.h>
 # include <dsn/tool-api/memory_provider.h>
 # include <dsn/tool-api/timer_service.h>
+# include <dsn/tool-api/partition_resolver.h>
 
 namespace dsn { namespace tools {
 
@@ -150,6 +151,7 @@ namespace internal_use_only
     DSN_API bool register_component_provider(const char* name, memory_provider::factory f, ::dsn::provider_type type);
     DSN_API bool register_component_provider(const char* name, nfs_node::factory f, ::dsn::provider_type type);
     DSN_API bool register_component_provider(network_header_format fmt, const std::vector<const char*>& signatures, message_parser::factory f, message_parser::factory2 f2, size_t sz);
+    DSN_API bool register_component_provider(const char* name, ::dsn::dist::partition_resolver::factory f, ::dsn::provider_type type);
     DSN_API bool register_toollet(const char* name, toollet::factory f, ::dsn::provider_type type);
     DSN_API bool register_tool(const char* name, tool_app::factory f, ::dsn::provider_type type);
     DSN_API toollet* get_toollet(const char* name, ::dsn::provider_type type);

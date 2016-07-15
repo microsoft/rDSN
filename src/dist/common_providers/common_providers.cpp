@@ -32,31 +32,25 @@
  *     Feb., 2016, @imzhenyu (Zhenyu Guo), first draft
  *     xxxx-xx-xx, author, fix bug about xxx
  */
-# include "partition_resolver_simple.h"
-# include <dsn/utility/factory_store.h>
 
-# include <dsn/dist/replication/replication.types.h>
+# include <dsn/utility/module_init.cpp.h>
+# include "partition_resolver_simple.h"
+# include <dsn/tool_api.h>
 
 namespace dsn
 {
     namespace dist
     {
-        static bool register_component_provider(
-            const char* name,
-            ::dsn::dist::partition_resolver::factory f)
-        {
-            return dsn::utils::factory_store< ::dsn::dist::partition_resolver>::register_factory(
-                name,
-                f,
-                PROVIDER_TYPE_MAIN);
-        }
-
         void register_common_providers()
         {
-            register_component_provider(
-                "partition_resolver_simple",
-                partition_resolver::create< partition_resolver_simple>
+            ::dsn::tools::register_component_provider<partition_resolver_simple>(
+                "partition_resolver_simple"
                 );
         }
     }
 }
+
+MODULE_INIT_BEGIN(tools_hpc)
+    dsn::dist::register_common_providers();
+MODULE_INIT_END
+

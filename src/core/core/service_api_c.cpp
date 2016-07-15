@@ -45,7 +45,7 @@
 # include <dsn/utility/factory_store.h>
 # include <dsn/tool-api/task.h>
 # include <dsn/utility/singleton_store.h>
-# include <dsn/utility/utils.h> 
+# include <dsn/cpp/utils.h> 
 
 # include <dsn/utility/configuration.h>
 # include "command_manager.h"
@@ -56,6 +56,7 @@
 # include "coredump.h"
 # include "crc.h"
 # include "transient_memory.h"
+# include "library_utils.h"
 # include <fstream>
 
 # ifndef _WIN32
@@ -1168,11 +1169,91 @@ namespace dsn {
 }
 
 extern void dsn_log_init();
-extern void dsn_core_init();
+
+// load all modules: local components, tools, frameworks, apps
+static void load_all_modules(::dsn::configuration_ptr config)
+{    
+    std::vector< std::pair<std::string, std::string> > modules;
+
+    // load local components, toollets, and tools
+    // [modules]
+    // dsn.tools.common
+    // dsn.tools.hpc
+    std::vector<const char*> lmodules;
+    config->get_all_keys("modules", lmodules);
+    for (auto& m : lmodules)
+    {
+        modules.push_back(std::make_pair(std::string(m), ""));
+    }
+
+    // load app and framework modules
+    // TODO: move them to [modules] section as well
+    std::vector<std::string> all_section_names;
+    config->get_all_sections(all_section_names);
+    
+    for (auto it = all_section_names.begin(); it != all_section_names.end(); ++it)
+    {
+        if (it->substr(0, strlen("apps.")) == std::string("apps."))
+        {
+            std::string module = dsn_config_get_value_string(it->c_str(), "dmodule", "",
+                "path of a dynamic library which implement this app role, and register itself upon loaded");
+            if (module.length() > 0)
+            {
+                std::string bridge_args = dsn_config_get_value_string(it->c_str(), "dmodule_bridge_arguments", "",
+                    "\n; when the service cannot automatically register its app types into rdsn \n"
+                    "; through %dmoudule%'s dllmain or attribute(constructor), we require the %dmodule% \n"
+                    "; implement an exporte function called \"dsn_error_t dsn_bridge(const char* args);\", \n"
+                    "; which loads the real target (e.g., a python/Java/php module), that registers their \n"
+                    "; app types and factories."
+                );
+
+                modules.push_back(std::make_pair(module, bridge_args));
+            }
+        }
+    }
+
+    // do the real job
+    for (auto m : modules)
+    {
+        auto hmod = ::dsn::utils::load_dynamic_library(m.first.c_str());
+        if (nullptr == hmod)
+        {
+            dassert(false, "cannot load shared library %s specified in config file",
+                m.first.c_str());
+            break;
+        }
+
+        // have dmodule_bridge_arguments?
+        if (m.second.length() > 0)
+        {
+            dsn_app_bridge_t bridge_ptr = (dsn_app_bridge_t)::dsn::utils::load_symbol(hmod, "dsn_app_bridge");
+            dassert(bridge_ptr != nullptr,
+                "when dmodule_bridge_arguments is present (%s), function dsn_app_bridge must be implemented in module %s",
+                m.second.c_str(),
+                m.first.c_str()
+            );
+
+            ddebug("call %s.dsn_app_bridge(...%s...)",
+                m.first.c_str(),
+                m.second.c_str()
+            );
+
+            std::vector<std::string> args;
+            std::vector<const char*> args_ptr;
+            ::dsn::utils::split_args(m.second.c_str(), args);
+
+            for (auto& arg : args)
+            {
+                args_ptr.push_back(arg.c_str());
+            }
+
+            bridge_ptr((int)args_ptr.size(), &args_ptr[0]);
+        }
+    }
+}
 
 bool run(const char* config_file, const char* config_arguments, bool sleep_after_init, std::string& app_list)
 {
-    //dsn_core_init();
     ::dsn::task::set_tls_dsn_context(nullptr, nullptr, nullptr);
 
     dsn_all.engine_ready = false;
@@ -1200,10 +1281,8 @@ bool run(const char* config_file, const char* config_arguments, bool sleep_after
 #endif
         getchar();
     }
-
-    // regiser external app roles by loading all shared libraries
-    // so all code and app factories are automatically registered
-    dsn::service_spec::load_app_shared_libraries();
+        
+    load_all_modules(dsn_all.config);
 
     for (int i = 0; i <= dsn_task_code_max(); i++)
     {

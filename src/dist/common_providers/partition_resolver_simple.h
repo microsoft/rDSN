@@ -35,7 +35,7 @@
 
 # pragma once
 
-# include <dsn/dist/partition_resolver.h>
+# include <dsn/tool-api/partition_resolver.h>
 # include <dsn/cpp/zlocks.h>
 
 namespace dsn
