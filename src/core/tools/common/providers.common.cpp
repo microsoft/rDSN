@@ -36,7 +36,7 @@
 
 # include <dsn/utility/module_init.cpp.h>
 # include "asio_net_provider.h"
-# include <dsn/tool/providers.common.h>
+# include "providers.common.h"
 # include "lockp.std.h"
 # include "native_aio_provider.win.h"
 # include "native_aio_provider.posix.h"
@@ -53,12 +53,12 @@
 # include "http_message_parser.h"
 # include "raw_message_parser.h"
 
-# include <dsn/tool/simulator.h>
-# include <dsn/tool/nativerun.h>
-# include <dsn/toollet/tracer.h>
-# include <dsn/toollet/profiler.h>
-# include <dsn/toollet/fault_injector.h>
-# include <dsn/toollet/explorer.h>
+# include "simulator.h"
+# include "nativerun.h"
+# include "tracer.h"
+# include "profiler.h"
+# include "fault_injector.h"
+# include "explorer.h"
 
 namespace dsn {
     namespace tools {

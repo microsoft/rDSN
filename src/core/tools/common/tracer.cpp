@@ -34,7 +34,7 @@
  */
 
 
-# include <dsn/toollet/tracer.h>
+# include "tracer.h"
 # include <dsn/tool-api/command.h>
 
 # ifdef __TITLE__

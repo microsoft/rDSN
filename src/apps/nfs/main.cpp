@@ -33,8 +33,8 @@
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
-# include <dsn/tool/nfs.h>
 # include <dsn/utility/module_init.cpp.h>
+# include "nfs_node_simple.h"
 
 MODULE_INIT_BEGIN(nfs_node_simple)
     dsn::tools::register_component_provider< ::dsn::service::nfs_node_simple>("dsn::service::nfs_node_simple");

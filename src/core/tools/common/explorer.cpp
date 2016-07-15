@@ -35,7 +35,7 @@
  */
 
 
-# include <dsn/toollet/explorer.h>
+# include "explorer.h"
 # include <dsn/service_api_c.h>
 # include <dsn/tool-api/command.h>
 

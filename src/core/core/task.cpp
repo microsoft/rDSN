@@ -39,7 +39,7 @@
 # include <dsn/tool-api/env_provider.h>
 # include <dsn/cpp/utils.h>
 # include <dsn/utility/synchronize.h>
-# include <dsn/tool/node_scoper.h>
+# include <dsn/tool-api/node_scoper.h>
 
 # include "task_engine.h"
 # include "service_engine.h"

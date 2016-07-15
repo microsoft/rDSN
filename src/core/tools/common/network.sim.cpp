@@ -37,7 +37,7 @@
 # include <boost/asio.hpp>
 # include <dsn/service_api_c.h>
 # include <dsn/utility/singleton_store.h>
-# include <dsn/tool/node_scoper.h>
+# include <dsn/tool-api/node_scoper.h>
 # include "network.sim.h" 
 
 # ifdef __TITLE__

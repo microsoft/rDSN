@@ -35,7 +35,7 @@
 
 
 # include <dsn/dist/replication/replication.global_check.h>
-# include <dsn/tool/global_checker.h>
+# include <dsn/tool-api/global_checker.h>
 # include <dsn/dist/replication/meta_service_app.h>
 # include <dsn/dist/replication/replication_service_app.h>
 
