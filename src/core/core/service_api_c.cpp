@@ -1222,7 +1222,22 @@ static void load_all_modules(::dsn::configuration_ptr config)
                 m.first.c_str());
             break;
         }
+        else
+        {
+            dwarn("load shared library %s successfully", m.first.c_str());
+        }
 
+// attribute(contructor) is not reliable on *nix
+#ifndef  _WIN32
+        typedef void(*dsn_module_init_fn)();
+        dsn_module_init_fn init_fn = (dsn_module_init_fn)::dsn::utils::load_symbol(hmod, "dsn_module_init");
+        dassert(init_fn != nullptr,
+            "dsn_module_init is not present (%s), use MODULE_INIT_BEGIN/END to define it",
+            m.first.c_str()
+        );
+        init_fn();
+#endif // ! _WIN32
+        
         // have dmodule_bridge_arguments?
         if (m.second.length() > 0)
         {
