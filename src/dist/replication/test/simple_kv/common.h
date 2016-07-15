@@ -35,6 +35,7 @@
 
 # pragma once
 
+# include <dsn/tool_api.h>
 # include <dsn/dist/replication.h>
 # include "../../client_lib/replication_common.h"
 

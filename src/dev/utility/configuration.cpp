@@ -34,7 +34,7 @@
  */
 
 # include <dsn/utility/configuration.h>
-# include <dsn/utility/utils.h>
+# include <dsn/cpp/utils.h>
 # include <cassert>
 # include <errno.h>
 # include <iostream>

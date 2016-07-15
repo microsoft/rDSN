@@ -36,7 +36,7 @@
 # pragma once
 
 # include <dsn/utility/ports.h>
-# include <dsn/utility/utils.h>
+# include <dsn/cpp/utils.h>
 # include <dsn/utility/dlib.h>
 # include <random>
 
@@ -55,7 +55,7 @@ public:
 
     typedef env_provider* (*factory)(env_provider*);
 
-    env_provider(env_provider* inner_provider);
+    DSN_API env_provider(env_provider* inner_provider);
 
     DSN_API virtual uint64_t now_ns() const;
 

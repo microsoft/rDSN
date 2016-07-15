@@ -48,11 +48,6 @@
 
 namespace dsn { namespace tools {
 
-void simulator::add_checker(const char* name, dsn_checker_create create, dsn_checker_apply apply)
-{
-    scheduler::instance().add_checker(name, create, apply);
-}
-
 void simulator::install(service_spec& spec)
 {   
     register_component_provider<sim_aio_provider>("dsn::tools::sim_aio_provider");
@@ -127,7 +122,27 @@ void simulator::install(service_spec& spec)
             tspec.queue_factory_name = ("dsn::tools::sim_task_queue");
     }
 
+    sys_init_after_app_created.put_back(
+        simulator::on_system_init_for_add_global_checker,
+        "checkers.install"
+    );
+
     sys_exit.put_front(simulator::on_system_exit, "simulator");
+}
+
+void simulator::on_system_init_for_add_global_checker()
+{
+    std::list<global_checker> checkers;
+    ::dsn::get_registered_checkers(checkers);
+
+    auto t = dynamic_cast<dsn::tools::simulator*>(::dsn::tools::get_current_tool());
+    if (t != nullptr)
+    {
+        for (auto& c : checkers)
+        {
+            t->add_checker(c.name.c_str(), c.create, c.apply);
+        }
+    }
 }
 
 void simulator::on_system_exit(sys_exit_type st)
@@ -135,6 +150,11 @@ void simulator::on_system_exit(sys_exit_type st)
     derror("system exits, you can replay this process using random seed %d",        
         sim_env_provider::seed()
         );
+}
+
+void simulator::add_checker(const char* name, dsn_checker_create create, dsn_checker_apply apply)
+{
+    scheduler::instance().add_checker(name, create, apply);
 }
 
 void simulator::run()

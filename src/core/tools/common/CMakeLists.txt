@@ -13,9 +13,11 @@ set(MY_PROJ_INC_PATH "")
 
 set(MY_PROJ_LIBS "")
 
+set(MY_BOOST_PACKAGES system)
+
 set(MY_PROJ_LIB_PATH "")
 
 # Extra files that will be installed
 set(MY_BINPLACES "")
 
-dsn_add_static_library()
+dsn_add_shared_library()

@@ -34,7 +34,7 @@
  */
 
 # include <dsn/utility/join_point.h>
-# include <dsn/service_api_c.h>
+# include <cassert>
 
 namespace dsn
 {
@@ -77,7 +77,8 @@ bool join_point_base::put_before(const char* base, void* fn, const char* name, b
     auto e0 = get_by_name(base);
     if (e0 == nullptr)
     {
-        dassert (false, "cannot find advice with name '%s' in '%s'", base, _name.c_str());
+        printf ("cannot find advice with name '%s' in '%s'", base, _name.c_str());
+        abort();
         return false;
     }
 
@@ -97,7 +98,8 @@ bool join_point_base::put_after(const char* base, void* fn, const char* name, bo
     auto e0 = get_by_name(base);
     if (e0 == nullptr)
     {
-        dassert (false, "cannot find advice with name '%s' in '%s'", base, _name.c_str());
+        printf ("cannot find advice with name '%s' in '%s'", base, _name.c_str());
+        abort();
         return false;
     }
 
@@ -117,7 +119,8 @@ bool join_point_base::put_replace(const char* base, void* fn, const char* name)
     auto e0 = get_by_name(base);
     if (e0 == nullptr)
     {
-        dassert (false, "cannot find advice with name '%s' in '%s'", base, _name.c_str());
+        printf ("cannot find advice with name '%s' in '%s'", base, _name.c_str());
+        abort();
         return false;
     }
     else
@@ -133,7 +136,8 @@ bool join_point_base::remove(const char* name)
     auto e0 = get_by_name(name);
     if (e0 == nullptr)
     {
-        dassert (false, "cannot find advice with name '%s' in '%s'", name, _name.c_str());
+        printf ("cannot find advice with name '%s' in '%s'", name, _name.c_str());
+        abort();
         return false;
     }
 

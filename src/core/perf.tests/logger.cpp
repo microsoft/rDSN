@@ -35,19 +35,9 @@
 
 
 # include <gtest/gtest.h>
-# include <dsn/service_api_cpp.h>
-# include <dsn/service_api_c.h>
-# include <dsn/tool/providers.hpc.h>
-# include <dsn/utility/singleton_store.h>
 # include <dsn/utility/factory_store.h>
 # include <dsn/tool_api.h>
-# include <dsn/tool-api/logging_provider.h>
-
-# include "service_engine.h"
 # include "test_utils.h"
-# include "../tools/hpc/hpc_logger.h"
-# include "../tools/hpc/hpc_tail_logger.h"
-# include "../tools/common/simple_logger.h"
 
 using namespace ::dsn;
 const char str[64] = "this is a logging test for log %010d @ thread %010d";
@@ -68,11 +58,10 @@ void logv(dsn::logging_provider* logger,const char* fmt, ...)
     va_end(ap);
 }
 
-template<typename TLOGGER>
-void logger_test(int thread_count, int record_count)
+void logger_test(logging_provider::factory f, int thread_count, int record_count)
 {
     std::list<std::thread*> threads;
-    TLOGGER logger("./");
+    logging_provider* logger = f("./");
 
     uint64_t nts = dsn_now_ns();
     uint64_t nts_start = nts;
@@ -85,7 +74,7 @@ void logger_test(int thread_count, int record_count)
             task::set_tls_dsn_context(task::get_current_node2(), nullptr, nullptr);
             for (int j = 0; j < record_count; j++)
             {
-                logv(&logger, str, j, i);
+                logv(logger, str, j, i);
             }
             
         }));
@@ -114,36 +103,25 @@ void logger_test(int thread_count, int record_count)
         << std::endl;
 
     //logger.flush();
-
+    delete logger;
 }
 
-TEST(core, simple_logger_test)
+TEST(core, logger_test)
 {
-    std::cout << "thread_count\t\t record_count\t\t speed" << std::endl;
-
-    auto threads_count = { 1, 2,  5, 10 };
-    for (int i : threads_count)
+    auto fs = dsn::utils::factory_store<logging_provider>::get_all_factories<logging_provider::factory>();
+    for (auto& f : fs)
     {
-        logger_test<dsn::tools::simple_logger>(i, 100000);
-    }
-}
+        if (f.type == ::dsn::provider_type::PROVIDER_TYPE_MAIN)
+        {
+            dwarn("test %s ...", f.name.c_str());
+            
+            std::cout << "thread_count\t\t record_count\t\t speed" << std::endl;
 
-TEST(core, hpc_logger_test)
-{
-    std::cout << "thread_count\t\t record_count\t\t speed" << std::endl;
-
-    auto threads_count = { 1, 2, 5, 10 };
-    for (int i : threads_count)
-        logger_test<dsn::tools::hpc_logger>(i, 100000);
-}
-
-TEST(core, hpc_tail_logger_test)
-{
-    std::cout << "thread_count\t\t record_count\t\t speed" << std::endl;
-
-    auto threads_count = { 1, 2,  5, 10 };
-    for (int i : threads_count)
-    {
-        logger_test<dsn::tools::hpc_tail_logger>(i, 10000);
+            auto threads_count = { 1, 2,  5, 10 };
+            for (int i : threads_count)
+            {
+                logger_test(f.factory, i, 100000);
+            }
+        }
     }
 }

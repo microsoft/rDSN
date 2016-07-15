@@ -33,11 +33,18 @@
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
-# include <dsn/utility/utils.h>
+# include <dsn/cpp/utils.h>
+# include <dsn/cpp/blob.h>
+# include <dsn/cpp/address.h>
+# include <dsn/cpp/auto_codes.h>
 # include <dsn/utility/singleton.h>
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <random>
+
+#ifdef DSN_USE_THRIFT_SERIALIZATION
+# include <dsn/cpp/serialization_helper/thrift_helper.h>
+#endif
 
 # if defined(__linux__)
 # include <sys/syscall.h>
@@ -202,7 +209,6 @@ namespace dsn {
 
 namespace  dsn 
 {
-
     binary_reader::binary_reader(const blob& blob)
     {
         init(blob);

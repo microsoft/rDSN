@@ -42,6 +42,7 @@
 # include <dsn/cpp/callocator.h>
 # include <dsn/cpp/auto_codes.h>
 # include <dsn/cpp/address.h>
+# include <dsn/cpp/blob.h>
 # include <dsn/utility/link.h>
 # include <dsn/tool-api/global_config.h>
 

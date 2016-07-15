@@ -54,11 +54,10 @@
 # error "dsn init on shared lib loading is not supported on this platform yet"
 # endif
 
-extern void dsn_module_init();
-
 # if defined(__GNUC__)
-# define MODULE_INIT_BEGIN(x) __attribute__((constructor)) void dsn_module_init_##x() {
+# define MODULE_INIT_BEGIN(x) extern "C" void dsn_module_init() {
 # else
+extern void dsn_module_init();
 # define MODULE_INIT_BEGIN(x) void dsn_module_init() {
 # endif
 

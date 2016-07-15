@@ -35,8 +35,9 @@
 
 # pragma once
 
-# include <dsn/utility/utils.h>
-# include <dsn/cpp/address.h>
+# include <string>
+# include <sstream>
+# include <dsn/cpp/serialization_helper/dsn_types.h>
 # include <dsn/cpp/rpc_stream.h>
 
 #ifdef DSN_USE_THRIFT_SERIALIZATION

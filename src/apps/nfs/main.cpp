@@ -26,37 +26,16 @@
 
 /*
  * Description:
- *     What is this file about?
+ *     nfs module auto registration
  *
  * Revision history:
- *     xxxx-xx-xx, author, first version
+ *     July, 2016, @imzhenyu (Zhenyu Guo), first version
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
-#pragma once
+# include <dsn/tool/nfs.h>
+# include <dsn/utility/module_init.cpp.h>
 
-# include <dsn/tool_api.h>
-
-namespace dsn { namespace tools {
-
-    class node_scoper
-    {
-    public:
-        node_scoper(service_node* node)
-        {
-            task::get_tls_dsn(&_old);
-            task::set_tls_dsn_context(node, nullptr, nullptr);
-        }
-
-        ~node_scoper()
-        {
-            task::set_tls_dsn(&_old);
-        }
-
-    private:
-        struct __tls_dsn__ _old;
-    };
-
-// ---- inline implementation ------
-
-}} // end namespace dsn::tools
+MODULE_INIT_BEGIN(nfs_node_simple)
+    dsn::tools::register_component_provider< ::dsn::service::nfs_node_simple>("dsn::service::nfs_node_simple");
+MODULE_INIT_END

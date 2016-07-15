@@ -32,31 +32,33 @@
  *     xxxx-xx-xx, author, first version
  *     xxxx-xx-xx, author, fix bug about xxx
  */
-
-#pragma once
-
+ 
+# include <dsn/tool-api/global_checkers.h>
+# include <dsn/utility/singleton.h>
 # include <dsn/tool_api.h>
 
-namespace dsn { namespace tools {
-
-    class node_scoper
+namespace dsn 
+{
+    class global_checker_store : public ::dsn::utils::singleton< global_checker_store >
     {
     public:
-        node_scoper(service_node* node)
-        {
-            task::get_tls_dsn(&_old);
-            task::set_tls_dsn_context(node, nullptr, nullptr);
-        }
-
-        ~node_scoper()
-        {
-            task::set_tls_dsn(&_old);
-        }
-
-    private:
-        struct __tls_dsn__ _old;
+        std::list<global_checker> checkers;
     };
 
-// ---- inline implementation ------
+    void get_registered_checkers(/*out*/ std::list<global_checker>& checkers)
+    {
+        checkers = ::dsn::global_checker_store::instance().checkers;
+    }
+}
 
-}} // end namespace dsn::tools
+
+DSN_API void dsn_register_app_checker(const char* name, dsn_checker_create create, dsn_checker_apply apply)
+{
+    ::dsn::global_checker ck;
+    ck.name = name;
+    ck.create = create;
+    ck.apply = apply;
+
+    ::dsn::global_checker_store::instance().checkers.push_back(ck);
+}
+

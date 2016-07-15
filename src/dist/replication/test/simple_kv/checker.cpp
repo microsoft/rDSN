@@ -45,8 +45,8 @@
 # include "../../meta_server/server_state.h"
 # include "../../meta_server/server_load_balancer.h"
 # include "../../client_lib/replication_ds.h"
-# include "../../../../core/core/service_engine.h"
-# include "../../../../core/core/rpc_engine.h"
+//# include "../../../../core/core/service_engine.h"
+//# include "../../../../core/core/rpc_engine.h"
 
 # include <sstream>
 # include <boost/lexical_cast.hpp>
@@ -189,12 +189,12 @@ bool test_checker::init(const char* name, dsn_app_info* info, int count)
         }
     }
 
-    auto nodes = ::dsn::service_engine::fast_instance().get_all_nodes();
-    for (auto& node : nodes)
+    for (int i = 0; i < count; i++)
     {
-        int id = node.second->id();
-        std::string name = node.second->name();
-        rpc_address paddr = node.second->rpc(nullptr)->primary_address();
+        auto& node = _apps[i];
+        int id = node.app_id;
+        std::string name = node.name;
+        rpc_address paddr(node.primary_address);
         int port = paddr.port();
         _node_to_address[name] = paddr;
         ddebug("=== node_to_address[%s]=%s", name.c_str(), paddr.to_string());
