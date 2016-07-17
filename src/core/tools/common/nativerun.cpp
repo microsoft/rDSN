@@ -33,7 +33,7 @@
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
-#include <dsn/tool/nativerun.h>
+#include "nativerun.h"
 
 namespace dsn {
     namespace tools {

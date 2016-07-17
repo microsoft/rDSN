@@ -34,7 +34,7 @@
  */
 
 # include <dsn/utility/module_init.cpp.h>
-# include <dsn/tool/providers.hpc.h>
+# include "providers.hpc.h"
 # include "hpc_task_queue.h"
 # include "hpc_tail_logger.h"
 # include "hpc_logger.h"
@@ -42,7 +42,7 @@
 # include "hpc_network_provider.h"
 # include "hpc_env_provider.h"
 # include "mix_all_io_looper.h"
-# include <dsn/tool/fastrun.h>
+# include "fastrun.h"
 
 namespace dsn {
     namespace tools {

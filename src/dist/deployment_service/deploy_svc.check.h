@@ -1,5 +1,5 @@
 # pragma once
-# include <dsn/tool/global_checker.h>
+# include <dsn/tool-api/global_checker.h>
 
 namespace dsn { namespace dist {  
 

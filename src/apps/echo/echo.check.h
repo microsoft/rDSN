@@ -33,7 +33,7 @@
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
-# include <dsn/tool/global_checker.h>
+# include <dsn/tool-api/global_checker.h>
 
 namespace dsn { namespace example {  
 

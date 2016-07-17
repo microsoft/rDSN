@@ -34,7 +34,7 @@
  */
 
 
-# include <dsn/tool/simulator.h>
+# include "simulator.h"
 # include "scheduler.h"
 
 # include "diske.sim.h"
