@@ -36,7 +36,7 @@
 #pragma once
 
 # include <dsn/utility/ports.h>
-# include <dsn/utility/utils.h>
+# include <dsn/cpp/blob.h>
 # include <dsn/service_api_c.h>
 
 namespace dsn 

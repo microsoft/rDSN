@@ -37,9 +37,9 @@
 # include <dsn/service_api_c.h>
 # include <dsn/tool-api/task.h>
 # include <dsn/tool-api/env_provider.h>
-# include <dsn/utility/utils.h>
+# include <dsn/cpp/utils.h>
 # include <dsn/utility/synchronize.h>
-# include <dsn/tool/node_scoper.h>
+# include <dsn/tool-api/node_scoper.h>
 
 # include "task_engine.h"
 # include "service_engine.h"
@@ -57,6 +57,16 @@ namespace dsn
 {
 __thread struct __tls_dsn__ tls_dsn;
 __thread uint16_t tls_dsn_lower32_task_id_mask = 0;
+
+/*static*/ void task::set_tls_dsn(const __tls_dsn__* ctx)
+{
+    tls_dsn = *ctx;
+}
+
+/*static*/ void task::get_tls_dsn(/*out*/ __tls_dsn__* ctx)
+{
+    *ctx = tls_dsn;
+}
 
 /*static*/ void task::set_tls_dsn_context(
     service_node* node,  // cannot be null

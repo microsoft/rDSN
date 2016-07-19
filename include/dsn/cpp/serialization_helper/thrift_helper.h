@@ -36,8 +36,8 @@
 
 # pragma once
 
-# include <dsn/tool_api.h>
 # include <dsn/cpp/rpc_stream.h>
+# include <dsn/cpp/address.h>
 
 # include <thrift/Thrift.h>
 # include <thrift/protocol/TBinaryProtocol.h>

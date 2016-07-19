@@ -33,55 +33,30 @@
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
-#include "env.sim.h"
-#include "scheduler.h"
+#pragma once
 
-# ifdef __TITLE__
-# undef __TITLE__
-# endif
-# define __TITLE__ "env.provider.simulator"
+# include <dsn/tool_api.h>
 
 namespace dsn { namespace tools {
 
-/*static*/ int sim_env_provider::_seed;
-
-uint64_t sim_env_provider::now_ns() const
-{
-    return scheduler::instance().now_ns();
-}
-
-uint64_t sim_env_provider::random64(uint64_t min, uint64_t max)
-{
-    if (_tls_magic != 0xdeadbeef)
+    class node_scoper
     {
-        _tls_magic = 0xdeadbeef;
-        _rng = new std::remove_pointer<decltype(_rng)>::type;
-    }
-    return std::uniform_int_distribution<uint64_t>{min, max}(*_rng);
-}
+    public:
+        node_scoper(service_node* node)
+        {
+            task::get_tls_dsn(&_old);
+            task::set_tls_dsn_context(node, nullptr, nullptr);
+        }
 
-void sim_env_provider::on_worker_start(task_worker* worker)
-{
-    if (_tls_magic != 0xdeadbeef)
-    {
-        _tls_magic = 0xdeadbeef;
-        _rng = new std::remove_pointer<decltype(_rng)>::type;
-    }
-    _rng->seed((_seed + worker->index() + worker->index()*worker->pool_spec().pool_code) ^ worker->index());
-}
+        ~node_scoper()
+        {
+            task::set_tls_dsn(&_old);
+        }
 
-sim_env_provider::sim_env_provider(env_provider* inner_provider)
-    : env_provider(inner_provider)
-{
-    task_worker::on_start.put_front(on_worker_start, "sim_env_provider::on_worker_start");
+    private:
+        struct __tls_dsn__ _old;
+    };
 
-    _seed = (int)dsn_config_get_value_uint64("tools.simulator", "random_seed", 0, "random seed for the simulator, 0 for random random seed");
-    if (_seed == 0)
-    {
-        _seed = std::random_device{}();
-    }
+// ---- inline implementation ------
 
-    derror("simulation.random seed for this round is %d", _seed);
-}
-
-}} // end namespace
+}} // end namespace dsn::tools

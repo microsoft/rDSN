@@ -36,7 +36,8 @@
 # pragma once
 
 # include <dsn/utility/ports.h>
-# include <dsn/utility/utils.h>
+# include <dsn/cpp/utils.h>
+# include <dsn/utility/dlib.h>
 # include <random>
 
 namespace dsn {
@@ -54,15 +55,14 @@ public:
 
     typedef env_provider* (*factory)(env_provider*);
 
-    env_provider(env_provider* inner_provider);
+    DSN_API env_provider(env_provider* inner_provider);
 
-    virtual uint64_t now_ns() const { return utils::get_current_physical_time_ns(); }
+    DSN_API virtual uint64_t now_ns() const;
 
-    virtual uint64_t random64(uint64_t min, uint64_t max);
+    DSN_API virtual uint64_t random64(uint64_t min, uint64_t max);
 
 protected:
-    static __thread unsigned int _tls_magic;
-    static __thread std::ranlux48_base* _rng;
+    DSN_API static void set_thread_local_random_seed(int s);
 };
 /*@}*/
 } // end namespace

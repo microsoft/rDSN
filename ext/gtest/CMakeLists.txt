@@ -6,12 +6,12 @@ else()
     set(target_url "https://github.com/imzhenyu/googletest.git")
 endif()
 
-set(my_cmake_args "-Dgtest_force_shared_crt=OFF;")
+set(my_cmake_args "-Dgtest_force_shared_crt=OFF;-DBUILD_SHARED_LIBS=ON;")
 
 if(WIN32)
-    set(target_binaries gtest.lib gtest_main.lib)
+    set(target_binaries gtest.lib gtest_main.lib gtest.dll gtest_main.dll)
 else()
-    set(target_binaries libgtest.a libgtest_main.a)
+    set(target_binaries libgtest.so libgtest_main.so)
 endif()
 
 include(${PROJECT_SOURCE_DIR}/bin/dsn.ext.cmake)

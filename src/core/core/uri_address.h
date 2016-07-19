@@ -36,7 +36,7 @@
 # pragma once
 
 # include <dsn/cpp/address.h>
-# include <dsn/dist/partition_resolver.h>
+# include <dsn/tool-api/partition_resolver.h>
 # include <algorithm> // for std::find()
 # include <dsn/utility/configuration.h>
 

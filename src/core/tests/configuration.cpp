@@ -92,12 +92,13 @@ TEST(core, configuration)
 
     std::vector<std::string> sections;
     c->get_all_sections(sections);
-    ASSERT_EQ(4u, sections.size());
+    ASSERT_EQ(5u, sections.size());
     std::sort(sections.begin(), sections.end());
     ASSERT_EQ("apps..default", sections[0]);
     ASSERT_EQ("apps.client", sections[1]);
     ASSERT_EQ("apps.server", sections[2]);
-    ASSERT_EQ("test", sections[3]);
+    ASSERT_EQ("module", sections[3]);
+    ASSERT_EQ("test", sections[4]);
 
     std::vector<const char*> keys;
     c->get_all_keys("apps..default", keys);
@@ -131,13 +132,14 @@ TEST(core, configuration)
     v = c->get_string_value("my_section", "my_key", "my_value", "my key and value");
     ASSERT_STREQ("my_value", v);
     c->get_all_sections(sections);
-    ASSERT_EQ(5u, sections.size());
+    ASSERT_EQ(6u, sections.size());
     std::sort(sections.begin(), sections.end());
     ASSERT_EQ("apps..default", sections[0]);
     ASSERT_EQ("apps.client", sections[1]);
     ASSERT_EQ("apps.server", sections[2]);
     ASSERT_EQ("my_section", sections[3]);
-    ASSERT_EQ("test", sections[4]);
+    ASSERT_EQ("module", sections[4]);
+    ASSERT_EQ("test", sections[5]);
     c->get_all_keys("my_section", keys);
     ASSERT_EQ(1u, keys.size());
     ASSERT_STREQ("my_key", keys[0]);
@@ -192,13 +194,14 @@ TEST(core, configuration)
     c.reset(new configuration());
     ASSERT_TRUE(c->load("config-sample-dump.ini"));
     c->get_all_sections(sections);
-    ASSERT_EQ(5u, sections.size());
+    ASSERT_EQ(6u, sections.size());
     std::sort(sections.begin(), sections.end());
     ASSERT_EQ("apps..default", sections[0]);
     ASSERT_EQ("apps.client", sections[1]);
     ASSERT_EQ("apps.server", sections[2]);
     ASSERT_EQ("my_section", sections[3]);
-    ASSERT_EQ("test", sections[4]);
+    ASSERT_EQ("module", sections[4]);
+    ASSERT_EQ("test", sections[5]);
 
     // configuration set test
     ASSERT_TRUE(!c->has_key("not-exsit", "not-exsit"));

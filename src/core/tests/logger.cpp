@@ -88,38 +88,38 @@ void log_print(logging_provider* logger, const char* fmt, ...) {
     va_end(vl);
 }
 
-
-TEST(tools_common, simple_logger)
-{
-    //cases for print_header
-    screen_logger* logger = new screen_logger("./");
-    log_print(logger, "%s", "test_print");
-    std::thread t([](screen_logger* lg){
-        tls_dsn.magic = 0xdeadbeef;
-        log_print(lg, "%s", "test_print");
-    }, logger);
-    t.join();
-
-    logger->flush();
-    delete logger;
-
-    prepare_test_dir();
-    //create multiple files
-    for (unsigned int i=0; i<simple_logger_gc_gap + 10; ++i) {
-        simple_logger* logger = new simple_logger("./");
-        //in this case stdout is useless
-        for (unsigned int i=0; i!=1000; ++i)
-            log_print(logger, "%s", "test_print");
-        logger->flush();
-
-        delete logger;
-    }
-
-    std::vector<int> index;
-    get_log_file_index(index);
-    EXPECT_TRUE(!index.empty());
-    sort(index.begin(), index.end());
-    EXPECT_EQ(simple_logger_gc_gap, index.size());
-    clear_files(index);
-    finish_test_dir();
-}
+// TODO: move to tools.common
+//TEST(tools_common, simple_logger)
+//{
+//    //cases for print_header
+//    screen_logger* logger = new screen_logger("./");
+//    log_print(logger, "%s", "test_print");
+//    std::thread t([](screen_logger* lg){
+//        tls_dsn.magic = 0xdeadbeef;
+//        log_print(lg, "%s", "test_print");
+//    }, logger);
+//    t.join();
+//
+//    logger->flush();
+//    delete logger;
+//
+//    prepare_test_dir();
+//    //create multiple files
+//    for (unsigned int i=0; i<simple_logger_gc_gap + 10; ++i) {
+//        simple_logger* logger = new simple_logger("./");
+//        //in this case stdout is useless
+//        for (unsigned int i=0; i!=1000; ++i)
+//            log_print(logger, "%s", "test_print");
+//        logger->flush();
+//
+//        delete logger;
+//    }
+//
+//    std::vector<int> index;
+//    get_log_file_index(index);
+//    EXPECT_TRUE(!index.empty());
+//    sort(index.begin(), index.end());
+//    EXPECT_EQ(simple_logger_gc_gap, index.size());
+//    clear_files(index);
+//    finish_test_dir();
+//}

@@ -26,37 +26,16 @@
 
 /*
  * Description:
- *     the simulation tool (include simulation, replay, model-checking, ...)
+ *     nfs module auto registration
  *
  * Revision history:
- *     Mar., 2015, @imzhenyu (Zhenyu Guo), first version
+ *     July, 2016, @imzhenyu (Zhenyu Guo), first version
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
-#pragma once
+# include <dsn/utility/module_init.cpp.h>
+# include "nfs_node_simple.h"
 
-# include <dsn/tool_api.h>
-
-namespace dsn { namespace tools {
-
-class simulator : public tool_app
-{
-public:
-    simulator(const char* name)
-        : tool_app(name)
-    {
-    }
-
-    virtual void install(service_spec& s) override;
-    
-    virtual void run() override;
-
-    void add_checker(const char* name, dsn_checker_create create, dsn_checker_apply apply);
-
-private:
-    static void on_system_exit(sys_exit_type st);
-};
-
-// ---- inline implementation ------
-
-}} // end namespace dsn::tools
+MODULE_INIT_BEGIN(nfs_node_simple)
+    dsn::tools::register_component_provider< ::dsn::service::nfs_node_simple>("dsn::service::nfs_node_simple");
+MODULE_INIT_END

@@ -37,7 +37,7 @@
 # include "gtest/gtest.h"
 # include "test_utils.h"
 
-# include "hpc_aio_provider_for_test.h"
+//# include "hpc_aio_provider_for_test.h"
 
 extern void task_engine_module_init();
 extern void command_manager_module_init();
@@ -49,7 +49,7 @@ GTEST_API_ int main(int argc, char **argv)
 {
     testing::InitGoogleTest(&argc, argv);
 
-    dsn::tools::register_component_provider<dsn::test::hpc_aio_provider_for_test>("dsn::test::hpc_aio_provider_for_test");
+    //dsn::tools::register_component_provider<dsn::test::hpc_aio_provider_for_test>("dsn::test::hpc_aio_provider_for_test");
 
     // register all tools
     task_engine_module_init();
