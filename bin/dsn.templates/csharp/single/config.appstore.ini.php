@@ -3,6 +3,11 @@ require_once($argv[1]); // type.php
 require_once($argv[2]); // program.php
 $file_prefix = $argv[3];
 ?>
+[modules]
+dsn.tools.common
+dsn.tools.hpc
+dsn.tools.nfs
+dsn.dist.providers.common
 
 ;
 ; This configuration file is used by app store to automatically
