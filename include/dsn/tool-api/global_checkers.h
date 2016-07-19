@@ -26,22 +26,27 @@
 
 /*
  * Description:
- *     What is this file about?
+ *     interface for global checkers (tool side)
  *
  * Revision history:
- *     xxxx-xx-xx, author, first version
+ *     May, 2015, @imzhenyu (Zhenyu Guo), first version
  *     xxxx-xx-xx, author, fix bug about xxx
  */
+#pragma once
 
-// apps
-# include "nfs_test.app.example.h"
+# include <string>
+# include <list>
+# include <dsn/utility/dlib.h>
+# include <dsn/service_api_c.h>
 
-int main(int argc, char** argv)
-{
-    dsn::register_app< ::dsn::replication::application::nfs_client_app>("client");
-    dsn::register_app< ::dsn::replication::application::nfs_server_app>("server");
+namespace dsn {
     
-    // specify what services and tools will run in config file, then run
-    dsn_run_config("config.ini", true);
-    return 0;
+    struct global_checker
+    {
+        std::string        name;
+        dsn_checker_create create;
+        dsn_checker_apply  apply;
+    };
+
+    DSN_API void get_registered_checkers(/*out*/ std::list<global_checker>& checkers);
 }

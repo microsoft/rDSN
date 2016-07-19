@@ -33,9 +33,8 @@
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
-# include <dsn/tool-api/env_provider.h>
+# include <dsn/service_api_c.h>
 # include <gtest/gtest.h>
-# include "../tools/simulator/env.sim.h"
 
 using namespace ::dsn;
 

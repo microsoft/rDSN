@@ -1,4 +1,5 @@
-
+add_definitions(-DDSN_IN_CORE)
+set(DSN_IN_CORE "TRUE")
 set(MY_PROJ_NAME dsn.corelib)
 
 # Source files under CURRENT project directory will be automatically included.

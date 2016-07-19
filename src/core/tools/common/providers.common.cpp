@@ -34,8 +34,9 @@
  */
 
 
+# include <dsn/utility/module_init.cpp.h>
 # include "asio_net_provider.h"
-# include <dsn/tool/providers.common.h>
+# include "providers.common.h"
 # include "lockp.std.h"
 # include "native_aio_provider.win.h"
 # include "native_aio_provider.posix.h"
@@ -51,6 +52,13 @@
 # include "thrift_message_parser.h"
 # include "http_message_parser.h"
 # include "raw_message_parser.h"
+
+# include "simulator.h"
+# include "nativerun.h"
+# include "tracer.h"
+# include "profiler.h"
+# include "fault_injector.h"
+# include "explorer.h"
 
 namespace dsn {
     namespace tools {
@@ -104,3 +112,13 @@ namespace dsn {
         }
     }
 }
+
+MODULE_INIT_BEGIN(tools_common)
+    dsn::tools::register_common_providers();
+    dsn::tools::register_tool<dsn::tools::nativerun>("nativerun");
+    dsn::tools::register_tool<dsn::tools::simulator>("simulator");
+    dsn::tools::register_toollet<dsn::tools::tracer>("tracer");
+    dsn::tools::register_toollet<dsn::tools::profiler>("profiler");
+    dsn::tools::register_toollet<dsn::tools::fault_injector>("fault_injector");
+    dsn::tools::register_toollet<dsn::tools::explorer>("explorer");
+MODULE_INIT_END

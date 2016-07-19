@@ -42,7 +42,7 @@
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
-#include <dsn/toollet/profiler.h>
+#include "profiler.h"
 #include "profiler_header.h"
 
 namespace dsn {

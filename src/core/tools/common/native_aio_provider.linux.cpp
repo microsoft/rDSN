@@ -122,8 +122,6 @@ namespace dsn {
             struct io_event events[1];
             int ret;
 
-            task::set_tls_dsn_context(node(), nullptr, nullptr);
-
             const char* name = ::dsn::tools::get_service_node_name(node());
             char buffer[128];
             sprintf(buffer, "%s.aio", name);

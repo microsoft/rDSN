@@ -35,6 +35,7 @@
 
 # pragma once
 
+# include <dsn/cpp/serialization.h>
 # include <dsn/cpp/task_helper.h>
 # include <dsn/cpp/function_traits.h>
 

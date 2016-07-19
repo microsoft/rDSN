@@ -290,6 +290,15 @@ typedef dsn_error_t(*dsn_app_apply_checkpoint)(
 # define DSN_APP_MASK_APP        0x01 ///< app mask
 # define DSN_APP_MASK_FRAMEWORK  0x02 ///< framework mask
 
+/*!
+    when the service cannot automatically register its app types into rdsn
+    through %dmoudule%'s dllmain or attribute(constructor), we require the %dmodule%
+    implement an exporte function called "dsn_error_t dsn_bridge(const char* args);"
+    which loads the real target (e.g., a python/Java/php module), that registers their
+    app types and factories.
+ */
+typedef dsn_error_t(*dsn_app_bridge_t)(int, const char**);
+
 # pragma pack(push, 4)
 
 /*!

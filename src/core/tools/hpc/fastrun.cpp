@@ -33,7 +33,7 @@
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
-# include <dsn/tool/fastrun.h>
+# include "fastrun.h"
 # include "mix_all_io_looper.h"
 
 namespace dsn 

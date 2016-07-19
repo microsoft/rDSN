@@ -36,6 +36,10 @@ then
     else
         sed -i "s@^export DSN_ROOT=.*@export DSN_ROOT=$INSTALL_DIR@" ~/.bashrc
     fi
+    if ! grep -q '^export PATH=.*DSN_ROOT' ~/.bashrc
+    then
+        echo 'export PATH=$DSN_ROOT/bin:$PATH' >>~/.bashrc
+    fi
     if ! grep -q '^export LD_LIBRARY_PATH=.*DSN_ROOT' ~/.bashrc
     then
         echo 'export LD_LIBRARY_PATH=$DSN_ROOT/lib:$LD_LIBRARY_PATH' >>~/.bashrc

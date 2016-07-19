@@ -11,11 +11,11 @@ set(MY_SRC_SEARCH_MODE "GLOB")
 
 set(MY_PROJ_INC_PATH "")
 
-set(MY_PROJ_LIBS "")
+set(MY_PROJ_LIBS dsn.dev.utility)
 
 set(MY_PROJ_LIB_PATH "")
 
 # Extra files that will be installed
 set(MY_BINPLACES "")
 
-dsn_add_static_library()
+dsn_add_shared_library()

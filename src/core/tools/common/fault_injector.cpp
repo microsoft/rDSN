@@ -34,7 +34,7 @@
  */
 
 
-#include <dsn/toollet/fault_injector.h>
+#include "fault_injector.h"
 #include <dsn/service_api_c.h>
 
 # ifdef __TITLE__

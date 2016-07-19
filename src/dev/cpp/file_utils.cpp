@@ -34,7 +34,7 @@
  */
 
 
-# include <dsn/utility/utils.h>
+# include <dsn/cpp/utils.h>
 # include <sys/stat.h>
 # include <errno.h>
 

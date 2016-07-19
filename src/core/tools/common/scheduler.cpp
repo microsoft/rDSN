@@ -33,9 +33,9 @@
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
-# include <dsn/tool/simulator.h>
+# include "simulator.h"
 # include <dsn/service_api_c.h>
-# include <dsn/tool/node_scoper.h>
+# include <dsn/tool-api/node_scoper.h>
 # include "scheduler.h"
 # include "env.sim.h"
 # include <set>

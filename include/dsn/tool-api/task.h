@@ -43,7 +43,7 @@
 # include <dsn/tool-api/rpc_message.h>
 # include <dsn/cpp/callocator.h>
 # include <dsn/cpp/auto_codes.h>
-# include <dsn/utility/utils.h>
+# include <dsn/cpp/utils.h>
 
 namespace dsn 
 {
@@ -103,24 +103,24 @@ class task :
     public extensible_object<task, 4>
 {
 public:
-    task(
+    DSN_API task(
         dsn_task_code_t code, 
         void* context, 
         dsn_task_cancelled_handler_t on_cancel, 
         int hash = 0, 
         service_node* node = nullptr
         );
-    virtual ~task();
+    DSN_API virtual ~task();
         
     virtual void exec() = 0;
 
-    void                    exec_internal();    
+    DSN_API void            exec_internal();
     // return whether *this* cancel success, 
     // for timers, even return value is false, the further timer execs are cancelled
-    bool                    cancel(bool wait_until_finished, /*out*/ bool* finished = nullptr);
-    bool                    wait(int timeout_milliseconds = TIME_MS_MAX, bool on_cancel = false);
-    virtual void            enqueue();
-    bool                    set_retry(bool enqueue_immediately = true); // return true when called inside exec(), false otherwise
+    DSN_API bool            cancel(bool wait_until_finished, /*out*/ bool* finished = nullptr);
+    DSN_API bool            wait(int timeout_milliseconds = TIME_MS_MAX, bool on_cancel = false);
+    DSN_API virtual void    enqueue();
+    DSN_API bool            set_retry(bool enqueue_immediately = true); // return true when called inside exec(), false otherwise
     void                    set_error_code(error_code err) { _error = err; }
     void                    set_delay(int delay_milliseconds = 0) { _delay_milliseconds = delay_milliseconds; }
     void                    set_tracker(task_tracker* tracker) { _context_tracker.set_tracker(tracker, this); }
@@ -133,35 +133,37 @@ public:
     int                     delay_milliseconds() const { return _delay_milliseconds; }
     error_code              error() const { return _error; }
     service_node*           node() const { return _node; }
-    task_tracker*           tracker() const
-    { return _context_tracker.tracker(); }
+    task_tracker*           tracker() const { return _context_tracker.tracker(); }
     bool                    is_empty() const { return _is_null; }
 
     // static helper utilities
-    static task*            get_current_task();
-    static uint64_t         get_current_task_id();
-    static task_worker*     get_current_worker();
-    static task_worker*     get_current_worker2();
-    static service_node*    get_current_node();
-    static service_node*    get_current_node2();
-    static int              get_current_node_id();
-    static int              get_current_worker_index();
-    static const char*      get_current_node_name();
-    static rpc_engine*      get_current_rpc();
-    static disk_engine*     get_current_disk();
-    static env_provider*    get_current_env();
-    static nfs_node*        get_current_nfs();
-    static timer_service*   get_current_tsvc();
+    DSN_API static task*            get_current_task();
+    DSN_API static uint64_t         get_current_task_id();
+    DSN_API static task_worker*     get_current_worker();
+    DSN_API static task_worker*     get_current_worker2();
+    DSN_API static service_node*    get_current_node();
+    DSN_API static service_node*    get_current_node2();
+    DSN_API static int              get_current_node_id();
+    DSN_API static int              get_current_worker_index();
+    DSN_API static const char*      get_current_node_name();
+    DSN_API static rpc_engine*      get_current_rpc();
+    DSN_API static disk_engine*     get_current_disk();
+    DSN_API static env_provider*    get_current_env();
+    DSN_API static nfs_node*        get_current_nfs();
+    DSN_API static timer_service*   get_current_tsvc();
+    DSN_API static int              get_current_queue_length();
 
-    static void             set_tls_dsn_context(
+    DSN_API static void     set_tls_dsn_context(
                                 service_node* node,  // cannot be null
                                 task_worker* worker, // null for io or timer threads if they are not worker threads
                                 task_queue* queue   // owner queue if io_mode == IOE_PER_QUEUE
                                 );
+    DSN_API static void     set_tls_dsn(const __tls_dsn__* ctx);
+    DSN_API static void     get_tls_dsn(/*out*/ __tls_dsn__* ctx);
 
 protected:
-    void                    signal_waiters();
-    void                    enqueue(task_worker_pool* pool);
+    DSN_API void            signal_waiters();
+    DSN_API void            enqueue(task_worker_pool* pool);
     void                    set_task_id(uint64_t tid) { _task_id = tid;  }
         
     bool                   _is_null;
@@ -172,7 +174,7 @@ protected:
 private:
     task(const task&);
     static void            check_tls_dsn();
-    static void            on_tls_dsn_not_set();
+    static void    on_tls_dsn_not_set();
 
     mutable std::atomic<task_state> _state;
     uint64_t               _task_id; 
@@ -230,9 +232,9 @@ public:
         service_node* node = nullptr
         );
 
-    void exec() override;
+    DSN_API void exec() override;
 
-    void enqueue() override;
+    DSN_API void enqueue() override;
 
 private:
     uint32_t           _interval_milliseconds;
@@ -294,7 +296,7 @@ public:
 
     message_ex*  get_request() const { return _request; }
 
-    void enqueue() override;
+    DSN_API void enqueue() override;
 
     void  exec() override
     {
@@ -323,7 +325,7 @@ typedef void(*dsn_rpc_response_handler_replace_t)(
 class rpc_response_task : public task, public transient_object
 {
 public:
-    rpc_response_task(
+    DSN_API rpc_response_task(
         message_ex* request, 
         dsn_rpc_response_handler_t cb,
         void* context, 
@@ -331,15 +333,15 @@ public:
         int hash = 0, 
         service_node* node = nullptr
         );
-    ~rpc_response_task();
+    DSN_API ~rpc_response_task();
 
     // return true for normal case, false for fault injection applied
-    bool             enqueue(error_code err, message_ex* reply);
-    void             enqueue() override; // re-enqueue after above enqueue, e.g., after delay
+    DSN_API bool     enqueue(error_code err, message_ex* reply);
+    DSN_API void     enqueue() override; // re-enqueue after above enqueue, e.g., after delay
     message_ex*      get_request() const    { return _request; }
     message_ex*      get_response() const    { return _response; }            
-    void             replace_callback(dsn_rpc_response_handler_replace_t callback, uint64_t context); // not thread-safe
-    bool             reset_callback(); // used only when replace_callback is called before, not thread-safe
+    DSN_API void     replace_callback(dsn_rpc_response_handler_replace_t callback, uint64_t context); // not thread-safe
+    DSN_API bool     reset_callback(); // used only when replace_callback is called before, not thread-safe
     task_worker_pool* caller_pool() const { return _caller_pool; }
     void             set_caller_pool(task_worker_pool* pl) { _caller_pool = pl; }
     
@@ -396,7 +398,7 @@ public:
 class aio_task : public task, public transient_object
 {
 public:
-    aio_task(
+    DSN_API aio_task(
         dsn_task_code_t code,
         dsn_aio_handler_t cb, 
         void* context, 
@@ -404,9 +406,9 @@ public:
         int hash = 0,
         service_node* node = nullptr
         );
-    ~aio_task();
+    DSN_API ~aio_task();
 
-    void            enqueue(error_code err, size_t transferred_size);
+    DSN_API void    enqueue(error_code err, size_t transferred_size);
     size_t          get_transferred_size() const { return _transferred_size; }
     disk_aio*       aio() { return _aio; }
 
@@ -540,6 +542,12 @@ __inline /*static*/ timer_service* task::get_current_tsvc()
 {
     check_tls_dsn();
     return tls_dsn.tsvc;
+}
+
+__inline /*static*/ int task::get_current_queue_length()
+{
+    check_tls_dsn();
+    return tls_dsn.last_worker_queue_size;
 }
 
 } // end namespace
