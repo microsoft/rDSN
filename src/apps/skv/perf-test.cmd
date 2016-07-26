@@ -10,7 +10,7 @@ FOR %%R IN (1,2,3) DO (
         FOR %%U IN (dsn::tools::sim_network_provider dsn::tools::asio_udp_provider) DO (
             :: %aio_provider% - what kind of aio provider we use
             FOR %%A IN (dsn::tools::empty_aio_provider dsn::tools::native_aio_provider) DO (
-                CALL dsn.replication.simple_kv perf-config.ini -cargs replica_count=%%R;tcp_network_provider=%%T;udp_network_provider=%%U;aio_provider=%%A
+                CALL dsn.app.simple_kv perf-config.ini -cargs replica_count=%%R;tcp_network_provider=%%T;udp_network_provider=%%U;aio_provider=%%A
                 XCOPY /Y data\client.perf.test\perf-result-* .\perf-result\
                 @RMDIR /Q /S data
             )

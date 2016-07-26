@@ -53,6 +53,7 @@
 // providers
 # include <dsn/utility/factory_store.h>
 # include <dsn/tool-api/global_config.h>
+# include <dsn/tool-api/command.h>
 # include <dsn/tool-api/global_checkers.h>
 # include <dsn/tool-api/task_queue.h>
 # include <dsn/tool-api/task_worker.h>

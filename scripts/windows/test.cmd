@@ -10,36 +10,42 @@ IF "%build_dir%" EQU "" (
     GOTO error
 )
 
-IF NOT EXIST "%build_dir%" (
+IF NOT EXIST %build_dir% (
     CALL %bin_dir%\echoc.exe 4 %build_dir% does not exist
     GOTO error
 )
 
-pushd %build_dir%
+CALL %bin_dir%\echoc.exe 2 run the tests here ...
 
-CALL  %bin_dir%\echoc.exe 2 run the test cases here ...
+:: run dll-embedded unit tests
+SET DSN_TEST_HOST=%build_dir%\bin\dsn.svchost\%build_type%\dsn.svchost.exe
+FOR /D %%A IN (%build_dir%\test\*) DO (    
+    IF EXIST %%A\gtests (
+        pushd %%A 
+        FOR /F %%I IN (%%A\gtests) DO (
+            IF EXIST %%A (
+                ECHO =========== %DSN_TEST_HOST% %%I ======================
+                CALL %DSN_TEST_HOST% %%I
+                IF ERRORLEVEL 1 popd && echo test %%I failed && goto error
+            )
+        )
+        popd
+    )
+)
 
-cd bin\dsn.core.tests
+:: run e-e tests
+FOR /D %%A IN (%build_dir%\bin\*) DO (
+    IF EXIST %%A\test.cmd (
+        pushd %%A 
+        ECHO ================= %%A\test.cmd ================================
+        CALL test.cmd %TOP_DIR% %build_type% %build_dir%
+        IF ERRORLEVEL 1 popd && echo test %%A failed && goto error
+        popd
+    )
+)
 
-CALL  %bin_dir%\echoc.exe 2  %build_type%\dsn.core.tests.exe config-test.ini
-%build_type%\dsn.core.tests.exe config-test.ini
-@CALL clear.cmd
-
-CALL  %bin_dir%\echoc.exe 2  %build_type%\dsn.core.tests.exe config-test-2.ini
-%build_type%\dsn.core.tests.exe config-test-2.ini
-@CALL clear.cmd
-
-CALL  %bin_dir%\echoc.exe 2  %build_type%\dsn.core.tests.exe config-test-sim.ini
-%build_type%\dsn.core.tests.exe config-test-sim.ini
-@CALL clear.cmd
-
-cd ..\dsn.tests
-
-::CALL  %bin_dir%\echoc.exe 2  %build_type%\dsn.tests.exe config-test.ini
-::%build_type%\dsn.tests.exe config-test.ini
-::@CALL clear.cmd
-
-cd ..\dsn.idl.tests
+:: run idl test
+pushd %build_dir%\bin\dsn.idl.tests
 
 CALL  sbin\mock_install.cmd %TOP_DIR% %build_type% %build_dir%
 CALL  sbin\test.cmd %cd% %TOP_DIR%\ext\cmake-3.2.2\bin

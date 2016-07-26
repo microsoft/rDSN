@@ -42,14 +42,13 @@ using namespace ::dsn::replication;
 
 TEST(replication, mutation_log_learn)
 {
-    std::chrono::steady_clock clock;
     gpid gpid(1, 1);
     std::string str = "hello, world!";
     std::string logp = "./test-log";
 
     // prepare mutations
     std::vector<mutation_ptr> mutations;
-    auto time_tic = clock.now();
+    auto time_tic = std::chrono::steady_clock::now();
     for (int i = 0; i < 1000; i++)
     {
         mutation_ptr mu(new mutation());
@@ -73,7 +72,7 @@ TEST(replication, mutation_log_learn)
 
         mutations.push_back(mu);
     }
-    auto time_toc = clock.now();
+    auto time_toc = std::chrono::steady_clock::now();
     std::cout << "prepare mutations time(us): " << std::chrono::duration_cast<std::chrono::microseconds>(time_toc - time_tic).count() << std::endl;
 
     decree learn_points[] = {584,585,586, 594,595,596,604,605,606 };
@@ -85,7 +84,7 @@ TEST(replication, mutation_log_learn)
         utils::filesystem::create_directory(logp);
 
         // writing logs
-        time_tic = clock.now();
+        time_tic = std::chrono::steady_clock::now();
         mutation_log_ptr mlog = new mutation_log_private(logp, 32, gpid, nullptr, 4096);
         mlog->open(nullptr, nullptr);
         for (auto& mu : mutations)
@@ -93,43 +92,43 @@ TEST(replication, mutation_log_learn)
             mlog->append(mu, LPC_AIO_IMMEDIATE_CALLBACK, nullptr, nullptr, 0);
         }
         mlog->flush();
-        time_toc = clock.now();
+        time_toc = std::chrono::steady_clock::now();
         std::cout << "learn_point[" << lp << "]: write time(us): " << std::chrono::duration_cast<std::chrono::microseconds>(time_toc - time_tic).count() << std::endl;
 
         // gc
-        time_tic = clock.now();
+        time_tic = std::chrono::steady_clock::now();
         decree durable_decree = lp;
         mlog->garbage_collection(gpid, durable_decree, 0);
         mlog->close();
-        time_toc = clock.now();
+        time_toc = std::chrono::steady_clock::now();
         std::cout << "learn_point[" << lp << "]: gc time(us): " << std::chrono::duration_cast<std::chrono::microseconds>(time_toc - time_tic).count() << std::endl;
 
         // reading logs
-        time_tic = clock.now();
+        time_tic = std::chrono::steady_clock::now();
         mlog = new mutation_log_private(logp, 1, gpid, nullptr, 1024);
         mlog->open([](mutation_ptr& mu)->bool{ return true; }, nullptr);
-        time_toc = clock.now();
+        time_toc = std::chrono::steady_clock::now();
         std::cout << "learn_point[" << lp << "]: read time(us): " << std::chrono::duration_cast<std::chrono::microseconds>(time_toc - time_tic).count() << std::endl;
 
         // learning
-        time_tic = clock.now();
+        time_tic = std::chrono::steady_clock::now();
         learn_state state;
         mlog->get_learn_state(gpid, durable_decree + 1, state);
         mlog->close();
         mlog = nullptr;
-        time_toc = clock.now();
+        time_toc = std::chrono::steady_clock::now();
         std::cout << "learn_point[" << lp << "]: learn time(us): " << std::chrono::duration_cast<std::chrono::microseconds>(time_toc - time_tic).count() << std::endl;
 
         // replaying
-        time_tic = clock.now();
+        time_tic = std::chrono::steady_clock::now();
         int64_t offset = 0;
         std::set<decree> learned_decress;
         mutation_log::replay(state.files,
-            [&mutations, &learned_decress, &clock](mutation_ptr& mu)->bool
+            [&mutations, &learned_decress](mutation_ptr& mu)->bool
             {
                 //wait for 5 usec mimicing mutation replay time
-                auto tic = clock.now();
-                while (std::chrono::duration_cast<std::chrono::microseconds>(clock.now() - tic).count() < 5)
+                auto tic = std::chrono::steady_clock::now();
+                while (std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - tic).count() < 5)
                 {
                     ;
                 }
@@ -157,17 +156,17 @@ TEST(replication, mutation_log_learn)
             },
             offset
             ).end_tracking();
-        time_toc = clock.now();
+        time_toc = std::chrono::steady_clock::now();
         std::cout << "learn_point[" << lp << "]: replay time(us): " << std::chrono::duration_cast<std::chrono::microseconds>(time_toc - time_tic).count() << std::endl;
 
         // checking
-        time_tic = clock.now();
+        time_tic = std::chrono::steady_clock::now();
         for (decree s = durable_decree + 1; s < 1000; s++)
         {
             auto it = learned_decress.find(s);
             ASSERT_TRUE(it != learned_decress.end());
         }
-        time_toc = clock.now();
+        time_toc = std::chrono::steady_clock::now();
         std::cout << "learn_point[" << lp << "]: check time(us): " << std::chrono::duration_cast<std::chrono::microseconds>(time_toc - time_tic).count() << std::endl;
 
         // clear all

@@ -313,9 +313,6 @@ template<typename uintxx_t, uintxx_t uPoly> struct crc_generator
 typedef crc_generator<uint32_t, crc32_POLY> crc32;
 typedef crc_generator<uint64_t, crc64_POLY> crc64;
 
-extern crc32 PdiCrc32;
-extern crc64 PdiCrc64;
-
 template<>
 uint32_t crc32::_uX2N[sizeof (crc32::_uX2N) / sizeof (crc32::_uX2N[0])] = {
     0x00800000, 0x00008000, 0x82f63b78, 0x6ea2d55c, 0x18b8ea18, 0x510ac59a, 0xb82be955, 0xb8fdb1e7,

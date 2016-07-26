@@ -1,5 +1,5 @@
 #!/bin/bash
-exe=dsn.replication.simple_kv
+exe=dsn.app.simple_kv
 cfg=vconfig.ini
 test_dir=test
 test_count=5
@@ -39,7 +39,7 @@ function run_test()
         cd test-$i
         replica_port=$[ $replica_port+3 ]
             meta_port=$[ $meta_port+3 ]
-        command="./dsn.replication.simple_kv vconfig.ini -cargs meta_port=$meta_port,replica_port=$replica_port"
+        command="./dsn.app.simple_kv vconfig.ini -cargs meta_port=$meta_port,replica_port=$replica_port"
         echo $command
         ulimit -c unlimited
         $command > output.log 2>&1 &

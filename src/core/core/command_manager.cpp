@@ -43,7 +43,7 @@
 # include <dsn/tool-api/task.h>
 # include <dsn/tool-api/rpc_message.h>
 # include "rpc_engine.h"
-# include <dsn/tool/cli.h>
+# include <dsn/cpp/cli.h>
 
 # ifdef __TITLE__
 # undef __TITLE__
@@ -151,6 +151,14 @@ namespace dsn {
         std::vector<const char*> cmds;
         cmds.push_back(command);
         return register_command(cmds, help_one_line, help_long, handler);
+    }
+
+    bool run_command(const char* cmd, /* out */ ::dsn::safe_string& output)
+    {
+        std::string output2;
+        bool r = command_manager::instance().run_command(cmd, output2);
+        output = ::dsn::safe_string(output2);
+        return r;
     }
 
     dsn_handle_t command_manager::register_command(const std::vector<const char*>& commands, const char* help_one_line, const char* help_long, command_handler handler)

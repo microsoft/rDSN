@@ -1,3 +1,15 @@
+if (DEFINED DSN_CMAKE_INCLUDED)
+else()
+    cmake_minimum_required(VERSION 2.8.8)
+
+    set(DSN_ROOT "$ENV{DSN_ROOT}")
+    if(NOT EXISTS "${DSN_ROOT}/")
+        message(FATAL_ERROR "Please make sure that ${DSN_ROOT} exists.")
+    endif()
+
+    include("${DSN_ROOT}/bin/dsn.cmake")
+endif()
+
 set(MY_PROJ_NAME dsn.meta.test)
 
 # Source files under CURRENT project directory will be automatically included.
@@ -21,7 +33,7 @@ set(MY_PROJ_LIBS dsn.replication.meta_server
 set(MY_PROJ_LIB_PATH "")
 
 # Extra files that will be installed
-set(MY_BINPLACES clear.sh run.sh config-test.ini)
+set(MY_BINPLACES test.sh config-test.ini)
 
 dsn_add_executable()
 add_dependencies(${MY_PROJ_NAME} googletest)
