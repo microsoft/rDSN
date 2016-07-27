@@ -30,6 +30,7 @@ before_script:
     - ulimit -c unlimited -S
 
 script:
+    - ./run.sh build --build_plugins
     - ./run.sh test
 
 after_script:

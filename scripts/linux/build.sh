@@ -10,6 +10,7 @@
 #    RUN_VERBOSE    YES|NO
 #    WARNING_ALL    YES|NO
 #    ENABLE_GCOV    YES|NO
+#    BUILD_PLUGINS  YES|NO
 #    BOOST_DIR      <dir>|""
 #    TEST_MODULE    "<module1> <module2> ..."
 #
@@ -89,6 +90,16 @@ then
 else
     echo "ENABLE_GCOV=NO"
 fi
+
+if [ "$BUILD_PLUGINS" == "YES" ]
+then
+    echo "BUILD_PLUGINS=YES"
+    CMAKE_OPTIONS="$CMAKE_OPTIONS -DBUILD_PLUGINS=TRUE"
+else
+    echo "BUILD_PLUGINS=NO"
+    CMAKE_OPTIONS="$CMAKE_OPTIONS -DBUILD_PLUGINS=FALSE"
+fi
+
 
 # You can specify customized boost by defining BOOST_DIR.
 # Install boost like this:

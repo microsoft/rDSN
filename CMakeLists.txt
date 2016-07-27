@@ -7,11 +7,15 @@ cmake_minimum_required(VERSION 2.8.7)
 project(dsn C CXX)
 set(DSN_BUILD_RUNTIME TRUE)
 
+message(STATUS "use git source ${DSN_GIT_SOURCE}")
+message(STATUS "use BUILD_PLUGINS = ${BUILD_PLUGINS}")
+message(STATUS "use BOOST_INCLUDEDIR = ${BOOST_INCLUDEDIR}")
+
+
 if((NOT DEFINED DSN_GIT_SOURCE) OR (DSN_GIT_SOURCE STREQUAL ""))
     set(DSN_GIT_SOURCE "github")
 endif()
 
-message(STATUS "use git source ${DSN_GIT_SOURCE}")
 set(GIT_SOURCE_FILE "ext/gitsource.${DSN_GIT_SOURCE}")
 
 include(bin/dsn.cmake)
@@ -45,7 +49,7 @@ add_subdirectory(ext/protobuf)
 
 add_subdirectory(src)
 
-if(DEFINED INCLUDE_PLUGINS)
+if(DEFINED BUILD_PLUGINS AND BUILD_PLUGINS STREQUAL "TRUE")
     add_subdirectory(plugins)
 endif()
 
