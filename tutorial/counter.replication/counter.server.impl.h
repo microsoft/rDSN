@@ -27,48 +27,58 @@
 # pragma once
 
 # include "counter.server.h"
+# include <dsn/cpp/replicated_service_app.h>
 
 namespace dsn {
-    namespace example {
-
-        using namespace ::dsn::replication;
-
-        class counter_service_impl
-            : public counter_service
+    namespace example {        
+        class counter_service_impl :
+            public counter_service,
+            public replicated_service_app_type_1
         {
         public:
-            counter_service_impl(replica* replica);
+            counter_service_impl(dsn_gpid gpid);
 
-            virtual void on_add(const ::dsn::example::count_op& op, ::dsn::replication_app_replier<int32_t>& reply) override;
-            virtual void on_read(const std::string& name, ::dsn::replication_app_replier<int32_t>& reply) override;
+            virtual void on_add(const ::dsn::example::count_op& op, ::dsn::rpc_replier<int32_t>& reply) override;
+            virtual void on_read(const std::string& name, ::dsn::rpc_replier<int32_t>& reply) override;
 
-            //
-            // interfaces to be implemented by app
-            // all return values are error code
-            //
-            virtual int  open(bool create_new); // singel threaded
-            virtual int  close(bool clear_state); // must be thread-safe
+            virtual ::dsn::error_code start(int argc, char** argv) override;
 
-            // update _last_durable_decree internally
-            virtual int  flush(bool force);  // must be thread-safe
+            virtual ::dsn::error_code stop(bool cleanup = false) override;
 
-            //
-            // helper routines to accelerate learning
-            // 
-            virtual int  get_learn_state(decree start, const blob& learn_request, /*out*/ learn_state& state);  // must be thread-safe
-            virtual int  apply_learn_state(learn_state& state);  // must be thread-safe, and last_committed_decree must equal to last_durable_decree after learning
+            virtual ::dsn::error_code sync_checkpoint(int64_t last_commit) override;
 
-            virtual int  checkpoint() override;
-            virtual int  get_checkpoint(decree start, const blob& learn_req, /*out*/ learn_state& state) override;
-            virtual int  apply_checkpoint(::dsn::replication::learn_state& state, chkpt_apply_mode mode) override;
+            virtual int64_t get_last_checkpoint_decree() override { return last_durable_decree(); }
+
+            virtual ::dsn::error_code get_checkpoint(
+                int64_t learn_start,
+                int64_t local_commit,
+                void*   learn_request,
+                int     learn_request_size,
+                app_learn_state& state
+            ) override;
+
+            virtual ::dsn::error_code apply_checkpoint(
+                dsn_chkpt_apply_mode mode,
+                int64_t local_commit,
+                const dsn_app_learn_state& state
+            ) override;
+
         private:
             void recover();
-            void recover(const std::string& name, decree version);
+            void recover(const std::string& name, int64_t version);
+            const char* data_dir() const { return _data_dir.c_str(); }
+            int64_t last_durable_decree() const { return _last_durable_decree; }
+            void set_last_durable_decree(int64_t d) { _last_durable_decree = d; }
 
         private:
             ::dsn::service::zlock _lock;
             std::map<std::string, int32_t> _counters;
+            bool      _test_file_learning;
+
+            std::string _data_dir;
+            int64_t     _last_durable_decree;
         };
+
     }
 }
 

@@ -4,3 +4,6 @@
 [submodule "plugins/rDSN.dist.deployment"]
     path = plugins/rDSN.dist.deployment
     url = https://github.com/imzhenyu/rDSN.dist.deployment.git
+[submodule "plugins/rDSN.tools.hpc"]
+	path = plugins/rDSN.tools.hpc
+	url = https://github.com/imzhenyu/rDSN.tools.hpc.git

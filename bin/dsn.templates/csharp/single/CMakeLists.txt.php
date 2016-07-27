@@ -4,14 +4,15 @@ require_once($argv[2]); // program.php
 $file_prefix = $argv[3];
 $idl_format = $argv[4];
 ?>
-cmake_minimum_required(VERSION 2.8.8)
+if (DEFINED DSN_CMAKE_INCLUDED)
+else()
+    set(DSN_ROOT "$ENV{DSN_ROOT}")
+    if(NOT EXISTS "${DSN_ROOT}/")
+        message(FATAL_ERROR "Please make sure that ${DSN_ROOT} exists.")
+    endif()
 
-set(DSN_ROOT "$ENV{DSN_ROOT}")
-if(NOT EXISTS "${DSN_ROOT}/")
-    message(FATAL_ERROR "Please make sure that ${DSN_ROOT} exists.")
+    include("${DSN_ROOT}/bin/dsn.cmake")
 endif()
-
-include("${DSN_ROOT}/bin/dsn.cmake")
 
 set(MY_PROJ_NAME "<?=$_PROG->name?>")
 
