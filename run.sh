@@ -50,6 +50,7 @@ function usage_build()
     echo "                     if not set, then use the system boost"
     echo "   -w|--warning_all  open all warnings when build, default no"
     echo "   --enable_gcov     generate gcov code coverage report, default no"
+    echo "   --build_plugins   build all plugins as well, default no"
     echo "   -v|--verbose      build in verbose mode, default no"
     if [ "$ONLY_BUILD" == "NO" ]; then
         echo "   -m|--test_module  specify modules to test, split by ',',"
@@ -67,6 +68,7 @@ function run_build()
     WARNING_ALL=NO
     ENABLE_GCOV=NO
     RUN_VERBOSE=NO
+    BUILD_PLUGINS=NO
     TEST_MODULE=""
     while [[ $# > 0 ]]; do
         key="$1"
@@ -99,6 +101,9 @@ function run_build()
                 ;;
             --enable_gcov)
                 ENABLE_GCOV=YES
+                ;;
+            --build_plugins)
+                BUILD_PLUGINS=YES
                 ;;
             -v|--verbose)
                 RUN_VERBOSE=YES
@@ -134,10 +139,16 @@ function run_build()
         usage_build
         exit -1
     fi
+    if [ "$BUILD_PLUGINS" == "YES" ]; then
+        pushd `pwd`/plugins
+        git submodule init
+        git submodule update
+        popd
+    fi
     BUILD_TYPE="$BUILD_TYPE" ONLY_BUILD="$ONLY_BUILD" \
         GIT_SOURCE="$GIT_SOURCE" CLEAR="$CLEAR" JOB_NUM="$JOB_NUM" \
         BOOST_DIR="$BOOST_DIR" WARNING_ALL="$WARNING_ALL" ENABLE_GCOV="$ENABLE_GCOV" \
-        RUN_VERBOSE="$RUN_VERBOSE" TEST_MODULE="$TEST_MODULE" $scripts_dir/build.sh
+        RUN_VERBOSE="$RUN_VERBOSE" TEST_MODULE="$TEST_MODULE" BUILD_PLUGINS="$BUILD_PLUGINS" $scripts_dir/build.sh
 }
 
 #####################
