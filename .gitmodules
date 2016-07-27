@@ -1,0 +1,3 @@
+[submodule "plugins/rDSN.tools.explorer"]
+    path = plugins/rDSN.tools.explorer
+    url = https://github.com/imzhenyu/rDSN.tools.explorer.git
