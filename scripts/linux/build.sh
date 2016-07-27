@@ -176,20 +176,6 @@ fi
 
 echo "#############################################################################"
 
-##############################################
-## Supported test module:
-##  - dsn.core.tests
-##  - dsn.tests
-##  - dsn.rep_tests.simple_kv
-##  - dsn.replication.simple_kv
-##############################################
-if [ -z "$TEST_MODULE" ]
-then
-    TEST_MODULE="dsn.core.tests,dsn.tests,dsn.replication.simple_kv,dsn.rep_tests.simple_kv,dsn.idl.tests,dsn.meta.test"
-fi
-
-echo "TEST_MODULE=$TEST_MODULE"
-
 if [ "$ENABLE_GCOV" == "YES" ]
 then
     echo "Initializing gcov..."
@@ -216,15 +202,56 @@ then
     mkdir -p $REPORT_DIR
 fi
 
-for MODULE in `echo $TEST_MODULE | sed 's/,/ /g'`; do
-    echo "====================== run $MODULE =========================="
-    cd $BUILD_DIR/bin/$MODULE
-    REPORT_DIR=$REPORT_DIR ./run.sh
-    if [ $? -ne 0 ]
+##### unit tests #######
+for dir in $BUILD_DIR/test/*/
+do
+    echo $dir
+    if [ -f "$dir/gtests" ]
     then
-        echo "ERROR: run $MODULE failed"
-        exit -1
-    fi
+        pushd $dir
+        cat $dir/gtests | while read -r -a line; do
+            echo "============ run unit tests in $dir with ${line[0]} ============"
+            rm -fr ./data
+            $BUILD_DIR/bin/dsn.svchost/dsn.svchost $dir/${line[0]}
+
+            if [ $? -ne 0 ]; then
+                echo "run unit tests in $dir with ${line[0]} failed"
+                echo "---- ls ----"
+                ls -l
+                if find . -name log.1.txt; then
+                    echo "---- tail -n 100 log.1.txt ----"
+                    tail -n 100 `find . -name log.1.txt`
+                fi
+                if [ -f core ]; then
+                    echo "---- gdb $BUILD_DIR/bin/dsn.svchost/dsn.svchost core ----"
+                    gdb $BUILD_DIR/bin/dsn.svchost/dsn.svchost core -ex "thread apply all bt" -ex "set pagination 0" -batch
+                fi
+                popd
+                exit -1
+            fi
+        done
+        popd
+    fi    
+done
+
+
+##### test.sh #######
+for dir in $BUILD_DIR/bin/*/
+do
+    echo $dir
+    if [ -f "$dir/test.sh" ]
+    then
+        pushd $dir
+        echo "============ run test.sh in $dir ============"
+        REPORT_DIR=$REPORT_DIR ./test.sh
+
+        if [ $? -ne 0 ]; then
+            echo "run test.sh in $dir failed"
+            popd
+            exit -1
+        fi
+        popd
+    fi    
 done
 
 if [ "$ENABLE_GCOV" == "YES" ]

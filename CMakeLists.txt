@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 2.8.7)
 
 #set(DSN_DEBUG_CMAKE TRUE)
 
-include(bin/dsn.cmake)
 #cmake_policy(SET CMP0048 NEW)
 #project(dsn VERSION 1.0 LANGUAGES C CXX)
 project(dsn C CXX)
@@ -14,6 +13,8 @@ endif()
 
 message(STATUS "use git source ${DSN_GIT_SOURCE}")
 set(GIT_SOURCE_FILE "ext/gitsource.${DSN_GIT_SOURCE}")
+
+include(bin/dsn.cmake)
 
 if(DEFINED WARNING_ALL)
     #add_compile_options("-Wall")
@@ -27,7 +28,7 @@ if(ENABLE_GCOV AND UNIX)
     SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fprofile-arcs -ftest-coverage -DENABLE_GCOV")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage -lgcov")
 endif()
-dsn_common_setup()
+
 dsn_add_pseudo_projects()
 
 include(${GIT_SOURCE_FILE})

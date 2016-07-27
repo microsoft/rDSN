@@ -18,7 +18,7 @@ for rep_cnt in {1..3};do
         for udp in ${udp_network_providers};do
             #%aio_provider% - what kind of aio provider we use
             for aio in ${aio_providers};do
-                ./dsn.replication.simple_kv perf-config.ini -cargs replica_count=${rep_cnt},tcp_network_provider=${tcp},udp_network_provider=${udp},aio_provider=${aio}
+                ./dsn.app.simple_kv perf-config.ini -cargs replica_count=${rep_cnt},tcp_network_provider=${tcp},udp_network_provider=${udp},aio_provider=${aio}
                 cp data/client.perf.test/perf-result-* ./perf-result/
                 rm -rf data
             done

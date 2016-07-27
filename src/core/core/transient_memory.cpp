@@ -149,3 +149,13 @@ DSN_API void dsn_transient_free(void* ptr)
 {
     return ::dsn::tls_trans_free(ptr);
 }
+
+DSN_API void* dsn_malloc(uint32_t size)
+{
+    return malloc((size_t)size);
+}
+
+DSN_API void dsn_free(void* ptr)
+{
+    return free(ptr);
+}

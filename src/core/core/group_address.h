@@ -163,7 +163,7 @@ namespace dsn
     inline int rpc_group_address::count()
     {
         alr_t l(_lock);
-        return _members.size();
+        return static_cast<int>(_members.size());
     }
 
     inline rpc_address rpc_group_address::next(rpc_address current) const

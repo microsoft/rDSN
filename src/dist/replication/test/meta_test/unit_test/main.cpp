@@ -8,8 +8,6 @@
 #include "meta_service_test_app.h"
 #include "meta_data.h"
 
-int gtest_flags = 0;
-int gtest_ret = 0;
 meta_service_test_app* g_app;
 
 TEST(meta, state_sync)
@@ -48,23 +46,15 @@ dsn::error_code meta_service_test_app::start(int argc, char **argv)
     srand(seed);
     testing::InitGoogleTest(&argc, argv);
     g_app = this;
-    gtest_ret = RUN_ALL_TESTS();
-    gtest_flags = 1;
+    auto ret = RUN_ALL_TESTS();
+    dsn_exit(ret);
+
     return dsn::ERR_OK;
 }
 
 GTEST_API_ int main(int, char **)
 {
     dsn::register_app<meta_service_test_app>("meta");
-    dassert(dsn_run_config("config-test.ini", false), "");
-
-    while (gtest_flags == 0)
-    {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
-
-#ifndef ENABLE_GCOV
-    dsn_exit(gtest_ret);
-#endif
-    return gtest_ret;
+    dsn_run_config("config-test.ini", true);
+    return 0;
 }

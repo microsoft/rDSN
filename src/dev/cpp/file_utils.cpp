@@ -590,7 +590,11 @@ namespace dsn {
 
                 if (dsn::utils::filesystem::path_exists_internal(npath, FTW_F))
                 {
+# ifdef _WIN32
+                    bool ret = (::DeleteFileA(npath.c_str()) == TRUE);
+# else
                     bool ret = (::remove(npath.c_str()) == 0);
+# endif                    
                     if (!ret)
                     {
                         dwarn("remove file %s failed, err = %s", path.c_str(), strerror(errno));

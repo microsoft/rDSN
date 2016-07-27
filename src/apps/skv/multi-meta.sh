@@ -1,6 +1,6 @@
 #!/bin/bash
 
-exe=dsn.replication.simple_kv
+exe=dsn.app.simple_kv
 cfg=config-zk.ini
 start_dir=run
 meta_count=1

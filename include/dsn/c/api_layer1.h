@@ -703,7 +703,7 @@ inline uint64_t dsn_gpid_to_hash(dsn_gpid gpid)
 typedef struct dsn_msg_options_t
 {
     int               timeout_ms;  ///< RPC timeout in milliseconds
-    int               hash;        ///< thread hash on RPC server
+    uint64_t          hash;        ///< partition and thread hash
     dsn_gpid          gpid;        ///< virtual node id, 0 for none
     dsn_msg_context_t context;     ///< see \ref dsn_msg_context_t
 } dsn_msg_options_t;

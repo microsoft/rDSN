@@ -38,6 +38,7 @@
 # include <vector>
 # include <functional>
 # include <dsn/utility/dlib.h>
+# include <dsn/cpp/safe_string.h>
 
 namespace dsn {
     
@@ -58,4 +59,6 @@ namespace dsn {
         );
 
     DSN_API void deregister_command(void* cli_handle);
+
+    DSN_API bool run_command(const char* cmd, /* out */ ::dsn::safe_string& output);
 }

@@ -34,7 +34,7 @@
  */
 
 # pragma once
-# include <dsn/tool/cli.h>
+# include <dsn/cpp/cli.h>
 # include <iostream>
 
 
