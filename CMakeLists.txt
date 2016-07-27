@@ -44,3 +44,9 @@ add_subdirectory(ext/protobuf)
 #
 
 add_subdirectory(src)
+
+if(DEFINED INCLUDE_PLUGINS)
+    add_subdirectory(plugins)
+endif()
+
+

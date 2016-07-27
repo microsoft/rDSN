@@ -58,7 +58,6 @@
 # include "tracer.h"
 # include "profiler.h"
 # include "fault_injector.h"
-# include "explorer.h"
 
 namespace dsn {
     namespace tools {
@@ -120,5 +119,4 @@ MODULE_INIT_BEGIN(tools_common)
     dsn::tools::register_toollet<dsn::tools::tracer>("tracer");
     dsn::tools::register_toollet<dsn::tools::profiler>("profiler");
     dsn::tools::register_toollet<dsn::tools::fault_injector>("fault_injector");
-    dsn::tools::register_toollet<dsn::tools::explorer>("explorer");
 MODULE_INIT_END
