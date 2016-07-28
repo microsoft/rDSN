@@ -38,13 +38,13 @@
 #include <dsn/tool_api.h>
 #if defined(_WIN32)
 #define NATIVE_AIO_PROVIDER native_win_aio_provider
-#include "../common/native_aio_provider.win.h"
+#include "native_aio_provider.win.h"
 #elif defined(__linux__)
 #define NATIVE_AIO_PROVIDER native_linux_aio_provider
-#include "../common/native_aio_provider.linux.h"
+#include "native_aio_provider.linux.h"
 #else
 #define NATIVE_AIO_PROVIDER native_posix_aio_provider
-#include "../common/native_aio_provider.posix.h"
+#include "native_aio_provider.posix.h"
 #endif
 
 namespace dsn { namespace tools {

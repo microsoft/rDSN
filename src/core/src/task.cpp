@@ -413,6 +413,11 @@ const char* task::get_current_node_name()
     return n ? n->name() : "unknown";
 }
 
+const char* task::node_name() const
+{
+    return _node->name();
+}
+
 void task::enqueue()
 {        
     dassert(_node != nullptr, "service node unknown for this task");

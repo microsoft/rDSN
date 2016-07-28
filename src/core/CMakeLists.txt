@@ -1,3 +1,2 @@
-add_subdirectory(core)
+add_subdirectory(src)
 add_subdirectory(dev.cpp.core.use)
-add_subdirectory(tools)

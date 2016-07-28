@@ -8,7 +8,7 @@ SET buildall=-DBUILD_PLUGINS=FALSE
 IF "%3" EQU "install" SET install=TRUE
 IF "%3" EQU "build_plugins" (
     SET buildall=-DBUILD_PLUGINS=TRUE
-    pushd %TOP_DIR%\plugins
+    pushd %TOP_DIR%\plugins_ext
     git submodule init
     git submodule update
     popd 

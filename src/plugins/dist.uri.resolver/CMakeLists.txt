@@ -1,6 +1,8 @@
+set(MY_PROJ_NAME dsn.dist.uri.resolver)
+
 if (DEFINED DSN_CMAKE_INCLUDED)
 else()
-    
+    project(${MY_PROJ_NAME} C CXX)
     set(DSN_ROOT "$ENV{DSN_ROOT}")
     if(NOT EXISTS "${DSN_ROOT}/")
         message(FATAL_ERROR "Please make sure that ${DSN_ROOT} exists.")
@@ -9,34 +11,24 @@ else()
     include("${DSN_ROOT}/bin/dsn.cmake")
 endif()
 
-set(MY_PROJ_NAME dsn.app.simple_kv.module)
-
 # Source files under CURRENT project directory will be automatically included.
 # You can manually set MY_PROJ_SRC to include source files under other directories.
-ms_find_source_files("CXX" "${CMAKE_CURRENT_SOURCE_DIR}/../skv" "GLOB" MY_PROJ_SRC)
-
-add_definitions(-DDSN_RUN_USE_SVCHOST)
+set(MY_PROJ_SRC "")
 
 # Search mode for source files under CURRENT project directory?
 # "GLOB_RECURSE" for recursive search
 # "GLOB" for non-recursive search
 set(MY_SRC_SEARCH_MODE "GLOB")
 
-set(MY_PROJ_INC_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../skv")
-
-set(MY_BOOST_PACKAGES system)
+set(MY_PROJ_INC_PATH "")
 
 set(MY_PROJ_LIBS "")
 
-set(MY_PROJ_LIB_PATH "${ZOOKEEPER_LIB_DIR}")
-
-set(INI_FILES "")
-file(GLOB
-    INI_FILES
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.ini"
-    )
+set(MY_PROJ_LIB_PATH "")
 
 # Extra files that will be installed
-set(MY_BINPLACES ${INI_FILES})
+set(MY_BINPLACES "")
 
 dsn_add_shared_library()
+
+# file(COPY test/ DESTINATION "${CMAKE_BINARY_DIR}/test/${MY_PROJ_NAME}")

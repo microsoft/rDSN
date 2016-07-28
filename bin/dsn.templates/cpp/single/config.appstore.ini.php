@@ -6,7 +6,7 @@ $file_prefix = $argv[3];
 [modules]
 dsn.tools.common
 dsn.tools.nfs
-dsn.dist.providers.common
+dsn.dist.uri.resolver
 
 ;
 ; This configuration file is used by app store to automatically
