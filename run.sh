@@ -140,7 +140,7 @@ function run_build()
         exit -1
     fi
     if [ "$BUILD_PLUGINS" == "YES" ]; then
-        pushd `pwd`/plugins
+        pushd `pwd`/plugins_ext
         git submodule init
         git submodule update
         popd

@@ -19,7 +19,7 @@ $default_serialize_format = $default_serialize_format."_".strtoupper($idl_format
 [modules]
 dsn.tools.common
 dsn.tools.nfs
-dsn.dist.providers.common
+dsn.dist.uri.resolver
 
 [apps..default]
 run = true

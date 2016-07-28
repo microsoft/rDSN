@@ -55,7 +55,7 @@ before_build:
         
         run.cmd setup-env
         
-        cd plugins
+        cd plugins_ext
         
         git submodule init
         

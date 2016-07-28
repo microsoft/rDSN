@@ -41,7 +41,6 @@
 # include <dsn/tool-api/rpc_message.h>
 # include "../../meta_server/server_load_balancer.h"
 # include "../../lib/replica_stub.h"
-# include "../../../../core/core/service_engine.h"
 
 # include <iostream>
 # include <string>
@@ -532,7 +531,7 @@ void event_on_task::init(task* tsk)
         char buf[100];
         sprintf(buf, "%016" PRIx64, tsk->id());
         _task_id = buf;
-        _node = tsk->node()->name();
+        _node = tsk->node_name();
         _task_code = dsn_task_code_to_string(tsk->code());
         _delay = boost::lexical_cast<std::string>(tsk->delay_milliseconds());
     }
