@@ -8,6 +8,7 @@ All pull requests please now go to https://github.com/imzhenyu/rdsn for automati
  * [[Tutorial](https://github.com/Microsoft/rDSN/wiki/Tutorial:-Build-A-Scalable-and-Reliable-Counter-Service)] Build a scalable and reliable counter service with built-in replication support
  * [[Tutorial](https://github.com/Microsoft/rDSN/wiki/Tutorial:-Perfect-Failure-Detector)] Build a perfect failure detector with progressively added system complexity
  * [[Tutorial](https://github.com/Microsoft/rDSN/wiki/Tutorial:-Plugin-A-New-Network-Implementation)] Plugin my own network implementation for higher performance
+ * [Latest documentation](http://imzhenyu.github.io/rDSN/documents/v1/html/index.html)
  * [Installation](https://github.com/Microsoft/rDSN/wiki/Installation)
  
 <hr>
@@ -28,14 +29,20 @@ All pull requests please now go to https://github.com/imzhenyu/rdsn for automati
 ### <a name="novel"> How does rDSN build robustness? </a> 
 
  * **reduced system complexity via microkernel architecture**: applications, frameworks (e.g., replication, scale-out, fail-over), local runtime libraries (e.g., network libraries, locks), and tools are all pluggable modules into a microkernel to enable independent development and seamless integration (therefore modules are reusable and transparently benefit each other) 
- ![rDSN Architecture](doc/imgs/arch.png)
- * **auto-handled distributed system challenges**: built-in frameworks to achieve scalability, reliability, availability, and consistency etc. for the applications
- ![rDSN service model](doc/imgs/rdsn-layer2.jpg)
- * **transparent tooling support**: dedicated tool API for tool development; built-in plugged tools for understanding, testing, debugging, and monitoring the upper applications and frameworks.
- ![rDSN Architecture](doc/imgs/viz.png)
- * **late resource binding with global deploy-time view**: tailor the module instances and their connections on demand with controllable system complexity and resource mapping (e.g., run all nodes in one simulator for testing, allocate CPU resources appropriately for avoiding resource contention, debug with progressively added system complexity) 
- ![rDSN Configuration](doc/imgs/config.png) 
  
+ ![rDSN Architecture](doc/imgs/arch.png)
+ 
+ * **auto-handled distributed system challenges**: built-in frameworks to achieve scalability, reliability, availability, and consistency etc. for the applications
+ 
+ ![rDSN service model](doc/imgs/rdsn-layer2.jpg)
+ 
+ * **transparent tooling support**: dedicated tool API for tool development; built-in plugged tools for understanding, testing, debugging, and monitoring the upper applications and frameworks 
+
+ ![rDSN Architecture](doc/imgs/viz.png)
+ 
+* **late resource binding with global deploy-time view**: tailor the module instances and their connections on demand with configurable system complexity and resource allocation (e.g., run all nodes in one simulator for testing, allocate CPU resources appropriately for avoiding resource contention, debug with progressively added system complexity) 
+ 
+ ![rDSN Configuration](doc/imgs/config.png) 
  
 ### <a name="existing">Existing pluggable modules (and growing) </a>
 
