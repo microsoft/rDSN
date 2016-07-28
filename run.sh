@@ -11,7 +11,7 @@ function usage()
     echo "   help        print the help info"
     echo "   build       build the system"
     echo "   install     install the system"
-    echo "   test        test the system"
+    echo "   test        test the system, see build for help"
     echo "   start_zk    start the local single zookeeper server"
     echo "   stop_zk     stop the local single zookeeper server"
     echo "   clear_zk    stop the local single zookeeper server and clear the data"

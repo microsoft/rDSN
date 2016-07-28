@@ -10,8 +10,6 @@ environment:
 
 install:
     - ps: >-
-        git submodule update --init
-
         if (!(Test-Path boost-1.59.7z)) {
 
             echo "Downloading boost binaries from ${env:DSN_BOOST_PKG} ..."
@@ -57,11 +55,19 @@ before_build:
         
         run.cmd setup-env
         
+        cd plugins
+        
+        git submodule init
+        
+        git submodule update
+        
+        cd ..
+        
         mkdir build
-
+        
         cd .\build
         
-        cmake .. -DBUILD_PLUGINS="TRUE" -DCMAKE_BUILD_TYPE="%DSN_CMAKE_BUILD_TYPE%" -DBOOST_INCLUDEDIR="%APPVEYOR_BUILD_FOLDER%\%DSN_BOOST%" -DBOOST_LIBRARYDIR="%APPVEYOR_BUILD_FOLDER%\%DSN_BOOST%\%DSN_BOOST_LIB%" -DDSN_GIT_SOURCE="github" -G "%DSN_VS%"
+        cmake .. -DBUILD_PLUGINS=TRUE -DCMAKE_BUILD_TYPE="%DSN_CMAKE_BUILD_TYPE%" -DBOOST_INCLUDEDIR="%APPVEYOR_BUILD_FOLDER%\%DSN_BOOST%" -DBOOST_LIBRARYDIR="%APPVEYOR_BUILD_FOLDER%\%DSN_BOOST%\%DSN_BOOST_LIB%" -DDSN_GIT_SOURCE="github" -G "%DSN_VS%"
 
 build_script:
     - cmd: >-

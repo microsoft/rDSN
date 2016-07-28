@@ -5,7 +5,6 @@ $file_prefix = $argv[3];
 ?>
 [modules]
 dsn.tools.common
-dsn.tools.hpc
 dsn.tools.nfs
 dsn.dist.providers.common
 

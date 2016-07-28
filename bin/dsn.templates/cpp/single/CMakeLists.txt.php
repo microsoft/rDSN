@@ -13,17 +13,18 @@ if ($idl_format == "thrift")
     $my_serialization = "protobuf";
 }
 ?>
-cmake_minimum_required(VERSION 2.8.8)
-
-set(DSN_ROOT "$ENV{DSN_ROOT}")
-if((DSN_ROOT STREQUAL "") OR (NOT EXISTS "${DSN_ROOT}/"))
-    message(FATAL_ERROR "Please make sure that DSN_ROOT is defined and does exists.")
-endif()
-
-include("${DSN_ROOT}/bin/dsn.cmake")
-
 set(MY_PROJ_NAME "<?=$_PROG->name?>")
-project(${MY_PROJ_NAME} C CXX)
+
+if (DEFINED DSN_CMAKE_INCLUDED)
+else()
+    project(${MY_PROJ_NAME} C CXX)
+    set(DSN_ROOT "$ENV{DSN_ROOT}")
+    if(NOT EXISTS "${DSN_ROOT}/")
+        message(FATAL_ERROR "Please make sure that ${DSN_ROOT} exists.")
+    endif()
+
+    include("${DSN_ROOT}/bin/dsn.cmake")
+endif()
 
 # Source files under CURRENT project directory will be automatically included.
 # You can manually set MY_PROJ_SRC to include source files under other directories.

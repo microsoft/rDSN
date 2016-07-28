@@ -1,6 +1,5 @@
 if (DEFINED DSN_CMAKE_INCLUDED)
 else()
-    cmake_minimum_required(VERSION 2.8.8)
 
     set(DSN_ROOT "$ENV{DSN_ROOT}")
     if(NOT EXISTS "${DSN_ROOT}/")
@@ -11,7 +10,6 @@ else()
 endif()
 
 set(MY_PROJ_NAME dsn.layer2.stateless)
-project(${MY_PROJ_NAME} C CXX)
 
 # Source files under CURRENT project directory will be automatically included.
 # You can manually set MY_PROJ_SRC to include source files under other directories.

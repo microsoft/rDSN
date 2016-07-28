@@ -1,9 +1,5 @@
-add_definitions(-DDSN_IN_CORE)
-set(DSN_IN_CORE "TRUE")
 if (DEFINED DSN_CMAKE_INCLUDED)
 else()
-    cmake_minimum_required(VERSION 2.8.8)
-
     set(DSN_ROOT "$ENV{DSN_ROOT}")
     if(NOT EXISTS "${DSN_ROOT}/")
         message(FATAL_ERROR "Please make sure that ${DSN_ROOT} exists.")
@@ -11,6 +7,9 @@ else()
 
     include("${DSN_ROOT}/bin/dsn.cmake")
 endif()
+
+add_definitions(-DDSN_IN_CORE)
+set(DSN_IN_CORE "TRUE")
 
 set(MY_PROJ_NAME dsn.dev.cpp.core.use)
 
