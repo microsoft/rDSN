@@ -408,6 +408,12 @@ extern DSN_API void*         dsn_transient_malloc(uint32_t size);
 /*! high-performance free for transient objects, paired with \ref dsn_transient_malloc */
 extern DSN_API void          dsn_transient_free(void* ptr);
 
+/*! common malloc, paird with dsn_free to ensure malloc/free are done by dsn.core */
+extern DSN_API void*         dsn_malloc(uint32_t size);
+
+/*! common free, paird with dsn_malloc to ensure malloc/free are done by dsn.core */
+extern DSN_API void          dsn_free(void* ptr);
+
 /*@}*/
 
 # ifdef __cplusplus

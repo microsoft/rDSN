@@ -147,7 +147,8 @@ function(ms_add_project PROJ_LANG PROJ_TYPE PROJ_NAME PROJ_SRC PROJ_INC_PATH PRO
         )
     endif()
 
-    if((PROJ_TYPE STREQUAL "EXECUTABLE") AND (NOT (PROJ_BINPLACES STREQUAL "")))
+    #if((PROJ_TYPE STREQUAL "EXECUTABLE") AND (NOT (PROJ_BINPLACES STREQUAL "")))
+    if(NOT (PROJ_BINPLACES STREQUAL ""))
         foreach(BF ${PROJ_BINPLACES})
             get_filename_component(BF "${BF}" ABSOLUTE)
             add_custom_command(
@@ -161,7 +162,7 @@ function(ms_add_project PROJ_LANG PROJ_TYPE PROJ_NAME PROJ_SRC PROJ_INC_PATH PRO
         endforeach()
     endif()
 
-    if((PROJ_TYPE STREQUAL "EXECUTABLE") AND (NOT (PROJ_BINDIRS STREQUAL "")))
+    if(NOT (PROJ_BINDIRS STREQUAL ""))
         foreach(BF ${PROJ_BINDIRS})
             get_filename_component(BF "${BF}" ABSOLUTE)
             add_custom_command(
@@ -694,3 +695,6 @@ function(dsn_common_setup)
     dsn_setup_link_path()
     dsn_setup_install()
 endfunction(dsn_common_setup)
+
+set(DSN_CMAKE_INCLUDED "1")
+dsn_common_setup()

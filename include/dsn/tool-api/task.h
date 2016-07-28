@@ -121,6 +121,7 @@ public:
     DSN_API bool            wait(int timeout_milliseconds = TIME_MS_MAX, bool on_cancel = false);
     DSN_API virtual void    enqueue();
     DSN_API bool            set_retry(bool enqueue_immediately = true); // return true when called inside exec(), false otherwise
+    DSN_API const char*     node_name() const;
     void                    set_error_code(error_code err) { _error = err; }
     void                    set_delay(int delay_milliseconds = 0) { _delay_milliseconds = delay_milliseconds; }
     void                    set_tracker(task_tracker* tracker) { _context_tracker.set_tracker(tracker, this); }
@@ -132,7 +133,7 @@ public:
     int                     hash() const { return _hash; }
     int                     delay_milliseconds() const { return _delay_milliseconds; }
     error_code              error() const { return _error; }
-    service_node*           node() const { return _node; }
+    service_node*           node() const { return _node; }    
     task_tracker*           tracker() const { return _context_tracker.tracker(); }
     bool                    is_empty() const { return _is_null; }
 

@@ -1,5 +1,15 @@
+if (DEFINED DSN_CMAKE_INCLUDED)
+else()
+
+    set(DSN_ROOT "$ENV{DSN_ROOT}")
+    if(NOT EXISTS "${DSN_ROOT}/")
+        message(FATAL_ERROR "Please make sure that ${DSN_ROOT} exists.")
+    endif()
+
+    include("${DSN_ROOT}/bin/dsn.cmake")
+endif()
+
 set(MY_PROJ_NAME dsn.layer2.stateless)
-project(${MY_PROJ_NAME} C CXX)
 
 # Source files under CURRENT project directory will be automatically included.
 # You can manually set MY_PROJ_SRC to include source files under other directories.
@@ -20,7 +30,7 @@ set(MY_PROJ_LIBS dsn.failure_detector.multimaster
 set(MY_PROJ_LIB_PATH "")
 
 # Extra files that will be installed
-set(MY_BINPLACES "${CMAKE_CURRENT_SOURCE_DIR}/config.ini;${CMAKE_CURRENT_SOURCE_DIR}/Dockerfile")
+set(MY_BINPLACES "")
 
 set(MY_BOOST_PACKAGES "")
 

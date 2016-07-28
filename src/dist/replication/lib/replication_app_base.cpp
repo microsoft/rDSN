@@ -232,13 +232,7 @@ error_code replication_app_base::open_internal(replica* r)
 {
     if (!dsn::utils::filesystem::directory_exists(_dir_data))
     {
-        derror("replica dir %s does not exit", _dir_data.c_str());
-        return ERR_FILE_OPERATION_FAILED;
-    }
-
-    if (!dsn::utils::filesystem::directory_exists(_dir_learn))
-    {
-        derror("replica dir %s does not exit", _dir_learn.c_str());
+        derror("%s: replica data dir %s does not exist", r->name(), _dir_data.c_str());
         return ERR_FILE_OPERATION_FAILED;
     }
 
@@ -268,23 +262,12 @@ error_code replication_app_base::open_internal(replica* r)
 
 error_code replication_app_base::open_new_internal(replica* r, int64_t shared_log_start, int64_t private_log_start)
 {
-    auto dir = data_dir();
-    dsn::utils::filesystem::remove_path(dir);
-    dsn::utils::filesystem::create_directory(dir);
-
-    dir = learn_dir();
-    dsn::utils::filesystem::remove_path(dir);
-    dsn::utils::filesystem::create_directory(dir);
+    dsn::utils::filesystem::remove_path(_dir_data);
+    dsn::utils::filesystem::create_directory(_dir_data);
 
     if (!dsn::utils::filesystem::directory_exists(_dir_data))
     {
-        derror("%s: replica dir %s does not exit", r->name(), _dir_data.c_str());
-        return ERR_FILE_OPERATION_FAILED;
-    }
-
-    if (!dsn::utils::filesystem::directory_exists(_dir_learn))
-    {
-        derror("%s: replica dir %s does not exit", r->name(), _dir_learn.c_str());
+        derror("%s: create replica data dir %s failed", r->name(), _dir_data.c_str());
         return ERR_FILE_OPERATION_FAILED;
     }
 
@@ -403,12 +386,12 @@ error_code replication_app_base::open_new_internal(replica* r, int64_t shared_lo
         }
         else
         {
-            dwarn("%s: call app.get_checkpoint() returns ERR_CAPACITY_EXCEEDED, capacity = %s, need = %d",
+            dwarn("%s: call app.get_checkpoint() returns ERR_CAPACITY_EXCEEDED, capacity = %d, need = %d",
                   _replica->name(), capacity, need_size);
             dassert(need_size > capacity, "");
             capacity = need_size;
             buffer = dsn_transient_malloc(capacity);
-            dsn_app_learn_state* lstate = reinterpret_cast<dsn_app_learn_state*>(buffer);
+            lstate = reinterpret_cast<dsn_app_learn_state*>(buffer);
             err = _callbacks.calls.get_checkpoint(
                 _app_context_callbacks, learn_start, last_committed_decree(),
                 (void*)learn_request.data(), learn_request.length(), lstate, capacity);
@@ -537,8 +520,16 @@ error_code replication_app_base::open_new_internal(replica* r, int64_t shared_lo
 
     ++_last_committed_decree;
 
-    ddebug("%s: mutation %s committed, batched_count = %d",
-           _replica->name(), mu->name(), batched_count);
+    if (_replica->status() == partition_status::PS_PRIMARY)
+    {
+        ddebug("%s: mutation %s committed, batched_count = %d",
+               _replica->name(), mu->name(), batched_count);
+    }
+    else
+    {
+        dinfo("%s: mutation %s committed, batched_count = %d",
+              _replica->name(), mu->name(), batched_count);
+    }
 
     _replica->update_commit_statistics(1);
     _app_commit_decree.increment();

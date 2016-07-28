@@ -1,3 +1,14 @@
+if (DEFINED DSN_CMAKE_INCLUDED)
+else()
+    
+    set(DSN_ROOT "$ENV{DSN_ROOT}")
+    if(NOT EXISTS "${DSN_ROOT}/")
+        message(FATAL_ERROR "Please make sure that ${DSN_ROOT} exists.")
+    endif()
+
+    include("${DSN_ROOT}/bin/dsn.cmake")
+endif()
+
 set(MY_PROJ_NAME dsn.dev.utility)
 
 # Source files under CURRENT project directory will be automatically included.

@@ -1,3 +1,14 @@
+if (DEFINED DSN_CMAKE_INCLUDED)
+else()
+    
+    set(DSN_ROOT "$ENV{DSN_ROOT}")
+    if(NOT EXISTS "${DSN_ROOT}/")
+        message(FATAL_ERROR "Please make sure that ${DSN_ROOT} exists.")
+    endif()
+
+    include("${DSN_ROOT}/bin/dsn.cmake")
+endif()
+
 add_definitions(-DDSN_REPLICATION_TYPE_1_DYNAMIC_LIB)
 
 set(MY_PROJ_NAME dsn.layer2.stateful.type1)

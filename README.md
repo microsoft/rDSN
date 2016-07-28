@@ -71,7 +71,7 @@ All pull requests please now go to https://github.com/imzhenyu/rdsn for automati
  * fault-injector mimics data center failures to expose bugs early
  * global-checker enables cross-node assertion 
  * replayer reproduces the bugs for easier root cause analysis
- * build-in web studio to visualize task-level performance and dependency information
+ * build-in web studio to visualize task-level performance and dependency information  [Demo](https://www.youtube.com/watch?v=FKNNg3Yzu6o) 
 
 ##### Other distributed providers and libraries
 

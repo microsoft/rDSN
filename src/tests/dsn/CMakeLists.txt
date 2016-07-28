@@ -1,3 +1,14 @@
+if (DEFINED DSN_CMAKE_INCLUDED)
+else()
+    
+    set(DSN_ROOT "$ENV{DSN_ROOT}")
+    if(NOT EXISTS "${DSN_ROOT}/")
+        message(FATAL_ERROR "Please make sure that ${DSN_ROOT} exists.")
+    endif()
+
+    include("${DSN_ROOT}/bin/dsn.cmake")
+endif()
+
 set(MY_PROJ_NAME dsn.tests)
 
 # Source files under CURRENT project directory will be automatically included.
@@ -45,9 +56,7 @@ set(MY_PROJ_LIB_PATH
 
 # Extra files that will be installed
 set(MY_BINPLACES
-    "${CMAKE_CURRENT_SOURCE_DIR}/run.sh"
-    "${CMAKE_CURRENT_SOURCE_DIR}/clear.sh"
-    "${CMAKE_CURRENT_SOURCE_DIR}/clear.cmd"
+    "${CMAKE_CURRENT_SOURCE_DIR}/test.sh"
     "${CMAKE_CURRENT_SOURCE_DIR}/config-test.ini"
 )
 

@@ -40,7 +40,7 @@ int main(int argc, char** argv)
 
 # include <dsn/internal/module_int.cpp.h>
 
-MODULE_INIT_BEGIN
+MODULE_INIT_BEGIN(counter)
     dsn_app_registration_counter();
 MODULE_INIT_END
 

@@ -1,3 +1,14 @@
+if (DEFINED DSN_CMAKE_INCLUDED)
+else()
+    
+    set(DSN_ROOT "$ENV{DSN_ROOT}")
+    if(NOT EXISTS "${DSN_ROOT}/")
+        message(FATAL_ERROR "Please make sure that ${DSN_ROOT} exists.")
+    endif()
+
+    include("${DSN_ROOT}/bin/dsn.cmake")
+endif()
+
 set(MY_PROJ_NAME dsn.cli.tool)
 
 # Source files under CURRENT project directory will be automatically included.
@@ -12,9 +23,7 @@ set(MY_SRC_SEARCH_MODE "GLOB")
 set(MY_PROJ_INC_PATH "")
 
 if (UNIX)
-    set(MY_PROJ_LIBS pthread dsn.cli)
-else()
-    set(MY_PROJ_LIBS dsn.cli)
+    set(MY_PROJ_LIBS pthread)
 endif()
 
 set(MY_PROJ_LIB_PATH "")
