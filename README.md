@@ -2,6 +2,16 @@
 
 All pull requests please now go to https://github.com/imzhenyu/rdsn for automatic integration with latest version. We will preriodically update this repo. Thank you.
 
+<hr>
+
+**Robust Distributed System Nucleus (rDSN)** is a framework for quickly building robust distributed systems. It has a microkernel for pluggable components, including applications, distributed frameworks, devops tools, and local runtime/resource providers, enabling their independent development and seamless integration. The project was originally developed for Microsoft Bing, and now has been adopted in production both inside and outside Microsoft. 
+
+* [How does rDSN build robustness?](#novel)
+* [What I can do with rDSN?](#cando)
+* [What are the existing modules I can immediately use?] (#existing)
+* [Related papers] (#papers)
+
+
 ### Top Links
  * [[Case](https://github.com/imzhenyu/rocksdb)] RocksDB made replicated using rDSN!
  * [[Tutorial](https://github.com/Microsoft/rDSN/wiki/Tutorial:-Build-A-Single-Node-Counter-Service)] Build a counter service with built-in tools (e.g., codegen, auto-test, fault injection, bug replay, tracing)
@@ -10,14 +20,6 @@ All pull requests please now go to https://github.com/imzhenyu/rdsn for automati
  * [[Tutorial](https://github.com/Microsoft/rDSN/wiki/Tutorial:-Plugin-A-New-Network-Implementation)] Plugin my own network implementation for higher performance
  * [Latest documentation](http://imzhenyu.github.io/rDSN/documents/v1/html/index.html)
  * [Installation](https://github.com/Microsoft/rDSN/wiki/Installation)
- 
-<hr>
-
-**Robust Distributed System Nucleus (rDSN)** is a framework for quickly building robust distributed systems. It has a microkernel for pluggable components, including applications, distributed frameworks, devops tools, and local runtime/resource providers, enabling their independent development and seamless integration. The project was originally developed for Microsoft Bing, and now has been adopted in production both inside and outside Microsoft. 
-
-* [How does rDSN build robustness?](#novel)
-* [What I can do with rDSN?](#cando)
-* [What are the existing modules I can immediately use?] (#existing)
 
 ### <a name="cando"> What I can do with rDSN? </a>
 
@@ -78,6 +80,22 @@ All pull requests please now go to https://github.com/imzhenyu/rdsn for automati
  * remote file copy 
  * perfect failure detector
  * multi-master perfect failure detector 
+
+### <a name="papers"> Research papers </a>
+
+rDSN borrows the idea in many research work, from both our own and the others, and tries to make them real in production in a coherent way; we greatly appreciate the researchers who did these work.
+
+ * [Failure Recovery: When the Cure Is Worse Than the Disease](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/FailureRecoveryBeEvil.pdf), Zhenyu Guo, Sean McDirmid, Mao Yang, Li Zhuang, Pu Zhang, Yingwei Luo, Tom Bergan, Peter Bodík, Madan Musuvathi, Zheng Zhang, Lidong Zhou, HotOS'13	
+ * [SEDA: An Architecture for Well-Conditioned, Scalable Internet Services](https://www.eecs.harvard.edu/~mdw/papers/seda-sosp01.pdf), Matt Welsh, David Culler, and Eric Brewer. SOSP'01
+ * [PacificA: replication in log-based distributed storage systems](https://www.microsoft.com/en-us/research/wp-content/uploads/2008/02/tr-2008-25.pdf), Wei Lin, Mao Yang, Lintao Zhang, Lidong Zhou. MSR Tech Report
+ * [Rex: Replication at the Speed of Multi-core](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/ppaxos.pdf), Zhenyu Guo, Chuntao Hong, Mao Yang, Lidong Zhou, Li Zhuang, Dong Zhou, EuroSys'14
+ * [Arming Cloud Services with Task Aspects](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/zion.techreport.pdf), Zhenyu Guo, Sean McDirmid, Haoxiang Lin, Cheng Chen, Fan Yang, Xueying Guo, Mao Yang, Lidong Zhou, MSR Tech Report
+ * [D3S: Debugging Deployed Distributed Systems](https://www.microsoft.com/en-us/research/wp-content/uploads/2008/02/d3s_nsdi08.pdf), Xuezheng Liu, Zhenyu Guo, Xi WANG, Feibo Chen, Xiaochen Lian, Jian Tang, Ming Wu, M. Frans Kaashoek, Zheng Zhang, NSDI'08
+ * [MoDIST: Transparent Model Checking of Unmodified Distributed Systems](http://www.cs.columbia.edu/~junfeng/papers/modist-nsdi09.pdf), Junfeng Yang, Tisheng Chen, Ming Wu, Zhilei Xu, Xuezheng Liu, Haoxiang Lin, Mao Yang, Fan Long, Lintao Zhang, Lidong Zhou, NSDI'09
+ * [G2: A Graph Processing System for Diagnosing Distributed Systems](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/G2-cr.pdf),  Zhenyu Guo, Haoxiang Lin, Mao Yang, Dong Zhou, Fan Long, Chaoqiang Deng, Changshu Liu, Lidong Zhou, USENIX ATC'11
+ * [R2: An Application-Level Kernel for Record and Replay](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/r2-osdi08.pdf),  Zhenyu Guo, Xi Wang, Jian Tang, Xuezheng Liu, Zhilei Xu, Ming Wu, M. Frans Kaashoek, Zheng Zhang, OSDI'08
+ * [WiDS: an Integrated Toolkit for Distributed System Development](https://www.microsoft.com/en-us/research/wp-content/uploads/2005/06/wids.pdf), Shiding Lin, Aimin Pan, Zheng Zhang, Rui Guo, Zhenyu Guo, HotOS'05
+
 
 ### License and Support
 
