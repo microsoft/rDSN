@@ -1,0 +1,3 @@
+add_subdirectory(global_checker)
+add_subdirectory(replication)
+add_subdirectory(replication_lib)

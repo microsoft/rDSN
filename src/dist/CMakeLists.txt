@@ -1,4 +1,0 @@
-add_subdirectory(failure_detector)
-add_subdirectory(failure_detector_multimaster)
-add_subdirectory(replication)
-add_subdirectory(app_daemon)

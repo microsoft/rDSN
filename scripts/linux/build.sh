@@ -220,13 +220,13 @@ do
     if [ -f "$dir/gtests" ]
     then
         pushd $dir
-        cat $dir/gtests | while read -r -a line; do
-            echo "============ run unit tests in $dir with ${line[0]} ============"
+        cat $dir/gtests | while read -r line || [ -n "$line" ]; do
+            echo "============ run unit tests in $dir with $line ============"
             rm -fr ./data
-            $BUILD_DIR/bin/dsn.svchost/dsn.svchost $dir/${line[0]}
+            $BUILD_DIR/bin/dsn.svchost/dsn.svchost $dir/$line
 
             if [ $? -ne 0 ]; then
-                echo "run unit tests in $dir with ${line[0]} failed"
+                echo "run unit tests in $dir with $line failed"
                 echo "---- ls ----"
                 ls -l
                 if find . -name log.1.txt; then
