@@ -1,0 +1,7 @@
+add_subdirectory(common)
+add_subdirectory(app_daemon)
+add_subdirectory(fd)
+add_subdirectory(meta_server)
+add_subdirectory(replica_server)
+add_subdirectory(test)
+add_subdirectory(tools)

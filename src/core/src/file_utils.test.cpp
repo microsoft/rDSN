@@ -809,11 +809,11 @@ static void file_utils_test_get_paths()
     EXPECT_TRUE(file_list.size() >= 3);
     file_list.clear();
 
-    path = "../../";
+    /*path = "../../";
     ret = dsn::utils::filesystem::get_subfiles(path, file_list, true);
     EXPECT_TRUE(ret);
     EXPECT_TRUE(file_list.size() >= 3);
-    file_list.clear();
+    file_list.clear();*/
 
     path = "./file_utils_temp/";
     ret = dsn::utils::filesystem::get_subfiles(path, file_list, true);
