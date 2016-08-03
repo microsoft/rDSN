@@ -8,8 +8,8 @@ All pull requests please now go to https://github.com/imzhenyu/rdsn for automati
 
 * [How does rDSN build robustness?](#novel)
 * [What I can do with rDSN?](#cando)
-* [What are the existing modules I can immediately use?] (#existing)
-* [Related papers] (#papers)
+* [What are the existing modules I can immediately use?](#existing)
+* [Related papers](#papers)
 
 
 ### Top Links
@@ -23,9 +23,13 @@ All pull requests please now go to https://github.com/imzhenyu/rdsn for automati
 
 ### <a name="cando"> What I can do with rDSN? </a>
 
- * an enhanced event-driven RPC library such as libevent, Thrift, and GRPC
- * a production Paxos framework to quickly turn a local component (e.g., rocksdb) into a online service with replication, partition, failure recovery, and reconfiguration supports
- * a scale-out and fail-over framework for stateless services such as Memcached
+ * turn legacy local component (e.g., a local storage, or micro service) into highly available and highly reliable service with provided distributed frameworks
+ * develop services with an enhanced event-driven RPC library such as libevent, Thrift, and GRPC
+    * a production Paxos framework to quickly turn a single node service into an online service with replication, partition, failure recovery, and reconfiguration supports
+    * a scale-out and fail-over framework for stateless services
+    * built-in tools for testing, debuging, monitoring, and operation 
+ * build new fraemworks with strong tooling support, benefiting the service applications immediately 
+ * build new tools with dedicated Tool API, benefiting the services and frameworks transparently
  * more as you can imagine.
 
 ### <a name="novel"> How does rDSN build robustness? </a> 
@@ -34,52 +38,55 @@ All pull requests please now go to https://github.com/imzhenyu/rdsn for automati
  
  ![rDSN Architecture](doc/imgs/arch.png)
  
- * **auto-handled distributed system challenges**: built-in frameworks to achieve scalability, reliability, availability, and consistency etc. for the applications
+ * **flexible configuration with global deploy-time view**: tailor the module instances and their connections on demand with configurable system complexity and resource allocation (e.g., run all nodes in one simulator for testing, allocate CPU resources appropriately for avoiding resource contention, debug with progressively added system complexity) 
  
- ![rDSN service model](doc/imgs/rdsn-layer2.jpg)
+ ![rDSN Configuration](doc/imgs/config.png)
  
  * **transparent tooling support**: dedicated tool API for tool development; built-in plugged tools for understanding, testing, debugging, and monitoring the upper applications and frameworks 
 
  ![rDSN Architecture](doc/imgs/viz.png)
  
-* **late resource binding with global deploy-time view**: tailor the module instances and their connections on demand with configurable system complexity and resource allocation (e.g., run all nodes in one simulator for testing, allocate CPU resources appropriately for avoiding resource contention, debug with progressively added system complexity) 
+ * **auto-handled distributed system challenges**: built-in frameworks to achieve scalability, reliability, availability, and consistency etc. for the applications
  
- ![rDSN Configuration](doc/imgs/config.png) 
+ ![rDSN service model](doc/imgs/rdsn-layer2.jpg) 
  
 ### <a name="existing">Existing pluggable modules (and growing) </a>
 
 ##### Distributed frameworks
 
- * a production Paxos framework to quickly turn a local component (e.g., rocksdb) into an online service with replication, partition, failure recovery, and reconfiguration supports
- * a scale-out and fail-over framework for stateless services such as Memcached
+ * dist.service.stateful.type1: a production Paxos framework to quickly turn a local component (e.g., rocksdb) into an online service with replication, partition, failure recovery, and reconfiguration supports
+ * dist.service.stateless: a scale-out and fail-over framework for stateless services such as Memcached
 
 ##### Local runtime libraries 
 
- * network libraries on Linux/Windows supporting rDSN/Thrift/HTTP messages at the same time
- * asynchronous disk IO on Linux/Windows
- * locks, rwlocks, semaphores
- * task queues 
- * timer services
- * performance counters
- * loggers (high-perf, screen)
+ * tools.common
+   * network libraries on Linux/Windows supporting rDSN/Thrift/HTTP messages at the same time
+   * asynchronous disk IO on Linux/Windows
+   * locks, rwlocks, semaphores
+   * task queues 
+   * timer services
+   * performance counters
+   * loggers (high-perf, screen)
+ * tools.hpc: high performance counterparts for the above modules
 
 ##### Devops tools
 
- * nativerun and fastrun enables native deployment on Windows and Linux 
- * simulator debugs multiple nodes in one single process without worry about timeout
- * explorer extracts task-level dependencies automatically
- * tracer dumps logs for how requests are processed across tasks/nodes
- * profiler shows detailed task-level performance data (e.g., queue-time, exec-time)
- * fault-injector mimics data center failures to expose bugs early
- * global-checker enables cross-node assertion 
- * replayer reproduces the bugs for easier root cause analysis
- * build-in web studio to visualize task-level performance and dependency information  [Demo](https://www.youtube.com/watch?v=FKNNg3Yzu6o) 
+ * tools.common
+   * simulator debugs multiple nodes in one single process without worry about timeout
+   * tracer dumps logs for how requests are processed across tasks/nodes
+   * profiler shows detailed task-level performance data (e.g., queue-time, exec-time)
+   * fault-injector mimics data center failures to expose bugs early
+   * global-checker enables cross-node assertion 
+   * replayer reproduces the bugs for easier root cause analysis
+ * tools.explorer: extracts task-level dependencies automatically 
+ * rDSN web studio to visualize task-level performance and dependency information [Demo](https://www.youtube.com/watch?v=FKNNg3Yzu6o) 
 
-##### Other distributed providers and libraries
+##### Other distributed providers, libraries, and tools
 
- * remote file copy 
- * perfect failure detector
- * multi-master perfect failure detector 
+ * tools.nfs: remote file copy 
+ * dist.service.fd: perfect failure detector
+ * dist.service.fd.multimaster: multi-master perfect failure detector
+ * dist.deployment: a deployment service for Windows/Linux/Kubernets  
 
 ### <a name="papers"> Research papers </a>
 
@@ -95,7 +102,6 @@ rDSN borrows the idea in many research work, from both our own and the others, a
  * [G2: A Graph Processing System for Diagnosing Distributed Systems](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/G2-cr.pdf), USENIX ATC'11 
  * [R2: An Application-Level Kernel for Record and Replay](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/r2-osdi08.pdf), OSDI'08 
  * [WiDS: an Integrated Toolkit for Distributed System Development](https://www.microsoft.com/en-us/research/wp-content/uploads/2005/06/wids.pdf), HotOS'05 
-
 
 ### License and Support
 

@@ -48,8 +48,5 @@ add_subdirectory(ext/protobuf)
 
 add_subdirectory(src)
 
-if(DEFINED BUILD_PLUGINS AND BUILD_PLUGINS STREQUAL "TRUE")
-    add_subdirectory(plugins_ext)
-endif()
 
 
