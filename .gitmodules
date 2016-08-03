@@ -1,9 +1,9 @@
-[submodule "plugins_ext/rDSN.tools.explorer"]
-	path = plugins_ext/rDSN.tools.explorer
+[submodule "src/plugins_ext/rDSN.tools.explorer"]
+	path = src/plugins_ext/rDSN.tools.explorer
 	url = https://github.com/imzhenyu/rDSN.tools.explorer.git
-[submodule "plugins_ext/rDSN.tools.hpc"]
-	path = plugins_ext/rDSN.tools.hpc
+[submodule "src/plugins_ext/rDSN.tools.hpc"]
+	path = src/plugins_ext/rDSN.tools.hpc
 	url = https://github.com/imzhenyu/rDSN.tools.hpc.git
-[submodule "plugins_ext/rDSN.dist.deployment"]
-	path = plugins_ext/rDSN.dist.deployment
+[submodule "src/plugins_ext/rDSN.dist.deployment"]
+	path = src/plugins_ext/rDSN.dist.deployment
 	url = https://github.com/imzhenyu/rDSN.dist.deployment.git
