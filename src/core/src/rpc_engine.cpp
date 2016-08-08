@@ -805,7 +805,6 @@ namespace dsn {
     {
         dbg_dassert(addr.type() == HOST_TYPE_URI, "only URI is now supported");
         auto& hdr = *request->header;
-        auto partition_hash = hdr.client.hash;
 
         auto resolver = request->server_address.uri_address()->get_resolver();
         if (nullptr == resolver)
@@ -889,7 +888,7 @@ namespace dsn {
             }
 
             resolver->resolve(
-                partition_hash,
+                hdr.client.partition_hash,
                 [=](dist::partition_resolver::resolve_result&& result) mutable
                 {
                     if (result.err == ERR_OK)
@@ -898,9 +897,14 @@ namespace dsn {
                         auto& hdr2 = request->header;
                         if (hdr2->gpid.value != result.pid.value)
                         {
-                            dassert(hdr2->gpid.value == 0, "");
+                            dassert(hdr2->gpid.value == 0, "inconsistent gpid");
                             hdr2->gpid = result.pid;
-                            hdr2->client.hash = dsn_gpid_to_hash(result.pid);
+
+                            // update thread hash if not assigned by applications
+                            if (hdr2->client.thread_hash == 0)
+                            {
+                                hdr2->client.thread_hash = dsn_gpid_to_thread_hash(result.pid);
+                            }
                         }
 
                         call_address(result.address, request, call);
