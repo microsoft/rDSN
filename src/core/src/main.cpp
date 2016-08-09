@@ -163,6 +163,7 @@ extern void dsn_log_init();
 static void load_all_modules(::dsn::configuration_ptr config)
 {    
     std::vector< std::pair<std::string, std::string> > modules;
+    std::map<std::string, std::size_t> module_map; // name -> index in modules
 
     // load local components, toollets, and tools
     // [modules]
@@ -172,6 +173,8 @@ static void load_all_modules(::dsn::configuration_ptr config)
     config->get_all_keys("modules", lmodules);
     for (auto& m : lmodules)
     {
+        dassert(module_map.find(m) == module_map.end(), "duplicate [modules].%s", m);
+        module_map[m] = modules.size();
         modules.push_back(std::make_pair(std::string(m), ""));
     }
 
@@ -188,6 +191,9 @@ static void load_all_modules(::dsn::configuration_ptr config)
                 "path of a dynamic library which implement this app role, and register itself upon loaded");
             if (module.length() > 0)
             {
+                dassert(module_map.find(module) != module_map.end(), "[apps.%s].dmodule %s is not set in [modules]", it->c_str(), module.c_str());
+                std::size_t idx = module_map[module];
+
                 std::string bridge_args = dsn_config_get_value_string(it->c_str(), "dmodule_bridge_arguments", "",
                     "\n; when the service cannot automatically register its app types into rdsn \n"
                     "; through %dmoudule%'s dllmain or attribute(constructor), we require the %dmodule% \n"
@@ -196,7 +202,14 @@ static void load_all_modules(::dsn::configuration_ptr config)
                     "; app types and factories."
                 );
 
-                modules.push_back(std::make_pair(module, bridge_args));
+                if (modules[idx].second.length() > 0)
+                {
+                    dassert(modules[idx].second == bridge_args, "inconsistent dmodule_bridge_arguments of module %s", module.c_str());
+                }
+                else
+                {
+                    modules[idx].second = bridge_args;
+                }
             }
         }
     }
