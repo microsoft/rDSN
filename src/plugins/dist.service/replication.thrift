@@ -168,6 +168,7 @@ enum config_type
     CT_DOWNGRADE_TO_INACTIVE,
     CT_REMOVE,
     CT_ADD_SECONDARY_FOR_LB,
+    CT_PRIMARY_FORCE_UPDATE_BALLOT
 }
 
 enum node_status
