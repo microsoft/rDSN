@@ -6,13 +6,11 @@
 #    JOB_NUM        <num>
 #    BUILD_TYPE     debug|release
 #    GIT_SOURCE     github|xiaomi
-#    ONLY_BUILD     YES|NO
 #    RUN_VERBOSE    YES|NO
 #    WARNING_ALL    YES|NO
 #    ENABLE_GCOV    YES|NO
 #    BUILD_PLUGINS  YES|NO
 #    BOOST_DIR      <dir>|""
-#    TEST_MODULE    "<module1> <module2> ..."
 #
 # CMake options:
 #    -DCMAKE_C_COMPILER=gcc
@@ -32,6 +30,9 @@ GCOV_PATTERN=`find $ROOT/include $ROOT/src -name '*.h' -o -name '*.cpp'`
 TIME=`date --rfc-3339=seconds`
 CMAKE_OPTIONS="$CMAKE_OPTIONS -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
 MAKE_OPTIONS="$MAKE_OPTIONS -j$JOB_NUM"
+
+CBIN_DIR=$(dirname "$0")
+TOP_DIR=$CBIN_DIR/../..
 
 if [ "$CLEAR" == "YES" ]
 then
@@ -58,13 +59,6 @@ echo "GIT_SOURCE=$GIT_SOURCE"
 if [ -n "$GIT_SOURCE" ]
 then
     CMAKE_OPTIONS="$CMAKE_OPTIONS -DDSN_GIT_SOURCE=$GIT_SOURCE"
-fi
-
-if [ "$ONLY_BUILD" == "YES" ]
-then
-    echo "ONLY_BUILD=YES"
-else
-    echo "ONLY_BUILD=NO"
 fi
 
 if [ "$RUN_VERBOSE" == "YES" ]
@@ -122,7 +116,26 @@ fi
 echo "CMAKE_OPTIONS=$CMAKE_OPTIONS"
 echo "MAKE_OPTIONS=$MAKE_OPTIONS"
 
-echo "#############################################################################"
+if [ ! -f "$TOP_DIR/bin/Linux/thrift" ]
+then
+    echo "Downloading thrift..."
+    if [ "$GIT_SOURCE" == "xiaomi" ]
+    then
+        wget http://git.n.xiaomi.com/pegasus/packages/raw/master/rdsn/thrift
+    else
+        wget --no-check-certificate https://github.com/imzhenyu/thrift/raw/master/pre-built/ubuntu14.04/thrift
+    fi
+    chmod u+x thrift
+    mv thrift $TOP_DIR/bin/Linux
+fi
+
+echo "############################ BUILD #################################################"
+if [ "$BUILD_PLUGINS" == "YES" ]; then
+    pushd $TOP_DIR/src/plugins_ext
+    git submodule init
+    git submodule update
+    popd
+fi
 
 if [ -f $BUILD_DIR/CMAKE_OPTIONS ]
 then
@@ -140,18 +153,6 @@ then
     rm -rf $BUILD_DIR
 fi
 
-if [ ! -f "$ROOT/bin/Linux/thrift" ]
-then
-    echo "Downloading thrift..."
-    if [ "$GIT_SOURCE" == "xiaomi" ]
-    then
-        wget http://git.n.xiaomi.com/pegasus/packages/raw/master/rdsn/thrift
-    else
-        wget --no-check-certificate https://github.com/imzhenyu/thrift/raw/master/pre-built/ubuntu14.04/thrift
-    fi
-    chmod u+x thrift
-    mv thrift $ROOT/bin/Linux
-fi
 
 if [ ! -d "$BUILD_DIR" ]
 then
@@ -180,118 +181,6 @@ else
 fi
 cd ..
 
-if [ "$ONLY_BUILD" == "YES" ]
-then
-    exit 0
-fi
+exit 0
 
-echo "#############################################################################"
-
-if [ "$ENABLE_GCOV" == "YES" ]
-then
-    echo "Initializing gcov..."
-    cd $ROOT
-    rm -rf $GCOV_TMP &>/dev/null
-    mkdir -p $GCOV_TMP
-    lcov -q -d $BUILD_DIR -z
-    lcov -q -d $BUILD_DIR -b $ROOT --no-external --initial -c -o $GCOV_TMP/initial.info
-    if [ $? -ne 0 ]
-    then
-        echo "ERROR: lcov init failed, maybe need to run again with --clear option"
-        exit -1
-    fi
-    lcov -q -e $GCOV_TMP/initial.info $GCOV_PATTERN -o $GCOV_TMP/initial.extract.info
-    if [ $? -ne 0 ]
-    then
-        echo "ERROR: lcov init extract failed"
-        exit -1
-    fi
-fi
-
-if [ ! -d "$REPORT_DIR" ]
-then
-    mkdir -p $REPORT_DIR
-fi
-
-##### unit tests #######
-for dir in $BUILD_DIR/test/*/
-do
-    echo $dir
-    if [ -f "$dir/gtests" ]
-    then
-        pushd $dir
-        cat $dir/gtests | while read -r line || [ -n "$line" ]; do
-            echo "============ run unit tests in $dir with $line ============"
-            rm -fr ./data
-            $BUILD_DIR/bin/dsn.svchost/dsn.svchost $dir/$line
-
-            if [ $? -ne 0 ]; then
-                echo "run unit tests in $dir with $line failed"
-                echo "---- ls ----"
-                ls -l
-                if find . -name log.1.txt; then
-                    echo "---- tail -n 100 log.1.txt ----"
-                    tail -n 100 `find . -name log.1.txt`
-                fi
-                if [ -f core ]; then
-                    echo "---- gdb $BUILD_DIR/bin/dsn.svchost/dsn.svchost core ----"
-                    gdb $BUILD_DIR/bin/dsn.svchost/dsn.svchost core -ex "thread apply all bt" -ex "set pagination 0" -batch
-                fi
-                popd
-                exit -1
-            fi
-        done
-        popd
-    fi    
-done
-
-
-##### test.sh #######
-for dir in $BUILD_DIR/bin/*/
-do
-    echo $dir
-    if [ -f "$dir/test.sh" ]
-    then
-        pushd $dir
-        echo "============ run test.sh in $dir ============"
-        REPORT_DIR=$REPORT_DIR ./test.sh
-
-        if [ $? -ne 0 ]; then
-            echo "run test.sh in $dir failed"
-            popd
-            exit -1
-        fi
-        popd
-    fi    
-done
-
-if [ "$ENABLE_GCOV" == "YES" ]
-then
-    echo "Generating gcov report..."
-    cd $ROOT
-    lcov -q -d $BUILD_DIR -b $ROOT --no-external -c -o $GCOV_TMP/gcov.info
-    if [ $? -ne 0 ]
-    then
-        echo "ERROR: lcov generate failed"
-        exit -1
-    fi
-    lcov -q -e $GCOV_TMP/gcov.info $GCOV_PATTERN -o $GCOV_TMP/gcov.extract.info
-    if [ $? -ne 0 ]
-    then
-        echo "ERROR: lcov extract failed"
-        exit -1
-    fi
-    genhtml $GCOV_TMP/*.extract.info --show-details --legend --title "GCOV report at $TIME" -o $GCOV_TMP/report
-    if [ $? -ne 0 ]
-    then
-        echo "ERROR: gcov genhtml failed"
-        exit -1
-    fi
-    rm -rf $GCOV_DIR &>/dev/null
-    mv $GCOV_TMP/report $GCOV_DIR
-    rm -rf $GCOV_TMP
-    echo "View gcov report: firefox $GCOV_DIR/index.html"
-fi
-
-echo "Test succeed"
 

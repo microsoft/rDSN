@@ -52,11 +52,6 @@ function usage_build()
     echo "   --enable_gcov     generate gcov code coverage report, default no"
     echo "   --build_plugins   build all plugins as well, default no"
     echo "   -v|--verbose      build in verbose mode, default no"
-    if [ "$ONLY_BUILD" == "NO" ]; then
-        echo "   -m|--test_module  specify modules to test, split by ',',"
-        echo "                     e.g., \"dsn.core.tests,dsn.tests\","
-        echo "                     if not set, then run all tests"
-    fi
 }
 function run_build()
 {
@@ -69,7 +64,6 @@ function run_build()
     ENABLE_GCOV=NO
     RUN_VERBOSE=NO
     BUILD_PLUGINS=NO
-    TEST_MODULE=""
     while [[ $# > 0 ]]; do
         key="$1"
         case $key in
@@ -107,17 +101,7 @@ function run_build()
                 ;;
             -v|--verbose)
                 RUN_VERBOSE=YES
-                ;;
-            -m|--test_module)
-                if [ "$ONLY_BUILD" == "YES" ]; then
-                    echo "ERROR: unknown option \"$key\""
-                    echo
-                    usage_build
-                    exit -1
-                fi
-                TEST_MODULE="$2"
-                shift
-                ;;
+                ;;            
             *)
                 echo "ERROR: unknown option \"$key\""
                 echo
@@ -138,17 +122,58 @@ function run_build()
         echo
         usage_build
         exit -1
-    fi
-    if [ "$BUILD_PLUGINS" == "YES" ]; then
-        pushd `pwd`/src/plugins_ext
-        git submodule init
-        git submodule update
-        popd
-    fi
-    BUILD_TYPE="$BUILD_TYPE" ONLY_BUILD="$ONLY_BUILD" \
-        GIT_SOURCE="$GIT_SOURCE" CLEAR="$CLEAR" JOB_NUM="$JOB_NUM" \
+    fi    
+    BUILD_TYPE="$BUILD_TYPE" GIT_SOURCE="$GIT_SOURCE" CLEAR="$CLEAR" JOB_NUM="$JOB_NUM" \
         BOOST_DIR="$BOOST_DIR" WARNING_ALL="$WARNING_ALL" ENABLE_GCOV="$ENABLE_GCOV" \
-        RUN_VERBOSE="$RUN_VERBOSE" TEST_MODULE="$TEST_MODULE" BUILD_PLUGINS="$BUILD_PLUGINS" $scripts_dir/build.sh
+        RUN_VERBOSE="$RUN_VERBOSE" BUILD_PLUGINS="$BUILD_PLUGINS" $scripts_dir/build.sh
+}
+
+#####################
+## test
+#####################
+function usage_test()
+{
+    echo "Options for subcommand 'build':"
+    echo "   -h|--help         print the help info"
+    echo "   --enable_gcov     generate gcov code coverage report, default no"
+    echo "   -v|--verbose      build in verbose mode, default no"
+    echo "   -m|--test_module  TODO: specify modules to test, split by ',',"
+    echo "                     e.g., \"dsn.core.tests,dsn.tests\","
+    echo "                     if not set, then run all tests"
+}
+
+function run_test()
+{
+    ENABLE_GCOV=NO
+    RUN_VERBOSE=NO
+    TEST_MODULE=""
+    while [[ $# > 0 ]]; do
+        key="$1"
+        case $key in
+            -h|--help)
+                usage_test
+                exit 0
+                ;;
+            --enable_gcov)
+                ENABLE_GCOV=YES
+                ;;
+            -v|--verbose)
+                RUN_VERBOSE=YES
+                ;;
+            -m|--test_module)
+                TEST_MODULE="$2"
+                shift
+                ;;
+            *)
+                echo "ERROR: unknown option \"$key\""
+                echo
+                usage_test
+                exit -1
+                ;;
+        esac
+        shift
+    done
+    ENABLE_GCOV="$ENABLE_GCOV" RUN_VERBOSE="$RUN_VERBOSE" TEST_MODULE="$TEST_MODULE" $scripts_dir/test.sh
 }
 
 #####################
@@ -352,15 +377,13 @@ case $cmd in
         usage ;;
     build)
         shift
-        ONLY_BUILD=YES
         run_build $* ;;
     install)
         shift
         run_install $* ;;
     test)
         shift
-        ONLY_BUILD=NO
-        run_build $* ;;
+        run_test $* ;;
     start_zk)
         shift
         run_start_zk $* ;;
