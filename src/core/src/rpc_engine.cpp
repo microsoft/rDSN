@@ -52,7 +52,7 @@
 # include <dsn/tool-api/task_queue.h>
 # include <dsn/cpp/serialization.h>
 # include <set>
-# include <dsn/dist/layer2_handler.h>
+# include <dsn/cpp/layer2_handler.h>
 
 # ifdef __TITLE__
 # undef __TITLE__

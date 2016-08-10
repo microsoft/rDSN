@@ -47,7 +47,7 @@ namespace dsn.dev.csharp
 
         protected override bool ReleaseHandle()
         {
- 	        Native.dsn_exlock_destroy(handle); 
+             Native.dsn_exlock_destroy(handle); 
             return true;
         }
 
@@ -68,7 +68,7 @@ namespace dsn.dev.csharp
 
         protected override bool ReleaseHandle()
         {
- 	        Native.dsn_rwlock_nr_destroy(handle);
+             Native.dsn_rwlock_nr_destroy(handle);
             return true;
         }
 
@@ -88,7 +88,7 @@ namespace dsn.dev.csharp
 
         protected override bool ReleaseHandle()
         {
- 	        Native.dsn_semaphore_destroy(handle);
+             Native.dsn_semaphore_destroy(handle);
             return true;
         }
 

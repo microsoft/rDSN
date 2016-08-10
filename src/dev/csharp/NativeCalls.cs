@@ -358,7 +358,7 @@ namespace dsn.dev.csharp
 
             return dsn_register_app_checker(name, create2, apply);
         }
-		
+        
         //------------------------------------------------------------------------------
         //
         // system
@@ -401,7 +401,7 @@ namespace dsn.dev.csharp
         public static extern IntPtr                dsn_threadpool_code_to_string(int pool_code);
         [DllImport(DSN_CORE_DLL, CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Ansi), SuppressUnmanagedCodeSecurity]
         public static extern int dsn_threadpool_code_from_string(string s, int default_code);
-		[DllImport(DSN_CORE_DLL, CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Ansi), SuppressUnmanagedCodeSecurity]
+        [DllImport(DSN_CORE_DLL, CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Ansi), SuppressUnmanagedCodeSecurity]
         public static extern int                   dsn_threadpool_get_current_tid();
         [DllImport(DSN_CORE_DLL, CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Ansi), SuppressUnmanagedCodeSecurity]
         public static extern int                   dsn_threadpool_code_max();
