@@ -44,18 +44,11 @@ FOR /D %%A IN (%build_dir%\bin\*) DO (
     )
 )
 
-:: run idl test
-pushd %build_dir%\bin\dsn.idl.tests
-
-CALL  sbin\mock_install.cmd %TOP_DIR% %build_type% %build_dir%
-CALL  sbin\test.cmd %cd% %TOP_DIR%\ext\cmake-3.2.2\bin
-@CALL sbin\clear.cmd
-
-popd
-
 goto exit
 
 :error
     CALL %bin_dir%\echoc.exe 4  "Usage: run.cmd test build_type(Debug|Release|RelWithDebInfo|MinSizeRel) build_dir"
+    exit -1
 
 :exit
+    exit 0

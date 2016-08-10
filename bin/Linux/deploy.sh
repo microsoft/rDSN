@@ -1,6 +1,7 @@
 #!/bin/bash
 os=linux
-export scripts_dir=$PWD/scripts/$os
+scripts_path=`readlink -f $0`
+scripts_dir=`dirname $scripts_path`
 
 function usage() {
     echo "Option for subcommand 'deploy|start|stop|clean"

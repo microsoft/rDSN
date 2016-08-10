@@ -30,7 +30,10 @@ before_script:
     - ulimit -c unlimited -S
 
 script:
-    - ./run.sh build --build_plugins
+    - this_path=`readlink -f $0`
+    - export DSN_ROOT=`dirname $this_path`
+    - ./run.sh build --build_plugins    
+    - ./run.sh install
     - ./run.sh test
 
 after_script:

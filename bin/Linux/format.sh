@@ -13,7 +13,7 @@ find . -name '*.h' \
     -o -name '*.act' \
     | grep -v '^\./\.' \
     | grep -v '^\./builder' \
-    | grep -v '^\./scripts/.*/format.sh' \
+    | grep -v '^\./bin/.*/format.sh' \
     | xargs grep -n '	\|<::'
 
 if [ $? -eq 0 ]; then
