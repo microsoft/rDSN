@@ -58,8 +58,8 @@ public:
             );
     }
 
-    // - asynchronous with on-stack <?=$f->get_cpp_request_type_name()?> and <?=$f->get_cpp_return_type()?>
-    template<typename TCallback>
+    // - asynchronous with on-stack <?=$f->get_cpp_request_type_name()?> and <?=$f->get_cpp_return_type()?> 
+    template<typename TCallback> 
     ::dsn::task_ptr <?=$f->name?>(
         const <?=$f->get_cpp_request_type_name()?>& args,
         TCallback&& callback,

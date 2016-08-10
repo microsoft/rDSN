@@ -698,3 +698,7 @@ endfunction(dsn_common_setup)
 
 set(DSN_CMAKE_INCLUDED "1")
 dsn_common_setup()
+if(UNIX)
+    add_compile_options(-fPIC)
+endif()
+

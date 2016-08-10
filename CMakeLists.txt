@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 2.8.7)
 #cmake_policy(SET CMP0048 NEW)
 #project(dsn VERSION 1.0 LANGUAGES C CXX)
 project(dsn C CXX)
+
 set(DSN_BUILD_RUNTIME TRUE)
 
 message(STATUS "use git source ${DSN_GIT_SOURCE}")
@@ -38,8 +39,6 @@ dsn_add_pseudo_projects()
 include(${GIT_SOURCE_FILE})
 add_subdirectory(ext/thrift)
 add_subdirectory(ext/gtest)
-add_subdirectory(ext/zookeeper)
-add_subdirectory(ext/rapidjson)
 add_subdirectory(ext/protobuf)
 #
 # !!! gflags is currently not used, and when it is enabled, it causes failure on windows compilation

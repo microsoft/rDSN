@@ -8,6 +8,8 @@ else()
     include("${DSN_ROOT}/bin/dsn.cmake")
 endif()
 
+add_definitions(-DDSN_ROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../..")
+
 set(MY_PROJ_NAME dsn.idl.tests)
 
 # Source files under CURRENT project directory will be automatically included.
@@ -32,28 +34,8 @@ set(MY_PROJ_LIB_PATH
 
 # Extra files that will be installed
 
-if (UNIX)
-    set(MY_BINPLACES "${CMAKE_CURRENT_SOURCE_DIR}/test.sh")
-endif ()
-
-set(MY_PROJ_BINDIRS
-    "${CMAKE_CURRENT_SOURCE_DIR}/resources"
-)
-
-# For Windows style path
-if (WIN32)
-    STRING(REGEX REPLACE "/" "\\\\" WIN_THRIFT_INCLUDE_DIR ${THRIFT_INCLUDE_DIR})
-    STRING(REGEX REPLACE "/" "\\\\" WIN_THRIFT_LIB_DIR ${THRIFT_LIB_DIR})
-    STRING(REGEX REPLACE "/" "\\\\" WIN_PROTOBUF_INCLUDE_DIR ${PROTOBUF_INCLUDE_DIR})
-    STRING(REGEX REPLACE "/" "\\\\" WIN_PROTOBUF_LIB_DIR ${PROTOBUF_LIB_DIR})
-    STRING(REGEX REPLACE "/" "\\\\" WIN_PROTOBUF_BIN_DIR ${PROTOBUF_BIN_DIR})
-    STRING(REGEX REPLACE "/" "\\\\" WIN_BOOST_INCLUDE_DIR ${BOOST_INCLUDEDIR})
-    STRING(REGEX REPLACE "/" "\\\\" WIN_SOURCE_TOP_DIR ${CMAKE_SOURCE_DIR})
-    STRING(REGEX REPLACE "/" "\\\\" WIN_BINARY_TOP_DIR ${CMAKE_BINARY_DIR})
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/resources/sbin/mock_install.cmd.template" "${CMAKE_CURRENT_SOURCE_DIR}/resources/sbin/mock_install.cmd")
-else ()
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/resources/sbin/test.sh.template" "${CMAKE_CURRENT_SOURCE_DIR}/test.sh")
-endif ()
+set(MY_BINPLACES test.sh test.cmd)
+set(MY_PROJ_BINDIRS "")
 
 set(MY_SERIALIZATION_TYPE
     "thrift"

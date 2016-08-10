@@ -47,7 +47,7 @@
 # include <dsn/tool-api/perf_counter.h>
 # include <dsn/tool_api.h>
 # include <dsn/tool-api/node_scoper.h>
-# include <dsn/dist/layer2_handler.h>
+# include <dsn/cpp/layer2_handler.h>
 
 # ifdef __TITLE__
 # undef __TITLE__
