@@ -46,8 +46,7 @@
 #include <dsn/utility/autoref_ptr.h>
 #include <dsn/cpp/auto_codes.h>
 #include <dsn/cpp/utils.h>
-#include <dsn/dist/replication/replication_types.h>
-#include <dsn/dist/replication/replication_other_types.h>
+#include <dsn/cpp/serialization_helper/dsn.layer2.types.h>
 
 #define JsonSplitter "{}[]:,\""
 
@@ -111,6 +110,18 @@ void encode_json_state(std::stringstream& out) const \
 void decode_json_state(dsn::json::string_tokenizer& in) \
 {\
     JSON_DECODE_ENTRIES(in, *this, __VA_ARGS__);\
+}
+
+#define ENUM_TYPE_SERIALIZATION(EnumType, InvalidEnum) \
+inline void json_encode(std::stringstream& out, const EnumType& enum_variable)\
+{\
+    out << "\"" << enum_to_string(enum_variable) << "\"";\
+}\
+inline void json_decode(dsn::json::string_tokenizer& in, EnumType& enum_variable)\
+{\
+    std::string status_message;\
+    dsn::json::json_decode(in, status_message);\
+    enum_variable = enum_from_string(status_message.c_str(), InvalidEnum);\
 }
 
 namespace dsn { namespace json {
@@ -239,19 +250,6 @@ inline void json_decode(string_tokenizer& in, std::string& t)
     in.forward();
 }
 
-#define ENUM_TYPE_SERIALIZATION(EnumType, InvalidEnum) \
-inline void json_encode(std::stringstream& out, const EnumType& enum_variable)\
-{\
-    out << "\"" << enum_to_string(enum_variable) << "\"";\
-}\
-inline void json_decode(dsn::json::string_tokenizer& in, EnumType& enum_variable)\
-{\
-    std::string status_message;\
-    dsn::json::json_decode(in, status_message);\
-    enum_variable = enum_from_string(status_message.c_str(), InvalidEnum);\
-}
-
-ENUM_TYPE_SERIALIZATION(dsn::replication::partition_status::type, dsn::replication::partition_status::PS_INVALID)
 ENUM_TYPE_SERIALIZATION(dsn::app_status::type, dsn::app_status::AS_INVALID)
 
 inline void json_encode(std::stringstream& out, const dsn::gpid& pid)
@@ -282,8 +280,6 @@ inline void json_encode(std::stringstream& out, const dsn::partition_configurati
 inline void json_decode(string_tokenizer& in, dsn::partition_configuration& config);
 inline void json_encode(std::stringstream& out, const dsn::app_info& info);
 inline void json_decode(string_tokenizer& in, dsn::app_info& info);
-inline void json_encode(std::stringstream& out, const dsn::replication::node_state& ns);
-inline void json_decode(string_tokenizer& in, dsn::replication::node_state& ns);
 
 template<typename T> inline void json_encode_iterable(std::stringstream& out, const T& t)
 {
@@ -531,13 +527,4 @@ inline void json_decode(dsn::json::string_tokenizer& in, dsn::app_info& info)
 {
     JSON_DECODE_ENTRIES(in, info, status, app_type, app_name, app_id, partition_count, envs, is_stateful, max_replica_count);
 }
-inline void json_encode(std::stringstream& out, const dsn::replication::node_state& ns)
-{
-    JSON_ENCODE_ENTRIES(out, ns, is_alive, address, primaries, partitions);
-}
-inline void json_decode(dsn::json::string_tokenizer& in, dsn::replication::node_state& ns)
-{
-    JSON_DECODE_ENTRIES(in, ns, is_alive, address, primaries, partitions);
-}
-
 }}

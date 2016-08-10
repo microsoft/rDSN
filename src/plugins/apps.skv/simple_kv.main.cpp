@@ -37,9 +37,6 @@
 # include "simple_kv.app.example.h"
 # include "simple_kv.server.impl.h"
 
-// framework specific tools
-# include <dsn/dist/replication/replication.global_check.h>
-
 static void dsn_app_registration_simple_kv()
 {
     // register all possible services
@@ -47,8 +44,6 @@ static void dsn_app_registration_simple_kv()
     
     dsn::register_app< ::dsn::replication::application::simple_kv_client_app>("client");
     dsn::register_app< ::dsn::replication::application::simple_kv_perf_test_client_app>("client.perf.test");
-
-    //dsn::replication::install_checkers();
 }
 
 # if defined(DSN_RUN_USE_SVCHOST)

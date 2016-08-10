@@ -1,2 +1,0 @@
-add_subdirectory(failure_detector)
-add_subdirectory(failure_detector_multimaster)
