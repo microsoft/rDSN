@@ -31,7 +31,9 @@ TIME=`date --rfc-3339=seconds`
 CMAKE_OPTIONS="$CMAKE_OPTIONS -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
 MAKE_OPTIONS="$MAKE_OPTIONS -j$JOB_NUM"
 
-CBIN_DIR=$(dirname "$0")
+scripts_path=`readlink -f $0`
+CBIN_DIR=`dirname $scripts_path`
+
 TOP_DIR=$CBIN_DIR/../..
 
 if [ "$CLEAR" == "YES" ]

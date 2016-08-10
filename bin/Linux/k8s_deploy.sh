@@ -1,6 +1,7 @@
 #!/bin/bash
 os=linux
-export scripts_dir=$PWD/scripts/$os
+scripts_path=`readlink -f $0`
+export scripts_dir=`dirname $scripts_path`
 
 function usage() {
     echo "Option for subcommand 'k8s_deploy|k8s_undeploy"
