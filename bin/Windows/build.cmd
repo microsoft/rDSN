@@ -3,6 +3,7 @@ SET TOP_DIR=%bin_dir%\..\..\
 SET build_type=%1
 SET build_dir=%~f2
 SET buildall=-DBUILD_PLUGINS=FALSE
+SET cdir=%cd%
 
 IF "%3" EQU "build_plugins" (
     SET buildall=-DBUILD_PLUGINS=TRUE
@@ -37,9 +38,8 @@ IF NOT EXIST "%build_dir%" mkdir %build_dir%
 
 pushd %build_dir%
 
-
-echo CALL %TOP_DIR%\ext\cmake-3.2.2\bin\cmake.exe .. %buildall% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DCMAKE_BUILD_TYPE="%build_type%" -DBOOST_INCLUDEDIR="%TOP_DIR%\ext\%boost_dir_name%" -DBOOST_LIBRARYDIR="%TOP_DIR%\ext\%boost_dir_name%\%boost_lib%" -DDSN_GIT_SOURCE="github" -G "%cmake_target%"
-CALL %TOP_DIR%\ext\cmake-3.2.2\bin\cmake.exe .. %buildall% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DCMAKE_BUILD_TYPE="%build_type%" -DBOOST_INCLUDEDIR="%TOP_DIR%\ext\%boost_dir_name%" -DBOOST_LIBRARYDIR="%TOP_DIR%\ext\%boost_dir_name%\%boost_lib%" -DDSN_GIT_SOURCE="github" -G "%cmake_target%"
+echo CALL %TOP_DIR%\ext\cmake-3.2.2\bin\cmake.exe %cdir% %buildall% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DCMAKE_BUILD_TYPE="%build_type%" -DBOOST_INCLUDEDIR="%TOP_DIR%\ext\%boost_dir_name%" -DBOOST_LIBRARYDIR="%TOP_DIR%\ext\%boost_dir_name%\%boost_lib%" -DDSN_GIT_SOURCE="github" -G "%cmake_target%"
+CALL %TOP_DIR%\ext\cmake-3.2.2\bin\cmake.exe %cdir% %buildall% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DCMAKE_BUILD_TYPE="%build_type%" -DBOOST_INCLUDEDIR="%TOP_DIR%\ext\%boost_dir_name%" -DBOOST_LIBRARYDIR="%TOP_DIR%\ext\%boost_dir_name%\%boost_lib%" -DDSN_GIT_SOURCE="github" -G "%cmake_target%"
 
 FOR /F "delims=" %%i IN ('dir /b *.sln') DO set solution_name=%%i
 
