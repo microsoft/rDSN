@@ -162,7 +162,7 @@ then
     mkdir -p $BUILD_DIR
     cd $BUILD_DIR
     echo "$CMAKE_OPTIONS" >CMAKE_OPTIONS
-    cmake .. -DCMAKE_INSTALL_PREFIX=$BUILD_DIR/output $CMAKE_OPTIONS
+    cmake $ROOT -DCMAKE_INSTALL_PREFIX=$BUILD_DIR/output $CMAKE_OPTIONS
     if [ $? -ne 0 ]
     then
         echo "ERROR: cmake failed"
