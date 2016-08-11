@@ -16,5 +16,5 @@ ZOOKEEPER_HOME=`pwd`/zookeeper-3.4.6
 if [ -d "$ZOOKEEPER_HOME" ]
 then
     $ZOOKEEPER_HOME/bin/zkServer.sh stop
+    exit 0
 fi
-

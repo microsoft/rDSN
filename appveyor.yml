@@ -8,13 +8,11 @@ before_build:
         
 build_script:
     - cmd: >-
-        run.cmd build Debug .\build build_plugins
+        run.cmd build Debug .\build
         
-        run.cmd build Debug .\build install
+        run.cmd install Debug .\build
         
 test_script:
     - cmd: >-
-        SET DSN_ROOT=%~dp0
-        
         run.cmd test Debug .\build
-        
+

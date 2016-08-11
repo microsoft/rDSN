@@ -27,15 +27,6 @@ IF NOT EXIST "%bin_dir%\sed.exe" (
     @move sed.exe %bin_dir%
 )
 
-IF NOT EXIST "%TOP_DIR%\ext\%boost_dir_name%" (
-    CALL %bin_dir%\wget.exe --no-check-certificate http://github.com/imzhenyu/packages/blob/master/windows/%boost_package_name%?raw=true
-    CALL %bin_dir%\7z.exe x %boost_package_name% -y -o"%TOP_DIR%\ext\"
-)
-
-IF NOT EXIST "%TOP_DIR%\ext\cmake-3.2.2" (
-    CALL %bin_dir%\wget.exe --no-check-certificate http://github.com/imzhenyu/packages/blob/master/windows/cmake-3.2.2.7z?raw=true
-    CALL %bin_dir%\7z.exe x cmake-3.2.2.7z -y -o"%TOP_DIR%\ext\"
-)
 
 IF NOT EXIST "%TOP_DIR%\bin\Windows\thrift.exe" (
     CALL %bin_dir%\wget.exe --no-check-certificate https://github.com/imzhenyu/thrift/raw/master/pre-built/windows8.1/thrift.exe
@@ -59,4 +50,14 @@ IF NOT EXIST "%TOP_DIR%\bin\Windows\php.exe" (
     @move php5.dll %TOP_DIR%\bin\Windows\
     @move php.exe %TOP_DIR%\bin\Windows\
     @move php.ini %TOP_DIR%\bin\Windows\
+)
+
+IF NOT EXIST "%TOP_DIR%\ext\%boost_dir_name%" (
+    CALL %bin_dir%\wget.exe --no-check-certificate http://github.com/imzhenyu/packages/blob/master/windows/%boost_package_name%?raw=true
+    CALL %bin_dir%\7z.exe x %boost_package_name% -y -o"%TOP_DIR%\ext\"
+)
+
+IF NOT EXIST "%TOP_DIR%\ext\cmake-3.2.2" (
+    CALL %bin_dir%\wget.exe --no-check-certificate http://github.com/imzhenyu/packages/blob/master/windows/cmake-3.2.2.7z?raw=true
+    CALL %bin_dir%\7z.exe x cmake-3.2.2.7z -y -o"%TOP_DIR%\ext\"
 )
