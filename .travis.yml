@@ -36,8 +36,5 @@ script:
     - ./run.sh install
     - ./run.sh test
 
-after_script:
-    - ./run.sh stop_zk
-
 notifications:
   email: false
