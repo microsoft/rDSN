@@ -18,7 +18,9 @@ IF NOT EXIST %build_dir% (
 CALL %bin_dir%\echoc.exe 2 run the tests here ...
 
 :: run dll-embedded unit tests
-SET DSN_TEST_HOST=%build_dir%\bin\dsn.svchost\%build_type%\dsn.svchost.exe
+SET DSN_TEST_HOST=%DSN_ROOT:/=\%\bin\dsn.svchost.exe
+IF EXIST "%build_dir%\bin\dsn.svchost\%build_type%\dsn.svchost.exe"  SET DSN_TEST_HOST=%build_dir%\bin\dsn.svchost\%build_type%\dsn.svchost.exe
+
 FOR /D %%A IN (%build_dir%\test\*) DO (    
     IF EXIST %%A\gtests (
         pushd %%A 

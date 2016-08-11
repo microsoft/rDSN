@@ -77,6 +77,13 @@ fi
 ### TODO: add test module filtering 
 
 ##### unit tests #######
+if [ -f "$BUILD_DIR/bin/dsn.svchost/dsn.svchost" ]
+then
+    SVC_HOST=$BUILD_DIR/bin/dsn.svchost/dsn.svchost
+else
+    SVC_HOST=$DSN_ROOT/bin/dsn.svchost
+fi 
+
 for dir in $BUILD_DIR/test/*/
 do
     echo $dir
@@ -86,7 +93,7 @@ do
         cat $dir/gtests | while read -r line || [ -n "$line" ]; do
             echo "============ run unit tests in $dir with $line ============"
             rm -fr ./data
-            $BUILD_DIR/bin/dsn.svchost/dsn.svchost $dir/$line
+            $SVC_HOST $dir/$line
 
             if [ $? -ne 0 ]; then
                 echo "run unit tests in $dir with $line failed"
@@ -97,8 +104,8 @@ do
                     tail -n 100 `find . -name log.1.txt`
                 fi
                 if [ -f core ]; then
-                    echo "---- gdb $BUILD_DIR/bin/dsn.svchost/dsn.svchost core ----"
-                    gdb $BUILD_DIR/bin/dsn.svchost/dsn.svchost core -ex "thread apply all bt" -ex "set pagination 0" -batch
+                    echo "---- gdb $SVC_HOST core ----"
+                    gdb $SVC_HOST core -ex "thread apply all bt" -ex "set pagination 0" -batch
                 fi
                 popd
                 exit -1
