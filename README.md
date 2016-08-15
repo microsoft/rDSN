@@ -23,13 +23,13 @@ All pull requests please now go to https://github.com/imzhenyu/rdsn for automati
 
 ### <a name="cando"> What I can do with rDSN? </a>
 
- * turn legacy local component (e.g., a local storage, or micro service) into highly available and highly reliable service with provided distributed frameworks
- * develop services with an enhanced event-driven RPC library such as libevent, Thrift, and GRPC
-    * a production Paxos framework to quickly turn a single node service into an online service with replication, partition, failure recovery, and reconfiguration supports
-    * a scale-out and fail-over framework for stateless services
-    * built-in tools for testing, debuging, monitoring, and operation 
- * build new fraemworks with strong tooling support, benefiting the service applications immediately 
- * build new tools with dedicated Tool API, benefiting the services and frameworks transparently
+ * turn legacy local components (e.g., a local storage, or a micro service) into highly available and reliable service with [service frameworks](https://github.com/imzhenyu/rDSN.dist.service)
+ * develop services with an event-driven service lib similar to libevent, Thrift, and GRPC, with additional:
+    * a rich set of [service API]()http://imzhenyu.github.io/rDSN/documents/v1/html/group__service-api.html in addition to RPC 
+    * built-in [tools](#tools) for testing, debuging, monitoring, and operation
+    * built-in [service frameworks](#fraemworks) for scaliability, availabity, and reliability
+ * build new frameworks with strong tooling support, benefiting the service applications immediately 
+ * build new tools with dedicated [Tool API](http://imzhenyu.github.io/rDSN/documents/v1/html/group__tool-api.html), benefiting the services and frameworks transparently
  * more as you can imagine.
 
 ### <a name="novel"> How does rDSN build robustness? </a> 
@@ -52,41 +52,41 @@ All pull requests please now go to https://github.com/imzhenyu/rdsn for automati
  
 ### <a name="existing">Existing pluggable modules (and growing) </a>
 
-##### Distributed frameworks
+##### <a name="frameworks"> Distributed frameworks </a>
 
- * dist.service.stateful.type1: a production Paxos framework to quickly turn a local component (e.g., rocksdb) into an online service with replication, partition, failure recovery, and reconfiguration supports
- * dist.service.stateless: a scale-out and fail-over framework for stateless services such as Memcached
+ * [dist.service.stateful.type1](https://github.com/imzhenyu/rDSN.dist.service): a production Paxos framework to quickly turn a local component (e.g., rocksdb) into an online service with replication, partition, failure recovery, and reconfiguration supports
+ * [dist.service.stateless](https://github.com/imzhenyu/rDSN.dist.service): a scale-out and fail-over framework for stateless services such as Memcached
 
-##### Local runtime libraries 
+##### <a name="locallibs"> Local runtime libraries </a> 
 
- * tools.common
+ * [tools.common](https://github.com/imzhenyu/rDSN/tree/master/src/plugins/tools.common)
    * network libraries on Linux/Windows supporting rDSN/Thrift/HTTP messages at the same time
    * asynchronous disk IO on Linux/Windows
    * locks, rwlocks, semaphores
    * task queues 
    * timer services
    * performance counters
-   * loggers (high-perf, screen)
- * tools.hpc: high performance counterparts for the above modules
+   * loggers (screen, simple)
+ * [tools.hpc](https://github.com/imzhenyu/rDSN.tools.hpc): high performance counterparts for the above modules
 
-##### Devops tools
+##### <a name="tools"> Devops tools </a>
 
- * tools.common
+ * [tools.common](https://github.com/imzhenyu/rDSN/tree/master/src/plugins/tools.common)
    * simulator debugs multiple nodes in one single process without worry about timeout
    * tracer dumps logs for how requests are processed across tasks/nodes
    * profiler shows detailed task-level performance data (e.g., queue-time, exec-time)
    * fault-injector mimics data center failures to expose bugs early
    * global-checker enables cross-node assertion 
    * replayer reproduces the bugs for easier root cause analysis
- * tools.explorer: extracts task-level dependencies automatically 
- * rDSN web studio to visualize task-level performance and dependency information [Demo](https://www.youtube.com/watch?v=FKNNg3Yzu6o) 
+ * [tools.explorer](https://github.com/imzhenyu/rDSN.tools.explorer): extracts task-level dependencies automatically 
+ * [Web studio](https://github.com/imzhenyu/rDSN/tree/master/src/tools/webstudio) to visualize task-level performance and dependency information [live](http://imzhenyu.github.io/rDSN/webstudio/setting.html) [Demo](https://www.youtube.com/watch?v=FKNNg3Yzu6o) 
 
 ##### Other distributed providers, libraries, and tools
 
- * tools.nfs: remote file copy 
- * dist.service.fd: perfect failure detector
- * dist.service.fd.multimaster: multi-master perfect failure detector
- * dist.deployment: a deployment service for Windows/Linux/Kubernets  
+ * [tools.nfs](https://github.com/imzhenyu/rDSN/tree/master/src/plugins/tools.nfs): remote file copy 
+ * [dist.service.fd](https://github.com/imzhenyu/rDSN.dist.service/tree/master/src/fd): perfect failure detector
+ * [dist.service.fd.multimaster](https://github.com/imzhenyu/rDSN.dist.service/tree/master/src/fd): multi-master perfect failure detector
+ * [dist.deployment](https://github.com/imzhenyu/rDSN.dist.deployment): a deployment service for Windows/Linux/Kubernets  
 
 ### <a name="papers"> Research papers </a>
 
