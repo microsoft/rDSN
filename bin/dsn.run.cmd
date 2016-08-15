@@ -14,7 +14,7 @@ IF "%DSN_ROOT%" EQU "" SET DSN_ROOT=%TOP_DIR%\install
 @mkdir "%DSN_ROOT%"
 IF "%DSN_ROOT%" NEQ "" IF exist "%DSN_ROOT%" GOTO install_env
 CALL %bin_dir%\echoc.exe 4 %DSN_ROOT% does not exist
-GOTO exit
+exit /b 1
 
 :usage
     CALL %bin_dir%\echoc.exe 4  "Usage: run.cmd setup-env|pre-require|build|install|test|publish|republish|deploy|start|stop|cleanup|scds(stop-cleanup-deploy-start)|start_zk|stop_zk"
@@ -44,10 +44,10 @@ CALL :%1 %1 %2 %3 %4 %5 %6 %7 %8 %9
 IF ERRORLEVEL 1 (
     CALL %bin_dir%\echoc.exe 4 unknow command '%1'
     CALL :usage
-    GOTO exit
+    exit /b 1
 )
 
-GOTO exit
+exit /b 0
 
 :pre-require
 :build

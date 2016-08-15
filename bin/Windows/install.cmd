@@ -30,4 +30,4 @@ goto exit
     exit 1
     
 :exit
-    exit 0
+    exit /b 0

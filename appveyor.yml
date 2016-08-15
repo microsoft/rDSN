@@ -6,8 +6,6 @@ before_build:
         
         run.cmd setup-env
         
-        run.cmd start_zk
-        
 build_script:
     - cmd: >-
         run.cmd build Debug .\build build_plugins
@@ -16,5 +14,8 @@ build_script:
         
 test_script:
     - cmd: >-
+        run.cmd start_zk
+        
         run.cmd test Debug .\build
+        
 
