@@ -24,21 +24,35 @@ IF NOT EXIST %INSTALL_DIR%\%zk% (
     IF NOT EXIST %zk%.tar.gz (
         CALL %bin_dir%\echoc.exe 4 download zookeeper package failed from  https://github.com/shengofsun/packages/raw/master/%zk%.tar.gz?raw=true
         popd
-        GOTO exit
-    )    
-    CALL %bin_dir%\7z.exe x %zk%.tar.gz -y -o"%INSTALL_DIR%" > nul
-    CALL %bin_dir%\7z.exe x %zk%.tar -y -o"%INSTALL_DIR%" > nul
+        exit /b 1
+    ) 
+    
+    CALL %bin_dir%\7z.exe x %zk%.tar.gz -y -o"%INSTALL_DIR%"
+    CALL %bin_dir%\7z.exe x %zk%.tar -y -o"%INSTALL_DIR%"
 )
 
 SET ZOOKEEPER_HOME=%INSTALL_DIR%\%zk%
 SET ZOOKEEPER_PORT=%PORT%
+SET ZK_SRC_CONFIG=%ZOOKEEPER_HOME%\conf\zoo_sample.cfg
+SET ZK_DST_CONFIG=%ZOOKEEPER_HOME%\conf\zoo.cfg
 
-copy /Y %ZOOKEEPER_HOME%\conf\zoo_sample.cfg %ZOOKEEPER_HOME%\conf\zoo.cfg
-REM CALL %bin_dir%\ssed.exe -i "s@dataDir=/tmp/zookeeper@dataDir=%ZOOKEEPER_HOME:\=\\%\\data@" %ZOOKEEPER_HOME%\conf\zoo.cfg
-CALL %bin_dir%\ssed.exe %ZOOKEEPER_HOME%\conf\zoo.cfg clientPort=2181 clientPort=%ZOOKEEPER_PORT%
+ECHO # GENERATD BY rDSN SCRIPT > %ZK_DST_CONFIG%
+
+for /F  %%A in (%ZK_SRC_CONFIG%) do (
+    SET "line=%%A"
+    setlocal enabledelayedexpansion    
+    set "line=!line:2181=12181!"
+    if defined line (
+        echo(!line! >> %ZK_DST_CONFIG%
+    )
+    endlocal
+)
 
 @mkdir %ZOOKEEPER_HOME%\data
-CALL start cmd.exe /k "title zk-%PORT%&& %ZOOKEEPER_HOME%\bin\zkServer.cmd"
+
+powershell -command "Start-Process %ZOOKEEPER_HOME%\bin\zkServer.cmd"
+
+REM CALL start cmd.exe /k "title zk-%PORT%&& %ZOOKEEPER_HOME%\bin\zkServer.cmd"
 
 popd
 
@@ -50,3 +64,4 @@ GOTO exit
     GOTO:EOF
     
 :exit
+    exit /b 0

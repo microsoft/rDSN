@@ -52,5 +52,7 @@ goto exit
 
 :error
     CALL %bin_dir%\echoc.exe 4  "Usage: run.cmd build build_type(Debug|Release|RelWithDebInfo|MinSizeRel) build_dir [build_plugins]"
+    exit 1 
 
 :exit
+    exit /b 0
