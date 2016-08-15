@@ -108,7 +108,7 @@ TEST(perf_core, aio)
     auto concurrency_list = { 1, 4, 16 };
     for (auto is_write : { true, false }) 
     {
-        for (auto random_offset : {true, false }) 
+        for (auto random_offset : {false, true }) 
         {
             for (int i =0; i < sizeof(block_size_list)/sizeof(uint64_t); i++)
             {
