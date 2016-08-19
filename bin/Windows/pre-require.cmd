@@ -36,6 +36,8 @@ IF NOT EXIST "%bin_dir%\thrift.exe" (
 IF NOT EXIST "%bin_dir%\7z.exe" (
     CALL %bin_dir%\wget.exe --no-check-certificate https://github.com/imzhenyu/packages/raw/master/windows/7z.dll?raw=true
     CALL %bin_dir%\wget.exe --no-check-certificate https://github.com/imzhenyu/packages/raw/master/windows/7z.exe?raw=true
+    @copy /y 7z.dll %bin_dir%\..\
+    @copy /y 7z.exe %bin_dir%\..\
     @move 7z.dll %bin_dir%
     @move 7z.exe %bin_dir%
 )
