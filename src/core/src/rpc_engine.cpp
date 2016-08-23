@@ -411,11 +411,11 @@ namespace dsn {
 
         utils::auto_write_lock l(_handlers_lock);
         auto it = _handlers.find(name);
-        auto it2 = _handlers.find(handler->name);
+        auto it2 = _handlers.find(handler->name.c_str());
         if (it == _handlers.end() && it2 == _handlers.end())
         {
             _handlers[name] = handler;
-            _handlers[handler->name] = handler;   
+            _handlers[handler->name.c_str()] = handler;   
 
             {
                 utils::auto_write_lock l(_vhandlers[handler->code]->second);
@@ -440,9 +440,9 @@ namespace dsn {
                 return nullptr;
 
             ret = it->second;
-            std::string name = it->second->name;
+            auto name = it->second->name;
             _handlers.erase(it);
-            _handlers.erase(name);
+            _handlers.erase(name.c_str());
 
             {
                 utils::auto_write_lock l(_vhandlers[rpc_code]->second);
@@ -604,7 +604,7 @@ namespace dsn {
                 auto it1 = aspec.network_client_confs.find(c);
                 if (it1 != aspec.network_client_confs.end())
                 {
-                    factory = it1->second.factory_name;
+                    factory = it1->second.factory_name.c_str();
                     blk_size = it1->second.message_buffer_block_size;
                 }
                 else
@@ -614,7 +614,7 @@ namespace dsn {
                 }
 
                 network_server_config cs(aspec.id, c);
-                cs.factory_name = factory;
+                cs.factory_name = factory.c_str();
                 cs.message_buffer_block_size = blk_size;
 
                 auto net = create_network(cs, true, client_hdr_format, ctx);

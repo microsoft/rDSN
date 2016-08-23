@@ -86,14 +86,14 @@ namespace dsn {
             return it->second;
         }
 
-        std::string profiler_output_handler(const std::vector<std::string>& args)
+        safe_string profiler_output_handler(const safe_vector<safe_string>& args)
         {
-            std::stringstream ss;
+            ::std::stringstream ss;
 
             if (args.size() < 1)
             {
                 ss << "unenough arguments" << std::endl;
-                return ss.str();
+                return ss.str().c_str();
             }
 
             if ((args[0] == "dependency") || (args[0] == "dep"))
@@ -101,38 +101,38 @@ namespace dsn {
                 if (args.size() < 2)
                 {
                     ss << "unenough arguments" << std::endl;
-                    return ss.str();
+                    return ss.str().c_str();
                 }
 
                 if (args[1] == "matrix")
                 {
                     profiler_output_dependency_matrix(ss);
-                    return ss.str();
+                    return ss.str().c_str();
                 }
                 if (args[1] == "list")
                 {
                     if (args.size() < 3)
                     {
                         profiler_output_dependency_list_caller(ss, -1);
-                        return ss.str();
+                        return ss.str().c_str();
                     }
 
                     if (args[2] == "caller")
                     {
                         profiler_output_dependency_list_caller(ss, -1);
-                        return ss.str();
+                        return ss.str().c_str();
                     }
                     if (args[2] == "callee")
                     {
                         profiler_output_dependency_list_callee(ss, -1);
-                        return ss.str();
+                        return ss.str().c_str();
                     }
 
-                    int task_id = find_task_id(args[2]);
+                    int task_id = find_task_id(args[2].c_str());
                     if (task_id == TASK_CODE_INVALID)
                     {
                         ss << "no such task" << std::endl;
-                        return ss.str();
+                        return ss.str().c_str();
                     }
 
                     if ((args.size() > 3) && (args[3] == "callee"))
@@ -144,22 +144,22 @@ namespace dsn {
                         profiler_output_dependency_list_caller(ss, task_id);
                     }
 
-                    return ss.str();
+                    return ss.str().c_str();
                 }
                 ss << "wrong arguments" << std::endl;
-                return ss.str();
+                return ss.str().c_str();
             }
             else if (args[0] == "info")
             {
                 int task_id = -1;
                 if ((args.size() > 1) && (args[1] != "all"))
                 {
-                    task_id = find_task_id(args[1]);
+                    task_id = find_task_id(args[1].c_str());
                 }
                 if (task_id == TASK_CODE_INVALID)
                 {
                     ss << "no such task" << std::endl;
-                    return ss.str();
+                    return ss.str().c_str();
                 }
 
                 profiler_output_information_table(ss, task_id);
@@ -169,68 +169,69 @@ namespace dsn {
                 if (args.size() < 3)
                 {
                     ss << "unenough arguments" << std::endl;
-                    return ss.str();
+                    return ss.str().c_str();
                 }
 
                 int num = atoi(args[1].c_str());
                 if (num == 0)
                 {
                     ss << "not a legal value" << std::endl;
-                    return ss.str();
+                    return ss.str().c_str();
                 }
-                perf_counter_ptr_type counter_type = find_counter_type(args[2]);
+                perf_counter_ptr_type counter_type = find_counter_type(args[2].c_str());
                 if (counter_type == PREF_COUNTER_INVALID)
                 {
                     ss << "no such counter type" << std::endl;
-                    return ss.str();
+                    return ss.str().c_str();
                 }
 
                 dsn_perf_counter_percentile_type_t percentile_type = COUNTER_PERCENTILE_50;
-                if ((args.size() > 3) && (find_percentail_type(args[3]) != COUNTER_PERCENTILE_INVALID))
+                if ((args.size() > 3) && (find_percentail_type(args[3].c_str()) != COUNTER_PERCENTILE_INVALID))
                 {
-                    percentile_type = find_percentail_type(args[3]);
+                    percentile_type = find_percentail_type(args[3].c_str());
                 }
 
                 profiler_output_top(ss, counter_type, percentile_type, num);
             }
             else
                 ss << "wrong arguments" << std::endl;
-            return ss.str();
+            return ss.str().c_str();
         }
-        std::string profiler_data_handler(const std::vector<std::string>& args)
+
+        safe_string profiler_data_handler(const safe_vector<safe_string>& args)
         {
             int k = static_cast<int>(args.size());
             int task_id;
             perf_counter_ptr_type counter_type;
             dsn_perf_counter_percentile_type_t percentile_type;
-            std::stringstream ss;
-            std::vector<std::string> val;
+            ::std::stringstream ss;
+            safe_vector<safe_string> val;
 
             if ((args.size() > 0) && (args[0] == "top"))
             {
                 if (k < 4)
                 {
-                    return ss.str();
+                    return ss.str().c_str();
                 }
                 int num = atoi(args[1].c_str());
-                counter_type = find_counter_type(args[2]);
-                percentile_type = find_percentail_type(args[3]);
+                counter_type = find_counter_type(args[2].c_str());
+                percentile_type = find_percentail_type(args[3].c_str());
 
                 if ((num == 0) || (counter_type == PREF_COUNTER_INVALID) || (percentile_type == COUNTER_PERCENTILE_INVALID))
                 {
-                    return ss.str();
+                    return ss.str().c_str();
                 }
 
                 profiler_data_top(ss, counter_type, percentile_type, num);
-                return ss.str();
+                return ss.str().c_str();
             }
 
             for (int i = 0; i < k; i++)
             {
                 utils::split_args(args[i].c_str(), val, ':');
-                task_id = find_task_id(val[0]);
-                counter_type = find_counter_type(val[1]);
-                percentile_type = find_percentail_type(val[2]);
+                task_id = find_task_id(val[0].c_str());
+                counter_type = find_counter_type(val[1].c_str());
+                percentile_type = find_percentail_type(val[2].c_str());
 
                 if ((task_id != TASK_CODE_INVALID) && (counter_type != PREF_COUNTER_INVALID) && (s_spec_profilers[task_id].ptr[counter_type] != NULL) && (s_spec_profilers[task_id].is_profile != false))
                 {
@@ -255,7 +256,7 @@ namespace dsn {
                     }
                 }
             }
-            return ss.str();
+            return ss.str().c_str();
         }
 
         struct call_link {
@@ -287,14 +288,15 @@ namespace dsn {
             std::vector<nv_pair> data;
             DEFINE_JSON_SERIALIZATION(time, data)
         };
-        std::string query_data_handler(const std::vector<std::string>& args)
+
+        safe_string query_data_handler(const safe_vector<safe_string>& args)
         {
-            std::stringstream ss;
+            ::std::stringstream ss;
 
             if (args.size() < 1)
             {
                 ss << "incorrect arguments" << std::endl;
-                return ss.str();
+                return ss.str().c_str();
             }
 
             //return a matrix for all task codes contained with perf_counter percentile value
@@ -361,7 +363,7 @@ namespace dsn {
                     }
                 }
                 ss << "]";
-                return ss.str();
+                return ss.str().c_str();
             }
             //return a list of names of all task codes
             else if (args[0] == "task_list")
@@ -379,7 +381,7 @@ namespace dsn {
 
                 }
                 dsn::json::json_encode(ss,task_list);
-                return ss.str();
+                return ss.str().c_str();
             }
             //return a list of 2 elements for a specific task:
             //1. a list of all perf_counters
@@ -389,15 +391,15 @@ namespace dsn {
                 if (args.size() < 2)
                 {
                     ss << "unenough arguments" << std::endl;
-                    return ss.str();
+                    return ss.str().c_str();
                 }
 
-                int task_id = find_task_id(args[1]);
+                int task_id = find_task_id(args[1].c_str());
 
                 if ((task_id == TASK_CODE_INVALID) || (s_spec_profilers[task_id].is_profile == false))
                 {
                     ss << "no such task code or target task is not profiled" << std::endl;
-                    return ss.str();
+                    return ss.str().c_str();
                 }
 
                 if (task_spec::get(task_id)->type == TASK_TYPE_RPC_RESPONSE)
@@ -472,7 +474,7 @@ namespace dsn {
                 } while (task_spec::get(task_id)->type == TASK_TYPE_RPC_RESPONSE);
 
                 dsn::json::json_encode(ss, total_resp);
-                return ss.str();
+                return ss.str().c_str();
             }
             //return 6 types of latency times for a specific task
             else if (args[0] == "counter_breakdown")
@@ -480,16 +482,16 @@ namespace dsn {
                 if (args.size() < 2)
                 {
                     ss << "unenough arguments" << std::endl;
-                    return ss.str();
+                    return ss.str().c_str();
                 }
-                int task_id = find_task_id(args[1]);
+                int task_id = find_task_id(args[1].c_str());
                 int query_percentile = (args.size() == 2) ? 50 : atoi(args[2].c_str());
                 
 
                 if ((task_id == TASK_CODE_INVALID) || (s_spec_profilers[task_id].is_profile == false))
                 {
                     ss << "no such task code or target task is not profiled" << std::endl;
-                    return ss.str();
+                    return ss.str().c_str();
                 }
 
                 if (task_spec::get(task_id)->type == TASK_TYPE_RPC_RESPONSE)
@@ -552,7 +554,7 @@ namespace dsn {
                 //timeList[3] = timeList[0];
 
                 dsn::json::json_encode(ss, timeList);
-                return ss.str();
+                return ss.str().c_str();
             }
             //return a list of current counter value for a specific task
             else if (args[0] == "counter_realtime")
@@ -560,15 +562,15 @@ namespace dsn {
                 if (args.size() < 2)
                 {
                     ss << "unenough arguments" << std::endl;
-                    return ss.str();
+                    return ss.str().c_str();
                 }
 
-                int task_id = find_task_id(args[1]);
+                int task_id = find_task_id(args[1].c_str());
 
                 if ((task_id == TASK_CODE_INVALID) || (s_spec_profilers[task_id].is_profile == false))
                 {
                     ss << "no such task code or target task is not profiled" << std::endl;
-                    return ss.str();
+                    return ss.str().c_str();
                 }
 
                 char str[24];
@@ -616,7 +618,7 @@ namespace dsn {
                 } while (task_spec::get(task_id)->type == TASK_TYPE_RPC_RESPONSE);
 
                 counter_realtime_resp{ std::string(str), data }.encode_json_state(ss);
-                return ss.str();
+                return ss.str().c_str();
             }
             //return a list of 2 elements for a specific task
             //1. a list of caller names and call times 
@@ -626,7 +628,7 @@ namespace dsn {
                 if (args.size() < 1)
                 {
                     ss << "unenough arguments" << std::endl;
-                    return ss.str();
+                    return ss.str().c_str();
                 }
                 else if (args.size() == 1)
                 {
@@ -637,7 +639,7 @@ namespace dsn {
                     {
                         if ((j != TASK_CODE_INVALID) && (s_spec_profilers[j].is_profile))
                         {
-                            task_list.push_back(std::string(dsn_task_code_to_string(j)));
+                            task_list.push_back(dsn_task_code_to_string(j));
                         
                             std::vector<uint64_t> call_vector;
                             for (int k = 0; k <= dsn_task_code_max(); k++)
@@ -652,15 +654,15 @@ namespace dsn {
                     }
 
                     call_resp{ task_list, call_matrix }.encode_json_state(ss);
-                    return ss.str();
+                    return ss.str().c_str();
                 }
 
-                int task_id = find_task_id(args[1]);
+                int task_id = find_task_id(args[1].c_str());
 
                 if ((task_id == TASK_CODE_INVALID) || (s_spec_profilers[task_id].is_profile == false))
                 {
                     ss << "no such task code or target task is not profiled" << std::endl;
-                    return ss.str();
+                    return ss.str().c_str();
                 }
                 std::vector<std::vector<call_link>> call_list;
                 std::vector<call_link> caller_list;
@@ -693,7 +695,7 @@ namespace dsn {
                 call_list.push_back(caller_list);
                 call_list.push_back(callee_list);
                 dsn::json::json_encode(ss, call_list);
-                return ss.str();
+                return ss.str().c_str();
             }
             //return a list of all sharer using the same pool with a specific task
             else if (args[0] == "pool_sharer")
@@ -701,15 +703,15 @@ namespace dsn {
                 if (args.size() < 2)
                 {
                     ss << "unenough arguments" << std::endl;
-                    return ss.str();
+                    return ss.str().c_str();
                 }
 
-                int task_id = find_task_id(args[1]);
+                int task_id = find_task_id(args[1].c_str());
 
                 if ((task_id == TASK_CODE_INVALID) || (s_spec_profilers[task_id].is_profile == false))
                 {
                     ss << "no such task code or target task is not profiled" << std::endl;
-                    return ss.str();
+                    return ss.str().c_str();
                 }
 
                 auto pool = task_spec::get(task_id)->pool_code;
@@ -717,9 +719,9 @@ namespace dsn {
                 std::vector<std::string> sharer_list;
                 for (int j = 0; j <= dsn_task_code_max(); j++)
                 if (j != TASK_CODE_INVALID && j != task_id && task_spec::get(j)->pool_code == pool && task_spec::get(j)->type == TASK_TYPE_RPC_RESPONSE)
-                    sharer_list.push_back(std::string(dsn_task_code_to_string(j)));
+                    sharer_list.push_back(dsn_task_code_to_string(j));
                 dsn::json::json_encode(ss, sharer_list);
-                return ss.str();
+                return ss.str().c_str();
             }
             //query time
             else if (args[0] == "time")
@@ -727,12 +729,12 @@ namespace dsn {
                 char str[24];
                 ::dsn::utils::time_ms_to_string(dsn_now_ns() / 1000000, str);
                 ss << str;
-                return ss.str();
+                return ss.str().c_str();
             }
             else
             {
                 ss << "wrong parameter";
-                return ss.str();
+                return ss.str().c_str();
             }
         }
     }

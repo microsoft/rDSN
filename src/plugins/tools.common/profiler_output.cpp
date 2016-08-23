@@ -68,7 +68,7 @@ namespace dsn {
             return x.val > y.val;
         }
 
-        void profiler_output_top(std::stringstream &ss, const perf_counter_ptr_type counter_type, const dsn_perf_counter_percentile_type_t percentile_type, const int num)
+        void profiler_output_top(::std::stringstream &ss, const perf_counter_ptr_type counter_type, const dsn_perf_counter_percentile_type_t percentile_type, const int num)
         {
             sort_node *_tmp = new sort_node[dsn_task_code_max() + 3];
             int tmp_num = (num >= dsn_task_code_max() + 1) ? dsn_task_code_max() + 1 : num;
@@ -118,7 +118,7 @@ namespace dsn {
             delete[] _tmp;
         }
 
-        void profiler_output_infomation_line(std::stringstream &ss, const int task_id, dsn_perf_counter_percentile_type_t percentile_type, const bool full_data)
+        void profiler_output_infomation_line(::std::stringstream &ss, const int task_id, dsn_perf_counter_percentile_type_t percentile_type, const bool full_data)
         {
             //Print the table infrom
             if (full_data == true)
@@ -171,7 +171,7 @@ namespace dsn {
             ss << std::endl;
         }
 
-        void profiler_output_information_table(std::stringstream &ss, const int task_id)
+        void profiler_output_information_table(::std::stringstream &ss, const int task_id)
         {
             ss << profiler_output_data->separate_line_info << std::endl;
             ss << "|PROFILE|" << profiler_output_data->view_task_type << "PERCENT|";
@@ -212,7 +212,7 @@ namespace dsn {
             }
         }
 
-        void profiler_output_dependency_matrix(std::stringstream &ss)
+        void profiler_output_dependency_matrix(::std::stringstream &ss)
         {
             //Print the separate line
             ss << profiler_output_data->separate_line_depmatrix;
@@ -276,7 +276,7 @@ namespace dsn {
             }
         }
 
-        void profiler_output_dependency_list_caller(std::stringstream &ss, const int task_id)
+        void profiler_output_dependency_list_caller(::std::stringstream &ss, const int task_id)
         {
             //Print the title of table
             ss << profiler_output_data->separate_line_deplist << std::endl;
@@ -320,7 +320,7 @@ namespace dsn {
             }
         }
 
-        void profiler_output_dependency_list_callee(std::stringstream &ss, const int task_id)
+        void profiler_output_dependency_list_callee(::std::stringstream &ss, const int task_id)
         {
             //Print the title of table
             ss << profiler_output_data->separate_line_deplist << std::endl;
@@ -364,7 +364,7 @@ namespace dsn {
             }
         }
 
-        void profiler_data_top(std::stringstream &ss, const perf_counter_ptr_type counter_type, const dsn_perf_counter_percentile_type_t percentile_type, const int num)
+        void profiler_data_top(::std::stringstream &ss, const perf_counter_ptr_type counter_type, const dsn_perf_counter_percentile_type_t percentile_type, const int num)
         {
             sort_node *_tmp = new sort_node[dsn_task_code_max() + 3];
             int tmp_num = num >= dsn_task_code_max() + 1 ? dsn_task_code_max() + 1 : num;

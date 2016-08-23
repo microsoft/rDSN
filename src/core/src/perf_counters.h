@@ -66,17 +66,17 @@ public:
     bool remove_counter(const char* full_name);
     
     void register_factory(perf_counter::factory factory);
-    static std::string list_counter(const std::vector<std::string>& args);
-    static std::string get_counter_value(const std::vector<std::string>& args);
-    static std::string get_counter_sample(const std::vector<std::string>& args);
-    static std::string get_counter_value_i(const std::vector<std::string>& args);
-    static std::string get_counter_sample_i(const std::vector<std::string>& args);
-    static std::string get_counter_index(const std::vector<std::string>& args);
+    static safe_string list_counter(const safe_vector<safe_string>& args);
+    static safe_string get_counter_value(const safe_vector<safe_string>& args);
+    static safe_string get_counter_sample(const safe_vector<safe_string>& args);
+    static safe_string get_counter_value_i(const safe_vector<safe_string>& args);
+    static safe_string get_counter_sample_i(const safe_vector<safe_string>& args);
+    static safe_string get_counter_index(const safe_vector<safe_string>& args);
 
     typedef std::map<std::string, perf_counter_ptr > all_counters;
 
 private:
-    std::string list_counter_internal(const std::vector<std::string>& args);
+    safe_string list_counter_internal(const safe_vector<safe_string>& args);
     mutable utils::rw_lock_nr  _lock;
     all_counters               _counters;
     perf_counter::factory      _factory;

@@ -50,9 +50,9 @@ namespace dsn {
     struct remote_copy_request
     {
         ::dsn::rpc_address   source;
-        std::string source_dir;
-        std::vector<std::string> files;
-        std::string dest_dir;
+        safe_string source_dir;
+        safe_vector<safe_string> files;
+        safe_string dest_dir;
         bool        overwrite;
     };
 

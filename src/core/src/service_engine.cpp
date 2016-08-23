@@ -306,7 +306,7 @@ dsn_error_t service_node::start_app()
     return start_app(_app_info.app.app_context_ptr, spec().arguments, _app_spec.role->layer1.start, spec().name);
 }
 
-dsn_error_t service_node::start_app(void* app_context, const std::string& sargs, dsn_app_start start, const std::string& app_name)
+dsn_error_t service_node::start_app(void* app_context, const safe_string& sargs, dsn_app_start start, const safe_string& app_name)
 {
     std::vector<std::string> args;
     std::vector<char*> args_ptr;
@@ -320,7 +320,7 @@ dsn_error_t service_node::start_app(void* app_context, const std::string& sargs,
     {
         if (0 == i)
         {
-            args[0] = app_name;
+            args[0] = app_name.c_str();
         }
         else
         {
@@ -338,8 +338,8 @@ error_code service_node::start()
     error_code err = ERR_OK;
 
     // init data dir
-    if (!dsn::utils::filesystem::path_exists(spec().data_dir))
-        dsn::utils::filesystem::create_directory(spec().data_dir);
+    if (!dsn::utils::filesystem::path_exists(spec().data_dir.c_str()))
+        dsn::utils::filesystem::create_directory(spec().data_dir.c_str());
 
     // init task engine    
     _computation = new task_engine(this);
@@ -455,19 +455,19 @@ timer_service* service_node::tsvc(task_queue* q) const
 }
 
 void service_node::get_runtime_info(
-    const std::string& indent, 
-    const std::vector<std::string>& args, 
-    /*out*/ std::stringstream& ss
+    const safe_string& indent, 
+    const safe_vector<safe_string>& args,
+    /*out*/ safe_sstream& ss
     )
 {
     ss << indent << name() << ":" << std::endl;
 
-    std::string indent2 = indent + "\t";
+    auto indent2 = indent + "\t";
     _computation->get_runtime_info(indent2, args, ss);
 }
 
 void service_node::get_queue_info(
-    /*out*/ std::stringstream& ss
+    /*out*/ safe_sstream& ss
     )
 {
     ss << "{\"app_name\":\"" << name() << "\",\n\"thread_pool\":[\n";
@@ -577,7 +577,7 @@ void service_engine::register_system_rpc_handler(
     ) // -1 for all node
 {
     ::dsn::rpc_handler_info* h(new ::dsn::rpc_handler_info(code));
-    h->name = std::string(name);
+    h->name = name;
     h->c_handler = cb;
     h->parameter = param;
     h->add_ref();
@@ -659,9 +659,9 @@ service_node* service_engine::start_node(service_app_spec& app_spec)
     }
 }
 
-std::string service_engine::get_runtime_info(const std::vector<std::string>& args)
+safe_string service_engine::get_runtime_info(const safe_vector<safe_string>& args)
 {
-    std::stringstream ss;
+    safe_sstream ss;
     if (args.size() == 0)
     {
         ss << "" << service_engine::fast_instance()._nodes_by_app_id.size() 
@@ -673,7 +673,7 @@ std::string service_engine::get_runtime_info(const std::vector<std::string>& arg
     }
     else
     {
-        std::string indent = "";
+        auto indent = "";
         int id = atoi(args[0].c_str());
         auto it = service_engine::fast_instance()._nodes_by_app_id.find(id);
         if (it != service_engine::fast_instance()._nodes_by_app_id.end())
@@ -690,9 +690,9 @@ std::string service_engine::get_runtime_info(const std::vector<std::string>& arg
     return ss.str();
 }
 
-std::string service_engine::get_queue_info(const std::vector<std::string>& args)
+safe_string service_engine::get_queue_info(const safe_vector<safe_string>& args)
 {
-    std::stringstream ss;
+    safe_sstream ss;
     ss << "[";
     for (auto &it : service_engine::fast_instance()._nodes_by_app_id)
     {

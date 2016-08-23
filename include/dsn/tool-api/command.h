@@ -42,10 +42,10 @@
 
 namespace dsn {
     
-    typedef std::function<std::string(const std::vector<std::string>&)> command_handler;
+    typedef std::function<safe_string(const safe_vector<safe_string>&)> command_handler;
 
     extern DSN_API void* register_command(
-        const std::vector<const char*>& commands, // commands, e.g., {"help", "Help", "HELP", "h", "H"}
+        const safe_vector<const char*>& commands, // commands, e.g., {"help", "Help", "HELP", "h", "H"}
         const char* help_one_line,
         const char* help_long,
         command_handler handler

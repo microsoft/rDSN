@@ -95,8 +95,8 @@ public:
 
     task_engine* computation() const { return _computation; }
     const std::list<io_engine>& ios() const { return _ios; }
-    void get_runtime_info(const std::string& indent, const std::vector<std::string>& args, /*out*/ std::stringstream& ss);
-    void get_queue_info(/*out*/ std::stringstream& ss);
+    void get_runtime_info(const safe_string& indent, const safe_vector<safe_string>& args, /*out*/ safe_sstream& ss);
+    void get_queue_info(/*out*/ safe_sstream& ss);
 
     error_code start_io_engine_in_node_start_task(const io_engine& io);
 
@@ -116,7 +116,7 @@ public:
     void handle_l2_rpc_request(dsn_gpid gpid, bool is_write, dsn_message_t req);
     rpc_request_task* generate_l2_rpc_request_task(message_ex* req);
 
-    static dsn_error_t start_app(void* app_context, const std::string& args, dsn_app_start start, const std::string& app_name);
+    static dsn_error_t start_app(void* app_context, const safe_string& args, dsn_app_start start, const safe_string& app_name);
 
 private:
     dsn_app_info     _app_info;
@@ -150,8 +150,8 @@ public:
     env_provider* env() const { return _env; }
     logging_provider* logging() const { return _logging; }
     memory_provider* memory() const { return _memory; }
-    static std::string get_runtime_info(const std::vector<std::string>& args);
-    static std::string get_queue_info(const std::vector<std::string>& args);
+    static safe_string get_runtime_info(const safe_vector<safe_string>& args);
+    static safe_string get_queue_info(const safe_vector<safe_string>& args);
 
     void init_before_toollets(const service_spec& spec);
     void init_after_toollets();

@@ -154,10 +154,10 @@ namespace dsn {
         return header_type::header_type_to_c_type(ht);
     }
 
-    /*static*/ std::string message_parser::get_debug_string(const char* bytes)
+    /*static*/ safe_string message_parser::get_debug_string(const char* bytes)
     {
         header_type ht(bytes);
-        return ht.debug_string();
+        return ht.debug_string().c_str();
     }
 
     //-------------------- msg reader --------------------

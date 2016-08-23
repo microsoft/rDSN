@@ -36,6 +36,7 @@
 # pragma once
 
 # include <dsn/service_api_c.h>
+# include <memory>
 
 namespace dsn {
 
@@ -70,7 +71,7 @@ namespace dsn {
     typedef callocator_object<dsn_transient_malloc, dsn_transient_free> transient_object;
 
     template <typename T, t_allocate a, t_deallocate d>
-    class callocator
+    class callocator : public std::allocator<T>
     {
     public:
         typedef T value_type;
@@ -83,19 +84,20 @@ namespace dsn {
             typedef callocator<_Tp1, a, d> other;
         };
 
-        static T* allocate(size_type n)
+        T* allocate(size_type n, const void *hint = 0)
         {
             return static_cast<T*>(a(uint32_t(n * sizeof(T))));
         }
 
-        static void deallocate(T* p, size_type n)
+        void deallocate(T* p, size_type n)
         {
             d(p);
         }
 
-        callocator() throw()  {}
+        callocator() throw() : std::allocator<T>() {}
         template<typename U>
-        callocator(const callocator<U, a, d> &ac) throw(){ }
+        callocator(const callocator<U, a, d> &ac) throw() 
+            : std::allocator<T>(ac) { }
         ~callocator() throw() { }
     };
 

@@ -180,7 +180,9 @@ bool task_spec::init()
             "invalid length of rpc_request_delays_milliseconds, must be of length 6");
         if (spec->rpc_request_delays_milliseconds.size() > 0)
         {
-            spec->rpc_request_delayer.initialize(spec->rpc_request_delays_milliseconds);
+            std::vector<int> mss{ spec->rpc_request_delays_milliseconds.begin(),
+                spec->rpc_request_delays_milliseconds.end() };
+            spec->rpc_request_delayer.initialize(mss);
         }
 
         if (spec->rpc_request_throttling_mode != TM_NONE)
@@ -198,9 +200,9 @@ bool task_spec::init()
     ::dsn::register_command("task-code", 
         "task-code - query task code containing any given keywords",        
         "task-code keyword1 keyword2 ...",
-        [](const std::vector<std::string>& args)
+        [](const safe_vector<safe_string>& args)
         {
-            std::stringstream ss;
+            safe_sstream ss;
 
             for (int code = 0; code <= dsn_task_code_max(); code++)
             {
@@ -232,7 +234,7 @@ bool task_spec::init()
 }
 
 
-bool threadpool_spec::init(/*out*/ std::vector<threadpool_spec>& specs)
+bool threadpool_spec::init(/*out*/ safe_vector<threadpool_spec>& specs)
 {
     /*
     [threadpool..default]
@@ -272,7 +274,7 @@ bool threadpool_spec::init(/*out*/ std::vector<threadpool_spec>& specs)
         spec.pool_code = code;
 
         if ("" == spec.name) 
-            spec.name = std::string(dsn_threadpool_code_to_string(code));
+            spec.name = dsn_threadpool_code_to_string(code);
 
         if (false == spec.worker_share_core && 0 == spec.worker_affinity_mask)
         {

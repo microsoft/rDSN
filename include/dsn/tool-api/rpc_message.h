@@ -43,6 +43,7 @@
 # include <dsn/cpp/auto_codes.h>
 # include <dsn/cpp/address.h>
 # include <dsn/cpp/blob.h>
+# include <dsn/cpp/safe_string.h>
 # include <dsn/utility/link.h>
 # include <dsn/tool-api/global_config.h>
 
@@ -105,7 +106,7 @@ namespace dsn
     {
     public:
         message_header         *header;
-        std::vector<blob>      buffers; // header included for *send* message, 
+        safe_vector<blob>      buffers; // header included for *send* message, 
                                         // header not included for *recieved*
 
         // by rpc and network

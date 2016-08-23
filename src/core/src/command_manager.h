@@ -48,9 +48,9 @@ namespace dsn {
     public:
         command_manager();
 
-        dsn_handle_t register_command(const std::vector<const char*>& commands, const char* help_one_line, const char* help_long, command_handler handler);
+        dsn_handle_t register_command(const safe_vector<const char*>& commands, const char* help_one_line, const char* help_long, command_handler handler);
         void deregister_command(dsn_handle_t handle);
-        bool run_command(const std::string& cmdline, /*out*/ std::string& output);
+        bool run_command(const safe_string& cmdline, /*out*/ safe_string& output);
         void run_console();
         void start_local_cli();
         void start_remote_cli();
@@ -58,20 +58,20 @@ namespace dsn {
         void set_cli_target_address(dsn_handle_t handle, dsn::rpc_address address);
 
     private:
-        bool run_command(const std::string& cmd, const std::vector<std::string>& args, /*out*/ std::string& output);
+        bool run_command(const safe_string& cmd, const safe_vector<safe_string>& args, /*out*/ safe_string& output);
 
     private:
         struct command
         {
             dsn::rpc_address address;
-            std::vector<const char*> commands;
+            safe_vector<const char*> commands;
             std::string     help_short;
             std::string     help_long;
             command_handler handler;
         };
 
         ::dsn::utils::rw_lock_nr        _lock;
-        std::map<std::string, command*> _handlers;
+        std::map<safe_string, command*> _handlers;
         std::vector<command*>           _commands;
     };
 

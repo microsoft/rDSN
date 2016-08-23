@@ -268,7 +268,7 @@ void perf_counters::register_factory(perf_counter::factory factory)
 }
 
 
-std::string perf_counters::list_counter(const std::vector<std::string>& args)
+safe_string perf_counters::list_counter(const safe_vector<safe_string>& args)
 {
     return perf_counters::instance().list_counter_internal(args);
 }
@@ -297,7 +297,7 @@ struct sample_resp {
     DEFINE_JSON_SERIALIZATION(val, time, counter_name, counter_index)
 };
 
-std::string perf_counters::list_counter_internal(const std::vector<std::string>& args)
+safe_string perf_counters::list_counter_internal(const safe_vector<safe_string>& args)
 {
     // <app, <section, counter_info[] > > counters
     std::map<std::string, std::map< std::string, std::vector<counter_info> > > counters;
@@ -331,10 +331,10 @@ std::string perf_counters::list_counter_internal(const std::vector<std::string>&
 
     std::stringstream ss;
     dsn::json::json_encode(ss, counters);
-    return ss.str();
+    return ss.str().c_str();
 }
 
-std::string perf_counters::get_counter_value(const std::vector<std::string>& args)
+safe_string perf_counters::get_counter_value(const safe_vector<safe_string>& args)
 {
     std::stringstream ss;
 
@@ -345,7 +345,7 @@ std::string perf_counters::get_counter_value(const std::vector<std::string>& arg
     if (args.size() < 1)
     {
         value_resp{ value, ts, std::string(), 0 }.encode_json_state(ss);
-        return ss.str();
+        return ss.str().c_str();
     }
 
     perf_counters& c = perf_counters::instance();
@@ -358,12 +358,12 @@ std::string perf_counters::get_counter_value(const std::vector<std::string>& arg
             value = counter->get_value();
     }
         
-    value_resp{ value, ts, args[0], counter_index }.encode_json_state(ss);
-    return ss.str();
+    value_resp{ value, ts, args[0].c_str(), counter_index }.encode_json_state(ss);
+    return ss.str().c_str();
 }
 
 
-std::string perf_counters::get_counter_sample(const std::vector<std::string>& args)
+safe_string perf_counters::get_counter_sample(const safe_vector<safe_string>& args)
 {
     std::stringstream ss;
 
@@ -374,7 +374,7 @@ std::string perf_counters::get_counter_sample(const std::vector<std::string>& ar
     if (args.size() < 1)
     {
         sample_resp{ sample, ts, std::string(), 0 }.encode_json_state(ss);
-        return ss.str();
+        return ss.str().c_str();
     }
 
     perf_counters& c = perf_counters::instance();
@@ -385,12 +385,12 @@ std::string perf_counters::get_counter_sample(const std::vector<std::string>& ar
         sample = counter->get_latest_sample();
         counter_index = counter->index();
     }
-    sample_resp{ sample, ts, args[0], counter_index }.encode_json_state(ss);
-    return ss.str();
+    sample_resp{ sample, ts, args[0].c_str(), counter_index }.encode_json_state(ss);
+    return ss.str().c_str();
 }
 
 
-std::string perf_counters::get_counter_value_i(const std::vector<std::string>& args)
+safe_string perf_counters::get_counter_value_i(const safe_vector<safe_string>& args)
 {
     std::stringstream ss;
 
@@ -401,7 +401,7 @@ std::string perf_counters::get_counter_value_i(const std::vector<std::string>& a
     if (args.size() < 1)
     {
         value_resp{ value, ts, std::string(), 0 }.encode_json_state(ss);
-        return ss.str();
+        return ss.str().c_str();
     }
 
     uint64_t idx = atoll(args[0].c_str());
@@ -417,11 +417,11 @@ std::string perf_counters::get_counter_value_i(const std::vector<std::string>& a
     }
     
     value_resp{ value, ts, counter_name, idx }.encode_json_state(ss);
-    return ss.str();
+    return ss.str().c_str();
 }
 
 
-std::string perf_counters::get_counter_sample_i(const std::vector<std::string>& args)
+safe_string perf_counters::get_counter_sample_i(const safe_vector<safe_string>& args)
 {
     std::stringstream ss;
 
@@ -432,7 +432,7 @@ std::string perf_counters::get_counter_sample_i(const std::vector<std::string>& 
     if (args.size() < 1)
     {
         sample_resp{ sample, ts, std::string(), 0 }.encode_json_state(ss);
-        return ss.str();
+        return ss.str().c_str();
     }
 
     uint64_t idx = atoll(args[0].c_str());
@@ -446,10 +446,10 @@ std::string perf_counters::get_counter_sample_i(const std::vector<std::string>& 
         counter_name = std::string(counter->full_name());
     }
     sample_resp{ sample, ts, counter_name, idx }.encode_json_state(ss);
-    return ss.str();
+    return ss.str().c_str();
 }
 
-std::string perf_counters::get_counter_index(const std::vector<std::string>& args)
+safe_string perf_counters::get_counter_index(const safe_vector<safe_string>& args)
 {
     std::stringstream ss;
 
@@ -466,7 +466,7 @@ std::string perf_counters::get_counter_index(const std::vector<std::string>& arg
     }
     
     dsn::json::json_encode(ss, counter_index_list);
-    return ss.str();
+    return ss.str().c_str();
 }
 
 } // end namespace
