@@ -203,9 +203,10 @@ bool task_worker_pool::shared_same_worker_with_current_task(task* tsk) const
     }
 }
 
-void task_worker_pool::get_runtime_info(const std::string& indent, const std::vector<std::string>& args, /*out*/ std::stringstream& ss)
+void task_worker_pool::get_runtime_info(const safe_string& indent, 
+    const safe_vector<safe_string>& args, /*out*/ safe_sstream& ss)
 {
-    std::string indent2 = indent + "\t";
+    auto indent2 = indent + "\t";
     ss << indent << "contains " << _workers.size() << " threads with " << _queues.size() << " queues" << std::endl;
     
     for (auto& q : _queues)
@@ -224,7 +225,7 @@ void task_worker_pool::get_runtime_info(const std::string& indent, const std::ve
         }
     }
 }
-void task_worker_pool::get_queue_info(/*out*/ std::stringstream& ss)
+void task_worker_pool::get_queue_info(/*out*/ safe_sstream& ss)
 {
     ss << "[";
     bool first_flag = 0;
@@ -248,7 +249,7 @@ task_engine::task_engine(service_node* node)
     _node = node;
 }
 
-void task_engine::create(const std::list<dsn_threadpool_code_t>& pools)
+void task_engine::create(const safe_list<dsn_threadpool_code_t>& pools)
 {
     if (_is_running)
         return;
@@ -288,9 +289,10 @@ volatile int* task_engine::get_task_queue_virtual_length_ptr(
     return pl->queues()[idx]->get_virtual_length_ptr();
 }
 
-void task_engine::get_runtime_info(const std::string& indent, const std::vector<std::string>& args, /*out*/ std::stringstream& ss)
+void task_engine::get_runtime_info(const safe_string& indent, 
+    const safe_vector<safe_string>& args, /*out*/ safe_sstream& ss)
 {
-    std::string indent2 = indent + "\t";
+    auto indent2 = indent + "\t";
     for (auto& p : _pools)
     {
         if (p)
@@ -301,7 +303,7 @@ void task_engine::get_runtime_info(const std::string& indent, const std::vector<
     }
 }
 
-void task_engine::get_queue_info(/*out*/ std::stringstream& ss)
+void task_engine::get_queue_info(/*out*/ safe_sstream& ss)
 {
     bool first_flag = 0;
     for (auto& p : _pools)

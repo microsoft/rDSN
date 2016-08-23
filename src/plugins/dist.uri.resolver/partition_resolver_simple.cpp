@@ -271,7 +271,7 @@ namespace dsn
             auto msg = dsn_msg_create_request(RPC_CM_QUERY_PARTITION_CONFIG_BY_INDEX);
 
             configuration_query_by_index_request req;
-            req.app_name = _app_path;
+            req.app_name = _app_path.c_str();
             if (partition_index != -1)
             {
                 req.partition_indices.push_back(partition_index);

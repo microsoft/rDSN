@@ -185,7 +185,7 @@ namespace dsn {
         }
 
         
-        static void replace_value(std::vector<blob>& buffer_list, unsigned int offset)
+        static void replace_value(safe_vector<blob>& buffer_list, unsigned int offset)
         {
             for (blob& bb: buffer_list)
             {

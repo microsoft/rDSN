@@ -44,9 +44,12 @@ namespace dsn {
         {
             user_request* req = new user_request();
             req->file_size_req.source = rci->source;
-            req->file_size_req.dst_dir = rci->dest_dir;
-            req->file_size_req.file_list = rci->files;
-            req->file_size_req.source_dir = rci->source_dir;
+            req->file_size_req.dst_dir = rci->dest_dir.c_str();
+            for (auto& f : rci->files)
+            {
+                req->file_size_req.file_list.emplace_back(f.c_str());
+            }
+            req->file_size_req.source_dir = rci->source_dir.c_str();
             req->file_size_req.overwrite = rci->overwrite;
             req->nfs_task = nfs_task;
             req->is_finished = false;

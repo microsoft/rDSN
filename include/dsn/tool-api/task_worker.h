@@ -72,7 +72,7 @@ public:
     DSN_API virtual void loop(); // run tasks from _input_queue
 
     // inquery
-    const std::string& name() const { return _name; }
+    const safe_string& name() const { return _name; }
     int index() const { return _index; }
     int native_tid() const { return _native_tid; }
     task_worker_pool* pool() const { return _owner_pool; }
@@ -85,7 +85,7 @@ private:
     task_queue*       _input_queue;
     int               _index;
     int               _native_tid;
-    std::string       _name;
+    safe_string       _name;
     std::thread      *_thread;
     bool             _is_running;
     utils::notify_event _started;

@@ -42,10 +42,10 @@ namespace dsn
     class global_checker_store : public ::dsn::utils::singleton< global_checker_store >
     {
     public:
-        std::list<global_checker> checkers;
+        safe_vector<global_checker> checkers;
     };
 
-    void get_registered_checkers(/*out*/ std::list<global_checker>& checkers)
+    void get_registered_checkers(/*out*/ safe_vector<global_checker>& checkers)
     {
         checkers = ::dsn::global_checker_store::instance().checkers;
     }

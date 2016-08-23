@@ -134,6 +134,6 @@ namespace dsn
 
     public:
         DSN_API static network_header_format get_header_type(const char* bytes); // buffer size >= sizeof(uint32_t)
-        DSN_API static std::string get_debug_string(const char* bytes);
+        DSN_API static safe_string get_debug_string(const char* bytes);
     };
 }

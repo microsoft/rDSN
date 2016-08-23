@@ -41,7 +41,7 @@
 void on_lpc_test(void* p)
 {
     std::string& result = *(std::string*)p;
-    result = ::dsn::task::get_current_worker()->name();
+    result = ::dsn::task::get_current_worker()->name().c_str();
 }
 
 void on_lpc_test2(void* p)

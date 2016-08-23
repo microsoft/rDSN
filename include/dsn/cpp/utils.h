@@ -37,6 +37,7 @@
 
 # include <dsn/cpp/auto_codes.h>
 # include <dsn/cpp/callocator.h>
+# include <dsn/cpp/safe_string.h>
 # include <functional>
 
 # ifdef __TITLE__
@@ -110,7 +111,9 @@ namespace dsn {
     namespace utils {
 
         extern void split_args(const char* args, /*out*/ std::vector<std::string>& sargs, char splitter = ' ');
+        extern void split_args(const char* args, /*out*/ safe_vector<safe_string>& sargs, char splitter = ' ');
         extern void split_args(const char* args, /*out*/ std::list<std::string>& sargs, char splitter = ' ');
+        extern void split_args(const char* args, /*out*/ safe_list<safe_string>& sargs, char splitter = ' ');
         extern std::string replace_string(std::string subject, const std::string& search, const std::string& replace);
         extern std::string get_last_component(const std::string& input, const char splitters[]);
 

@@ -323,10 +323,10 @@ bool run(const char* config_file, const char* config_arguments, bool sleep_after
 
     // setup data dir
     auto& data_dir = spec.data_dir;
-    dassert(!dsn::utils::filesystem::file_exists(data_dir), "%s should not be a file.", data_dir.c_str());
+    dassert(!dsn::utils::filesystem::file_exists(data_dir.c_str()), "%s should not be a file.", data_dir.c_str());
     if (!dsn::utils::filesystem::directory_exists(data_dir.c_str()))
     {
-        if (!dsn::utils::filesystem::create_directory(data_dir))
+        if (!dsn::utils::filesystem::create_directory(data_dir.c_str()))
         {
             dassert(false, "Fail to create %s.", data_dir.c_str());
         }
@@ -336,16 +336,16 @@ bool run(const char* config_file, const char* config_arguments, bool sleep_after
     {
         dassert(false, "Fail to get absolute path from %s.", data_dir.c_str());
     }
-    spec.data_dir = cdir;
+    spec.data_dir = cdir.c_str();
 
     // setup coredump dir
-    spec.dir_coredump = ::dsn::utils::filesystem::path_combine(cdir, "coredumps");
-    dsn::utils::filesystem::create_directory(spec.dir_coredump);
+    spec.dir_coredump = ::dsn::utils::filesystem::path_combine(cdir, "coredumps").c_str();
+    dsn::utils::filesystem::create_directory(spec.dir_coredump.c_str());
     ::dsn::utils::coredump::init(spec.dir_coredump.c_str());
 
     // setup log dir
-    spec.dir_log = ::dsn::utils::filesystem::path_combine(cdir, "logs");
-    dsn::utils::filesystem::create_directory(spec.dir_log);
+    spec.dir_log = ::dsn::utils::filesystem::path_combine(cdir, "logs").c_str();
+    dsn::utils::filesystem::create_directory(spec.dir_log.c_str());
     
     // init tools
     dsn_all.tool = ::dsn::utils::factory_store< ::dsn::tools::tool_app>::create(spec.tool.c_str(), ::dsn::PROVIDER_TYPE_MAIN, spec.tool.c_str());
@@ -412,14 +412,14 @@ bool run(const char* config_file, const char* config_arguments, bool sleep_after
         {
             for (auto &kv : applistkvs)
             {
-                std::list<std::string> argskvs;
+                ::dsn::safe_list< ::dsn::safe_string> argskvs;
                 ::dsn::utils::split_args(kv.c_str(), argskvs, '@');
-                if (std::string("apps.") + argskvs.front() == sp.config_section)
+                if (::dsn::safe_string("apps.") + argskvs.front() == sp.config_section)
                 {
                     if (argskvs.size() < 2)
                         create_it = true;
                     else
-                        create_it = (std::stoi(argskvs.back()) == sp.index);
+                        create_it = (std::stoi(argskvs.back().c_str()) == sp.index);
                     break;
                 }
             }
@@ -448,14 +448,14 @@ bool run(const char* config_file, const char* config_arguments, bool sleep_after
     ::dsn::register_command("config-dump",
         "config-dump - dump configuration",
         "config-dump [to-this-config-file]",
-        [](const std::vector<std::string>& args)
+        [](const ::dsn::safe_vector< ::dsn::safe_string>& args)
     {
-        std::ostringstream oss;
+        ::dsn::safe_sstream oss;
         std::ofstream off;
         std::ostream* os = &oss;
         if (args.size() > 0)
         {
-            off.open(args[0]);
+            off.open(args[0].c_str());
             os = &off;
 
             oss << "config dump to file " << args[0] << std::endl;

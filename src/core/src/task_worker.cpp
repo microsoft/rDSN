@@ -73,7 +73,7 @@ task_worker::task_worker(task_worker_pool* pool, task_queue* q, int index, task_
 
     char name[256];
     sprintf(name, "%5s.%s.%u", pool->node()->name(), pool->spec().name.c_str(), index);
-    _name = std::string(name);
+    _name = name;
     _is_running = false;
 
     _thread = nullptr;

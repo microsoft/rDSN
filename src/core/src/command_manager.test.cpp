@@ -44,9 +44,9 @@ void command_manager_module_init()
     register_command("test-cmd",
         "test-cmd - just for command_manager unit-test",
         "test-cmd arg1 arg2 ...",
-        [](const std::vector<std::string>& args)
+        [](const safe_vector<safe_string>& args)
         {
-            std::stringstream ss;
+            safe_sstream ss;
             ss << "test-cmd response: [";
             for (size_t i = 0; i < args.size(); ++i)
             {

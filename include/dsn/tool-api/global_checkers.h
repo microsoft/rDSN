@@ -38,15 +38,16 @@
 # include <list>
 # include <dsn/utility/dlib.h>
 # include <dsn/service_api_c.h>
+# include <dsn/cpp/safe_string.h>
 
 namespace dsn {
     
     struct global_checker
     {
-        std::string        name;
+        safe_string        name;
         dsn_checker_create create;
         dsn_checker_apply  apply;
     };
 
-    DSN_API void get_registered_checkers(/*out*/ std::list<global_checker>& checkers);
+    DSN_API void get_registered_checkers(/*out*/ safe_vector<global_checker>& checkers);
 }

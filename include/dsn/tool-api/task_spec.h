@@ -38,6 +38,7 @@
 # include <dsn/service_api_c.h>
 # include <dsn/cpp/utils.h>
 # include <dsn/cpp/config_helper.h>
+# include <dsn/cpp/safe_string.h>
 # include <dsn/utility/enum_helper.h>
 # include <dsn/utility/customizable_id.h>
 # include <dsn/utility/singleton_vector_store.h>
@@ -198,7 +199,7 @@ public:
     // not configurable [
     dsn_task_code_t        code;
     dsn_task_type_t        type;
-    std::string            name;    
+    safe_string            name;    
     dsn_task_code_t        rpc_paired_code;
     shared_exp_delay       rpc_request_delayer;
     // ]
@@ -221,7 +222,7 @@ public:
     int32_t                rpc_timeout_milliseconds;
     int32_t                rpc_request_resend_timeout_milliseconds; // 0 for no auto-resend
     throttling_mode_t      rpc_request_throttling_mode; // 
-    std::vector<int>       rpc_request_delays_milliseconds; // see exp_delay for delaying recving
+    safe_vector<int>       rpc_request_delays_milliseconds; // see exp_delay for delaying recving
     bool                   rpc_request_dropped_before_execution_when_timeout;
 
     // layer 2 configurations
@@ -301,7 +302,7 @@ CONFIG_END
 
 struct threadpool_spec
 {
-    std::string             name;
+    safe_string             name;
     dsn_threadpool_code_t   pool_code;
     int                     worker_count;
     worker_priority_t       worker_priority;
@@ -309,20 +310,20 @@ struct threadpool_spec
     uint64_t                worker_affinity_mask;
     int                     dequeue_batch_size;
     bool                    partitioned;         // false by default
-    std::string             queue_factory_name;
-    std::string             worker_factory_name;
-    std::list<std::string>  queue_aspects;
-    std::list<std::string>  worker_aspects;
+    safe_string             queue_factory_name;
+    safe_string             worker_factory_name;
+    safe_list<safe_string>  queue_aspects;
+    safe_list<safe_string>  worker_aspects;
     int                     queue_length_throttling_threshold;
     bool                    enable_virtual_queue_throttling;
-    std::string             admission_controller_factory_name;
-    std::string             admission_controller_arguments;
+    safe_string             admission_controller_factory_name;
+    safe_string             admission_controller_arguments;
 
     threadpool_spec(const dsn_threadpool_code_t& code) : name(dsn_threadpool_code_to_string(code)), pool_code(code) {}
     threadpool_spec(const threadpool_spec& source) = default;
     threadpool_spec& operator=(const threadpool_spec& source) = default;
 
-    DSN_API static bool init(/*out*/ std::vector<threadpool_spec>& specs);
+    DSN_API static bool init(/*out*/ safe_vector<threadpool_spec>& specs);
 };
 
 CONFIG_BEGIN(threadpool_spec)

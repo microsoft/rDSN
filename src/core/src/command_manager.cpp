@@ -52,8 +52,8 @@
 
 DSN_API const char* dsn_cli_run(const char* command_line) // return command output
 {
-    std::string cmd = command_line;
-    std::string output;
+    ::dsn::safe_string cmd = command_line;
+    ::dsn::safe_string output;
     dsn::command_manager::instance().run_command(cmd, output);
 
     char* c_output = (char*)malloc(output.length() + 1);
@@ -80,7 +80,7 @@ DSN_API dsn_handle_t dsn_cli_register(
         command,
         help_one_line,
         help_long,
-        [=](const std::vector<std::string>& args)
+        [=](const ::dsn::safe_vector< ::dsn::safe_string>& args)
         {
             std::vector<const char*> c_args;
             for (auto& s : args)
@@ -89,7 +89,7 @@ DSN_API dsn_handle_t dsn_cli_register(
             }
             dsn_cli_reply reply;
             cmd_handler(context, (int)c_args.size(), c_args.empty() ? nullptr : (const char**)&c_args[0], &reply);
-            std::string cpp_output = std::string(reply.message, reply.message + reply.size);
+            auto cpp_output = dsn::safe_string(reply.message, reply.message + reply.size);
             output_freer(reply);
             return cpp_output;
         }
@@ -132,7 +132,7 @@ namespace dsn {
     }
 
     dsn_handle_t register_command(
-        const std::vector<const char*>& commands, // commands, e.g., {"help", "Help", "HELP", "h", "H"}
+        const safe_vector<const char*>& commands, // commands, e.g., {"help", "Help", "HELP", "h", "H"}
         const char* help_one_line,
         const char* help_long, // help info for users
         command_handler handler
@@ -148,20 +148,17 @@ namespace dsn {
         command_handler handler
         )
     {
-        std::vector<const char*> cmds;
+        safe_vector<const char*> cmds;
         cmds.push_back(command);
         return register_command(cmds, help_one_line, help_long, handler);
     }
 
     bool run_command(const char* cmd, /* out */ ::dsn::safe_string& output)
     {
-        std::string output2;
-        bool r = command_manager::instance().run_command(cmd, output2);
-        output = ::dsn::safe_string(output2);
-        return r;
+        return command_manager::instance().run_command(cmd, output);
     }
 
-    dsn_handle_t command_manager::register_command(const std::vector<const char*>& commands, const char* help_one_line, const char* help_long, command_handler handler)
+    dsn_handle_t command_manager::register_command(const safe_vector<const char*>& commands, const char* help_one_line, const char* help_long, command_handler handler)
     {
         utils::auto_write_lock l(_lock);
 
@@ -169,7 +166,7 @@ namespace dsn {
         {
             if (cmd != nullptr)
             {
-                auto it = _handlers.find(std::string(cmd));
+                auto it = _handlers.find(cmd);
                 dassert(it == _handlers.end(), "command '%s' already regisered", cmd);
             }
         }
@@ -186,7 +183,7 @@ namespace dsn {
         {
             if (cmd != nullptr)
             {
-                _handlers[std::string(cmd)] = c;
+                _handlers[cmd] = c;
             }
         }
         return c;
@@ -212,7 +209,7 @@ namespace dsn {
 
     }
 
-    bool command_manager::run_command(const std::string& cmdline, /*out*/ std::string& output)
+    bool command_manager::run_command(const safe_string& cmdline, /*out*/ safe_string& output)
     {
         auto cnode = ::dsn::task::get_current_node2();
         if (cnode == nullptr)
@@ -221,15 +218,16 @@ namespace dsn {
             dassert(!all_nodes.empty(), "no node to mimic!");
             dsn_mimic_app(all_nodes.begin()->second->spec().role_name.c_str(), 1);
         }
-        std::string scmd = cmdline;
-        std::vector<std::string> args;
+
+        auto scmd = cmdline;
+        safe_vector<safe_string> args;
         
         utils::split_args(scmd.c_str(), args, ' ');
 
         if (args.size() < 1)
             return false;
 
-        std::vector<std::string> args2;
+        safe_vector<safe_string> args2;
         for (size_t i = 1; i < args.size(); i++)
         {
             args2.push_back(args[i]);
@@ -238,7 +236,7 @@ namespace dsn {
         return run_command(args[0], args2, output);
     }
 
-    bool command_manager::run_command(const std::string& cmd, const std::vector<std::string>& args, /*out*/ std::string& output)
+    bool command_manager::run_command(const safe_string& cmd, const safe_vector<safe_string>& args, /*out*/ safe_string& output)
     {
         command* h = nullptr;
         {
@@ -250,7 +248,7 @@ namespace dsn {
 
         if (h == nullptr)
         {
-            output = std::string("unknown command '") + cmd + "'";
+            output = safe_string("unknown command '") + cmd + "'";
             return false;
         }
         else
@@ -266,13 +264,18 @@ namespace dsn {
                 
                 dsn_message_t msg = dsn_msg_create_request(RPC_CLI_CLI_CALL);
                 ::dsn::command rcmd;
-                rcmd.cmd = cmd;
-                rcmd.arguments = args;
+                rcmd.cmd = cmd.c_str();
+                for (auto& e : args)
+                {
+                    rcmd.arguments.emplace_back(e.c_str());
+                }
+
                 ::dsn::marshall(msg, rcmd);
                 auto resp = dsn_rpc_call_wait(h->address.c_addr(), msg);
                 if (resp != nullptr)
                 {
-                    ::dsn::unmarshall(resp, output);
+                    std::string o2 = output.c_str();
+                    ::dsn::unmarshall(resp, o2);
                     return true;
                 }
                 else
@@ -292,8 +295,8 @@ namespace dsn {
         std::string cmdline;
         while (std::getline(std::cin, cmdline))
         {
-            std::string result;
-            run_command(cmdline, result);
+            safe_string result;
+            run_command(cmdline.c_str(), result);
             std::cout << result << std::endl;
             std::cout << ">";
         }
@@ -317,13 +320,22 @@ namespace dsn {
     void command_manager::on_remote_cli(dsn_message_t req)
     {
         ::dsn::command cmd;
-        std::string result;
+        safe_string result;
 
         ::dsn::unmarshall(req, cmd);
-        run_command(cmd.cmd, cmd.arguments, result);
+
+        safe_vector<safe_string> args;
+        for (auto& e : cmd.arguments)
+        {
+            args.emplace_back(e.c_str());
+        }
+
+        run_command(cmd.cmd.c_str(), args, result);
 
         auto resp = dsn_msg_create_response(req);
-        ::dsn::marshall(resp, result);
+
+        std::string r2 = result.c_str();
+        ::dsn::marshall(resp, r2);
         dsn_rpc_reply(resp);
     }
 
@@ -338,9 +350,9 @@ namespace dsn {
             {"help", "h", "H", "Help"}, 
             "help|Help|h|H [command] - display help information", 
             "",
-            [this](const std::vector<std::string>& args)
+            [this](const safe_vector<safe_string>& args)
             {
-                std::stringstream ss;
+                safe_sstream ss;
 
                 if (args.size() == 0)
                 {
@@ -371,9 +383,9 @@ namespace dsn {
             { "repeat", "r", "R", "Repeat" },
             "repeat|Repeat|r|R interval_seconds max_count command - execute command periodically",
             "repeat|Repeat|r|R interval_seconds max_count command - execute command every interval seconds, to the max count as max_count (0 for infinite)",
-            [this](const std::vector<std::string>& args)
+            [this](const safe_vector<safe_string>& args)
         {
-            std::stringstream ss;
+            safe_sstream ss;
 
             if (args.size() < 3)
             {
@@ -397,8 +409,8 @@ namespace dsn {
                 max_count = std::numeric_limits<int>::max();
             }
 
-            std::string cmd = args[2];
-            std::vector<std::string> largs;
+            safe_string cmd = args[2];
+            safe_vector<safe_string> largs;
             for (int i = 3; i < (int)args.size(); i++)
             {
                 largs.push_back(args[i]);
@@ -406,7 +418,7 @@ namespace dsn {
 
             for (int i = 0; i < max_count; i++)
             {
-                std::string output;
+                safe_string output;
                 auto r = this->run_command(cmd, largs, output);
 
                 if (!r)
