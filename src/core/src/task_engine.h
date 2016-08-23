@@ -73,8 +73,8 @@ public:
     bool shared_same_worker_with_current_task(task* task) const;
     task_engine* engine() const { return _owner; }
     service_node* node() const { return _node; }
-    void get_runtime_info(const std::string& indent, const std::vector<std::string>& args, /*out*/ std::stringstream& ss);
-    void get_queue_info(/*out*/ std::stringstream& ss);
+    void get_runtime_info(const safe_string& indent, const safe_vector<safe_string>& args, /*out*/ safe_sstream& ss);
+    void get_queue_info(/*out*/ safe_sstream& ss);
     std::vector<task_queue*>& queues() { return _queues; }
     std::vector<task_worker*>& workers() { return _workers; }
     std::vector<admission_controller*>& controllers() { return _controllers; }
@@ -103,7 +103,7 @@ public:
     //
     // service management routines
     //
-    void create(const std::list<dsn_threadpool_code_t>& pools);
+    void create(const safe_list<dsn_threadpool_code_t>& pools);
     void start();
 
     //
@@ -120,8 +120,8 @@ public:
         );
 
     service_node* node() const { return _node; }
-    void get_runtime_info(const std::string& indent, const std::vector<std::string>& args, /*out*/ std::stringstream& ss);
-    void get_queue_info(/*out*/ std::stringstream& ss);
+    void get_runtime_info(const safe_string& indent, const safe_vector<safe_string>& args, /*out*/ safe_sstream& ss);
+    void get_queue_info(/*out*/ safe_sstream& ss);
 private:
     std::vector<task_worker_pool*> _pools;
     volatile bool                  _is_running;

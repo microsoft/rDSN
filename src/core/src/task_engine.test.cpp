@@ -88,8 +88,8 @@ TEST(core, task_engine)
     ASSERT_NE(nullptr, engine);
 
     ASSERT_TRUE(engine->is_started());
-    std::vector<std::string> args;
-    std::stringstream oss;
+    safe_vector<safe_string> args;
+    safe_sstream oss;
     engine->get_runtime_info("  ", args, oss);
     printf("%s\n", oss.str().c_str());
 

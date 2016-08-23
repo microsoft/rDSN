@@ -247,7 +247,7 @@ private:
 struct rpc_handler_info
 {
     dsn_task_code_t           code;
-    std::string               name;
+    safe_string               name;
     bool                      unregistered;
     std::atomic<int>          running_count;
     dsn_rpc_request_handler_t c_handler;

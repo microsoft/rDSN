@@ -132,7 +132,7 @@ static bool build_server_network_confs(
     const char* section,
     /*out*/ network_server_configs& nss,
     network_server_configs* default_spec,
-    const std::vector<int>& ports,
+    const safe_vector<int>& ports,
     bool is_template)
 {
     nss.clear();
@@ -286,9 +286,9 @@ bool service_app_spec::init(
 {
     id = 0;
     index = 0;
-    role_name = std::string(role_name_);
+    role_name = role_name_;
     name = role_name;
-    config_section = std::string(section);
+    config_section = section;
 
     if (!read_config(section, *this, default_value))
         return false;
@@ -461,7 +461,7 @@ bool service_spec::init_app_specs()
 
             auto& store = ::dsn::utils::singleton_store<std::string, dsn_app*>::instance();
             dsn_app* role;
-            if (!store.get(app.type, role))
+            if (!store.get(app.type.c_str(), role))
             {
                 printf("service type '%s' not registered\n", app.type.c_str());
                 return false;
@@ -478,7 +478,7 @@ bool service_spec::init_app_specs()
                 app.name = (app.count > 1 ? (app.role_name + buf) : app.role_name);
                 app.id = ++app_id;
                 app.index = i;
-                app.data_dir = utils::filesystem::path_combine(data_dir, app.name);
+                app.data_dir = utils::filesystem::path_combine(data_dir.c_str(), app.name.c_str()).c_str();
 
                 // add app
                 app_specs.push_back(app);

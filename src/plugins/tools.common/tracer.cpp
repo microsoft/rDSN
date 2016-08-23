@@ -240,12 +240,12 @@ namespace dsn {
         };
 
 
-        static std::string tracer_log_flow_error(const char* msg)
+        static safe_string tracer_log_flow_error(const char* msg)
         {
-            return std::string("invalid arguments for tracer.find: ") + msg;
+            return safe_string("invalid arguments for tracer.find: ") + msg;
         }
 
-        static std::string tracer_log_flow(const std::vector<std::string>& args)
+        static safe_string tracer_log_flow(const safe_vector<safe_string>& args)
         {
             // forward|f|backward|b rpc|r|task|t trace_id|task_id(e.g., 002a003920302390) log_file_name(log.xx.txt)
             if (args.size() < 4)
@@ -285,13 +285,13 @@ namespace dsn {
             }
 
             std::string log_dir = utils::filesystem::path_combine(
-                tools::spec().data_dir,
+                tools::spec().data_dir.c_str(),
                 "logs"
                 );
 
             std::string fpath = utils::filesystem::path_combine(
                 log_dir,
-                args[3]
+                args[3].c_str()
                 );
 
             if (!utils::filesystem::file_exists(fpath))

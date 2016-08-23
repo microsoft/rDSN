@@ -36,8 +36,7 @@
 # pragma once
 
 # include <dsn/service_api_c.h>
-# include <string>
-# include <vector>
+# include <dsn/cpp/safe_string.h>
 
 namespace dsn 
 {
@@ -58,13 +57,13 @@ namespace dsn
 
             virtual void check() = 0;
 
-            const std::string& name() const { return _name; }
+            const safe_string& name() const { return _name; }
 
         protected:
-            std::vector<dsn_app_info> _apps;
+            safe_vector<dsn_app_info> _apps;
 
         private:
-            std::string _name;
+            safe_string _name;
 
         public:
             template<typename T> // T : public checker

@@ -134,6 +134,41 @@ namespace dsn {
                 }
             }
         }
+
+        void split_args(const char* args, /*out*/ safe_vector<safe_string>& sargs, char splitter)
+        {
+            sargs.clear();
+
+            safe_string v(args);
+
+            int lastPos = 0;
+            while (true)
+            {
+                auto pos = v.find(splitter, lastPos);
+                if (pos != safe_string::npos)
+                {
+                    safe_string s = v.substr(lastPos, pos - lastPos);
+                    if (s.length() > 0)
+                    {
+                        safe_string s2 = trim_string((char*)s.c_str());
+                        if (s2.length() > 0)
+                            sargs.push_back(s2);
+                    }
+                    lastPos = static_cast<int>(pos + 1);
+                }
+                else
+                {
+                    safe_string s = v.substr(lastPos);
+                    if (s.length() > 0)
+                    {
+                        safe_string s2 = trim_string((char*)s.c_str());
+                        if (s2.length() > 0)
+                            sargs.push_back(s2);
+                    }
+                    break;
+                }
+            }
+        }
         
         void split_args(const char* args, /*out*/ std::list<std::string>& sargs, char splitter)
         {
@@ -170,6 +205,41 @@ namespace dsn {
             }
         }
 
+        void split_args(const char* args, /*out*/ safe_list<safe_string>& sargs, char splitter)
+        {
+            sargs.clear();
+
+            safe_string v(args);
+
+            int lastPos = 0;
+            while (true)
+            {
+                auto pos = v.find(splitter, lastPos);
+                if (pos != safe_string::npos)
+                {
+                    safe_string s = v.substr(lastPos, pos - lastPos);
+                    if (s.length() > 0)
+                    {
+                        safe_string s2 = trim_string((char*)s.c_str());
+                        if (s2.length() > 0)
+                            sargs.push_back(s2);
+                    }
+                    lastPos = static_cast<int>(pos + 1);
+                }
+                else
+                {
+                    safe_string s = v.substr(lastPos);
+                    if (s.length() > 0)
+                    {
+                        safe_string s2 = trim_string((char*)s.c_str());
+                        if (s2.length() > 0)
+                            sargs.push_back(s2);
+                    }
+                    break;
+                }
+            }
+        }
+        
         std::string replace_string(std::string subject, const std::string& search, const std::string& replace) 
         {
             size_t pos = 0;

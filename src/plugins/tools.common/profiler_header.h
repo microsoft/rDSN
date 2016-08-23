@@ -96,7 +96,7 @@ namespace dsn {
         public:
             profiler_output_data_type(int name_width, int data_width, int call_width)
             {
-                std::stringstream namess, datass, tmpss;
+                ::std::stringstream namess, datass, tmpss;
                 int tmp;
 
                 for (int i = 0; i < name_width; i++)
@@ -226,17 +226,17 @@ namespace dsn {
             }
         };
 
-        std::string profiler_output_handler(const std::vector<std::string>& args);
-        std::string profiler_js_handler(const std::vector<std::string>& args);
-        std::string profiler_data_handler(const std::vector<std::string>& args);
-        std::string query_data_handler(const std::vector<std::string>& args);
+        safe_string profiler_output_handler(const safe_vector<safe_string>& args);
+        safe_string profiler_js_handler(const safe_vector<safe_string>& args);
+        safe_string profiler_data_handler(const safe_vector<safe_string>& args);
+        safe_string query_data_handler(const safe_vector<safe_string>& args);
 
-        void profiler_output_dependency_list_callee(std::stringstream &ss, const int task_id);
-        void profiler_output_dependency_list_caller(std::stringstream &ss, const int task_id);
-        void profiler_output_dependency_matrix(std::stringstream &ss);
-        void profiler_output_information_table(std::stringstream &ss, const int task_id);
-        void profiler_output_infomation_line(std::stringstream &ss, const int task_id, dsn_perf_counter_percentile_type_t percentile_type, const bool full_data);
-        void profiler_output_top(std::stringstream &ss, const perf_counter_ptr_type counter_type, const dsn_perf_counter_percentile_type_t percentile_type, const int num);
-        void profiler_data_top(std::stringstream &ss, const perf_counter_ptr_type counter_type, const dsn_perf_counter_percentile_type_t percentile_type, const int num);
+        void profiler_output_dependency_list_callee(::std::stringstream &ss, const int task_id);
+        void profiler_output_dependency_list_caller(::std::stringstream &ss, const int task_id);
+        void profiler_output_dependency_matrix(::std::stringstream &ss);
+        void profiler_output_information_table(::std::stringstream &ss, const int task_id);
+        void profiler_output_infomation_line(::std::stringstream &ss, const int task_id, dsn_perf_counter_percentile_type_t percentile_type, const bool full_data);
+        void profiler_output_top(::std::stringstream &ss, const perf_counter_ptr_type counter_type, const dsn_perf_counter_percentile_type_t percentile_type, const int num);
+        void profiler_data_top(::std::stringstream &ss, const perf_counter_ptr_type counter_type, const dsn_perf_counter_percentile_type_t percentile_type, const int num);
     }
 }

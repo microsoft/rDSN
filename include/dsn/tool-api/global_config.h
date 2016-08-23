@@ -49,7 +49,7 @@ namespace dsn {
 //
 struct network_client_config
 {
-    std::string factory_name;
+    safe_string factory_name;
     int         message_buffer_block_size;
 
     DSN_API network_client_config();
@@ -64,7 +64,7 @@ struct network_server_config
     rpc_channel channel;
     // ]
 
-    std::string           factory_name;
+    safe_string           factory_name;
     int                   message_buffer_block_size;
 
     DSN_API network_server_config();
@@ -86,22 +86,22 @@ struct service_app_spec
 {
     int                  id;    // global id for all roles, assigned by rDSN automatically, also named as "app_id"
     int                  index; // local index for the current role (1,2,3,...), also named as "role_index"
-    std::string          data_dir; // data dir for the app. it is auto-set as ${service_spec.data_dir}/${service_app_spec.name}.
-    std::string          config_section; // [apps.${role_name}]
-    std::string          role_name;  // role name of [apps.${role_name}], also named as "app_name"
-    std::string          name;  // combined by role_name and role_index, also named as "app_full_name"
+    safe_string          data_dir; // data dir for the app. it is auto-set as ${service_spec.data_dir}/${service_app_spec.name}.
+    safe_string          config_section; // [apps.${role_name}]
+    safe_string          role_name;  // role name of [apps.${role_name}], also named as "app_name"
+    safe_string          name;  // combined by role_name and role_index, also named as "app_full_name"
                                 // e.g., if role_name = meta and role_index = 1, then app_full_name = meta1
                                 // specially, if role count is 1, then app_full_name equals to role_name
                                 // it is usually used for printing log
-    std::string          type;  // registered type name, alse named as "app_type"
-    std::string          arguments;
-    std::vector<int>     ports;
-    std::list<dsn_threadpool_code_t> pools;
+    safe_string          type;  // registered type name, alse named as "app_type"
+    safe_string          arguments;
+    safe_vector<int>     ports;
+    safe_list<dsn_threadpool_code_t> pools;
     int                  delay_seconds;
     bool                 run;
     int                  count; // index = 1,2,...,count
     int                  ports_gap; // when count > 1 or service_spec.io_mode != IOE_PER_NODE
-    std::string          dmodule; // when the service is a dynamcially loaded module
+    safe_string          dmodule; // when the service is a dynamcially loaded module
 
     //
     // when the service cannot automatically register its app types into rdsn 
@@ -110,7 +110,7 @@ struct service_app_spec
     // which loads the real target (e.g., a python/Java/php module), that registers their
     // app types and factories.
     //
-    std::string          dmodule_bridge_arguments; 
+    safe_string          dmodule_bridge_arguments; 
     dsn_app              *role;
 
     network_client_configs network_client_confs;
@@ -146,9 +146,9 @@ CONFIG_END
 
 struct service_spec
 {
-    std::string                  tool;   // the main tool (only 1 is allowed for a time)
-    std::list<std::string>       toollets; // toollets enabled compatible to the main tool
-    std::string                  data_dir; // to store all data/log/coredump etc.
+    safe_string                  tool;   // the main tool (only 1 is allowed for a time)
+    safe_list<safe_string>       toollets; // toollets enabled compatible to the main tool
+    safe_string                  data_dir; // to store all data/log/coredump etc.
     bool                         start_nfs;
 
     //
@@ -164,27 +164,27 @@ struct service_spec
     //
     bool                         enable_default_app_mimic;
     
-    std::string                  timer_factory_name;
-    std::string                  aio_factory_name;
-    std::string                  env_factory_name;
-    std::string                  lock_factory_name;
-    std::string                  lock_nr_factory_name;
-    std::string                  rwlock_nr_factory_name;
-    std::string                  semaphore_factory_name;
-    std::string                  nfs_factory_name;
-    std::string                  perf_counter_factory_name;
-    std::string                  logging_factory_name;
-    std::string                  memory_factory_name; // for upper applications
-    std::string                  tools_memory_factory_name; // for rDSN itself and lower tools
+    safe_string                  timer_factory_name;
+    safe_string                  aio_factory_name;
+    safe_string                  env_factory_name;
+    safe_string                  lock_factory_name;
+    safe_string                  lock_nr_factory_name;
+    safe_string                  rwlock_nr_factory_name;
+    safe_string                  semaphore_factory_name;
+    safe_string                  nfs_factory_name;
+    safe_string                  perf_counter_factory_name;
+    safe_string                  logging_factory_name;
+    safe_string                  memory_factory_name; // for upper applications
+    safe_string                  tools_memory_factory_name; // for rDSN itself and lower tools
 
-    std::list<std::string>       network_aspects; // toollets compatible to the above network main providers in network configs
-    std::list<std::string>       aio_aspects; // toollets compatible to main aio provider
-    std::list<std::string>       env_aspects;
-    std::list<std::string>       timer_aspects;
-    std::list<std::string>       lock_aspects;
-    std::list<std::string>       lock_nr_aspects;
-    std::list<std::string>       rwlock_nr_aspects;
-    std::list<std::string>       semaphore_aspects;
+    safe_list<safe_string>       network_aspects; // toollets compatible to the above network main providers in network configs
+    safe_list<safe_string>       aio_aspects; // toollets compatible to main aio provider
+    safe_list<safe_string>       env_aspects;
+    safe_list<safe_string>       timer_aspects;
+    safe_list<safe_string>       lock_aspects;
+    safe_list<safe_string>       lock_nr_aspects;
+    safe_list<safe_string>       rwlock_nr_aspects;
+    safe_list<safe_string>       semaphore_aspects;
 
     ioe_mode                     disk_io_mode; // whether disk is per node or per queue
     ioe_mode                     rpc_io_mode; // whether rpc is per node or per queue
@@ -194,12 +194,12 @@ struct service_spec
         
     network_client_configs        network_default_client_cfs; // default network configed by tools
     network_server_configs        network_default_server_cfs; // default network configed by tools
-    std::vector<threadpool_spec>  threadpool_specs;
-    std::vector<service_app_spec> app_specs;
+    safe_vector<threadpool_spec>  threadpool_specs;
+    safe_vector<service_app_spec> app_specs;
 
     // auto-set
-    std::string                   dir_coredump;
-    std::string                   dir_log;
+    safe_string                   dir_coredump;
+    safe_string                   dir_log;
 
     service_spec() {}
     bool init();

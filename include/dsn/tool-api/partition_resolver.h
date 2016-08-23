@@ -109,12 +109,12 @@ namespace dsn
 
             virtual int get_partition_index(int partition_count, uint64_t partition_hash) = 0;
 
-            std::string get_app_path() const { return _app_path; }
+            safe_string get_app_path() const { return _app_path; }
 
             ::dsn::rpc_address get_meta_server() const { return _meta_server; }
 
         protected:
-            std::string _app_path;
+            safe_string _app_path;
             rpc_address _meta_server;
         };
 

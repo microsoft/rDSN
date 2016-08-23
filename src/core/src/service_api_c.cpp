@@ -550,7 +550,7 @@ DSN_API bool dsn_rpc_register_handler(
     )
 {
     ::dsn::rpc_handler_info* h(new ::dsn::rpc_handler_info(code));
-    h->name = std::string(name);
+    h->name = name;
     h->c_handler = cb;
     h->parameter = param;
 
@@ -791,7 +791,7 @@ DSN_API void dsn_file_copy_remote_files(dsn_address_t remote, const char* source
     const char** p = source_files;
     while (*p != nullptr && **p != '\0')
     {
-        rci->files.push_back(std::string(*p));
+        rci->files.push_back(*p);
         p++;
 
         dinfo("copy remote file %s from %s", 
@@ -928,8 +928,8 @@ DSN_API bool dsn_mimic_app(const char* app_name, int index)
     auto cnode = ::dsn::task::get_current_node2();
     if (cnode != nullptr)
     {
-        const std::string& name = cnode->spec().name;
-        if (cnode->spec().role_name == std::string(app_name)
+        const auto& name = cnode->spec().name;
+        if (cnode->spec().role_name == ::dsn::safe_string(app_name)
             && cnode->spec().index == index)
         {
             return true;
@@ -944,7 +944,7 @@ DSN_API bool dsn_mimic_app(const char* app_name, int index)
     auto nodes = ::dsn::service_engine::instance().get_all_nodes();
     for (auto& n : nodes)
     {
-        if (n.second->spec().role_name == std::string(app_name)
+        if (n.second->spec().role_name == ::dsn::safe_string(app_name)
             && n.second->spec().index == index)
         {
             ::dsn::task::set_tls_dsn_context(n.second, nullptr, nullptr);

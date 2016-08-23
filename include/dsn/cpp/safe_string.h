@@ -35,13 +35,43 @@
 
 #pragma once
 
+# include <dsn/service_api_c.h>
+# include <dsn/cpp/callocator.h>
+# include <vector>
+# include <list>
 # include <cstring>
 # include <string>
-# include <dsn/service_api_c.h>
+# include <sstream>
+# include <map>
 
 namespace dsn
 {
-    class safe_string
+    template<typename T>
+    using safe_allocator = callocator<T, dsn_malloc, dsn_free>;
+
+    template <class T, class U>
+    bool operator==(const safe_allocator<T>&, const safe_allocator<U>&)
+    {
+        return true;
+    }
+    template <class T, class U>
+    bool operator!=(const safe_allocator<T>&, const safe_allocator<U>&)
+    {
+        return false;
+    }
+
+    template<typename T>
+    using safe_vector = ::std::vector<T, safe_allocator<T> >;
+
+    template<typename T>
+    using safe_list = ::std::list<T, safe_allocator<T> >;
+
+    using safe_string = ::std::basic_string<char, ::std::char_traits<char>, safe_allocator<char> >;
+
+    using safe_sstream = ::std::basic_stringstream<char, ::std::char_traits<char>,
+        safe_allocator<char> >;
+
+    /*class safe_string
     {
     public:
         safe_string()
@@ -158,5 +188,5 @@ namespace dsn
     private:
         char* _content;
         int   _length;
-    };
+    };*/
 }

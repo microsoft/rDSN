@@ -56,7 +56,7 @@
     val.fld = (real_type)dsn_config_get_value_##config_type(section, #fld, default_value ? default_value->fld : default_fld_value, dsptr);
 
 # define CONFIG_FLD_STRING(fld, default_fld_value, dsptr) \
-    val.fld = dsn_config_get_value_string(section, #fld, (val.fld.length() > 0 && val.fld != std::string(default_fld_value)) ? \
+    val.fld = dsn_config_get_value_string(section, #fld, (val.fld.length() > 0 && val.fld != default_fld_value) ? \
          val.fld.c_str() : (default_value ? default_value->fld.c_str() : default_fld_value), dsptr);
 
 // customized_id<type> fld = xyz
@@ -123,6 +123,14 @@
 # define CONFIG_FLD_STRING_LIST(fld, dsptr) \
     {\
     std::string vv = dsn_config_get_value_string(section, #fld, "", dsptr); \
+    ::dsn::utils::split_args(vv.c_str(), val.fld, ','); \
+    if (val.fld.size() == 0 && default_value) \
+        val.fld = default_value->fld;\
+    }
+
+# define CONFIG_FLD_SAFE_STRING_LIST(fld, dsptr) \
+    {\
+    ::dsn::safe_string vv = dsn_config_get_value_string(section, #fld, "", dsptr); \
     ::dsn::utils::split_args(vv.c_str(), val.fld, ','); \
     if (val.fld.size() == 0 && default_value) \
         val.fld = default_value->fld;\

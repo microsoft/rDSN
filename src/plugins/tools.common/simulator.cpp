@@ -133,7 +133,7 @@ void simulator::install(service_spec& spec)
 
 void simulator::on_system_init_for_add_global_checker()
 {
-    std::list<global_checker> checkers;
+    safe_vector<global_checker> checkers;
     ::dsn::get_registered_checkers(checkers);
 
     auto t = dynamic_cast<dsn::tools::simulator*>(::dsn::tools::get_current_tool());

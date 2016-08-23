@@ -76,7 +76,7 @@ public:
     int               count() const { return _queue_length.load(std::memory_order_relaxed); }
     int               decrease_count(int count = 1) { _queue_length_counter->add((uint64_t)(-count));  return _queue_length.fetch_sub(count, std::memory_order_relaxed) - count;}
     int               increase_count(int count = 1) { _queue_length_counter->add(count);  return _queue_length.fetch_add(count, std::memory_order_relaxed) + count;}
-    const std::string & get_name() { return _name; }    
+    const safe_string & get_name() { return _name; }    
     task_worker_pool* pool() const { return _pool; }
     bool              is_shared() const { return _worker_count > 1; }
     int               worker_count() const { return _worker_count; }
@@ -95,7 +95,7 @@ private:
 private:
     task_worker_pool*      _pool;
     task_worker*           _owner_worker;
-    std::string            _name;
+    safe_string            _name;
     int                    _index;
     admission_controller*  _controller;
     int                    _worker_count;
