@@ -2,8 +2,29 @@ document.getElementById("iconToUpload").onchange = function () {
     document.getElementById("iconpath").value = this.value.replace(/^.*[\\\/]/, '');
 };
 
-document.getElementById("fileToUpload").onchange = function () {
-    $('#packname').val(document.forms["fileForm"]["fileToUpload"].value.replace(/^.*[\\\/]/, '').slice(0, -3));
+document.getElementById("fileToUpload").onchange = function () 
+{
+    var packname = this.value;
+    var pack = '';
+    var suffix1=".zip";
+    var suffix2=".tar.gz";
+    
+    if (packname.indexOf(suffix1, packname.length - suffix1.length) != -1)
+    {
+        pack = packname.replace(/^.*[\\\/]/, '').slice(0, - suffix1.length);
+    }
+    else if (packname.indexOf(suffix2, packname.length - suffix2.length) != -1)
+    {
+        pack = packname.replace(/^.*[\\\/]/, '').slice(0, - suffix2.length);
+    }
+    else
+    {
+        alert("invalid file type, only *.zip and *.tar.gz are allowed");
+        document.getElementById('fileToUpload').value = '';
+        return;
+    }
+    
+    $('#packname').val(pack);
     var flag = true;
     for(index in vm.$data.packList)
     {
@@ -16,48 +37,36 @@ document.getElementById("fileToUpload").onchange = function () {
     }
     if(flag)
         vm.$set('ifNameDuplicated', false);
-    document.getElementById("filepath").value = this.value.replace(/^.*[\\\/]/, '');
+    
+    document.getElementById("filepath").value = this.value.replace(/^.*[\\\/]/, '');    
 };
 
-function validateForm() {
+function validateForm() 
+{
+    
     var fileToUpload = document.forms["fileForm"]["fileToUpload"].value;
     if (fileToUpload == null || fileToUpload == "") {
         alert("You must choose a file to upload");
         return false;
     }
-
-
-    var file_name = $('#packname').val();
-    if (file_name == null || file_name == "") {
-        document.forms["fileForm"]["file_name"].value = fileToUpload.replace(/^.*[\\\/]/, '').slice(0, -3);
-    }
-    else
-    {
-        document.forms["fileForm"]["file_name"].value = $('#packname').val();
-    }
     
+    document.forms["fileForm"]["file_name"].value = $('#packname').val();
     document.forms["fileForm"]["author"].value = $('#author').val();
     document.forms["fileForm"]["description"].value = $('#description').val();
     document.forms["fileForm"]["schema_info"].value = $('#schema_info_in').val();
     document.forms["fileForm"]["schema_type"].value = $('#schema_type_in').val();
-    document.forms["fileForm"]["server_type"].value = $('#server_type_in').val();
+    document.forms["fileForm"]["rpc_type"].value = $('#rpc_type_in').val();
     document.forms["fileForm"]["if_stateful"].value = $('#if_stateful').val();
-
-    var clusterTypeList = [];
-    for(index in vm.$data.clusterList)
-    {
-        var cluster = vm.$data.clusterList[index];
-        if(cluster.active)
-            clusterTypeList.push(cluster.name);
-    }
-    document.forms["fileForm"]["cluster_type"].value = JSON.stringify(clusterTypeList);
-
+    document.forms["fileForm"]["icon_path"].value = $('#iconpath').val();
+    document.forms["fileForm"]["file_path"].value = $('#filepath').val();
+    
     var params_map = {};
     for(index in vm.$data.paramList)
     {
         var kv = vm.$data.paramList[index];
         params_map[kv.key] = kv.value;
     }
+    
     document.forms["fileForm"]["parameters"].value = JSON.stringify(params_map);
 
     return true;
@@ -68,50 +77,36 @@ var vm = new Vue({
     data:{
         packList: [],
 
-        detail_schema_info: '',
-        detail_schema_type: '',
-        detail_server_type: '',
-        detail_params: {},
+        detail_pack : null,
 
         app_name: '',
         partition_count: 0,
         replica_count: 0,
         success_if_exist: true,
-        package_id_to_deploy: '',
-        if_stateful_to_deploy: true,
+        deploy_pack : null,
+        deploy_parameters : [],
 
         newKey: '',
         newValue: '',
         paramList: [],
 
         ifNameDuplicated: false,
-
-        clusterList: [
-            {name:'kubernetes', active:false},
-            {name:'docker', active:false},
-            {name:'bare_medal_linux', active:false},
-            {name:'bare_medal_windows', active:false},
-            {name:'rdsn_linux', active:false},
-            {name:'rdsn_windows', active:false},
-        ],
     },
     components: {
     },
     methods: {
-        gotoFile: function(packname)
+        gotoFile: function(pack)
         {
-            window.location.href = 'fileview.html?working_dir=pack/' + packname + '&root_dir=local';
+            window.location.href = pack.packsrc;
         },
-        showDetail: function(packname)
+        showDetail: function(pack)
         {
             var self = this;
-            $.post('/api/pack/detail', {id: packname
+            $.post('/api/pack/detail', {id: pack.name
                 }, function(data) {
                     data = JSON.parse(data);
-                    self.detail_schema_info = data.schema_info;
-                    self.detail_schema_type = data.schema_type;
-                    self.detail_server_type = data.server_type;
-                    self.detail_params = JSON.parse(data.parameters);
+                    data.parameters = JSON.parse(data.parameters);
+                    self.detail_pack = data;
                 }
             );
             $('#detail_modal').modal('show');
@@ -120,33 +115,46 @@ var vm = new Vue({
         {
             window.location.href = 'service_meta.html?filterKey=' + packname;
         },
-        predeploy: function(packname, if_stateful)
+        predeploy: function(pack)
         {
-            this.package_id_to_deploy = packname;
-            this.if_stateful_to_deploy = if_stateful;
+            this.deploy_pack = pack;
+            this.deploy_parameters = pack.parameters;
             $('#deploypack').modal('show');
         },
         deploy: function()
         {
-            var self = this;
-
+            if (this.app_name.trim() == "")
+            {
+                alert ("app_name cannot be empty");
+                return;
+            }
+            
+            for (key in this.deploy_pack.parameters)
+            {
+                this.deploy_parameters[key] = document.getElementById("deploy_parameters_" + key).value;
+            }
+            
+            var req = new configuration_create_app_request({
+                    'app_name': this.app_name.trim(),
+                    'options': new create_app_options({
+                        'app_type': this.deploy_pack.name,
+                        'is_stateful': (this.deploy_pack.is_stateful=='true')?true:false,
+                        'partition_count': parseInt(this.partition_count),
+                        'replica_count': parseInt(this.replica_count),
+                        'success_if_exist': (this.success_if_exist=='true')?true:false,
+                        'envs': this.deploy_parameters
+                    })
+                });
+                
+            // alert (JSON.stringify(req));
+            
             var client = new meta_sApp("http://"+localStorage['target_meta_server']);
             result = client.create_app({
-                args: new configuration_create_app_request({
-                    'app_name': self.app_name,
-                    'options': new create_app_options({
-                        'partition_count': parseInt(self.partition_count),
-                        'replica_count': parseInt(self.replica_count),
-                        'success_if_exist': (self.success_if_exist=='true')?true:false,
-                        'app_type': self.package_id_to_deploy,
-                        'is_stateful': (self.if_stateful_to_deploy=='true')?true:false,
-                        'package_id': self.package_id_to_deploy
-                    })
-                }),
+                args: req,
                 async: true,
                 on_success: function (data){
                     data = new configuration_create_app_response(data);
-                    alert(JSON.stringify(data));
+                    //alert(JSON.stringify(data));
                     window.location.href = 'service_meta.html';
                 },
                 on_fail: function (xhr, textStatus, errorThrown) {}
@@ -169,6 +177,14 @@ var vm = new Vue({
             if (!key) {
                 return;
             }
+            
+            if (key.indexOf(';') != -1 || key.indexOf('"') != -1
+             || value.indexOf(';') != -1 || value.indexOf('"') != -1)
+            {
+                alert("cannot contain ';' or '\"' in key/value");
+                return;
+            }
+            
             this.paramList.push({key: key, value:value});
             this.newKey = '';        
             this.newValue = '';        
@@ -176,11 +192,6 @@ var vm = new Vue({
         removeKV: function(kv)
         {
             this.paramList.$remove(kv);   
-        },
-
-        changeClusterState: function(index)
-        {
-            this.clusterList[index].active = !(this.clusterList[index].active);
         },
 
         updatePackList: function()
@@ -191,7 +202,10 @@ var vm = new Vue({
                     self.packList = JSON.parse(data);
                     for(index in self.packList)
                     {
-                        self.packList[index].imgsrc = "local/pack/" + self.packList[index].name + ".jpg";
+                        pkg = self.packList[index];
+                        pkg.parameters = JSON.parse(pkg.parameters);
+                        pkg.imgsrc = "local/packages/" + pkg.name + "/" + pkg.icon_name;
+                        pkg.packsrc = "local/packages/" + pkg.file_name;
                     }
                 }   
             );

@@ -49,24 +49,29 @@ th, td {
         <div class="col-xs-10">
             <table class="table table-striped">
                 <thead>
-                    <tr><th>Machine Name</th><th>App Type</th><th>Global Partition Id</th><th>Role</th><th>Working Point</th><th>Kill</th></tr>
+                    <tr><th>Machine Name</th><th>Service</th><th>Global Partition Id</th><th>Role</th><th>Working Point</th><th>Kill</th></tr>
                 </thead>
-                <tbody v-for="(node_index,node) in partitionList">
+                <tbody v-for="(node_index,node) in nodeList.infos">
                     <tr>
-                        <td rowspan={{node.partitions.length}}>{{nodeList.infos[node_index].address.host}}:{{nodeList.infos[node_index].address.port}}</td>
-                        <td>{{node.partitions[0].info.app_type}}</td>
-                        <td>{{node.partitions[0].config.pid.toString()}}</td>
-                        <td>{{node.partitions[0].role}}</td>
-                        <td><a href="analyzer.html?init_machine={{node.partitions[0].working_point.split(':')[0]}}:{{commonPort}}">{{node.partitions[0].working_point}}</a></td>
-                        <td><span class="glyphicon glyphicon-remove" @click="del(nodeList.infos[node_index].address,node.partitions[0].role,node.partitions[0].gpid)"></span></td>
+                        <td rowspan={{nodeInfo[node_index].partitions.length}} align=left><a href="analyzer.html?init_machine={{node.address.host}}:{{node.address.port}}">{{node.address.host}}:{{node.address.port}}</a></td>
+                        <td v-if="nodeInfo[node_index].partitions.length > 0">{{nodeInfo[node_index].partitions[0].info.app_name}}</td>
+                        <td v-else > &nbsp; </td>
+                        <td v-if="nodeInfo[node_index].partitions.length > 0">{{nodeInfo[node_index].partitions[0].config.pid.toString()}}</td>
+                        <td v-else > &nbsp; </td>
+                        <td v-if="nodeInfo[node_index].partitions.length > 0">{{nodeInfo[node_index].partitions[0].role}}</td>
+                        <td v-else > &nbsp; </td>
+                        <td v-if="nodeInfo[node_index].partitions.length > 0"><a href="analyzer.html?init_machine={{nodeInfo[node_index].partitions[0].working_point}}">{{nodeInfo[node_index].partitions[0].working_point}}</a></td>
+                        <td v-else > &nbsp; </td>
+                        <td v-if="nodeInfo[node_index].partitions.length > 0"><span class="glyphicon glyphicon-remove" @click="del(node.address,nodeInfo[node_index].partitions[0].role,nodeInfo[node_index].partitions[0].gpid)"></span></td>
+                        <td v-else > &nbsp; </td>
                     </tr>
-                    <tr v-for="partition_index in (node.partitions.length-1)">
-                        <td>{{node.partitions[partition_index+1].info.app_type}}</td>
-                        <td>{{node.partitions[partition_index+1].config.pid.toString()}}</td>
-                        <td>{{node.partitions[partition_index+1].role}}</td>
-                        <td><a href="analyzer.html?init_machine={{node.partitions[partition_index+1].working_point.split(':')[0]}}:{{commonPort}}">{{node.partitions[partition_index+1].working_point}}</a></td>
-                        <td><span class="glyphicon glyphicon-remove" @click="del(nodeList.infos[node_index].address,node.partitions[partition_index+1].role,node.partitions[partition_index+1].gpid)"></span></td>
-                    </tr>
+                    <tr v-if="nodeInfo[node_index].partitions.length > 1" v-for="partition_index in (nodeInfo[node_index].partitions.length-1)">
+                        <td>{{nodeInfo[node_index].partitions[partition_index+1].info.app_name}}</td>
+                        <td>{{nodeInfo[node_index].partitions[partition_index+1].config.pid.toString()}}</td>
+                        <td>{{nodeInfo[node_index].partitions[partition_index+1].role}}</td>
+                        <td><a href="analyzer.html?init_machine={{nodeInfo[node_index].partitions[partition_index+1].working_point}}">{{nodeInfo[node_index].partitions[partition_index+1].working_point}}</a></td>
+                        <td><span class="glyphicon glyphicon-remove" @click="del(node.address,nodeInfo[node_index].partitions[partition_index+1].role,nodeInfo[node_index].partitions[partition_index+1].gpid)"></span></td>
+                    </tr>                    
                 </tbody>
             </table>
         </div>
