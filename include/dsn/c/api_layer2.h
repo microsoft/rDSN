@@ -59,7 +59,7 @@ Creates framework hosted application.
 \param app_context_for_downcalls app_context for usage by dsn_hosted_app_create/start/destroy
 \param app_context_for_callbacks  app_context used by upcalls retrived from dsn_get_app_callbacks
 
-\return error code: ERR_OK, ERR_SERVICE_ALREADY_EXIST (app_context is also valid)
+\return error code: ERR_OK, ERR_SERVICE_ALREADY_EXIST, ERR_OBJECT_NOT_FOUND
 */
 extern DSN_API dsn_error_t dsn_hosted_app_create(
     const char* type,

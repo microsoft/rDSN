@@ -3,9 +3,8 @@
 var vm = new Vue({
     el: '#app',
     data:{
-        nodeList: [],
-        nodeTotal: 0,
-        partitionList: [],
+        nodeList: new configuration_list_nodes_response(),
+        nodeInfo: [],
         updateTimer: 0,
     },
     components: {
@@ -29,35 +28,31 @@ var vm = new Vue({
                     catch(err) {
                     }
                     
-                    if(self.nodeTotal !=self.nodeList.infos.length)
-                    {
-                        self.nodeTotal = self.nodeList.infos.length;
-                        self.partitionList = [];
-                    }
-
-                    var index = 0;
-                    for (index = 0; index < self.nodeList.infos.length; ++index)
-                    {                        
-                        (function(nodeIndex){
-                            result = client.query_configuration_by_node({
+                    var nodeIndex = 0;
+                    for (nodeIndex = 0; nodeIndex < self.nodeList.infos.length; ++nodeIndex)
+                    {   
+                        (function (nidx) {
+                            client.query_configuration_by_node({
                                 args: new configuration_query_by_node_request({
-                                    'node': new rpc_address({host:self.nodeList.infos[nodeIndex].address.host,port:self.nodeList.infos[nodeIndex].address.port})
+                                    'node': new rpc_address({host:self.nodeList.infos[nidx].address.host,port:self.nodeList.infos[nidx].address.port})
                                 }),
                                 async: true,
                                 on_success: function (servicedata){
                                     try {
                                         servicedata = new configuration_query_by_node_response(servicedata);
                                         // console.log(JSON.stringify(servicedata));
-                                        self.partitionList.$set(nodeIndex, servicedata);
+                                        self.nodeInfo.$set(nidx, servicedata);
                                     }
                                     catch(err) {
                                         return;
                                     }
                                     
+                                    var host_node = self.nodeList.infos[nidx].address.host + ':' + self.nodeList.infos[nidx].address.port;
+                                    
                                     var index = 0;
-                                    for (index = 0; index < self.partitionList[nodeIndex].partitions.length; ++index)
+                                    for (index = 0; index < servicedata.partitions.length; ++index)
                                     {
-                                        var par = self.partitionList[nodeIndex].partitions[index];
+                                        var par = servicedata.partitions[index];
                                         par.role = '';
                                         par.working_point = '';
 
@@ -72,23 +67,20 @@ var vm = new Vue({
                                         for (drop in par.config.last_drops)
                                         {
                                             addressList['last_drops'][drop] = par.config.last_drops[drop].host +':'+ par.config.last_drops[drop].port;
-                                        } 
-
-
+                                        }
+                                        
                                         if(par.info.is_stateful==true)
                                         {
                                             //stateful service
-                                            if (addressList.primary== self.nodeList.infos[nodeIndex].address.host+':'+self.nodeList.infos[nodeIndex].address.port) 
+                                            if (host_node == addressList.primary) 
                                             {
                                                 par['role'] = 'primary';
                                             }
-                                            else if (addressList.secondaries.indexOf(
-                                                self.nodeList.infos[nodeIndex].address.host+':'+self.nodeList.infos[nodeIndex].address.port) > -1)
+                                            else if (addressList.secondaries.indexOf(host_node) != -1)
                                             {
                                                 par['role'] = 'secondary';
                                             }
-                                            else if (addressList.last_drops.indexOf(
-                                                self.nodeList.infos[nodeIndex].address.host+':'+self.nodeList.infos[nodeIndex].address.port) > -1)
+                                            else if (addressList.last_drops.indexOf(host_node) != -1)
                                             {
                                                 par['role'] = 'drop';
                                             }
@@ -97,15 +89,14 @@ var vm = new Vue({
                                         }
                                         else
                                         {
-                                            par['working_point'] = par.last_drops[addressList.secondaries.indexOf(
-                                                    self.nodeList.infos[nodeIndex].address.host +':'+
-                                                        self.nodeList.infos[nodeIndex].address.port)];
+                                            par['role'] = 'worker';
+                                            par['working_point'] = addressList.last_drops[addressList.secondaries.indexOf(host_node)];
                                         }
                                     }
                                 },
                                 on_fail: function (xhr, textStatus, errorThrown) {}
                             });
-                        })(index);
+                        })(nodeIndex);
                     }
                 },
                 on_fail: function (xhr, textStatus, errorThrown) {}

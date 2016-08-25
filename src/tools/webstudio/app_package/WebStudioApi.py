@@ -19,13 +19,13 @@ sqlDataType['app_package'] = {
         {'name': 'name','type': 'text'},
         {'name': 'author','type': 'text'},
         {'name': 'description','type': 'text'},
-        {'name': 'register_state','type': 'text'},
-        {'name': 'cluster_type','type': 'text'},
         {'name': 'schema_info','type': 'text'},
         {'name': 'schema_type','type': 'text'},
-        {'name': 'server_type','type': 'text'},
+        {'name': 'rpc_type','type': 'text'}, # 5
         {'name': 'parameters','type': 'text'},
         {'name': 'if_stateful','type': 'text'},
+        {'name': 'file_name','type': 'text'},
+        {'name': 'icon_name','type': 'text'},
     ],
 }
 
@@ -125,13 +125,13 @@ class ApiDelViewHandler(BaseHandler):
 
 class ApiLoadPackHandler(BaseHandler):
     def post(self):
-        pack_dir = os.path.join(GetWebStudioDirPath(),'local','pack')
+        pack_dir = os.path.join(GetWebStudioDirPath(),'local','packages')
         if not os.path.exists(pack_dir):
             os.makedirs(pack_dir)
 
         packList = []
         for pack in sqlOp(op='load',dataType='app_package'):
-            packList.append({'name':pack[0],'author':pack[1],'description':pack[2],'register_state':pack[3],'cluster_type':pack[4],'if_stateful':pack[9]})
+            packList.append({'name':pack[0],'author':pack[1], 'parameters':pack[6], 'if_stateful':pack[7],'file_name':pack[8],'icon_name':pack[9]})
         
         self.SendJson(packList)    
 
@@ -144,10 +144,16 @@ class ApiPackDetailHandler(BaseHandler):
             return
 
         ret = {'name' : pack_info[0], \
-            'schema_info' : pack_info[5], \
-            'schema_type' : pack_info[6], \
-            'server_type' : pack_info[7], \
-            'parameters' : pack_info[8]};
+            'author' : pack_info[1], \
+            'description' : pack_info[2], \
+            'schema_info' : pack_info[3], \
+            'schema_type' : pack_info[4], \
+            'rpc_type' : pack_info[5], \
+            'parameters' : pack_info[6], \
+            'is_stateful' : pack_info[7], \
+            'file_name' : pack_info[8], \
+            'icon_name' : pack_info[9]};
+
         self.SendJson(ret)
 
 
@@ -157,12 +163,10 @@ class ApiDelPackHandler(BaseHandler):
 
         sqlOp(op='delete',dataType='app_package',dataName=packName)
 
-        try:
-            shutil.rmtree(os.path.join(pack_dir,packName))
-            os.remove(os.path.join(pack_dir,packName+'.jpg'))
-            os.remove(os.path.join(pack_dir,packName+'.7z'))
-            os.remove(os.path.join(pack_dir,packName+'.thrift'))
-        
+        try:            
+            pack_dir = os.path.join(GetWebStudioDirPath(),'local','packages', packName);
+            shutil.rmtree(pack_dir)
+            print "remove " + pack_dir
             self.response.write('success')
         except:
             self.response.write('fail')

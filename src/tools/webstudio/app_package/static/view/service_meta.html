@@ -62,21 +62,25 @@ th, td {
                 <thead>
                     <tr><th>Name</th><th>Type</th><th>Id</th><th>Status</th><th>Kill</th><th>Index</th><th>Ballot</th><th>Membership</th></tr>
                 </thead>
-                <tbody v-for="(app_index, app) in appDetails" >
+                <tbody v-for="(app_index, app) in appInfo.infos" >
                     <tr>
-                        <td rowspan={{app.partitions.length}}>{{appInfo.infos[app_index].app_name}}</td>
-                        <td rowspan={{app.partitions.length}}>{{appInfo.infos[app_index].app_type}}</td>
-                        <td rowspan={{app.partitions.length}}>{{app.app_id}}</td>
-                        <td rowspan={{app.partitions.length}}>{{appInfo.infos[app_index].status}}</td>
-                        <td rowspan={{app.partitions.length}}><span class="glyphicon glyphicon-remove" @click="del(app.app_name)"></td>
-                        <td v-if="app.partitions.length > 0">{{app.partitions[0].pid.toString()}}</td>
-                        <td v-if="app.partitions.length > 0">{{app.partitions[0].ballot}}</td>
-                        <td v-if="app.partitions.length > 0">{{app.partitions[0].membership}}</td>
+                        <td rowspan={{appDetails[app.app_id].partitions.length}}>{{app.app_name}}</td>
+                        <td rowspan={{appDetails[app.app_id].partitions.length}}>{{app.app_type}}</td>
+                        <td rowspan={{appDetails[app.app_id].partitions.length}}>{{app.app_id}}</td>
+                        <td rowspan={{appDetails[app.app_id].partitions.length}}>{{AS_STATES[app.status]}}({{app.status}})</td>
+                        <td v-if="app.status < AS_DROPPING" rowspan={{appDetails[app.app_id].partitions.length}}><span class="glyphicon glyphicon-remove" @click="del(app.app_name)"></td>
+                        <td v-else > - </td>
+                        <td v-if="appDetails[app.app_id].partitions.length > 0">{{appDetails[app.app_id].partitions[0].pid.toString()}}</td>
+                        <td v-else > &nbsp; </td>
+                        <td v-if="appDetails[app.app_id].partitions.length > 0">{{appDetails[app.app_id].partitions[0].ballot}}</td>
+                        <td v-else > &nbsp; </td>
+                        <td v-if="appDetails[app.app_id].partitions.length > 0">{{appDetails[app.app_id].partitions[0].membership}}</td>
+                        <td v-else > &nbsp; </td>
                     </tr>
-                    <tr v-for="pidx in (app.partitions.length-1)">
-                        <td>{{app.partitions[pidx+1].pid.toString()}}</td>
-                        <td>{{app.partitions[pidx+1].ballot}}</td>
-                        <td>{{app.partitions[pidx+1].membership}}</td>
+                    <tr v-if="appDetails[app.app_id].partitions.length > 1" v-for="pidx in (appDetails[app.app_id].partitions.length-1)">
+                        <td>{{appDetails[app.app_id].partitions[pidx+1].pid.toString()}}</td>
+                        <td>{{appDetails[app.app_id].partitions[pidx+1].ballot}}</td>
+                        <td>{{appDetails[app.app_id].partitions[pidx+1].membership}}</td>
                     </tr>
                 </tbody>
             </table>

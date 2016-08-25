@@ -147,112 +147,54 @@ class PageCounterViewHandler(BaseHandler):
 class PageStoreHandler(BaseHandler):
     def get(self):
         self.render_template_Vue('store.html')
-    def post(self):
-        def updateSQL(newstate, c, conn, if_close=False):
-            c.execute(TUpdate.render({'dataType':'app_package','dataName':file_name,'updateColumn':'register_state','updateValue':newstate}))
-            conn.commit()
-            if if_close:
-                conn.close()
-
+    def post(self):        
         raw_file = self.request.get('fileToUpload')
+        file_path = self.request.get('file_path')
+        
         raw_icon = self.request.get('iconToUpload')
-        file_name = self.request.get('file_name')
+        icon_path = self.request.get('icon_path');
+        
+        pack_name = self.request.get('file_name');        
         author = self.request.get('author')
         description = self.request.get('description')
-        cluster_type = self.request.get('cluster_type')
         schema_info = self.request.get('schema_info')
         schema_type = self.request.get('schema_type')
-        server_type = self.request.get('server_type')
+        rpc_type = self.request.get('rpc_type')
         parameters = self.request.get('parameters')
         if_stateful = self.request.get('if_stateful')
-        register_state = 'REGISTER_PROCESS_INIT'
+        
+        # 
+        pack_dir = os.path.join(GetWebStudioDirPath(),'local','packages', pack_name);
+        if not os.path.exists(pack_dir):
+            os.makedirs(pack_dir)
 
+        # save uploaded package 
+        savedFile = open(os.path.join(GetWebStudioDirPath(),'local','packages', file_path), 'wb')
+        savedFile.write(raw_file)
+        savedFile.close()
+
+        # save icon file 
+        iconFile = open(os.path.join(pack_dir, icon_path), 'wb')
+        iconFile.write(raw_icon)
+        iconFile.close()
+        
+        # save to db 
         conn = sqlite3.connect(os.path.join(GetWebStudioDirPath(),'local','data.db'))
         c = conn.cursor()
         c.execute(TCreate.render({'dataType':'app_package','elems': sqlDataType['app_package']['elems']}))
         c.execute(TInsert.render({'dataType':'app_package','val_list':[
-            file_name,
+            pack_name,            
             author,
             description,
-            register_state,
-            cluster_type,
             schema_info,
             schema_type,
-            server_type,
+            rpc_type,
             parameters,
-            if_stateful
+            if_stateful,
+            file_path,
+            icon_path
         ]}))
         conn.commit()
-
-        pack_dir = os.path.join(GetWebStudioDirPath(),'local','pack')
-        if not os.path.exists(pack_dir):
-            os.makedirs(pack_dir)
-
-        bin_dir = os.path.join(os.path.dirname(GetWebStudioDirPath()),'bin')
-        if not os.path.exists(bin_dir):
-            updateSQL('ERR_NO_BIN_FOLDER',c,conn,True)
-            return webapp2.redirect('/store.html')
-
-        updateSQL('WRITING_7Z_FILE',c,conn)
-
-        savedFile = open(os.path.join(pack_dir, file_name + '.7z'), 'wb')
-        savedFile.write(raw_file)
-        savedFile.close()
-
-        updateSQL('WRITING_iCON_FILE',c,conn)
-
-        iconFile = open(os.path.join(pack_dir,file_name + '.jpg'), 'wb')
-        iconFile.write(raw_icon)
-        iconFile.close()
-
-        updateSQL('WRITING_SCHEMA_FILE',c,conn)
-
-        schemaFile = open(os.path.join(pack_dir, file_name + '.' + schema_type), 'wb')
-        schemaFile.write(schema_info)
-        schemaFile.close()
-
-        loc_of_7z = ''
-        #to detect if 7z exists
-        os_type = platform.system()
-        if os_type == 'Windows':
-            loc_of_7z = os.path.join(bin_dir,'7z.exe')
-        elif os_type == 'Linux':
-            loc_of_7z = os.path.join(bin_dir,'7z')
-        if loc_of_7z =='':
-            updateSQL('ERR_NO_7Z',c,conn,True)
-            return webapp2.redirect('/store.html')
-
-        updateSQL('EXTRACTING_7Z_FILE',c,conn)
-
-        subprocess.call([loc_of_7z,'x', os.path.join(pack_dir, file_name) + '.7z','-y','-o'+os.path.join(pack_dir, file_name)])
-        if not os.path.exists(os.path.join(pack_dir, file_name)):
-            updateSQL('ERR_7Z_EXTRACT_FAIL',c,conn,True)
-            return webapp2.redirect('/store.html')
-
-        loc_of_tron = ''
-        #to detect if Tron exists
-        if os_type == 'Windows':
-            loc_of_tron = os.path.join(bin_dir,'Tron.exe')
-        elif os_type == 'Linux':
-            loc_of_tron = os.path.join(bin_dir,'Tron')
-        if loc_of_tron =='':
-            updateSQL('ERR_NO_TRON',c,conn,True)
-            return webapp2.redirect('/store.html')
-
-        updateSQL('TRON_GENERATING_DLL',c,conn)
-
-        from subprocess import Popen, PIPE
-        p = Popen([loc_of_tron,'gcs','thrift','dsn', os.path.join(pack_dir,file_name + '.thrift')],stdin=subprocess.PIPE,stdout=subprocess.PIPE,cwd=bin_dir)
-        while p.poll() is None:
-            print p.stdout.readline()
-
-        if not os.path.exists(os.path.join(bin_dir,'tmp',file_name+'.Tron.Composition.dll')):
-            updateSQL('ERR_TRON_GENERATE_DLL_FAIL',c,conn,True)
-            return webapp2.redirect('/store.html')
-
-        os.rename(os.path.join(bin_dir,'tmp',file_name+'.Tron.Composition.dll'), os.path.join(pack_dir,file_name,file_name+'.Tron.Composition.dll'))
-
-        updateSQL('SUCCESS',c,conn,True)
 
         return webapp2.redirect('/store.html')
 
