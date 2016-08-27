@@ -39,4 +39,5 @@ file(GLOB
 # Extra files that will be installed
 set(MY_BINPLACES ${RES_FILES})
 
-dsn_add_executable()
+dsn_add_shared_library()
+
