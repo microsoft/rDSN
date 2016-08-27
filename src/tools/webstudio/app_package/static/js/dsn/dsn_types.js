@@ -130,8 +130,7 @@ gpid.prototype.app_id = function()
     }; 
 
     idstr2 += idstr;
-
-    return parseInt(idstr2.substring(0, 32), 2);
+    return parseInt(idstr2.substring(32), 2);
 }
 
 gpid.prototype.partition_index = function()
@@ -143,7 +142,7 @@ gpid.prototype.partition_index = function()
     }; 
 
     idstr2 += idstr;
-    return parseInt(idstr2.substring(32), 2);
+    return parseInt(idstr2.substring(0, 32), 2);
 }
 
 gpid.prototype.toString = function()

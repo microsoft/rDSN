@@ -7,7 +7,7 @@ SET rdst_dir=%ldst_dir::=$%
 SET machine=%5
 TITLE %cmd% %deploy_name% @ %machine%
 
-ECHO %cmd% %machine% ... && CALL :%cmd% %machine%
+ECHO %cmd% %machine% %1 %2 %3 %4 %5 ... && CALL :%cmd% %machine%
 
 IF ERRORLEVEL 1 (
     CALL %bin_dir%\echoc.exe 4 unknow command '%cmd%'
@@ -36,25 +36,26 @@ REM
     xcopy /F /Y /S %src_dir% %rdst%
     COPY /Y %bin_dir%\7z.exe %rdst%
     COPY /Y %bin_dir%\7z.dll %rdst%
-    SCHTASKS /CREATE /S %machine% /RU SYSTEM /SC ONLOGON /TN %deploy_name% /TR "%ldst_dir%\start.cmd" /V1 /F
+    SCHTASKS /CREATE /S %machine% /RU SYSTEM /SC ONLOGON /TN rDSN.%deploy_name% /TR "%ldst_dir%\start.cmd" /V1 /F
     GOTO:EOF
 
 :start
-    @SCHTASKS /RUN /S %1 /TN %deploy_name%
+    @SCHTASKS /RUN /S %1 /TN rDSN.%deploy_name%
     GOTO:EOF
     
 :stop
-    @SCHTASKS /END /S %1 /TN %deploy_name%
+    ::taskkill /S %1 /f /im dsn.svchost.exe
+    @SCHTASKS /END /S %1 /TN rDSN.%deploy_name%
     GOTO:EOF
 
 :quick-cleanup
-    ::SCHTASKS /Delete /S %1 /TN %deploy_name% /F
+    ::SCHTASKS /Delete /S %1 /TN rDSN.%deploy_name% /F
     set rdst=\\%1\%rdst_dir%
     @rmdir /Q /S %rdst%\data
     GOTO:EO
 
 :cleanup
-    SCHTASKS /Delete /S %1 /TN %deploy_name% /F
+    SCHTASKS /Delete /S %1 /TN rDSN.%deploy_name% /F
     set rdst=\\%1\%rdst_dir%
     @rmdir /Q /S %rdst%
     GOTO:EOF
