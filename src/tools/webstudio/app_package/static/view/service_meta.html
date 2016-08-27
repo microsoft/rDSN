@@ -60,27 +60,23 @@ th, td {
         <div class="col-xs-10"> 
             <table class="table table-striped">
                 <thead>
-                    <tr><th>Name</th><th>Type</th><th>Id</th><th>Status</th><th>Kill</th><th>Index</th><th>Ballot</th><th>Membership</th></tr>
+                    <tr><th>ID</th><th>Name</th><th>Package</th><th>Status</th><th>Del</th><th>GPID</th><th>Ballot</th><th>Membership</th></tr>
                 </thead>
                 <tbody v-for="(app_index, app) in appInfo.infos" >
                     <tr>
-                        <td rowspan={{appDetails[app.app_id].partitions.length}}>{{app.app_name}}</td>
-                        <td rowspan={{appDetails[app.app_id].partitions.length}}>{{app.app_type}}</td>
-                        <td rowspan={{appDetails[app.app_id].partitions.length}}>{{app.app_id}}</td>
-                        <td rowspan={{appDetails[app.app_id].partitions.length}}>{{AS_STATES[app.status]}}({{app.status}})</td>
-                        <td v-if="app.status < AS_DROPPING" rowspan={{appDetails[app.app_id].partitions.length}}><span class="glyphicon glyphicon-remove" @click="del(app.app_name)"></td>
-                        <td v-else > - </td>
-                        <td v-if="appDetails[app.app_id].partitions.length > 0">{{appDetails[app.app_id].partitions[0].pid.toString()}}</td>
-                        <td v-else > &nbsp; </td>
-                        <td v-if="appDetails[app.app_id].partitions.length > 0">{{appDetails[app.app_id].partitions[0].ballot}}</td>
-                        <td v-else > &nbsp; </td>
-                        <td v-if="appDetails[app.app_id].partitions.length > 0">{{appDetails[app.app_id].partitions[0].membership}}</td>
-                        <td v-else > &nbsp; </td>
+                        <td rowspan="{{get_app(app.app_id).partitions.length + 1}}">{{app.app_id}}</td>
+                        <td rowspan="{{get_app(app.app_id).partitions.length + 1}}">{{app.app_name}}</td>
+                        <td rowspan="{{get_app(app.app_id).partitions.length + 1}}">{{app.app_type}}</td>                        
+                        <td rowspan="{{get_app(app.app_id).partitions.length + 1}}">{{AS_STATES[app.status]}}({{app.status}})</td>
+                        <td v-if="app.status < AS_DROPPING" rowspan="{{get_app(app.app_id).partitions.length + 1}}"><span class="glyphicon glyphicon-remove" @click="del(app.app_name)"></td>
+                        <td v-else rowspan="{{get_app(app.app_id).partitions.length + 1}}"> - </td>
+                        <td v-if="get_app(app.app_id).partitions.length > 0" colspan=3 style="display:none;"> &nbsp; </td>
+                        <td v-else colspan=3> &nbsp; </td>
                     </tr>
-                    <tr v-if="appDetails[app.app_id].partitions.length > 1" v-for="pidx in (appDetails[app.app_id].partitions.length-1)">
-                        <td>{{appDetails[app.app_id].partitions[pidx+1].pid.toString()}}</td>
-                        <td>{{appDetails[app.app_id].partitions[pidx+1].ballot}}</td>
-                        <td>{{appDetails[app.app_id].partitions[pidx+1].membership}}</td>
+                    <tr v-for="pidx in (get_app(app.app_id).partitions.length)">
+                        <td>{{get_app(app.app_id).partitions[pidx].pid.toString()}}</td>
+                        <td>{{get_app(app.app_id).partitions[pidx].ballot}}</td>
+                        <td>{{get_app(app.app_id).partitions[pidx].membership}}</td>
                     </tr>
                 </tbody>
             </table>

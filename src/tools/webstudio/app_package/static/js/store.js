@@ -56,7 +56,7 @@ function validateForm()
     document.forms["fileForm"]["schema_info"].value = $('#schema_info_in').val();
     document.forms["fileForm"]["schema_type"].value = $('#schema_type_in').val();
     document.forms["fileForm"]["rpc_type"].value = $('#rpc_type_in').val();
-    document.forms["fileForm"]["if_stateful"].value = $('#if_stateful').val();
+    document.forms["fileForm"]["is_stateful"].value = $('#is_stateful').val();
     document.forms["fileForm"]["icon_path"].value = $('#iconpath').val();
     document.forms["fileForm"]["file_path"].value = $('#filepath').val();
     

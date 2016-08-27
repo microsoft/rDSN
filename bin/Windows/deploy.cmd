@@ -48,7 +48,7 @@ IF "%3" EQU "" (
 ::SET deploy_name=%4
 ::SET rdst_dir=%ldst_dir::=$%
 ::SET machine=%5
-FOR /F %%i IN (%machine_list%) DO ECHO %cmd% %%i ... && start %bin_dir%\deploy.one.cmd %cmd% %src_dir% %ldst_dir% %deploy_name% %%i
+FOR /F %%i IN (%machine_list%) DO ECHO %cmd% %%i %src_dir% %ldst_dir% %deploy_name% ... && start %bin_dir%\deploy.one.cmd %cmd% %src_dir% %ldst_dir% %deploy_name% %%i
 
 IF ERRORLEVEL 1 (
     CALL %bin_dir%\echoc.exe 4 unknow command '%cmd%'
@@ -61,7 +61,7 @@ GOTO exit
 :usage
     ECHO run.cmd deploy^|start^|stop^|cleanup^|quick-cleanup^|scds(stop-cleanup-deploy-start) source-dir target-dir
     ECHO  source-dir is a directory which contains a start.cmd, machines.txt, and other resource files/dirs
-    ECHO  or, a directory which contains a set of directories above which will be deployed simultaneously.
+    ECHO  or, a directory which contains an apps.txt each line specifying a sub-directory above (inside this directory).
     ECHO  Example: "run deploy .\skv\meta d:\zhenyug" deploys meta to d:\zhenyug\meta
     ECHO  Example: "run deploy .\skv d:\zhenyug" deploys skv\meta, skv\replica, ... to d:\zhenyug\meta, replica, ...    
     GOTO:EOF

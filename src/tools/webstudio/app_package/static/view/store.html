@@ -99,20 +99,23 @@ th, td {
             <table class="table table-striped main" id="packList">
             <thead>
             <tr>
-                <th>Icon</th>
+                <th>&nbsp;</th>
                 <th>Name</th>
+                <th>Stateful</th>
                 <th>Author</th>
                 <th>Details</th>
                 <th>Instances</th>
                 <th>Deploy</th>
-                <th>Download</th>
-                <th>Remove</th>
+                <th>Down</th>
+                <th>Delete</th>
             </tr>
             </thead>
             <tbody>
                 <tr v-for="pack in packList">
                     <td><img :src="pack.imgsrc" width="50" height="50" ></td> 
                     <td>{{pack.name}}</td> 
+                    <td v-if="pack.is_stateful.toString() == 'true'"> <font color=green> Y </font> </td>
+                    <td v-else> <font color=red> N </font> </td>
                     <td>{{pack.author}}</td> 
                     <td><span class="glyphicon glyphicon-list-alt" aria-hidden="true" @click="showDetail(pack)"></span></td>
                     <!--<td><a href="local/pack/{{pack.name}}/{{pack.name}}.Tron.Composition.dll" download><span class="glyphicon glyphicon-save-file" aria-hidden="true"></span></a></td>-->
@@ -170,8 +173,8 @@ Service packages are registered as <i>%name%.tar.gz</i> (Linux, or <i>%name%.zip
             </div>
             <div class="row">
                 <div class="col-xs-12">
-                    <label for="if_stateful" > If stateful</label>
-                    <select class = "form-control" id = "if_stateful">
+                    <label for="is_stateful" > If stateful</label>
+                    <select class = "form-control" id = "is_stateful">
                       <option value = "false">false</option>
                       <option value = "true">true</option>
                     </select>
@@ -201,7 +204,7 @@ Service packages are registered as <i>%name%.tar.gz</i> (Linux, or <i>%name%.zip
                     <input id="rpc_type" name="rpc_type" type="hidden" value=""></input>
                     <input id="schema_type" name="schema_type" type="hidden" value=""></input>
                     <input id="parameters" name="parameters" type="hidden" value=""></input>
-                    <input id="if_stateful" name="if_stateful" type="hidden" value=""></input>
+                    <input id="is_stateful" name="is_stateful" type="hidden" value=""></input>
                     <input id="icon_path" name="icon_path" type="hidden" value=""></input>
                     <input id="file_path" name="file_path" type="hidden" value=""></input>
                     </form>

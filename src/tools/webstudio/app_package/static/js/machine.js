@@ -1,15 +1,33 @@
-//Vue.config.debug = true;
+Vue.config.debug = true;
 
 var vm = new Vue({
     el: '#app',
     data:{
         nodeList: new configuration_list_nodes_response(),
         nodeInfo: [],
+        nodeDummy : new configuration_query_by_node_response(),
         updateTimer: 0,
     },
     components: {
     },
     methods: {
+        get_node: function(node_index)
+        {
+            if (this.nodeInfo.length > node_index)
+            {
+                var n = this.nodeInfo[node_index];
+                if (n != null)
+                    return n;
+                else
+                {
+                    return this.nodeDummy;
+                }
+            }
+            else
+            {
+                return this.nodeDummy;
+            }
+        },
         update: function()
         {
             var self = this;
@@ -30,7 +48,7 @@ var vm = new Vue({
                     
                     var nodeIndex = 0;
                     for (nodeIndex = 0; nodeIndex < self.nodeList.infos.length; ++nodeIndex)
-                    {   
+                    {
                         (function (nidx) {
                             client.query_configuration_by_node({
                                 args: new configuration_query_by_node_request({
@@ -103,30 +121,32 @@ var vm = new Vue({
             });
 
         },
-        del: function (address, role, gpid)
+        del: function (address, is_stateful, gpid)
         {
-            /*
             var self = this;
-            console.log(((role!='')?'replica.':'daemon.') + "kill_partition " + gpid.app_id + " " + gpid.pidx);
-            var client = new cliApp("http://"+localStorage['target_meta_server']);
+            var client = new cliApp("http://" + address.host + ':' + address.port);
+            var app_id = gpid.app_id().toString();
+            var partition_index = gpid.partition_index().toString();
             result = client.call({
                     args: new command({
-                    cmd: ((role!='')?'replica.':'daemon.') + "kill_partition",
-                    arguments: [gpid.app_id,gpid.pidx]
+                    cmd: (is_stateful ? 'replica.':'daemon.') + "kill_partition",
+                    arguments: [app_id, partition_index]
                 }),
                 async: true,
                 on_success: function (data){
                     console.log(data);
                 },
-                on_fail: function (xhr, textStatus, errorThrown) {}
+                on_fail: function (xhr, textStatus, errorThrown) 
+                {
+                    
+                }
             });
-            */
-            alert('This function not available now');
         }
     },
     ready: function ()
     {
         var self = this;
+        self.nodeDummy.partitions = [];
         self.update(); 
         //query each machine their service state
         self.updateTimer = setInterval(function () {

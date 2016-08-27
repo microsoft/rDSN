@@ -13,6 +13,7 @@ var vm = new Vue({
     data:{
         appInfo: new configuration_list_apps_response(),
         appDetails: [],
+        appDummy : new configuration_query_by_index_response(),
         updateTimer: 0,
         filterKey: '',
         
@@ -28,6 +29,14 @@ var vm = new Vue({
     components: {
     },
     methods: {
+        get_app : function(app_id)
+        {
+            var r = this.appDetails[app_id];
+            if (r == undefined || r == null || r.partitions == null)
+                return this.appDummy;
+            else
+                return r;
+        },
         update: function()
         {
             var self = this;
@@ -48,12 +57,6 @@ var vm = new Vue({
                     var app;
                     for (app = 0; app < self.appInfo.infos.length; ++app)
                     {
-                        if (self.appInfo.infos[app].status >= self.AS_DROPPING)
-                        {
-                            self.appDetails.$set(self.appInfo.infos[app].app_id, new configuration_query_by_index_response());
-                            continue;
-                        }
-                        
                         client.query_configuration_by_index({
                             args: new configuration_query_by_index_request({
                                 'app_name': self.appInfo.infos[app].app_name,
@@ -146,6 +149,8 @@ var vm = new Vue({
     ready: function ()
     {
         var self = this;
+        
+        self.appDummy.partitions = [];
         
         self.AS_STATES[self.AS_INVALID] = "INVALID";
         self.AS_STATES[self.AS_AVAILABLE] = "AVAILABLE"; 
