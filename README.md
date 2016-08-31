@@ -1,8 +1,4 @@
-[![Build Status](https://travis-ci.org/imzhenyu/rDSN.svg?branch=master)](https://travis-ci.org/imzhenyu/rDSN) [![Build status](https://ci.appveyor.com/api/projects/status/c0uqfq0k6ep7qote?svg=true)](https://ci.appveyor.com/project/imzhenyu/rdsn)
-
-All pull requests please now go to https://github.com/imzhenyu/rdsn for automatic integration with latest version. We will preriodically update this repo. Thank you.
-
-<hr>
+[![Build Status](https://travis-ci.org/Microsoft/rDSN.svg?branch=master)](https://travis-ci.org/Microsoft/rDSN) [![Build status](https://ci.appveyor.com/api/projects/status/hkryxjf16uhyqie7?svg=true)](https://ci.appveyor.com/project/Microsoft/rdsn)
 
 **Robust Distributed System Nucleus (rDSN)** is a framework for quickly building robust distributed systems. It has a microkernel for pluggable components, including applications, distributed frameworks, devops tools, and local runtime/resource providers, enabling their independent development and seamless integration. The project was originally developed for Microsoft Bing, and now has been adopted in production both inside and outside Microsoft. 
 
