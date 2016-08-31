@@ -131,7 +131,9 @@ var vm = new Vue({
             
             for (key in this.deploy_pack.parameters)
             {
-                this.deploy_parameters[key] = document.getElementById("deploy_parameters_" + key).value;
+                var v = document.getElementById("deploy_parameters_" + key).value.trim();
+                if (v.length > 0)
+                    this.deploy_parameters[key] = v;
             }
             
             var req = new configuration_create_app_request({

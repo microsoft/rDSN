@@ -6,18 +6,27 @@ $idl_type = $argv[4];
 ?>
 // apps
 # include "<?=$file_prefix?>.app.example.h"
+# include <dsn/utility/module_init.cpp.h>
 
 void dsn_app_registration_<?=$_PROG->name?>()
 {
     // register all possible service apps
-    dsn::register_app< <?=$_PROG->get_cpp_namespace().$_PROG->name?>_server_app>("server");
-    dsn::register_app< <?=$_PROG->get_cpp_namespace().$_PROG->name?>_client_app>("client");
+    dsn::register_app< <?=$_PROG->get_cpp_namespace().$_PROG->name?>_server_app>("<?=$_PROG->name?>");
+    // if replicated, using 
+    // dsn::register_app_with_type_1_replication_support< <?=$_PROG->get_cpp_namespace().$_PROG->name?>_service_impl>("<?=$_PROG->name?>");
+    dsn::register_app< <?=$_PROG->get_cpp_namespace().$_PROG->name?>_client_app>("<?=$_PROG->name?>.client");
 <?php foreach ($_PROG->services as $svc) { ?>
-    dsn::register_app< <?=$_PROG->get_cpp_namespace().$svc->name?>_perf_test_client_app>("client.perf.<?=$svc->name?>");
+    dsn::register_app< <?=$_PROG->get_cpp_namespace().$svc->name?>_perf_test_client_app>("<?=$_PROG->name?>.<?=$svc->name?>.client.perf");
 <?php } ?>
 }
 
-# ifndef DSN_RUN_USE_SVCHOST
+# if 1
+
+MODULE_INIT_BEGIN(<?=$_PROG->name?>)
+    dsn_app_registration_<?=$_PROG->name?>();
+MODULE_INIT_END
+
+# else
 
 int main(int argc, char** argv)
 {
@@ -27,13 +36,5 @@ int main(int argc, char** argv)
     dsn_run(argc, argv, true);
     return 0;
 }
-
-# else
-
-# include <dsn/internal/module_init.cpp.h>
-
-MODULE_INIT_BEGIN(<?=$_PROG->name?>)
-    dsn_app_registration_<?=$_PROG->name?>();
-MODULE_INIT_END
 
 # endif

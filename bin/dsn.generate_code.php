@@ -74,12 +74,12 @@ else
     $g_mode = "single";
 }
     
-if ($g_mode != "single" && $g_mode != "replication" && $g_mode != "layer3")
+/*if ($g_mode != "single" && $g_mode != "replication" && $g_mode != "layer3")
 {
     echo "invalid mode '$g_mode'".PHP_EOL;
     usage();
     exit(0);
-}
+}*/
 
 if (!file_exists($g_idl))
 {
