@@ -42,11 +42,11 @@ static void dsn_app_registration_simple_kv()
     // register all possible services
     dsn::register_app_with_type_1_replication_support< ::dsn::replication::application::simple_kv_service_impl>("simple_kv");
     
-    dsn::register_app< ::dsn::replication::application::simple_kv_client_app>("client");
-    dsn::register_app< ::dsn::replication::application::simple_kv_perf_test_client_app>("client.perf.test");
+    dsn::register_app< ::dsn::replication::application::simple_kv_client_app>("simple_kv.client");
+    dsn::register_app< ::dsn::replication::application::simple_kv_perf_test_client_app>("simple_kv.client.perf");
 }
 
-# if defined(DSN_RUN_USE_SVCHOST)
+# if 1
 
 # include <dsn/utility/module_init.cpp.h>
 
