@@ -41,7 +41,7 @@ public:
     {
         <?=$f->get_cpp_request_type_name()?> req;
         // TODO: randomize the value of req
-        // auto rs = random64(0, 10000000) % key_space_size;
+        auto rs = random64(0, 10000000) % key_space_size;
         // std::stringstream ss;
         // ss << "key." << rs;
         // req = ss.str();
@@ -51,7 +51,9 @@ public:
             {
                 end_send_one(context, err);
             },
-            _timeout
+            _timeout,
+            0, // thread-hash
+            rs
             );
     }
 <?php } ?>

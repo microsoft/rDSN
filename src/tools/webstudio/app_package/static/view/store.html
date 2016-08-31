@@ -88,7 +88,7 @@ th, td {
         </div>
 
         <div class="page-header">
-            <h1> <font color= #333333><center>rDSN Store</center></font>
+            <h1> <font color= #333333><center>Service Store</center></font>
                 <small><center><font color= #778899></font></center></small>
             </h1>
         </div>
@@ -99,31 +99,29 @@ th, td {
             <table class="table table-striped main" id="packList">
             <thead>
             <tr>
-                <th>Icon</th>
+                <th>&nbsp;</th>
                 <th>Name</th>
+                <th>Stateful</th>
                 <th>Author</th>
-                <th>Description</th>
-                <th>Register State</th>
-                <th>Files</th>
                 <th>Details</th>
-                <th>Composition Stub</th>
-                <th>Running instance</th>
+                <th>Instances</th>
                 <th>Deploy</th>
-                <th>Remove</th>
+                <th>Down</th>
+                <th>Delete</th>
             </tr>
             </thead>
             <tbody>
                 <tr v-for="pack in packList">
                     <td><img :src="pack.imgsrc" width="50" height="50" ></td> 
                     <td>{{pack.name}}</td> 
+                    <td v-if="pack.is_stateful.toString() == 'true'"> <font color=green> Y </font> </td>
+                    <td v-else> <font color=red> N </font> </td>
                     <td>{{pack.author}}</td> 
-                    <td>{{pack.description}}</td> 
-                    <td>{{pack.register_state}}</td> 
-                    <td><span class="glyphicon glyphicon-file" aria-hidden="true" @click="gotoFile(pack.name)"></span></td>
-                    <td><span class="glyphicon glyphicon-list-alt" aria-hidden="true" @click="showDetail(pack.name)"></span></td>
-                    <td><a href="local/pack/{{pack.name}}/{{pack.name}}.Tron.Composition.dll" download><span class="glyphicon glyphicon-save-file" aria-hidden="true"></span></a></td>
+                    <td><span class="glyphicon glyphicon-list-alt" aria-hidden="true" @click="showDetail(pack)"></span></td>
+                    <!--<td><a href="local/pack/{{pack.name}}/{{pack.name}}.Tron.Composition.dll" download><span class="glyphicon glyphicon-save-file" aria-hidden="true"></span></a></td>-->
                     <td><span class="glyphicon glyphicon-flash" aria-hidden="true" @click="gotoInstance(pack.name)"></span></td>
-                    <td><span class="glyphicon glyphicon-send" aria-hidden="true" @click="predeploy(pack.name, pack.if_stateful)"></span></td>
+                    <td><span class="glyphicon glyphicon-send" aria-hidden="true" @click="predeploy(pack)"></span></td>
+                    <td><span class="glyphicon glyphicon-file" aria-hidden="true" @click="gotoFile(pack)"></span></td>
                     <td><span class="glyphicon glyphicon-remove" aria-hidden="true" @click="remove(pack.name)"></span></td>
                 </tr>
             </tbody>
@@ -132,7 +130,7 @@ th, td {
         <div class="row">
             <div class="col-xs-10"></div>
             <div class="col-xs-2">
-                <button class="btn btn-success" data-toggle="modal" data-target="#uploadpack1">App Registration </button>
+                <button class="btn btn-success" data-toggle="modal" data-target="#uploadpack1">Service Registration </button>
             </div>
         </div>
     </div>
@@ -144,12 +142,20 @@ th, td {
         <div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal">&times;</button>
-            <h4 class="modal-title">App Registration -- Step 1</h4>
+            <h4 class="modal-title">Service Registration -- Step 1</h4>
           </div>
-          <div class="modal-body">
+          <div class="modal-header">
+            <div class="row">
+                <div class="col-xs-12">
+Service packages are registered as <i>%name%.tar.gz</i> (Linux, or <i>%name%.zip</i> on Windows), with <i>%name%</i> as the top directory name in the tar ball, and <i>%name%/config.ini</i>. rDSN starts the packages as <i>dsn.svchost config.ini -cargs port=%port%;k1=v1;k2=v2;...;</i> where <i>port</i> is the assigned network listen port and <i>k1,v1,...</i> are environment variables defined at deployment time. 
+                <h4 class="modal-title" />
+                </div>
+            </div>
+          </div>
+          <div class="modal-body">            
             <div class="row">
                 <div class="col-xs-4">
-                    <label for="packname"  >App Name</label>
+                    <label for="packname">Name</label>
                     <input id="packname" disabled="disabled">
                 </div>
                 <div class="col-xs-4">
@@ -167,8 +173,8 @@ th, td {
             </div>
             <div class="row">
                 <div class="col-xs-12">
-                    <label for="if_stateful" > If stateful</label>
-                    <select class = "form-control" id = "if_stateful">
+                    <label for="is_stateful" > If stateful</label>
+                    <select class = "form-control" id = "is_stateful">
                       <option value = "false">false</option>
                       <option value = "true">true</option>
                     </select>
@@ -186,7 +192,7 @@ th, td {
                     <div class="row">
                         <div class="col-xs-12">
                             <input id="filepath" placeholder="Choose File" disabled="disabled" />
-                            <div class="fileUpload btn btn-warning"><span>Select Package</span><input type="file" name="fileToUpload" id="fileToUpload" class="upload" accept=".7z"></div>
+                            <div class="fileUpload btn btn-warning"><span>Select Package</span><input type="file" name="fileToUpload" id="fileToUpload" class="upload" accept=".zip;.tar.gz"></div>
                             <h4 v-if="ifNameDuplicated"><font color="red">Package name duplicated!</font></h4>
                         </div>
                     </div>
@@ -194,12 +200,13 @@ th, td {
                     <input id="file_name" name="file_name" type="hidden" value=""></input>
                     <input id="author" name="author" type="hidden" value=""></input>
                     <input id="description" name="description" type="hidden" value=""></input>
-                    <input id="cluster_type" name="cluster_type" type="hidden" value=""></input>
                     <input id="schema_info" name="schema_info" type="hidden" value=""></input>
-                    <input id="server_type" name="server_type" type="hidden" value=""></input>
+                    <input id="rpc_type" name="rpc_type" type="hidden" value=""></input>
                     <input id="schema_type" name="schema_type" type="hidden" value=""></input>
                     <input id="parameters" name="parameters" type="hidden" value=""></input>
-                    <input id="if_stateful" name="if_stateful" type="hidden" value=""></input>
+                    <input id="is_stateful" name="is_stateful" type="hidden" value=""></input>
+                    <input id="icon_path" name="icon_path" type="hidden" value=""></input>
+                    <input id="file_path" name="file_path" type="hidden" value=""></input>
                     </form>
                 </div>
             </div>
@@ -223,18 +230,24 @@ th, td {
         <div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal">&times;</button>
-            <h4 class="modal-title">App Registration -- Step 2</h4>
+            <h4 class="modal-title">Service Registration -- Step 2</h4>
           </div>
           <div class="modal-body">
-            <div class = "row">
-              <div class="col-xs-12">
-                <label for="schema_info_in" >schema information</label>
-                <textarea class="form-control" rows="10" id="schema_info_in"> </textarea>
-              </div>
-            </div>
             <div class="row">
               <div class="col-xs-12">
-                <label for="schema_type_in" >schema type</label>
+                <label for="rpc_type_in" >RPC access type</label>
+                <select class = "form-control" id = "rpc_type_in">
+                  <option value = "rdsn">rdsn</option>
+                  <option value = "thrift">thrift</option>
+                  <option value = "bond">bond</option>
+                  <option value = "protobuf">protocol buffer</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-xs-12">
+                <label for="schema_type_in" >Service Schema</label>
                 <select class = "form-control" id = "schema_type_in">
                   <option value = "thrift">thrift</option>
                   <option value = "bond">bond</option>
@@ -242,17 +255,29 @@ th, td {
                 </select>
               </div>
             </div>
-            <div class="row">
+            
+            <div class = "row">
               <div class="col-xs-12">
-                <label for="server_type_in" >runtime type</label>
-                <select class = "form-control" id = "server_type_in">
-                  <option value = "rdsn">rdsn</option>
-                  <option value = "thrift">thrift</option>
-                  <option value = "bond">bond</option>
-                  <option value = "protobuf">protocol buffers</option>
-                </select>
+                <label for="schema_info_in" > </label>
+                <textarea class="form-control" rows="10" id="schema_info_in">
+namespace cpp dsn.example
+
+struct count_op
+{
+   1: string name;
+   2: i32    operand;
+}
+
+service counter
+{
+    i32 add(1:count_op op);
+    i32 read(1:string name);
+}                   
+                </textarea>
               </div>
             </div>
+            
+            
           </div>
           <div class="modal-footer">
             <div class = "pull-left">
@@ -272,27 +297,15 @@ th, td {
         <div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal">&times;</button>
-            <h4 class="modal-title">App Registration -- Step 3</h4>
+            <h4 class="modal-title">Service Registration -- Step 3</h4>
           </div>
           <div class="modal-body">
-            <div class="row">
-              <div class="col-xs-12">
-                <label>Supported Cluster Type</label>
-                <div class="well" style="max-height: 300px;overflow: auto;">
-                  <ul class="list-group checked-list-box">
-                    <li v-for="cluster in clusterList" :class="['list-group-item', cluster.active ? 'list-group-item-primary' : '']" @click="changeClusterState($index)">
-                        {{cluster.name}}
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
             <div class = "row">
               <div class = "col-xs-9">
-                <label>Deployment Parameters</label>
+                <label>Environment variables</label>
               </div>
               <div class = "col-xs-3">
-                <button type = "button" class = "btn btn-warning" @click="addKV">Add Parameter</button>
+                <button type = "button" class = "btn btn-warning" @click="addKV">Add Variable</button>
               </div>
             </div>
             <div class = "row">
@@ -301,7 +314,7 @@ th, td {
                   <thead>
                     <tr>
                       <th>Key</th>
-                      <th>Value</th>
+                      <th>Default Value</th>
                       <th>Remove</th>
                     </tr>
                   </thead>
@@ -351,30 +364,30 @@ th, td {
         <div class = "modal-content">
           <div class = "modal-header">
             <button type = "button" class = "close" data-dismiss = "modal">&times;</button>
-            <h4 class = "modal-title text-danger">Detail Infomation</h4>
+            <h4 class = "modal-title text-danger">Detail for {{detail_pack.name}}</h4>
           </div>
           <div class = "modal-body">
             <div class = "row">
-              <div class = "col-xs-12">
-                <label>Schema Info : </label>
-                <pre>{{detail_schema_info}}</pre>
+              <div class = "col-xs-6">
+                <label>RPC Access Type : </label>
+                <p>{{detail_pack.rpc_type}}</p>
               </div>
             </div>
             <div class = "row">
               <div class = "col-xs-6">
                 <label>Schema Type : </label>
-                <p>{{detail_schema_type}}</p>
-              </div>
-            </div>
-            <div class = "row">
-              <div class = "col-xs-6">
-                <label>Server Type : </label>
-                <p>{{detail_server_type}}</p>
+                <p>{{detail_pack.schema_type}}</p>
               </div>
             </div>
             <div class = "row">
               <div class = "col-xs-12">
-                <label for="detail_parameters">Parameters : </label>
+                <label>Schema Detail : </label>
+                <pre>{{detail_pack.schema_info}}</pre>
+              </div>
+            </div>
+            <div class = "row">
+              <div class = "col-xs-12">
+                <label for="detail_parameters">Envrionment variables : </label>
                 <table class = "table table-striped text-success">
                   <thead>
                     <tr>
@@ -383,7 +396,7 @@ th, td {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="(key,value) in detail_params">
+                    <tr v-for="(key,value) in detail_pack.parameters">
                         <td>{{key}}</td>
                         <td>{{value}}</td>
                     </tr>
@@ -407,7 +420,7 @@ th, td {
         <div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal">&times;</button>
-            <h4 class="modal-title">App Deploy</h4>
+            <h4 class="modal-title">New deployment for {{deploy_pack.name}}</h4>
           </div>
           <div class="modal-body">
             <div class="row">
@@ -423,20 +436,39 @@ th, td {
             </div>
             <div class="row">
                 <div class="col-xs-4">
-                    <label for="partition_count" >Partition Count</label>
-                    <input id="partition_count" v-model="partition_count">
+                    <label for="partition_count" >Partition #</label>
+                    <input id="partition_count" v-model="partition_count" value=1>
                 </div>
                 <div class="col-xs-4">
-                    <label for="replica_count" >Replica Count</label>
-                    <input id="replica_count" v-model="replica_count">
+                    <label for="replica_count" >Replica #</label>
+                    <input id="replica_count" v-model="replica_count" value=3>
                 </div>
                 <div class="col-xs-4">
                     <label for="success_if_exist" >Success if exists</label>
                     <select class = "form-control" id = "success_if_exist" v-model="success_if_exist">
                       <option value = "true">true</option>
-                      <option value = "false">false</option>
+                      <option value = "false" selected>false</option>
                     </select>
                 </div>
+            </div>
+            <div class = "row">
+              <div class = "col-xs-12">
+                <label for="detail_parameters">Envrionment variables : </label>
+                <table class = "table table-striped text-success">
+                  <thead>
+                    <tr>
+                      <th><span class = "text-muted">Key</span></th>
+                      <th><span class = "text-muted">Value</span></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(key,value) in deploy_parameters">
+                        <td>{{key}}</td>
+                        <td><input value="{{value}}" id="deploy_parameters_{{key}}"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
             <div class="row">
                 <hr>

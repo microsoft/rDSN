@@ -95,7 +95,8 @@ foreach ($_PROG->services as $svc)
             _<?=$svc->name?>_client-><?=$f->name?>({});
 <?php } else { ?>
             //sync:
-            auto result = _<?=$svc->name?>_client-><?=$f->name?>_sync({});
+            auto rs = random64(0, 1000000000);
+            auto result = _<?=$svc->name?>_client-><?=$f->name?>_sync({}, std::chrono::milliseconds(0), 0, rs);
             std::cout << "call <?=$f->get_rpc_code()?> end, return " << result.first.to_string() << std::endl;
             //async: 
             //_<?=$svc->name?>_client-><?=$f->name?>({});
@@ -141,7 +142,7 @@ public:
         _server = ::dsn::url_host_address(argv[1]);
 
         _<?=$svc->name?>_client = new <?=$svc->name?>_perf_test_client(_server);
-        _<?=$svc->name?>_client->start_test("<?=$svc->name?>.perf-test.case.", <?=count($svc->functions)?>);
+        _<?=$svc->name?>_client->start_test("<?=$_PROG->name?>.<?=$svc->name?>.perf-test.case.", <?=count($svc->functions)?>);
         return ::dsn::ERR_OK;
     }
 

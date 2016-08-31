@@ -1,95 +1,114 @@
+<?php
+require_once($argv[1]); // type.php
+require_once($argv[2]); // program.php
+$file_prefix = $argv[3];
+$idl_type = $argv[4];
+$idl_format = $argv[5];
+
+$default_serialize_format = "DSF";
+if ($idl_type == "thrift")
+{
+    $default_serialize_format = $default_serialize_format."_THRIFT";
+} else
+{
+    $default_serialize_format = $default_serialize_format."_PROTOC";
+}
+$default_serialize_format = $default_serialize_format."_".strtoupper($idl_format);
+
+?>
 [modules]
 dsn.tools.common
 dsn.tools.nfs
 dsn.dist.uri.resolver
 dsn.dist.service.meta_server
 dsn.dist.service.stateful.type1
+<?=$_PROG->name?> 
 
-[apps..default]
-run = true
-count = 1
-;network.client.RPC_CHANNEL_TCP = dsn::tools::sim_network_provider, 65536
-;network.client.RPC_CHANNEL_UDP = dsn::tools::sim_network_provider, 65536
-;network.server.0.RPC_CHANNEL_TCP = dsn::tools::sim_network_provider, 65536
-;network.server.0.RPC_CHANNEL_UDP = dsn::tools::sim_network_provider, 65536
-
-[apps.meta]
-type = meta
-dmodule = dsn.dist.service.meta_server
-arguments = 
-ports = 34601
-run = true
-count = 1
-pools = THREAD_POOL_DEFAULT,THREAD_POOL_META_SERVER,THREAD_POOL_FD,THREAD_POOL_META_STATE
-
-[apps.simple_kv]
-type = simple_kv
-arguments = 
-ports = 34801
-run = true
-count = 0
+[apps.client]
+type = <?=$_PROG->name?>.client 
+;arguments = localhost:34888
+arguments = dsn://mycluster/<?=$_PROG->name?>.c1
 pools = THREAD_POOL_DEFAULT
+
+<?php 
+foreach ($_PROG->services as $svc) 
+{
+    echo "[apps.client.perf.".$svc->name."]".PHP_EOL;
+    echo "type = ".$_PROG->name.".".$svc->name.".client.perf".PHP_EOL;
+    echo ";arguments = localhost:34888".PHP_EOL;
+    echo "arguments = dsn://mycluster/".$_PROG->name.".c1".PHP_EOL;
+    echo "pools = THREAD_POOL_DEFAULT".PHP_EOL;
+    echo "run = false".PHP_EOL;
+    echo PHP_EOL;
+    echo "[".$_PROG->name.".".$svc->name.".perf-test.case.1]".PHP_EOL;
+    echo "perf_test_seconds  = 360000".PHP_EOL;
+    echo "perf_test_key_space_size = 100000".PHP_EOL;
+    echo "perf_test_concurrency = 1".PHP_EOL;
+    echo "perf_test_payload_bytes = 128".PHP_EOL;
+    echo "perf_test_timeouts_ms = 10000".PHP_EOL;
+    echo "perf_test_hybrid_request_ratio = ";
+    foreach ($svc->functions as $f) echo "1,";
+    echo PHP_EOL;
+    echo PHP_EOL;
+    foreach ($svc->functions as $f) { 
+        if ($f->is_write)
+        {   
+            echo "[task.". $f->get_rpc_code(). "]".PHP_EOL;
+            echo "rpc_request_is_write_operation = true".PHP_EOL;
+            echo PHP_EOL;
+        }
+    }
+} ?>
 
 [apps.replica]
 type = replica
-dmodule = dsn.dist.service.stateful.type1
 arguments = 
 ports = 34801
-run = true
+pools = THREAD_POOL_DEFAULT,THREAD_POOL_REPLICATION,THREAD_POOL_FD,THREAD_POOL_LOCAL_APP,THREAD_POOL_REPLICATION_LONG
 count = 3
-pools = THREAD_POOL_DEFAULT,THREAD_POOL_REPLICATION_LONG,THREAD_POOL_REPLICATION,THREAD_POOL_FD,THREAD_POOL_LOCAL_APP
 
-hosted_app_type_name = simple_kv
-hosted_app_arguments = 
+[apps.meta]
+type = meta
+arguments = 
+ports = 34601
+pools = THREAD_POOL_DEFAULT,THREAD_POOL_META_SERVER,THREAD_POOL_FD,THREAD_POOL_META_STATE
 
-[apps.client]
+[meta_server]
+server_list = localhost:34601
+min_live_node_count_for_unfreeze = 1
 
-type = client
-arguments = dsn://mycluster/simple_kv.instance0
-run = true
-count = 1
-pools = THREAD_POOL_DEFAULT
+[uri-resolver.dsn://mycluster]
+factory = partition_resolver_simple
+arguments = localhost:34601
 
-[apps.client.perf.test]
-type = client.perf.test
-arguments = dsn://mycluster/simple_kv.instance0
-run = true
-count = 1
-pools = THREAD_POOL_DEFAULT
-
-[tools.hpc_tail_logger]
-per_thread_buffer_bytes = 2048000
+[replication.app]
+app_name = <?=$_PROG->name?>.c1
+app_type = <?=$_PROG->name?> 
+partition_count = 1
+max_replica_count = 3
+stateful = true
 
 [core]
 start_nfs = true
 
-tool = simulator
-;tool = nativerun
-;tool = fastrun
-;toollets = tracer
-;toollets = fault_injector
-;toollets = tracer, fault_injector
-toollets = tracer, profiler, fault_injector
-;toollets = profiler, fault_injector
+tool = nativerun
+;tool = simulator
+toollets = tracer
+;toollets = tracer,profiler,fault_injector
 pause_on_start = false
 
 ;logging_start_level = LOG_LEVEL_WARNING
 ;logging_factory_name = dsn::tools::screen_logger
+;logging_factory_name = dsn::tools::simple_logger
 ;logging_factory_name = dsn::tools::hpc_tail_logger
 ;logging_factory_name = dsn::tools::hpc_logger
 ;aio_factory_name = dsn::tools::empty_aio_provider
-
-[tools.simulator]
-random_seed = 0
-;min_message_delay_microseconds = 0
-;max_message_delay_microseconds = 0
 
 [network]
 ; how many network threads for network library(used by asio)
 io_service_worker_count = 2
 
 ; specification for each thread pool
-
 [threadpool..default]
 worker_count = 2
 worker_priority = THREAD_xPRIORITY_LOWEST
@@ -106,19 +125,13 @@ partitioned = true
 max_input_queue_length = 2560
 worker_priority = THREAD_xPRIORITY_LOWEST
 
-[threadpool.THREAD_POOL_META_STATE]
-worker_count = 1
-
 [task..default]
 is_trace = true
 is_profile = true
-rpc_request_is_write_operation = false
 allow_inline = false
 rpc_call_channel = RPC_CHANNEL_TCP
 rpc_message_header_format = dsn
 rpc_timeout_milliseconds = 5000
-rpc_message_delay_ms_min = 1
-rpc_message_delay_ms_max = 1000
 
 disk_write_fail_ratio = 0.0
 disk_read_fail_ratio = 0.00001
@@ -154,32 +167,6 @@ is_trace = false
 [task.RPC_PREPARE]
 rpc_request_resend_timeout_milliseconds = 8000
 
-[task.LPC_DAEMON_APPS_CHECK_TIMER]
-is_trace = false
-
-[task.RPC_SIMPLE_KV_SIMPLE_KV_WRITE]
-rpc_request_is_write_operation = true
-
-[task.RPC_SIMPLE_KV_SIMPLE_KV_APPEND]
-rpc_request_is_write_operation = true
-
-
-[meta_server]
-server_list = localhost:34601
-min_live_node_count_for_unfreeze = 1
-
-[uri-resolver.dsn://mycluster]
-factory = partition_resolver_simple
-arguments = localhost:34601
-
-[replication.app]
-app_name = simple_kv.instance0
-app_type = simple_kv
-partition_count = 1
-max_replica_count = 3
-stateful = true
-package_id = 
-
 [replication]
 
 prepare_timeout_ms_for_secondaries = 10000
@@ -211,4 +198,3 @@ log_enable_shared_prepare = true
 log_enable_private_commit = false
 
 config_sync_interval_ms = 60000
-

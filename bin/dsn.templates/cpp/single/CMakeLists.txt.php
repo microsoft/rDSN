@@ -66,8 +66,7 @@ set(MY_BINPLACES ${RES_FILES})
 
 set(MY_BOOST_PACKAGES "")
 
-dsn_common_setup()
-dsn_add_executable()
+dsn_add_shared_library()
 
 add_custom_target( docker 
     COMMAND docker build -t "${MY_PROJ_NAME}-image" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${MY_PROJ_NAME}")

@@ -56,10 +56,18 @@ namespace dsn
             _h = dsn_perf_counter_create(section, name, type, dsptr);
         }
 
+        void destroy()
+        {
+            if (nullptr != _h)                
+            {
+                dsn_perf_counter_remove(_h);
+                _h = nullptr;
+            }
+        }
+
         ~perf_counter_(void)
         {
-            if (nullptr != _h)
-                dsn_perf_counter_remove(_h);
+            destroy();
         }
 
         // make sure they are called after init above
