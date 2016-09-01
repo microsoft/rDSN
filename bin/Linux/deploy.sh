@@ -4,10 +4,9 @@ scripts_path=`readlink -f $0`
 scripts_dir=`dirname $scripts_path`
 
 function usage() {
-    echo "Option for subcommand 'deploy|start|stop|clean"
-    echo " -s|--source-dir <dir>      local source directory for deployment"
+    echo "Option for subcommand 'deploy|start|stop|clean|scds(stop-clean-deploy-start)"
+    echo " -s|--source-dir <dir> local source directory for deployment containing start.sh, stop.sh, machines.txt and other resources, or a directory containing an apps.txt each line spcifying a sub-directory above (inside this directory"
     echo " -t|--target <dir>    remote target directory for deployment"
-    echo " -d|--deploy-name <name> deployment name to be deployed, like simple_kv"
 }
 
 CMD=$1
@@ -29,10 +28,6 @@ while [ $# -gt 0 ];do
             t_dir=$2
             shift 2
             ;;
-        -d|--deploy-name)
-            d_unit=$2
-            shift 2
-            ;;
         *)
             echo "ERROR: unknown option $key"
             echo
@@ -43,7 +38,7 @@ while [ $# -gt 0 ];do
 
 done
 
-if [ -z $s_dir ] || [ -z $t_dir ]|| [ -z $d_unit ];then
+if [ -z $s_dir ] || [ -z $t_dir ];then
     usage
     exit -1
 fi
@@ -53,45 +48,55 @@ if [ ! -d $s_dir ];then
     exit -1
 fi
 
-applist=$(cat ${s_dir}/applist)
 
-
-#$1 machine $2 app
+#$1 machine $2 app $3 sdir $4 tdir
 function deploy_files(){
 
-    echo "deploy $s_dir/$2 to $t_dir at $1"
-    ssh $1 "mkdir -p ${t_dir}/$2"
-    scp ${s_dir}/$2/* ${s_dir}/*list "${1}:${t_dir}/$2"
+    echo "deploy $2 at $3 to $4 at $1"
+    ssh $1 "mkdir -p '${4}'"
+    scp $3/* "${1}:'${4}'"
 }
 
 
-#$1 machine $2 app
+#$1 machine $2 app $3 sdir $4 tdir
 function clean_files(){
-    echo "cleaning at $1"
-    ssh $1 'rm -rf '$t_dir'/'
+    echo "cleaning $2 at $1"
+    ssh $1 'rm -fr '${4}''
 }
 
-#$1 machine $2 app
+#$1 machine $2 app $3 sdir $4 tdir
 function start_server(){
     echo "starting $2 at $1"
 
-    ssh $1 'cd '${t_dir}'/'$2';nohup sh -c "(( ./start.sh >foo.out 2>foo.err </dev/null)&)"'
+    ssh $1 'cd '${4}';nohup sh -c "(( ./start.sh >foo.out 2>foo.err </dev/null)&)"'
 }
 
+#$1 machine $2 app $3 sdir $4 tdir
 function stop_server(){
     echo "stopping $2 at $1"
-#    ssh $1 'pkill '${d_unit}''
-    ssh $1 'cd '${t_dir}'/'$2';nohup sh -c "(( ./stop.sh >foo.out 2>foo.err </dev/null)&)"'
+    ssh $1 'cd '${4}';nohup sh -c "(( ./stop.sh >foo.out 2>foo.err </dev/null)&)"'
 }
 
-
-function run_(){
-    for app in $applist;do
-        machines=$(cat ${s_dir}/${app}list)
-        for mac in $machines;do
-            $1 $mac $app
-        done
+#$1 cmd $2 app $3 sdir $4 tdir
+function run_one()
+{    
+    machines=$(cat $3/machines.txt)
+    for mac in $machines;do
+        $1 $mac $2 $3 $4
     done
+}
+
+#$1 cmd
+function run_()
+{
+    if [ -f ${s_dir}/apps.txt ]; then
+        applist=$(cat ${s_dir}/apps.txt)
+        for app in $applist;do
+            run_one $1 $app ${s_dir}/$app ${t_dir}/$app
+        done        
+    else
+        run_one $1 $(basename "$s_dir") $s_dir $t_dir
+    fi
 }
 
 case $CMD in
@@ -105,7 +110,14 @@ case $CMD in
         run_ "deploy_files"
         ;;
     clean)
+        run_ "stop_server"
         run_ "clean_files"
+        ;;
+    scds)
+        run_ "stop_server"
+        run_ "clean_files"
+        run_ "deploy_files"
+        run_ "start_server"
         ;;
     *)
         echo "Bug shouldn't come here"
