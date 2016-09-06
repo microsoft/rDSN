@@ -214,22 +214,18 @@ static void load_all_modules(::dsn::configuration_ptr config)
         }
     }
 
-    // do the real job
+    // prepare search dirs
     std::string config_file_path = config->get_file_name();
     std::string absolute_path;    
     ::dsn::utils::filesystem::get_absolute_path(config_file_path, absolute_path);
     std::string file_name = ::dsn::utils::filesystem::get_file_name(absolute_path);
     absolute_path = absolute_path.substr(0, absolute_path.length() - file_name.length() - 1);
+    std::vector<std::string> search_dirs = { absolute_path };
 
+    // do the real jobs
     for (auto m : modules)
     {
-        auto hmod = ::dsn::utils::load_dynamic_library(m.first.c_str());
-        if (nullptr == hmod)
-        {
-            auto spath = ::dsn::utils::filesystem::path_combine(absolute_path, m.first);
-            hmod = ::dsn::utils::load_dynamic_library(spath.c_str());
-        }
-
+        auto hmod = ::dsn::utils::load_dynamic_library(m.first.c_str(), search_dirs);
         if (nullptr == hmod)
         {
             dassert(false, "cannot load shared library %s specified in config file",

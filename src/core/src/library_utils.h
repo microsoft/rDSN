@@ -37,6 +37,7 @@
 
 # include <dsn/utility/ports.h>
 # include <dsn/cpp/auto_codes.h>
+# include <vector>
 
 # ifdef __TITLE__
 # undef __TITLE__
@@ -46,7 +47,7 @@
 namespace dsn {
     namespace utils {
         
-        extern dsn_handle_t load_dynamic_library(const char* module);
+        extern dsn_handle_t load_dynamic_library(const char* module, const std::vector<std::string>& search_dirs);
 
         extern dsn_handle_t load_symbol(dsn_handle_t hmodule, const char* symbol);
 

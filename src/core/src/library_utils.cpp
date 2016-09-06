@@ -59,37 +59,61 @@ namespace dsn {
     namespace utils {
 
 
-        dsn_handle_t load_dynamic_library(const char* module)
+        dsn_handle_t load_dynamic_library(const char* module, const std::vector<std::string>& search_dirs)
         {
             std::string module_name(module);
 # if defined(_WIN32)
             module_name += ".dll";
-            auto hmod = ::LoadLibraryA(module_name.c_str());
-            if (hmod == NULL)
-            {
-                derror("load dynamic library '%s' failed, err = %d", module_name.c_str(), ::GetLastError());
-            }            
 # elif defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)
             module_name = "lib" + module_name + ".so";
-            auto hmod = dlopen(module_name.c_str(), RTLD_LAZY|RTLD_GLOBAL);
-            if (nullptr == hmod)
-            {
-                derror("load dynamic library '%s' failed, err = %s", module_name.c_str(), dlerror());
-            }
 # else
 # error not implemented yet
+# endif
+
+            // search given dirs with priority
+            std::vector<std::string> passes;
+            for (auto & dr : search_dirs)
+            {
+                passes.push_back(utils::filesystem::path_combine(dr, module_name));
+            }
+
+            // search OS given passes
+            passes.push_back(module_name);
+
+            // try 
+            dsn_handle_t hmod = nullptr;
+            for (auto & m : passes)
+            {
+# if defined(_WIN32)
+                hmod = (dsn_handle_t)::LoadLibraryA(m.c_str());
+                if (hmod == nullptr)
+                {
+                    ddebug("load dynamic library '%s' failed, err = %d", m.c_str(), ::GetLastError());
+                }
+# else
+                hmod = (dsn_handle_t)dlopen(m.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+                if (nullptr == hmod)
+                {
+                    ddebug("load dynamic library '%s' failed, err = %s", m.c_str(), dlerror());
+                }
 # endif 
-            return (dsn_handle_t)(hmod);
+                else
+                    break;
+            }
+
+            if (hmod == nullptr)
+            {
+                derror("load dynamic library '%s' failed, check logs for details", module_name.c_str());
+            }
+            return hmod;
         }
 
         dsn_handle_t load_symbol(dsn_handle_t hmodule, const char* symbol)
         {
 # if defined(_WIN32)
             return (dsn_handle_t)::GetProcAddress((HMODULE)hmodule, (LPCSTR)symbol);
-# elif defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)
-            return (dsn_handle_t)dlsym((void*)hmodule, symbol);
 # else
-# error not implemented yet
+            return (dsn_handle_t)dlsym((void*)hmodule, symbol);
 # endif 
         }
 
@@ -97,10 +121,8 @@ namespace dsn {
         {
 # if defined(_WIN32)
             ::CloseHandle((HMODULE)hmodule);
-# elif defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)
-            dlclose((void*)hmodule);
 # else
-# error not implemented yet
+            dlclose((void*)hmodule);
 # endif
         }
     }
