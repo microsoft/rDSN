@@ -67,14 +67,13 @@ function clean_files(){
 #$1 machine $2 app $3 sdir $4 tdir
 function start_server(){
     echo "starting $2 at $1"
-
-    ssh $1 'cd '${4}';nohup sh -c "(( ./start.sh >foo.out 2>foo.err </dev/null)&)"'
+    ssh $1 'cd '${4}'; export LD_LIBRARY_PATH=${4}:$LD_LIBRARY_PATH; nohup sh -c "(( ./start.sh >foo.out 2>foo.err </dev/null)&)"'
 }
 
 #$1 machine $2 app $3 sdir $4 tdir
 function stop_server(){
     echo "stopping $2 at $1"
-    ssh $1 'cd '${4}';nohup sh -c "(( ./stop.sh >foo.out 2>foo.err </dev/null)&)"'
+    ssh $1 'cd '${4}'; export LD_LIBRARY_PATH=${4}:$LD_LIBRARY_PATH; nohup sh -c "(( ./stop.sh >foo.out 2>foo.err </dev/null)&)"'
 }
 
 #$1 cmd $2 app $3 sdir $4 tdir
