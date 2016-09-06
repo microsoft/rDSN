@@ -49,6 +49,8 @@
 # include <ifaddrs.h>
 # include <netinet/in.h>
 # include <arpa/inet.h>
+# include <sys/ioctl.h>
+# include <net/if.h>
 
 # if defined(__FreeBSD__)
 # include <netinet/in.h>
@@ -136,17 +138,37 @@ DSN_API uint32_t dsn_ipv4_local(const char* network_interface)
         while (i != nullptr)
         {
             if (i->ifa_name != nullptr &&
-                i->ifa_addr != nullptr && 
-                i->ifa_addr->sa_family == AF_INET
+                i->ifa_addr != nullptr 
                 )
             {
                 if (strcmp(i->ifa_name, network_interface) == 0 ||
-                        (network_interface[0] == '\0'
-                         && strncmp(i->ifa_name, "eth", 3) == 0
-                         && strncmp((const char*)&((struct sockaddr_in *)i->ifa_addr)->sin_addr.s_addr, loopback, 4) != 0)
+                    (network_interface[0] == '\0' && strncmp(i->ifa_name, "eth", 3) == 0)
                    )
-                ret = (uint32_t)ntohl(((struct sockaddr_in *)i->ifa_addr)->sin_addr.s_addr);
-                break;
+                {
+                    if (i->ifa_addr->sa_family == AF_INET && 
+                        strncmp((const char*)&((struct sockaddr_in *)i->ifa_addr)->sin_addr.s_addr, loopback, 4) != 0)
+                    {
+                        ret = (uint32_t)ntohl(((struct sockaddr_in *)i->ifa_addr)->sin_addr.s_addr);
+                        break;
+                    }
+
+                    // sometimes the sa_family is not AF_INET but we can still try 
+                    else
+                    {
+                        int fd = socket(AF_INET, SOCK_DGRAM, 0);
+                        struct ifreq ifr;
+                        
+                        ifr.ifr_addr.sa_family = AF_INET;
+                        strncpy(ifr.ifr_name, i->ifa_name, IFNAMSIZ - 1);
+
+                        auto err = ioctl(fd, SIOCGIFADDR, &ifr);
+                        if (err == 0 && strncmp((const char*)&((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr, loopback, 4) != 0)
+                        {
+                            ret = (uint32_t)ntohl(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr);
+                            break;
+                        }
+                    }
+                }
             }
             i = i->ifa_next;
         }
