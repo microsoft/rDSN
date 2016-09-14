@@ -76,7 +76,7 @@ public:
     {
     }
 
-    void on_rpc_test(const int& test_id, ::dsn::rpc_replier<std::string>& replier)
+    void on_rpc_test(const std::string& test_id, ::dsn::rpc_replier<std::string>& replier)
     {
         std::string r = dsn::task::get_current_node_name();
         replier(std::move(r));

@@ -78,7 +78,7 @@ static ::dsn::rpc_address dsn_address_from_string(const std::string& str)
 
 TEST(core, rpc)
 {
-    int req = 0;
+    std::string req = "";
     ::dsn::rpc_address server("localhost", 20101);
 
     auto result = ::dsn::rpc::call_wait<std::string>(

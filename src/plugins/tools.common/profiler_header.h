@@ -60,6 +60,7 @@ namespace dsn {
             RPC_CLIENT_NON_TIMEOUT_LATENCY_NS,
             RPC_CLIENT_TIMEOUT_THROUGHPUT,
             TASK_IN_QUEUE,
+            TASK_EXEC_COUNT,
 
             PREF_COUNTER_COUNT,
             PREF_COUNTER_INVALID
@@ -215,12 +216,16 @@ namespace dsn {
             perf_counter* ptr[PREF_COUNTER_COUNT];
             bool collect_call_count;
             bool is_profile;
+            bool alert_high_rpc_server_latency; // <rpc-request-enqueue, rpc-reply>
+            bool alert_high_rpc_client_latency; // <rpc-call, rpc-response-enqueue>
             std::atomic<int64_t>* call_counts;
 
             task_spec_profiler()
             {
                 collect_call_count = false;
                 is_profile = false;
+                alert_high_rpc_server_latency = false;
+                alert_high_rpc_client_latency = false;
                 call_counts = nullptr;
                 memset((void*)ptr, 0, sizeof(ptr));
             }

@@ -37,133 +37,141 @@
 #include <dsn/service_api_cpp.h>
 #include <boost/lexical_cast.hpp>
 
-TEST(perf_core, rpc)
-{
-    rpc_address localhost("localhost", 20101);
 
-    rpc_read_stream response;
-    std::mutex lock;
-    for (auto concurrency : {10, 100, 1000, 10000})
+void rpc_testcase(uint64_t block_size, size_t concurrency)
+{
+    std::atomic<uint64_t> io_count(0);
+    std::atomic<uint64_t> cb_flying_count(0);
+    volatile bool exit = false;
+    std::function<void(int)> cb;    
+    std::string req;
+    req.resize(block_size, 'x');
+    rpc_address server("localhost", 20101);
+
+    std::string test_server = dsn_config_get_value_string("apps.client", "test_server", "", 
+        "rpc test server address, i.e., host:port"
+        );
+    if (test_server.length() > 0)
     {
-        std::atomic_int remain_concurrency;
-        remain_concurrency = concurrency;
-        size_t total_query_count = 1000000;
-        auto tic = std::chrono::steady_clock::now();
-        for (auto remain_query_count = total_query_count; remain_query_count--;)
-        {
-            while(true)
-            {
-                if (remain_concurrency.fetch_sub(1, std::memory_order_relaxed) <= 0)
-                {
-                    remain_concurrency.fetch_add(1, std::memory_order_relaxed);
-                }
-                else
-                {
-                    break;
-                }
-            }
-            rpc::call(
-                localhost,
-                RPC_TEST_HASH,
-                0,
-                nullptr,
-                [&remain_concurrency](error_code ec, const std::string&)
-                {
-                    ec.end_tracking();
-                    remain_concurrency.fetch_add(1, std::memory_order_relaxed);
-                }
-            );
-        }
-        while(remain_concurrency != concurrency)
-        {
-            ;
-        }
-        auto toc = std::chrono::steady_clock::now();
-        auto time_us = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count();
-        std::cout << "rpc perf test: concurrency = " << concurrency
-            << " throughput = " << total_query_count * 1000000llu / time_us << "call/sec" << std::endl;
+        url_host_address addr(test_server.c_str());
+        server.assign_ipv4(addr.ip(), addr.port());
     }
 
-}
-
-TEST(perf_core, rpc_sync)
-{
-    rpc_address localhost("localhost", 20101);
-    auto tic = std::chrono::steady_clock::now();
-
-    auto round = 100000;
-    auto concurrency = 10;
-    auto total_query_count = round * concurrency;
-
-    std::vector<task_ptr> tasks;
-    for (auto i = 0; i < round; i++)
+    cb = [&](int index)
     {
-        for (auto j = 0; j < concurrency; j++)
+        if (!exit)
         {
-            auto req = 0;
-            auto task = rpc::call(
-                localhost,
+            io_count++;            
+            cb_flying_count++;
+
+            rpc::call(
+                server,
                 RPC_TEST_HASH,
                 req,
                 nullptr,
-                [](error_code err, std::string&& result) 
+                [idx = index, &cb, &cb_flying_count](error_code err, std::string&& result)
                 {
-                    // nothing to do
+                    if (ERR_OK == err)
+                        cb(idx);
+                    cb_flying_count--;
                 }
-                );
-
-            tasks.push_back(task);
+            );
         }
+    };
 
-        for (auto& t : tasks)
-            t->wait();
-
-        tasks.clear();
+    // start
+    auto tic = std::chrono::steady_clock::now();
+    for (int i = 0; i < concurrency; i++)
+    {
+        cb(i);
     }
 
+    // run for seconds
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+    auto ioc = io_count.load();
+    auto bytes = ioc * block_size;
     auto toc = std::chrono::steady_clock::now();
-    auto time_us = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count();
-    std::cout << "rpc-sync perf test: throughput = " 
-        << total_query_count * 1000000llu / time_us << " #/s, avg latency = "
-        << time_us / total_query_count 
-        << " us"<< std::endl;
+
+    std::cout
+        << "block_size = " << block_size
+        << ", concurrency = " << concurrency
+        << ", iops = " << (double)ioc / (double)std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count() * 1000000.0 << " #/s"
+        << ", throughput = " << (double)bytes / std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count() << " mB/s"
+        << ", avg_latency = " << (double)std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count() / (double)(ioc / concurrency) << " us"
+        << std::endl;
+
+    // safe exit
+    exit = true;
+
+    while (cb_flying_count.load() > 0)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
 }
 
-TEST(perf_core, lpc_sync)
+TEST(perf_core, rpc)
 {
-    auto tic = std::chrono::steady_clock::now();
+    for (auto blk_size_bytes : { 1, 128, 256, 4 * 1024 })
+        for (auto concurrency : { 1, 2, 4,10,50,100,200 })
+            rpc_testcase(blk_size_bytes, concurrency);
+}
 
-    auto round = 1000000;
-    auto concurrency = 10;
-    auto total_query_count = round * concurrency;
-    std::vector<task_ptr> tasks;
-    std::vector<std::string> results;
-    for (auto i = 0; i < round; i++)
+
+void lpc_testcase(size_t concurrency)
+{
+    std::atomic<uint64_t> io_count(0);
+    std::atomic<uint64_t> cb_flying_count(0);
+    volatile bool exit = false;
+    std::function<void(int)> cb;
+
+    cb = [&](int index)
     {
-        results.resize(concurrency);
-        for (auto j = 0; j < concurrency; j++)
+        if (!exit)
         {
-            auto task = tasking::enqueue(
+            io_count++;
+            cb_flying_count++;
+
+            tasking::enqueue(
                 LPC_TEST_HASH,
                 nullptr,
-                [&results, j]() {
-                    std::string r = dsn_get_app_data_dir();
-                    results[j] = std::move(r);
+                [idx = index, &cb, &cb_flying_count]()
+                {
+                    cb(idx);
+                    cb_flying_count--;
                 }
-                );
-            tasks.push_back(task);
+            );
         }
-        
-        for (auto& t : tasks)
-            t->wait();
+    };
 
-        tasks.clear();
+    // start
+    auto tic = std::chrono::steady_clock::now();
+    for (int i = 0; i < concurrency; i++)
+    {
+        cb(i);
     }
 
+    // run for seconds
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+    auto ioc = io_count.load();
     auto toc = std::chrono::steady_clock::now();
-    auto time_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(toc - tic).count();
-    std::cout << "lpc-sync perf test: throughput = "
-        << total_query_count * 1000000000llu / time_ns << " #/s, avg latency = "
-        << time_ns / total_query_count
-        << " ns" << std::endl;
+
+    std::cout
+        << "concurrency = " << concurrency
+        << ", iops = " << (double)ioc / (double)std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count() * 1000000.0 << " #/s"
+        << ", avg_latency = " << (double)std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count() / (double)(ioc / concurrency) << " us"
+        << std::endl;
+
+    // safe exit
+    exit = true;
+
+    while (cb_flying_count.load() > 0)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+
+TEST(perf_core, lpc)
+{
+    for (auto concurrency : { 1, 2, 4,10,50,100,200 })
+        lpc_testcase(concurrency);
 }
