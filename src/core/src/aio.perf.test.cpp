@@ -38,88 +38,158 @@
 #include <dsn/cpp/test_utils.h>
 #include <boost/lexical_cast.hpp>
 
-void aio_testcase(uint64_t block_size, uint64_t total_size_mb, size_t concurrency, bool is_write, bool random_offset)
+void aio_testcase(uint64_t block_size, size_t concurrency, bool is_write, bool shared)
 {
     std::unique_ptr<char[]> buffer(new char[block_size]);
-    std::atomic_uint remain_concurrency;
-    remain_concurrency = concurrency;
-    if (is_write && utils::filesystem::file_exists("temp"))
-    {
-        utils::filesystem::remove_path("temp");
-        dassert(!utils::filesystem::file_exists("temp"), "");
-    }
-    auto file_handle = dsn_file_open("temp", O_CREAT | O_RDWR, 0666);
-    auto total_size_bytes = total_size_mb * 1024 * 1024;
-    auto tic = std::chrono::steady_clock::now();
+    std::vector<dsn_handle_t> files;
+    files.resize(concurrency);
 
-    for (int bytes_written = 0; bytes_written < total_size_bytes; )
+    int flag;
+    if (is_write)
     {
-        while (true)
+        flag = O_CREAT | O_RDWR;
+        if (shared)
         {
-            if (remain_concurrency.fetch_sub(1, std::memory_order_acquire) <= 0)
-            {
-                remain_concurrency.fetch_add(1, std::memory_order_relaxed);
-            }
-            else
-            {
-                break;
-            }
-        }
-        auto cb = [&](error_code ec, int sz)
-        {
-            dassert(ec == ERR_OK && uint64_t(sz) == block_size,
-                "ec = %s, sz = %d, block_size = %" PRId64 "",
-                ec.to_string(), sz, block_size
-                );
-            remain_concurrency.fetch_add(1, std::memory_order_relaxed);
-        };
-        auto offset = random_offset ? dsn_random64(0, total_size_bytes - block_size) : bytes_written;
-        if (is_write)
-        {
-            file::write(file_handle, buffer.get(), block_size, offset, LPC_AIO_TEST, nullptr, cb);
+            if (utils::filesystem::file_exists("temp"))
+                utils::filesystem::remove_path("temp");
         }
         else
         {
-            file::read(file_handle, buffer.get(), block_size, offset, LPC_AIO_TEST, nullptr, cb);
-        }
-
-        bytes_written += block_size;
-    }
-    while (remain_concurrency != concurrency)
-    {
-        ;
-    }
-    dsn_file_flush(file_handle);
-    auto toc = std::chrono::steady_clock::now();
-    auto cok = dsn_file_close(file_handle);
-    EXPECT_EQ(cok, ERR_OK);
-
-    std::cout << "is_write = " << is_write
-        << " random_offset = " << random_offset
-        << " block_size = " << block_size
-        << " concurrency = " << concurrency
-        << " throughput = " << double(total_size_mb) * 1000000 / std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count() << " mB/s" << std::endl;
-}
-TEST(perf_core, aio)
-{
-    uint64_t block_size_list[] = { 64, 512, 4096, 512 * 1024 };
-    uint64_t file_size_list_MB[] = {8, 16, 32, 64};
-
-    auto concurrency_list = { 1, 4, 16 };
-    for (auto is_write : { true, false }) 
-    {
-        for (auto random_offset : {false, true }) 
-        {
-            for (int i =0; i < sizeof(block_size_list)/sizeof(uint64_t); i++)
+            for (int i = 0; i < concurrency; i++)
             {
-                auto block_size = block_size_list[i];
-                auto file_size_MB = file_size_list_MB[i];
-
-                for (auto concurrency : concurrency_list)
-                {
-                    aio_testcase(block_size,  file_size_MB, concurrency, is_write, random_offset);
-                }
+                std::stringstream ss;
+                ss << "temp." << i;
+                auto file = ss.str();
+                if (utils::filesystem::file_exists(file))
+                    utils::filesystem::remove_path(file);
             }
         }
     }
+    else
+    {
+        flag = O_RDWR;
+    }
+
+    if (shared)
+    {
+        auto file_handle = dsn_file_open("temp", flag, 0666);
+        EXPECT_TRUE(file_handle != nullptr);
+        for (int i = 0; i < concurrency; i++)
+            files[i] = file_handle;
+    }
+    else
+    {
+        for (int i = 0; i < concurrency; i++)
+        {
+            std::stringstream ss;
+            ss << "temp." << i;
+            auto file = ss.str();
+            auto file_handle = dsn_file_open(file.c_str(), flag, 0666);
+            EXPECT_TRUE(file_handle != nullptr);
+            files[i] = file_handle;
+        }
+    }
+    
+    std::atomic<uint64_t> io_count(0);
+    std::atomic<uint64_t> cb_flying_count(0);
+    volatile bool exit = false;
+    std::function<void(int)> cb;
+    std::vector<uint64_t> offsets;
+    offsets.resize(concurrency);
+    
+    cb = [&](int index)
+    {
+        if (!exit)
+        {
+            auto ioc = io_count++;
+            uint64_t offset;
+            if (!shared)
+            {
+                offset = offsets[index];
+                offsets[index] += block_size;
+            }
+            else
+            {
+                offset = ioc * block_size;
+            }
+
+            cb_flying_count++;
+            if (is_write)
+            {
+                file::write(files[index], buffer.get(), (int)block_size, offset,
+                    LPC_AIO_TEST, nullptr, [&](::dsn::error_code code, size_t sz) 
+                    {                        
+                        if (ERR_OK == code)
+                            cb(index);
+                        cb_flying_count--;
+                    });                
+            }
+            else
+            {
+                file::read(files[index], buffer.get(), (int)block_size, offset,
+                    LPC_AIO_TEST, nullptr, [&](::dsn::error_code code, size_t sz)
+                    {                        
+                        if (ERR_OK == code)
+                            cb(index);
+                        cb_flying_count--;
+                    });
+            }
+        }
+    };
+
+    // start
+    auto tic = std::chrono::steady_clock::now();
+    for (int i = 0; i < concurrency; i++)
+    {
+        offsets[i] = 0;
+        cb(i);
+    }
+
+    // run for seconds
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+    auto ioc = io_count.load();
+    auto bytes = ioc * block_size;    
+    auto toc = std::chrono::steady_clock::now();
+    
+    std::cout << "is_write = " << is_write        
+        << ", block_size = " << block_size
+        << ", shared = " << shared
+        << ", concurrency = " << concurrency
+        << ", iops = " << (double)ioc / (double)std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count() * 1000000.0 << " #/s"
+        << ", throughput = " << (double)bytes / std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count() << " mB/s"
+        << ", avg_latency = " << (double)std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count() / (double)(ioc / concurrency) << " us"
+        << std::endl;
+
+    // safe exit
+    exit = true;
+
+    while (cb_flying_count.load() > 0)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    if (shared)
+    {
+        dsn_file_flush(files[0]);
+        auto cok = dsn_file_close(files[0]);
+        EXPECT_EQ(cok, ERR_OK);
+    }
+    else
+    {
+        for (auto& f : files)
+        {
+            dsn_file_flush(f);
+            auto cok = dsn_file_close(f);
+            EXPECT_EQ(cok, ERR_OK);
+        }
+    }
+}
+
+TEST(perf_core, aio)
+{
+    for (auto is_write : { true, false })
+        for (auto shared : { false, true })
+            for (auto blk_size_bytes : { 256, 1024, 4 * 1024 })
+                for (auto concurrency : { 1, 2, 4})
+                    aio_testcase(blk_size_bytes, concurrency, is_write, shared);
 }

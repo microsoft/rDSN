@@ -46,7 +46,7 @@ class disk_write_queue : public work_queue<aio_task>
 {
 public:
     disk_write_queue()
-        : work_queue(2)
+        : work_queue(200)
     {
         _max_batch_bytes = 1024 * 1024; // 1 MB
     }
