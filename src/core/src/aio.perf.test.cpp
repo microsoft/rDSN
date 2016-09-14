@@ -117,20 +117,20 @@ void aio_testcase(uint64_t block_size, size_t concurrency, bool is_write, bool s
             if (is_write)
             {
                 file::write(files[index], buffer.get(), (int)block_size, offset,
-                    LPC_AIO_TEST, nullptr, [&](::dsn::error_code code, size_t sz) 
+                    LPC_AIO_TEST, nullptr, [idx = index, &cb, &cb_flying_count](::dsn::error_code code, size_t sz) 
                     {                        
                         if (ERR_OK == code)
-                            cb(index);
+                            cb(idx);
                         cb_flying_count--;
                     });                
             }
             else
             {
                 file::read(files[index], buffer.get(), (int)block_size, offset,
-                    LPC_AIO_TEST, nullptr, [&](::dsn::error_code code, size_t sz)
+                    LPC_AIO_TEST, nullptr, [idx = index, &cb, &cb_flying_count](::dsn::error_code code, size_t sz)
                     {                        
                         if (ERR_OK == code)
-                            cb(index);
+                            cb(idx);
                         cb_flying_count--;
                     });
             }
