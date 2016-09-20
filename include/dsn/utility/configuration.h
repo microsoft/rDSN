@@ -62,12 +62,23 @@ public:
 
     ~configuration();
 
+    //
     // arguments: k1=v1;k2=v2;k3=v3; ...
-    // e.g.,
-    //    port = %port%
-    //    timeout = %timeout%
-    // arguments: port=23466;timeout=1000
-    bool load(const char* file_name, const char* arguments = nullptr);
+    //   e.g.,
+    //      port = %port%
+    //      timeout = %timeout%
+    //   arguments: port=23466;timeout=1000
+    //
+    // overwrites: section1.k1=v1;section2.k2=v2;section3.k3=v3; ...
+    //   e.g., apps.client.port=23466;task.RPC_TEST.timeout=1000
+    //   to overwrite the configuration in the given file
+    //   note apps.client.port is always interpreted as [apps.client] port
+    //   instead of [apps] client.port, i.e., we don't use '.' in key names.
+    //
+    bool load(const char* file_name,
+        const char* arguments = nullptr,
+        const char* overwrites = nullptr
+    );
 
     void get_all_sections(std::vector<std::string>& sections);
 

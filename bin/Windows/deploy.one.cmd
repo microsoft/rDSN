@@ -36,7 +36,13 @@ REM
     xcopy /F /Y /S %src_dir% %rdst%
     COPY /Y %bin_dir%\7z.exe %rdst%
     COPY /Y %bin_dir%\7z.dll %rdst%
-    SCHTASKS /CREATE /S %machine% /RU SYSTEM /SC ONLOGON /TN rDSN.%deploy_name% /TR "%ldst_dir%\start.cmd" /V1 /F
+        
+    @Netsh -r %machine% AdvFirewall firewall delete rule name="rDSN.%deploy_name%.in"
+    Netsh -r %machine% AdvFirewall firewall add rule name="rDSN.%deploy_name%.in" dir=in program="%ldst_dir%\dsn.svchost.exe" action=allow
+    @Netsh -r %machine% AdvFirewall firewall delete rule name="rDSN.%deploy_name%.out"
+    Netsh -r %machine% AdvFirewall firewall add rule name="rDSN.%deploy_name%.out" dir=out program="%ldst_dir%\dsn.svchost.exe" action=allow
+    
+    SCHTASKS /CREATE /S %machine% /RU SYSTEM /SC ONSTART /TN rDSN.%deploy_name% /TR "%ldst_dir%\start.cmd" /V1 /F
     GOTO:EOF
 
 :start
@@ -55,6 +61,9 @@ REM
     GOTO:EO
 
 :cleanup
+    @Netsh -r %machine% AdvFirewall firewall delete rule name="rDSN.%deploy_name%.in"
+    @Netsh -r %machine% AdvFirewall firewall delete rule name="rDSN.%deploy_name%.out"
+    @SCHTASKS /END /S %1 /TN rDSN.%deploy_name%
     SCHTASKS /Delete /S %1 /TN rDSN.%deploy_name% /F
     set rdst=\\%1\%rdst_dir%
     @rmdir /Q /S %rdst%

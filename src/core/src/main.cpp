@@ -278,7 +278,13 @@ static void load_all_modules(::dsn::configuration_ptr config)
 }
 
 void run_all_unit_tests_prepare_when_necessary();
-bool run(const char* config_file, const char* config_arguments, bool sleep_after_init, std::string& app_list)
+bool run(
+    const char* config_file, 
+    const char* config_arguments, 
+    const char* config_overwrites,
+    bool sleep_after_init, 
+    std::string& app_list
+)
 {
     ::dsn::task::set_tls_dsn_context(nullptr, nullptr, nullptr);
 
@@ -290,7 +296,7 @@ bool run(const char* config_file, const char* config_arguments, bool sleep_after
     dsn_all.memory = nullptr;
     dsn_all.magic = 0xdeadbeef;
 
-    if (!dsn_all.config->load(config_file, config_arguments))
+    if (!dsn_all.config->load(config_file, config_arguments, config_overwrites))
     {
         printf("Fail to load config file %s\n", config_file);
         return false;
@@ -497,11 +503,6 @@ bool run(const char* config_file, const char* config_arguments, bool sleep_after
 
 //
 // run the system with arguments
-//   config [-cargs k1=v1;k2=v2] [-app_list app_name1@index1;app_name2@index]
-// e.g., config.ini -app_list replica@1 to start the first replica as a new process
-//       config.ini -app_list replica to start ALL replicas (count specified in config) as a new process
-//       config.ini -app_list replica -cargs replica-port=34556 to start ALL replicas with given port variable specified in config.ini
-//       config.ini to start ALL apps as a new process
 //
 DSN_API void dsn_run(int argc, char** argv, bool sleep_after_init)
 {
@@ -509,10 +510,11 @@ DSN_API void dsn_run(int argc, char** argv, bool sleep_after_init)
     {
         printf("invalid options for dsn_run\n"
             "// run the system with arguments\n"
-            "//   config [-cargs k1=v1;k2=v2] [-app_list app_name1@index1;app_name2@index]\n"
+            "//   config [-cargs k1=v1;k2=v2] [-overwrite section1.k1=v1;section2.k2=v2] [-app_list app_name1@index1;app_name2@index]\n"
             "// e.g., config.ini -app_list replica@1 to start the first replica as a new process\n"
             "//       config.ini -app_list replica to start ALL replicas (count specified in config) as a new process\n"
             "//       config.ini -app_list replica -cargs replica-port=34556 to start with %%replica-port%% var in config.ini\n"
+            "//       config.ini -app_list replica -overwrite apps.meta.port=24556 to overwrite [apps.meta] port = 24556 in config.ini\n"
             "//       config.ini to start ALL apps as a new process\n"
         );
         exit(1);
@@ -521,6 +523,7 @@ DSN_API void dsn_run(int argc, char** argv, bool sleep_after_init)
 
     char* config = argv[1];
     std::string config_args = "";
+    std::string overwrites = "";
     std::string app_list = "";
 
     for (int i = 2; i < argc;)
@@ -530,6 +533,14 @@ DSN_API void dsn_run(int argc, char** argv, bool sleep_after_init)
             if (++i < argc)
             {
                 config_args = std::string(argv[i++]);
+            }
+        }
+
+        else if (0 == strcmp(argv[i], "-overwrite"))
+        {
+            if (++i < argc)
+            {
+                overwrites = std::string(argv[i++]);
             }
         }
 
@@ -548,7 +559,12 @@ DSN_API void dsn_run(int argc, char** argv, bool sleep_after_init)
         }
     }
 
-    if (!run(config, config_args.size() > 0 ? config_args.c_str() : nullptr, sleep_after_init, app_list))
+    if (!run(config, 
+        config_args.size() > 0 ? config_args.c_str() : nullptr, 
+        overwrites.size() > 0 ? overwrites.c_str() : nullptr,
+        sleep_after_init, 
+        app_list
+    ))
     {
         printf("run the system failed\n");
         dsn_exit(-1);
@@ -559,7 +575,7 @@ DSN_API void dsn_run(int argc, char** argv, bool sleep_after_init)
 DSN_API bool dsn_run_config(const char* config, bool sleep_after_init)
 {
     std::string name;
-    return run(config, nullptr, sleep_after_init, name);
+    return run(config, nullptr, nullptr, sleep_after_init, name);
 }
 
 DSN_API int dsn_get_all_apps(dsn_app_info* info_buffer, int count)
