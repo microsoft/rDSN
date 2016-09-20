@@ -387,7 +387,7 @@ service counter
             </div>
             <div class = "row">
               <div class = "col-xs-12">
-                <label for="detail_parameters">Envrionment variables : </label>
+                <label for="detail_parameters"> Common envrionment variables : </label>
                 <table class = "table table-striped text-success">
                   <thead>
                     <tr>
@@ -451,9 +451,45 @@ service counter
                     </select>
                 </div>
             </div>
+            <div class="row">
+                <hr>
+            </div>
             <div class = "row">
               <div class = "col-xs-12">
-                <label for="detail_parameters">Envrionment variables : </label>
+                <label for="detail_parameters"> Target deployment scenario : </label>
+                <table class = "table table-striped text-success">                  
+                  <tbody>
+                    <tr>
+                        <td colspan=2>
+                        <select class = "form-control"  v-model="deploy_config_id"><!-- onchange="javascript:vm.on_deploy_config_changed()">-->
+                            <option v-for="(key,value) in deploy_configs" value="{{key}}"> 
+                            {{value.dsptr}} 
+                            </option>
+                        </select>
+                        </td>                        
+                    </tr>
+                    
+                    <tr v-for="(key,value) in deploy_configs[deploy_config_id].overwrites">
+                        <td>{{key}}</td>
+                        <td><input value="{{value}}" id="deploy_overwrites_{{key}}"  class = "form-control"></td>
+                    </tr>
+                    
+                    <tr>
+                        <td colspan=2>
+                        Addtional configurations (section.key=value;section2.key2=value2;...):                        
+                        <textarea class = "form-control"  v-model="deploy_overwrites_extra" rows=2>
+                        </textarea>
+                        </td>                        
+                    </tr>
+                    
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div class = "row">
+              <div class = "col-xs-12">
+                <label for="detail_parameters"> Common envrionment variables : </label>
                 <table class = "table table-striped text-success">
                   <thead>
                     <tr>
