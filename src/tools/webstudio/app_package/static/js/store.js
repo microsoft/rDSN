@@ -91,6 +91,64 @@ var vm = new Vue({
         paramList: [],
 
         ifNameDuplicated: false,
+        
+        deploy_config_id: 0,
+        deploy_overwrites_extra: "",
+        deploy_configs: [
+                {
+                    "dsptr" : "stateless service",
+                    "config" : "{{st}}.deploy.service.stateless.ini",
+                    "overwrites" : {
+                        "core.tool" : "nativerun",
+                        "core.toollets" : "profiler",
+                        }
+                },
+                {
+                    "dsptr" : "meta server(s) for stateful service",
+                    "config" : "{{st}}.deploy.meta_server.ini",
+                    "overwrites" : {
+                        "core.tool" : "nativerun",
+                        "core.toollets" : "profiler,tracer",
+                        "replication.app.partition_count" : 4,
+                        "replication.app.max_replica_count" : 3,
+                        }
+                },
+                {
+                    "dsptr" : "replica server(s) for stateful service",
+                    "config" : "{{st}}.deploy.service.stateful.ini",
+                    "overwrites" : {
+                        "core.tool" : "nativerun",
+                        "core.toollets" : "profiler",
+                        "meta_server.server_list" : "meta-server-address-list",
+                        "uri-resolver.dsn://mycluster.arguments" : "meta-server-address-list",
+                    }
+                },
+                {
+                    "dsptr" : "functional test",
+                    "config" : "{{st}}.deploy.client.ini",
+                    "overwrites" : {
+                        "core.tool" : "nativerun",
+                        "core.toollets" : "",
+                        "apps.client.arguments" : "dsn://mycluster/service-xxx",
+                        "uri-resolver.dsn://mycluster.arguments" : "meta-server-address-list",
+                    },
+                },
+                {
+                    "dsptr" : "performance test",
+                    "config" : "{{st}}.deploy.client.perf.ini",
+                    "overwrites" : {
+                        "core.tool" : "nativerun",
+                        "core.toollets" : "",
+                        "apps.client.arguments" : "dsn://mycluster/{{svc}}",
+                        "uri-resolver.dsn://mycluster.arguments" : "meta-server-address-list",
+                        "{{st}}.{{st}}.perf-test.case.1.perf_test_key_space_size" : 1000000,
+                        "{{st}}.{{st}}.perf-test.case.1.perf_test_concurrency" : 1,
+                        "{{st}}.{{st}}.perf-test.case.1.perf_test_payload_bytes" : 256,
+                        "{{st}}.{{st}}.perf-test.case.1.perf_test_timeouts_ms" : 100,
+                        "{{st}}.{{st}}.perf-test.case.1.perf_test_hybrid_request_ratio" : "1,1,",
+                    },
+                },
+        ],
     },
     components: {
     },
@@ -121,6 +179,10 @@ var vm = new Vue({
             this.deploy_parameters = pack.parameters;
             $('#deploypack').modal('show');
         },
+        on_deploy_config_changed: function()
+        {
+                alert (this.deploy_config_id);
+        },
         deploy: function()
         {
             if (this.app_name.trim() == "")
@@ -136,6 +198,33 @@ var vm = new Vue({
                     this.deploy_parameters[key] = v;
             }
             
+            this.deploy_parameters["RDSN_TARGET_CONFIG"] = this.deploy_configs[this.deploy_config_id]
+                .config.replace(/{{st}}/g, this.deploy_pack.name);
+
+            var overwrites = "";
+            for (key in this.deploy_configs[this.deploy_config_id].overwrites)
+            {
+                var v = document.getElementById("deploy_overwrites_" + key).value.trim();
+                overwrites += key + "=" + v + ";";
+            }
+            
+            this.deploy_overwrites_extra = this.deploy_overwrites_extra.trim();
+            if (this.deploy_overwrites_extra.length > 0)
+            {
+                overwrites += this.deploy_overwrites_extra;
+            }
+            
+            if (overwrites.length > 0)
+            {
+                overwrites = overwrites
+                    .replace(/{{st}}/g, this.deploy_pack.name) 
+                    .replace(/{{svc}}/g, this.deploy_pack.name)
+                    .replace(/ /g, "")
+                    ;
+
+                this.deploy_parameters["RDSN_OVERWRITES"] = overwrites;
+            }
+                        
             var req = new configuration_create_app_request({
                     'app_name': this.app_name.trim(),
                     'options': new create_app_options({
