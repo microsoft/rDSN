@@ -52,12 +52,7 @@ configuration::~configuration()
 {
 }
 
-// arguments: k1=v1;k2=v2;k3=v3; ...
-// e.g.,
-//    port = %port%
-//    timeout = %timeout%
-// arguments: port=23466;timeout=1000 or arguments: ports=23466,timout=1000
-bool configuration::load(const char* file_name, const char* arguments)
+bool configuration::load(const char* file_name, const char* arguments, const char* overwrites)
 {
     _file_name = std::string(file_name);
 
@@ -110,7 +105,6 @@ bool configuration::load(const char* file_name, const char* arguments)
             _file_data = utils::replace_string(_file_data, key, value);
         }
     }
-
     //
     // parse mapped file and build conf map
     //
@@ -254,6 +248,45 @@ ConfReg:
 Next:
         p = pNextLine;
     }
+
+    // overwrite configs
+    if (overwrites != nullptr)
+    {
+        std::string str_overwrites(overwrites);
+        std::list<std::string> argkvs;
+        utils::split_args(str_overwrites.c_str(), argkvs, ';');
+        for (auto& kv : argkvs)
+        {
+            std::list<std::string> vs;
+            utils::split_args(kv.c_str(), vs, '=');
+            if (vs.size() != 2)
+            {
+                printf("ERROR: invalid configuration overwrites: '%s' in '%s'\n", kv.c_str(), arguments);
+                return false;
+            }
+
+            std::string section_and_key = *vs.begin();
+            std::string value = *vs.rbegin();
+            
+            auto pos = section_and_key.find_last_of('.');
+            if (pos == std::string::npos)
+            {
+                printf("ERROR: invalid configuration overwrites: "
+                    "'%s' does not represent section.key\n", 
+                    section_and_key.c_str()
+                );
+                return false;
+            }
+
+            std::string section = section_and_key.substr(0, pos - 1);
+            std::string key = section_and_key.substr(pos + 1);
+            
+            set(section.c_str(), key.c_str(), value.c_str(), 
+                "added by command line"
+                );
+        }
+    }
+
     return true;
     
 err:
