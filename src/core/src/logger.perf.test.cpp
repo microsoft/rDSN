@@ -61,7 +61,7 @@ void logv(dsn::logging_provider* logger,const char* fmt, ...)
 void logger_test(logging_provider::factory f, int thread_count, int record_count)
 {
     std::list<std::thread*> threads;
-    logging_provider* logger = f("./");
+    logging_provider* logger = f("./", nullptr);
 
     uint64_t nts = dsn_now_ns();
     uint64_t nts_start = nts;

@@ -40,8 +40,8 @@
 namespace dsn { 
     namespace service {
 
-        nfs_node_simple::nfs_node_simple(::dsn::service_node* node)
-            : nfs_node(node)
+        nfs_node_simple::nfs_node_simple(::dsn::service_node* node, nfs_node* inner)
+            : nfs_node(node, inner)
         {
             _opts = new nfs_opts();
             _opts->init();
