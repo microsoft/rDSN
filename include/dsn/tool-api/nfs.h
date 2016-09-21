@@ -72,15 +72,15 @@ namespace dsn {
     class nfs_node
     {
     public:
-        template <typename T> static nfs_node* create(service_node* node)
+        template <typename T> static nfs_node* create(service_node* node, nfs_node* inner)
         {
-            return new T(node);
+            return new T(node, inner);
         }
 
-        typedef nfs_node* (*factory)(service_node*);
+        typedef nfs_node* (*factory)(service_node*, nfs_node*);
 
     public:
-        nfs_node(service_node* node) : _node(node) {}
+        nfs_node(service_node* node, nfs_node* inner) : _node(node) {}
 
         virtual ~nfs_node() {}
 

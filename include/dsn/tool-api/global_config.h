@@ -185,6 +185,8 @@ struct service_spec
     safe_list<safe_string>       lock_nr_aspects;
     safe_list<safe_string>       rwlock_nr_aspects;
     safe_list<safe_string>       semaphore_aspects;
+    safe_list<safe_string>       nfs_aspects;
+    safe_list<safe_string>       logging_aspects;
 
     ioe_mode                     disk_io_mode; // whether disk is per node or per queue
     ioe_mode                     rpc_io_mode; // whether rpc is per node or per queue
@@ -239,6 +241,8 @@ CONFIG_BEGIN(service_spec)
     CONFIG_FLD_STRING_LIST(lock_nr_aspects, "non-recurisve lock aspect providers, usually for tooling purpose")
     CONFIG_FLD_STRING_LIST(rwlock_nr_aspects, "non-recursive rwlock aspect providers, usually for tooling purpose")
     CONFIG_FLD_STRING_LIST(semaphore_aspects, "semaphore aspect providers, usually for tooling purpose")
+    CONFIG_FLD_STRING_LIST(nfs_aspects, "nfs aspect providers, usually for tooling purpose")
+    CONFIG_FLD_STRING_LIST(logging_aspects, "logging aspect providers, usually for tooling purpose")
 
     CONFIG_FLD_ENUM(ioe_mode, disk_io_mode, IOE_PER_NODE, IOE_INVALID, false,
         "how many disk engines? IOE_PER_NODE, or IOE_PER_QUEUE")

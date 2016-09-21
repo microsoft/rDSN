@@ -231,6 +231,12 @@ error_code service_node::init_io_engine(io_engine& io, ioe_mode mode)
         {
             io.nfs = factory_store<nfs_node>::create(spec.nfs_factory_name.c_str(),
                 PROVIDER_TYPE_MAIN, this);
+
+            for (auto& anfs : spec.nfs_aspects)
+            {
+                io.nfs = utils::factory_store<nfs_node>::create(
+                    anfs.c_str(), ::dsn::PROVIDER_TYPE_ASPECT, this, io.nfs);
+            }
         }
     }
 
@@ -530,8 +536,15 @@ void service_engine::init_before_toollets(const service_spec& spec)
 
     // init common providers (first half)
     _logging = factory_store<logging_provider>::create(
-        spec.logging_factory_name.c_str(), ::dsn::PROVIDER_TYPE_MAIN, spec.dir_log.c_str()
+        spec.logging_factory_name.c_str(), ::dsn::PROVIDER_TYPE_MAIN, spec.dir_log.c_str(), nullptr
         );
+
+    for (auto& alog : spec.logging_aspects)
+    {
+        _logging = utils::factory_store<logging_provider>::create(
+            alog.c_str(), ::dsn::PROVIDER_TYPE_ASPECT, spec.dir_log.c_str(), _logging);
+    }
+
     _memory = factory_store<memory_provider>::create(
         spec.memory_factory_name.c_str(), ::dsn::PROVIDER_TYPE_MAIN
         );

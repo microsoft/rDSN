@@ -46,7 +46,7 @@ namespace dsn {
         class nfs_node_simple : public nfs_node
         {
         public:
-            nfs_node_simple(::dsn::service_node* node);
+            nfs_node_simple(::dsn::service_node* node, nfs_node* inner);
 
             virtual ~nfs_node_simple(void);
 

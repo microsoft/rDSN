@@ -98,8 +98,8 @@ namespace dsn {
             }
         }
 
-        screen_logger::screen_logger(const char* log_dir)
-            : logging_provider(log_dir)
+        screen_logger::screen_logger(const char* log_dir, logging_provider* inner)
+            : logging_provider(log_dir, inner)
         {
             _short_header = dsn_config_get_value_bool("tools.screen_logger", "short_header",
                 true, "whether to use short header (excluding file/function etc.)");
@@ -134,8 +134,8 @@ namespace dsn {
             ::fflush(stdout);
         }
 
-        simple_logger::simple_logger(const char* log_dir)
-            : logging_provider(log_dir)
+        simple_logger::simple_logger(const char* log_dir, logging_provider* inner)
+            : logging_provider(log_dir, inner)
         {
             _log_dir = std::string(log_dir);
             //we assume all valid entries are positive

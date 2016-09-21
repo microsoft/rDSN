@@ -47,15 +47,15 @@ namespace dsn {
 class logging_provider
 {
 public:
-    template <typename T> static logging_provider* create(const char* log_dir)
+    template <typename T> static logging_provider* create(const char* log_dir, logging_provider* inner)
     {
-        return new T(log_dir);
+        return new T(log_dir, inner);
     }
 
-    typedef logging_provider* (*factory)(const char*);
+    typedef logging_provider* (*factory)(const char*, logging_provider*);
 
 public:
-    logging_provider(const char*) {}
+    logging_provider(const char*, logging_provider*) {}
 
     virtual ~logging_provider(void) { }
     
