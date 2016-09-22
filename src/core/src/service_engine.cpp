@@ -470,6 +470,11 @@ void service_node::get_runtime_info(
 
     auto indent2 = indent + "\t";
     _computation->get_runtime_info(indent2, args, ss);
+
+    if (this->rpc(nullptr))
+    {
+        rpc(nullptr)->get_runtime_info(indent2, args, ss);
+    }
 }
 
 void service_node::get_queue_info(

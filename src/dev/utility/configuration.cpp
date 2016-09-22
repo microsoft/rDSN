@@ -259,14 +259,14 @@ Next:
         {
             std::list<std::string> vs;
             utils::split_args(kv.c_str(), vs, '=');
-            if (vs.size() != 2)
+            if (vs.size() != 2 && vs.size() != 1)
             {
                 printf("ERROR: invalid configuration overwrites: '%s' in '%s'\n", kv.c_str(), arguments);
                 return false;
             }
 
             std::string section_and_key = *vs.begin();
-            std::string value = *vs.rbegin();
+            std::string value = vs.size() == 2 ? *vs.rbegin() : "";
             
             auto pos = section_and_key.find_last_of('.');
             if (pos == std::string::npos)
