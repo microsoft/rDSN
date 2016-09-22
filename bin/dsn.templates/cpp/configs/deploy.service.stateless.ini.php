@@ -49,19 +49,19 @@ io_service_worker_count = 2
 ; specification for each thread pool
 [threadpool..default]
 worker_count = 2
-worker_priority = THREAD_xPRIORITY_LOWEST
+
 
 [threadpool.THREAD_POOL_DEFAULT]
 name = default
 partitioned = false
 max_input_queue_length = 1024
-worker_priority = THREAD_xPRIORITY_LOWEST
+
 
 [threadpool.THREAD_POOL_REPLICATION]
 name = replication
 partitioned = true
 max_input_queue_length = 2560
-worker_priority = THREAD_xPRIORITY_LOWEST
+worker_count = 31
 
 [task..default]
 is_trace = true
