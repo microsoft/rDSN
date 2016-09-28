@@ -463,9 +463,10 @@ service counter
                         <td colspan=2>
                         <select class = "form-control"  v-model="deploy_config_id"><!-- onchange="javascript:vm.on_deploy_config_changed()">-->
                             <option v-for="(key,value) in deploy_configs" value="{{key}}"> 
-                            {{value.dsptr}} 
+                            {{value.title}} 
                             </option>
                         </select>
+                        <font color=gray>{{deploy_configs[deploy_config_id].dsptr}}</font>
                         </td>                        
                     </tr>
                     
@@ -521,6 +522,7 @@ service counter
 </div>
 
 <script src="js/vue.js"></script>
+<script src="js/rdsn.envs.js"></script>
 <script src="js/store.js"></script>
 
 {% endblock %}

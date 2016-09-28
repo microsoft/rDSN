@@ -17,7 +17,7 @@ CALL %bin_dir%\echoc.exe 4 %DSN_ROOT% does not exist
 exit /b 1
 
 :usage
-    CALL %bin_dir%\echoc.exe 4  "Usage: run.cmd setup-env|pre-require|build|install|test|publish|republish|deploy|start|stop|cleanup|scds(stop-cleanup-deploy-start)|start_zk|stop_zk"
+    CALL %bin_dir%\echoc.exe 4  "Usage: run.cmd setup-env|pre-require|build|install|test|publish|republish|deploy|start|stop|cleanup|scds(stop-cleanup-deploy-start)|start_zk|stop_zk|onecluster"
     GOTO:EOF
 
 :install_env
@@ -55,6 +55,7 @@ exit /b 0
 :test
 :start_zk
 :stop_zk
+:onecluster
     CALL %bin_dir%\%1.cmd %2 %3 %4 %5 %6 %7 %8 %9
     GOTO:EOF
 

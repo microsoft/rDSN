@@ -52,12 +52,36 @@ configuration::~configuration()
 {
 }
 
+bool configuration::load_include(const char* inc, const char* arguments)
+{
+    configuration conf;
+    if (!conf.load(inc, arguments))
+    {
+        printf("load included configuration file %s failed\n", inc);
+        return false;
+    }
+
+    printf("load included configuration file %s ...\n", inc);
+    for (auto& sec : conf._configs)
+    {
+        for (auto& kv : sec.second)
+        {
+            set(kv.second->section.c_str(),
+                kv.second->key.c_str(),
+                kv.second->value.c_str(),
+                kv.second->dsptr.c_str()
+            );
+        }
+    }
+    return true;
+}
+
 bool configuration::load(const char* file_name, const char* arguments, const char* overwrites)
 {
     _file_name = std::string(file_name);
 
     FILE* fd = ::fopen(file_name, "rb");
-    if (fd == nullptr) 
+    if (fd == nullptr)
     {
         std::string cdir;
         dsn::utils::filesystem::get_current_directory(cdir);
@@ -66,7 +90,7 @@ bool configuration::load(const char* file_name, const char* arguments, const cha
     }
     ::fseek(fd, 0, SEEK_END);
     int len = ftell(fd);
-    if (len == -1 || len == 0) 
+    if (len == -1 || len == 0)
     {
         printf("ERROR: cannot get length of %s, err = %s\n", file_name, strerror(errno));
         ::fclose(fd);
@@ -84,7 +108,9 @@ bool configuration::load(const char* file_name, const char* arguments, const cha
     }
     _file_data[len] = '\n';
 
-    // replace data with arguments
+    //-----------------------------------------------------------
+    // STEP: replace data with specified arguments
+    //
     if (arguments != nullptr)
     {
         std::string str_arguments(arguments);
@@ -102,11 +128,15 @@ bool configuration::load(const char* file_name, const char* arguments, const cha
 
             std::string key = std::string("%") + *vs.begin() + std::string("%");
             std::string value = *vs.rbegin();
+
             _file_data = utils::replace_string(_file_data, key, value);
+
+            printf("config.replace: %s => %s\n", key.c_str(), value.c_str());
         }
     }
-    //
-    // parse mapped file and build conf map
+    
+    //-----------------------------------------------------------
+    // STEP: parse mapped file and build conf map (include @include)
     //
     std::map<std::string, conf*>* pSection = nullptr;
     char *p, *pLine = (char*)"", *pNextLine, *pEnd, *pSectionName = nullptr, *pEqual;
@@ -153,7 +183,20 @@ bool configuration::load(const char* file_name, const char* arguments, const cha
         // parse line
         //
         p = pLine;
-        if (*p == '\0')    goto Next;    // skip comment line or empty line
+        
+        // skip comment line or empty line
+        if (*p == '\0')    goto Next; 
+
+        // collect include line and skip
+        if (strstr(p, "@include") == p)
+        {
+            auto pinclude = (p + strlen("@include"));
+            pinclude = utils::trim_string(pinclude);
+            if (!load_include(pinclude, arguments))
+                goto err;            
+            goto Next;
+        }
+
         pEqual = strchr(p, '=');
         if (nullptr == pEqual && *p != '[') {
             goto ConfReg;
@@ -181,14 +224,17 @@ ConfReg:
             {
                 auto it = pSection->find((const char*)pKey);
 
-                printf("WARNING: skip redefinition of option [%s] %s (line %u), already defined as [%s] %s (line %u)\n",
+                printf("WARNING: overwrite option [%s] %s = (%s => %s) (line %u => %u)\n",
                     pSectionName,
                     pKey,
-                    lineno,
-                    it->second->section.c_str(),
-                    it->second->key.c_str(),
-                    it->second->line
-                    );
+                    it->second->value.c_str(),
+                    pValue,
+                    it->second->line,
+                    lineno
+                );
+
+                it->second->value = pValue ? pValue : "";
+                it->second->line = lineno;
             }
             else
             {
@@ -200,11 +246,7 @@ ConfReg:
 
                 if (pValue)
                 {
-                    // if argument is not provided
-                    if (strlen(pValue) > 2 && *pValue == '%' && pValue[strlen(pValue) - 1] == '%')
-                        cf->value = "";
-                    else
-                        cf->value = pValue;
+                    cf->value = pValue;
                 }
                 else
                 {
@@ -228,18 +270,18 @@ ConfReg:
             if (*pSectionName == '\0')   
                 goto err;
 
-            bool old = set_warning(false);
-            if (has_section((const char*)pSectionName)) {
-                printf("ERROR: configuration section '[%s]' is redefined\n", pSectionName);
-                set_warning(old);
-                goto err;
+            if (has_section((const char*)pSectionName)) 
+            {
+                auto it = _configs.find(pSectionName);
+                pSection = &it->second;
             }
-            set_warning(old);
-
-            std::map<std::string, conf*> sm;
-            auto it = _configs.insert(config_map::value_type(std::string(pSectionName), sm));
-            assert (it.second);
-            pSection = &it.first->second;
+            else
+            {
+                std::map<std::string, conf*> sm;
+                auto it = _configs.insert(config_map::value_type(std::string(pSectionName), sm));
+                assert(it.second);
+                pSection = &it.first->second;
+            }
         }
 
         //
@@ -249,7 +291,53 @@ Next:
         p = pNextLine;
     }
 
-    // overwrite configs
+    //-----------------------------------------------------------
+    // STEP: setup parameters from the special [config.args] section, e.g.,
+    //
+    // [config.args]
+    // port = 12345
+    //
+    // [xyz]
+    // key = %port%
+    //
+    // then [xyz].key will be assigned with 12345
+    //
+    if (has_section("config.args"))
+    {
+        std::vector<const char*> keys;
+        get_all_keys("config.args", keys);
+
+        for (auto& k : keys)
+        {
+            std::string key = std::string("%") + k + "%";
+            auto value = get_string_value("config.args", k, "", "");
+
+            for (auto& sec : _configs)
+            {
+                for (auto& kv : sec.second)
+                {
+                    if (kv.second->value.find(key) != std::string::npos)
+                    {
+                        kv.second->value = utils::replace_string(
+                            kv.second->value, // %port%
+                            key,  // %port%
+                            value // 12345
+                        );
+
+                        printf("config.config.args: [%s] %s = %s\n",
+                            kv.second->section.c_str(),
+                            kv.second->key.c_str(),
+                            kv.second->value.c_str()
+                        );
+                    }
+                }
+            }
+        }
+    }
+    
+    //-----------------------------------------------------------
+    // STEP: overwrite configs
+    //
     if (overwrites != nullptr)
     {
         std::string str_overwrites(overwrites);
@@ -278,7 +366,7 @@ Next:
                 return false;
             }
 
-            std::string section = section_and_key.substr(0, pos - 1);
+            std::string section = section_and_key.substr(0, pos);
             std::string key = section_and_key.substr(pos + 1);
             
             set(section.c_str(), key.c_str(), value.c_str(), 
@@ -485,7 +573,14 @@ void configuration::set(const char* section, const char* key, const char* value,
         psection->insert(std::make_pair(cf->key, cf));
     }
     else
-    {
+    {        
+        printf("WARNING: overwrite [%s] %s = (%s => %s)\n",
+            section,
+            key, 
+            it2->second->value.c_str(),
+            value
+            );
+
         it2->second->value = value;
     }
 

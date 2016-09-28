@@ -246,6 +246,7 @@ function generate_files_from_dir($dr)
 
         // special files with which prefix are not neded
         if ($template == "config.ini.php"
+         || $template == "config.deploy.ini.php"
          || $template == "CMakeLists.txt.php"
          || $template == "App.config.php"
          || $template == "Dockerfile.php"

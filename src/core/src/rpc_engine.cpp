@@ -571,6 +571,7 @@ namespace dsn {
                     ss << indent3 
                         << "CHANNEL = "
                         << rpc_channel::to_string(ch)
+                        << ", PORT = " << port
                         << std::endl;
 
                     n->get_runtime_info(indent3, args, ss);
