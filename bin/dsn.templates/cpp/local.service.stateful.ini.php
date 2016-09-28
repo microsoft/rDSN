@@ -30,16 +30,16 @@ type = <?=$_PROG->name?>.client
 arguments = dsn://mycluster/<?=$_PROG->name?>.c1
 pools = THREAD_POOL_DEFAULT
 
+[apps.client.perf]
+type = <?=$_PROG->name?>.client.perf 
+arguments = localhost:34888
+;arguments = dsn://mycluster/<?=$_PROG->name?>.c1
+pools = THREAD_POOL_DEFAULT
+run = false
+
 <?php 
 foreach ($_PROG->services as $svc) 
 {
-    echo "[apps.client.perf.".$svc->name."]".PHP_EOL;
-    echo "type = ".$_PROG->name.".".$svc->name.".client.perf".PHP_EOL;
-    echo ";arguments = localhost:34888".PHP_EOL;
-    echo "arguments = dsn://mycluster/".$_PROG->name.".c1".PHP_EOL;
-    echo "pools = THREAD_POOL_DEFAULT".PHP_EOL;
-    echo "run = false".PHP_EOL;
-    echo PHP_EOL;
     echo "[".$_PROG->name.".".$svc->name.".perf-test.case.1]".PHP_EOL;
     echo "perf_test_seconds  = 360000".PHP_EOL;
     echo "perf_test_key_space_size = 100000".PHP_EOL;

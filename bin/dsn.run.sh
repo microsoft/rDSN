@@ -27,6 +27,7 @@ function usage()
     echo "   stop        stop program at remote machine"
     echo "   clean       clean deployed program at remote machine"
     echo "   scds        stop-clean-deploy-start"
+    echo "   onecluster  start a local cluster for service deployment"
     echo "   k8s_deploy  deploy onto kubernetes cluster"
     echo "   k8s_undeploy"
     echo "               undeploy from kubernetes cluster"
@@ -371,6 +372,35 @@ function run_format()
     $scripts_dir/format.sh
 }
 
+
+#####################
+## onecluster
+#####################
+function usage_onecluster()
+{
+    echo "Options for subcommand 'onecluster'"
+}
+function run_onecluster()
+{
+    while [[ $# > 0 ]]; do
+        key="$1"
+        case $key in
+            -h|--help)
+                usage_onecluster
+                exit 0
+                ;;
+            *)
+                echo "ERROR: unknown option \"$key\""
+                echo
+                usage_onecluster
+                exit -1
+                ;;
+        esac
+        shift
+    done
+    $scripts_dir/onecluster.sh
+}
+
 ####################################################################
 
 if [ $# -eq 0 ]; then
@@ -402,6 +432,9 @@ case $cmd in
     format)
         shift
         run_format $* ;;
+    onecluster)
+        shift
+        run_onecluster $* ;;
     publish|publish_docker|republish|republish_docker)
         $scripts_dir/publish.sh $* ;;
     deploy|start|stop|clean|scds)

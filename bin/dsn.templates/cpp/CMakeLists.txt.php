@@ -68,6 +68,6 @@ set(MY_BOOST_PACKAGES "")
 
 dsn_add_shared_library()
 
-add_custom_target( docker 
-    COMMAND docker build -t "${MY_PROJ_NAME}-image" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${MY_PROJ_NAME}")
-add_dependencies( docker "${MY_PROJ_NAME}")
+#add_custom_target( docker 
+#   COMMAND docker build -t "${MY_PROJ_NAME}-image" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${MY_PROJ_NAME}")
+#add_dependencies( docker "${MY_PROJ_NAME}")

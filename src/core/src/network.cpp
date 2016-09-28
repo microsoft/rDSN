@@ -540,6 +540,14 @@ namespace dsn
         return std::make_pair(pinfo.factory2, pinfo.parser_size);
     }
 
+    void network::get_runtime_info(const safe_string& indent,
+        const safe_vector<safe_string>& args, /*out*/ safe_sstream& ss)
+    {
+        auto indent2 = indent + "\t";
+        ss << indent2 << "raw network..." << std::endl;
+    }
+
+
     uint32_t network::get_local_ipv4()
     {
         static const char* explicit_host = dsn_config_get_value_string(
@@ -574,6 +582,39 @@ namespace dsn
         }
 
         return ip;
+    }
+
+    void connection_oriented_network::get_runtime_info(const safe_string& indent,
+        const safe_vector<safe_string>& args, /*out*/ safe_sstream& ss)
+    {
+        auto indent2 = indent + "\t";
+        {
+            utils::auto_read_lock l(_clients_lock);
+            if (_clients.size() > 0)
+            {
+                for (auto& kv : _clients)
+                {
+                    ss << indent2
+                        << kv.second->remote_address().to_string()
+                        << "(" << (kv.second->is_connected() ? "v" : "x") << ")"
+                        << std::endl;
+                }
+            }
+        }
+        {
+            utils::auto_read_lock l(_servers_lock);
+            if (_servers.size() > 0)
+            {
+                for (auto& kv : _servers)
+                {
+                    ss << indent2
+                        << kv.second->remote_address().to_string()
+                        << "(" << (kv.second->is_connected() ? "v" : "x") << ")"
+                        << std::endl;
+                }
+            }
+        }
+        ss << indent2 << std::endl;
     }
 
     connection_oriented_network::connection_oriented_network(rpc_engine* srv, network* inner_provider)

@@ -94,61 +94,7 @@ var vm = new Vue({
         
         deploy_config_id: 0,
         deploy_overwrites_extra: "",
-        deploy_configs: [
-                {
-                    "dsptr" : "stateless service",
-                    "config" : "{{st}}.deploy.service.stateless.ini",
-                    "overwrites" : {
-                        "core.tool" : "nativerun",
-                        "core.toollets" : "profiler",
-                        }
-                },
-                {
-                    "dsptr" : "meta server(s) for stateful service",
-                    "config" : "{{st}}.deploy.meta_server.ini",
-                    "overwrites" : {
-                        "core.tool" : "nativerun",
-                        "core.toollets" : "profiler,tracer",
-                        "replication.app.partition_count" : 4,
-                        "replication.app.max_replica_count" : 3,
-                        }
-                },
-                {
-                    "dsptr" : "replica server(s) for stateful service",
-                    "config" : "{{st}}.deploy.service.stateful.ini",
-                    "overwrites" : {
-                        "core.tool" : "nativerun",
-                        "core.toollets" : "profiler",
-                        "meta_server.server_list" : "meta-server-address-list",
-                        "uri-resolver.dsn://mycluster.arguments" : "meta-server-address-list",
-                    }
-                },
-                {
-                    "dsptr" : "functional test",
-                    "config" : "{{st}}.deploy.client.ini",
-                    "overwrites" : {
-                        "core.tool" : "nativerun",
-                        "core.toollets" : "",
-                        "apps.client.arguments" : "dsn://mycluster/service-xxx",
-                        "uri-resolver.dsn://mycluster.arguments" : "meta-server-address-list",
-                    },
-                },
-                {
-                    "dsptr" : "performance test",
-                    "config" : "{{st}}.deploy.client.perf.ini",
-                    "overwrites" : {
-                        "core.tool" : "nativerun",
-                        "core.toollets" : "",
-                        "apps.client.arguments" : "dsn://mycluster/{{svc}}",
-                        "uri-resolver.dsn://mycluster.arguments" : "meta-server-address-list",
-                        "{{st}}.{{st}}.perf-test.case.1.perf_test_key_space_size" : 1000000,
-                        "{{st}}.{{st}}.perf-test.case.1.perf_test_concurrency" : 1,
-                        "{{st}}.{{st}}.perf-test.case.1.perf_test_payload_bytes" : 256,
-                        "{{st}}.{{st}}.perf-test.case.1.perf_test_timeouts_ms" : 100,
-                        "{{st}}.{{st}}.perf-test.case.1.perf_test_hybrid_request_ratio" : "1,1,",
-                    },
-                },
-        ],
+        deploy_configs: [],
     },
     components: {
     },
@@ -219,6 +165,7 @@ var vm = new Vue({
                 overwrites = overwrites
                     .replace(/{{st}}/g, this.deploy_pack.name) 
                     .replace(/{{svc}}/g, this.deploy_pack.name)
+                    .replace(/{{meta}}/g, localStorage['target_meta_server'])
                     .replace(/ /g, "")
                     ;
 
@@ -305,6 +252,7 @@ var vm = new Vue({
     ready: function ()
     {
         var self = this;
+        this.deploy_configs = rdsn_envs;
         self.updatePackList();    
         setInterval(function () {
             self.updatePackList();    

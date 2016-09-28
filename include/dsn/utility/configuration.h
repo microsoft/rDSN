@@ -110,6 +110,7 @@ public:
 
 private:
     bool get_string_value_internal(const char* section, const char* key, const char* default_value, const char** ov, const char* dsptr);
+    bool load_include(const char* file, const char* arguments);
 
 private:
     struct conf

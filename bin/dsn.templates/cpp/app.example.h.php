@@ -116,19 +116,18 @@ private:
 <?php } ?>
 };
 
-<?php foreach ($_PROG->services as $svc) { ?>
-class <?=$svc->name?>_perf_test_client_app :
+// perf client app example
+class <?=$_PROG->name?>_perf_test_client_app :
     public ::dsn::service_app, 
     public virtual ::dsn::clientlet
 {
 public:
-    <?=$svc->name?>_perf_test_client_app(dsn_gpid gpid)
+    <?=$_PROG->name?>_perf_test_client_app(dsn_gpid gpid)
         : ::dsn::service_app(gpid)
     {
-        _<?=$svc->name?>_client = nullptr;
     }
 
-    ~<?=$svc->name?>_perf_test_client_app()
+    ~<?=$_PROG->name?>_perf_test_client_app()
     {
         stop();
     }
@@ -141,26 +140,28 @@ public:
         // argv[1]: e.g., dsn://mycluster/simple-kv.instance0
         _server = ::dsn::url_host_address(argv[1]);
 
-        _<?=$svc->name?>_client = new <?=$svc->name?>_perf_test_client(_server);
+<?php foreach ($_PROG->services as $svc) { ?>
+        _<?=$svc->name?>_client.reset(new <?=$svc->name?>_perf_test_client(_server));
         _<?=$svc->name?>_client->start_test("<?=$_PROG->name?>.<?=$svc->name?>.perf-test.case.", <?=count($svc->functions)?>);
+<?php } ?>
+        
         return ::dsn::ERR_OK;
     }
 
     virtual ::dsn::error_code stop(bool cleanup = false) override
     {
-        if (_<?=$svc->name?>_client != nullptr)
-        {
-            delete _<?=$svc->name?>_client;
-            _<?=$svc->name?>_client = nullptr;
-        }
+<?php foreach ($_PROG->services as $svc) { ?> 
+        _<?=$svc->name?>_client.reset();
+<?php } ?>
         
         return ::dsn::ERR_OK;
     }
     
 private:
-    <?=$svc->name?>_perf_test_client *_<?=$svc->name?>_client;
+<?php foreach ($_PROG->services as $svc) { ?>
+    std::unique_ptr<<?=$svc->name?>_perf_test_client> _<?=$svc->name?>_client;
+<?php } ?>    
     ::dsn::rpc_address _server;
 };
-<?php } ?>
 
 <?=$_PROG->get_cpp_namespace_end()?>

@@ -136,6 +136,7 @@ namespace dsn {
         network_header_format client_hdr_format() const { return _client_hdr_format; }
         network_header_format unknown_msg_hdr_format() const { return _unknown_msg_header_format; }
         int message_buffer_block_size() const { return _message_buffer_block_size; }
+        DSN_API virtual void get_runtime_info(const safe_string& indent, const safe_vector<safe_string>& args, /*out*/ safe_sstream& ss);
 
     protected:
         DSN_API static uint32_t get_local_ipv4();
@@ -180,7 +181,9 @@ namespace dsn {
 
         // to be defined
         virtual rpc_session_ptr create_client_session(::dsn::rpc_address server_addr) = 0;
-        
+
+        DSN_API virtual void get_runtime_info(const safe_string& indent, const safe_vector<safe_string>& args, /*out*/ safe_sstream& ss) override;
+
     protected:
         typedef std::unordered_map< ::dsn::rpc_address, rpc_session_ptr> client_sessions;
         client_sessions               _clients; // to_address => rpc_session
@@ -224,6 +227,7 @@ namespace dsn {
         DSN_API void send_message(message_ex* msg);
         DSN_API bool cancel(message_ex* request);
         void delay_recv(int delay_ms);
+        bool is_connected() const { return _connect_state == SS_CONNECTED; }
         DSN_API bool on_recv_message(message_ex* msg, int delay_ms);
 
     // for client session
@@ -259,8 +263,7 @@ namespace dsn {
         DSN_API void set_connected();
         DSN_API bool set_disconnected(); // return true when it is permitted
         bool is_disconnected() const { return _connect_state == SS_DISCONNECTED; }
-        bool is_connecting() const { return _connect_state == SS_CONNECTING; }
-        bool is_connected() const { return _connect_state == SS_CONNECTED; }        
+        bool is_connecting() const { return _connect_state == SS_CONNECTING; }        
         DSN_API void on_send_completed(uint64_t signature = 0); // default value for nothing is sent
 
     private:

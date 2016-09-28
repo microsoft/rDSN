@@ -163,6 +163,7 @@ public:
     ::dsn::rpc_address primary_address() const { return _local_primary_address; }
     rpc_client_matcher* matcher() { return &_rpc_matcher; }
     uri_resolver_manager* uri_resolver_mgr() { return _uri_resolver_mgr.get(); }
+    void get_runtime_info(const safe_string& indent, const safe_vector<safe_string>& args, /*out*/ safe_sstream& ss);
 
     // call with URI address only
     void call_uri(rpc_address addr, message_ex* request, rpc_response_task* call);

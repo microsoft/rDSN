@@ -215,7 +215,11 @@ namespace dsn {
         if (cnode == nullptr)
         {
             auto& all_nodes = ::dsn::service_engine::fast_instance().get_all_nodes();
-            dassert(!all_nodes.empty(), "no node to mimic!");
+            if (all_nodes.empty())
+            {
+                derror("no apps are started, no way to mimic");
+                return false;
+            }
             dsn_mimic_app(all_nodes.begin()->second->spec().role_name.c_str(), 1);
         }
 

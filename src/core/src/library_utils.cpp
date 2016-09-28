@@ -88,13 +88,13 @@ namespace dsn {
                 hmod = (dsn_handle_t)::LoadLibraryA(m.c_str());
                 if (hmod == nullptr)
                 {
-                    ddebug("load dynamic library '%s' failed, err = %d", m.c_str(), ::GetLastError());
+                    // ddebug("load dynamic library '%s' failed, err = %d", m.c_str(), ::GetLastError());
                 }
 # else
                 hmod = (dsn_handle_t)dlopen(m.c_str(), RTLD_LAZY | RTLD_GLOBAL);
                 if (nullptr == hmod)
                 {
-                    ddebug("load dynamic library '%s' failed, err = %s", m.c_str(), dlerror());
+                    // ddebug("load dynamic library '%s' failed, err = %s", m.c_str(), dlerror());
                 }
 # endif 
                 else
@@ -103,7 +103,11 @@ namespace dsn {
 
             if (hmod == nullptr)
             {
-                derror("load dynamic library '%s' failed, check logs for details", module_name.c_str());
+                derror("load dynamic library '%s' failed after trying all the following paths", module_name.c_str());
+                for (auto& m : passes)
+                {
+                    derror("\t%s", m.c_str());
+                }
             }
             return hmod;
         }

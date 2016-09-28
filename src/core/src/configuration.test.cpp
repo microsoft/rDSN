@@ -66,7 +66,8 @@ TEST(core, configuration)
 
     printf("load config-dup-section.ini\n");
     c.reset(new configuration());
-    ASSERT_FALSE(c->load("config-dup-section.ini"));
+    // we now allow duplicated section (as for include and overwrite)
+    ASSERT_TRUE(c->load("config-dup-section.ini"));
 
     printf("load config-unmatch-section.ini\n");
     c.reset(new configuration());

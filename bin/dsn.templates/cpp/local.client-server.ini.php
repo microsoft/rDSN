@@ -18,31 +18,41 @@ $default_serialize_format = $default_serialize_format."_".strtoupper($idl_format
 ?>
 [modules]
 dsn.tools.common
-dsn.tools.hpc
 dsn.tools.nfs
-dsn.dist.uri.resolver
-dsn.dist.service.stateful.type1
 <?=$_PROG->name?> 
 
-[apps.replica]
-type = replica
+[apps.server]
+type = <?=$_PROG->name?> 
 arguments = 
-ports = %port%
-pools = THREAD_POOL_DEFAULT,THREAD_POOL_REPLICATION,THREAD_POOL_FD,THREAD_POOL_LOCAL_APP,THREAD_POOL_REPLICATION_LONG
-count = 1
+ports = 34888
+pools = THREAD_POOL_DEFAULT
+run = true
 
-[meta_server]
-server_list = %meta_server_list%
-min_live_node_count_for_unfreeze = 1
+[apps.client]
+type = <?=$_PROG->name?>.client 
+arguments = localhost:34888
+;arguments = dsn://mycluster/<?=$_PROG->name?>.c1
+pools = THREAD_POOL_DEFAULT
 
-[uri-resolver.dsn://mycluster]
-factory = partition_resolver_simple
-arguments = %meta_server_list%
-
+[apps.client.perf]
+type = <?=$_PROG->name?>.client.perf 
+arguments = localhost:34888
+;arguments = dsn://mycluster/<?=$_PROG->name?>.c1
+pools = THREAD_POOL_DEFAULT
+run = false
 
 <?php 
 foreach ($_PROG->services as $svc) 
 {
+    echo "[".$_PROG->name.".".$svc->name.".perf-test.case.1]".PHP_EOL;
+    echo "perf_test_seconds  = 360000".PHP_EOL;
+    echo "perf_test_key_space_size = 100000".PHP_EOL;
+    echo "perf_test_concurrency = 1".PHP_EOL;
+    echo "perf_test_payload_bytes = 128".PHP_EOL;
+    echo "perf_test_timeouts_ms = 10000".PHP_EOL;
+    echo "perf_test_hybrid_request_ratio = ";
+    foreach ($svc->functions as $f) echo "1,";
+    echo PHP_EOL;
     echo PHP_EOL;
     foreach ($svc->functions as $f) { 
         if ($f->is_write)
@@ -54,7 +64,6 @@ foreach ($_PROG->services as $svc)
     }
 } ?>
 
-
 [core]
 start_nfs = true
 
@@ -62,11 +71,13 @@ tool = nativerun
 ;tool = simulator
 ;toollets = tracer
 ;toollets = tracer,profiler,fault_injector
-toollets = %toollets%
 pause_on_start = false
 
-logging_start_level = LOG_LEVEL_WARNING
-logging_factory_name = dsn::tools::hpc_logger
+;logging_start_level = LOG_LEVEL_WARNING
+logging_factory_name = dsn::tools::screen_logger
+;logging_factory_name = dsn::tools::hpc_tail_logger
+;logging_factory_name = dsn::tools::hpc_logger
+;aio_factory_name = dsn::tools::empty_aio_provider
 
 [network]
 ; how many network threads for network library(used by asio)
@@ -130,35 +141,3 @@ is_trace = false
 
 [task.RPC_PREPARE]
 rpc_request_resend_timeout_milliseconds = 8000
-
-[replication]
-
-prepare_timeout_ms_for_secondaries = 10000
-prepare_timeout_ms_for_potential_secondaries = 20000
-
-learn_timeout_ms = 30000
-staleness_for_commit = 20
-staleness_for_start_prepare_for_potential_secondary = 110
-mutation_max_size_mb = 15
-mutation_max_pending_time_ms = 20
-mutation_2pc_min_replica_count = 2
-
-prepare_list_max_size_mb = 250
-request_batch_disabled = false
-group_check_internal_ms = 100000
-group_check_disabled = false
-fd_disabled = false
-fd_check_interval_seconds = 5
-fd_beacon_interval_seconds = 3
-fd_lease_seconds = 14
-fd_grace_seconds = 15
-working_dir = .
-log_buffer_size_mb = 1
-log_pending_max_ms = 100
-log_file_size_mb = 32
-log_batch_write = true
-
-log_enable_shared_prepare = true
-log_enable_private_commit = false
-
-config_sync_interval_ms = 60000

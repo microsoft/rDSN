@@ -534,7 +534,54 @@ namespace dsn {
         _is_running = false;
         _is_serving = false;
     }
-    
+
+    void rpc_engine::get_runtime_info(const safe_string& indent,
+        const safe_vector<safe_string>& args, /*out*/ safe_sstream& ss)
+    {
+        auto indent2 = indent;
+        auto indent3 = indent2 + "\t";
+        ss << indent2 << "RPC.ConnectTo:" << std::endl;
+        for (int fmt = 0; fmt < (int)_client_nets.size(); fmt++)
+        {
+            for (int ch = 0; ch < (int)_client_nets[fmt].size(); ch++)
+            {
+                auto n = _client_nets[fmt][ch];
+                if (n != nullptr)
+                {
+                    ss << indent3 << "HDR.FMT = "
+                        << network_header_format::to_string(fmt)
+                        << ", CHANNEL = "
+                        << rpc_channel::to_string(ch)
+                        << std::endl;
+
+                    n->get_runtime_info(indent3, args, ss);
+                }
+            }
+        }
+
+        ss << indent2 << "RPC.Clients:" << std::endl;
+        for (auto& kv : _server_nets)
+        {
+            auto port = kv.first;
+            for (int ch = 0; ch < (int)kv.second.size(); ch++)
+            {
+                auto n = kv.second[ch];
+                if (n != nullptr)
+                {
+                    ss << indent3 
+                        << "CHANNEL = "
+                        << rpc_channel::to_string(ch)
+                        << ", PORT = " << port
+                        << std::endl;
+
+                    n->get_runtime_info(indent3, args, ss);
+                }
+            }
+        }
+
+        ss << indent2 << std::endl;
+    }
+        
     //
     // management routines
     //
