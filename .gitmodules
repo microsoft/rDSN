@@ -10,3 +10,6 @@
 [submodule "src/plugins_ext/rDSN.dist.deployment"]
 	path = src/plugins_ext/rDSN.dist.deployment
 	url = https://github.com/imzhenyu/rDSN.dist.deployment.git
+[submodule "src/plugins_ext/rDSN.tools.log.monitor"]
+	path = src/plugins_ext/rDSN.tools.log.monitor
+	url = https://github.com/imzhenyu/rDSN.tools.log.monitor.git
