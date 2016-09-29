@@ -45,7 +45,6 @@
 # include "simple_perf_counter_v2_atomic.h"
 # include "simple_perf_counter_v2_fast.h"
 # include "simple_task_queue.h"
-# include "network.sim.h"
 # include "simple_logger.h"
 # include "empty_aio_provider.h"
 # include "dsn_message_parser.h"
@@ -53,7 +52,6 @@
 # include "http_message_parser.h"
 # include "raw_message_parser.h"
 
-# include "simulator.h"
 # include "nativerun.h"
 # include "tracer.h"
 # include "profiler.h"
@@ -74,7 +72,6 @@ namespace dsn {
             register_component_provider<std_semaphore_provider>("dsn::tools::std_semaphore_provider");            
             register_component_provider<asio_network_provider>("dsn::tools::asio_network_provider");
             register_component_provider<asio_udp_provider>("dsn::tools::asio_udp_provider");
-            register_component_provider<sim_network_provider>("dsn::tools::sim_network_provider");
             register_component_provider<simple_task_queue>("dsn::tools::simple_task_queue");
             register_component_provider<simple_timer_service>("dsn::tools::simple_timer_service");
             
@@ -115,7 +112,6 @@ namespace dsn {
 MODULE_INIT_BEGIN(tools_common)
     dsn::tools::register_common_providers();
     dsn::tools::register_tool<dsn::tools::nativerun>("nativerun");
-    dsn::tools::register_tool<dsn::tools::simulator>("simulator");
     dsn::tools::register_toollet<dsn::tools::tracer>("tracer");
     dsn::tools::register_toollet<dsn::tools::profiler>("profiler");
     dsn::tools::register_toollet<dsn::tools::fault_injector>("fault_injector");

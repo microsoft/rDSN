@@ -18,6 +18,7 @@ $default_serialize_format = $default_serialize_format."_".strtoupper($idl_format
 ?>
 [modules]
 dsn.tools.common
+dsn.tools.emulator
 dsn.tools.nfs
 <?=$_PROG->name?> 
 
@@ -68,7 +69,7 @@ foreach ($_PROG->services as $svc)
 start_nfs = true
 
 tool = nativerun
-;tool = simulator
+;tool = emulator
 ;toollets = tracer
 ;toollets = tracer,profiler,fault_injector
 pause_on_start = false

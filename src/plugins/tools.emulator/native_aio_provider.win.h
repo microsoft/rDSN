@@ -33,40 +33,38 @@
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
-#include "env.sim.h"
-#include "scheduler.h"
+#pragma once
 
-# ifdef __TITLE__
-# undef __TITLE__
-# endif
-# define __TITLE__ "env.provider.simulator"
+# ifdef _WIN32
 
-namespace dsn { namespace tools {
+# include <dsn/tool_api.h>
+# include <dsn/utility/synchronize.h>
 
-/*static*/ int sim_env_provider::_seed;
+namespace dsn {
+    namespace tools {
+        class native_win_aio_provider : public aio_provider
+        {
+        public:
+            native_win_aio_provider(disk_engine* disk, aio_provider* inner_provider);
+            ~native_win_aio_provider();
 
-uint64_t sim_env_provider::now_ns() const
-{
-    return scheduler::instance().now_ns();
-}
+            virtual dsn_handle_t open(const char* file_name, int flag, int pmode);
+            virtual error_code close(dsn_handle_t fh);
+            virtual error_code flush(dsn_handle_t fh);
+            virtual void    aio(aio_task* aio);            
+            virtual disk_aio* prepare_aio_context(aio_task* tsk);
+            
+            virtual void start(io_modifer& ctx) override;
 
-void sim_env_provider::on_worker_start(task_worker* worker)
-{
-    set_thread_local_random_seed((_seed + worker->index() + worker->index()*worker->pool_spec().pool_code) ^ worker->index());
-}
+        protected:
+            error_code aio_internal(aio_task* aio, bool async, /*out*/ uint32_t* pbytes = nullptr);
 
-sim_env_provider::sim_env_provider(env_provider* inner_provider)
-    : env_provider(inner_provider)
-{
-    task_worker::on_start.put_front(on_worker_start, "sim_env_provider::on_worker_start");
-
-    _seed = (int)dsn_config_get_value_uint64("tools.simulator", "random_seed", 0, "random seed for the simulator, 0 for random random seed");
-    if (_seed == 0)
-    {
-        _seed = std::random_device{}();
+        private:
+            void worker();
+            std::thread *_worker_thr;
+            HANDLE       _iocp;
+        };
     }
-
-    derror("simulation.random seed for this round is %d", _seed);
 }
 
-}} // end namespace
+# endif

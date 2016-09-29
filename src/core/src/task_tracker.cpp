@@ -65,16 +65,16 @@ namespace dsn
     struct tls_tracker_hack
     {
         unsigned int  magic;
-        bool is_simulator;
+        bool is_emulator;
 
-        bool under_simulation()
+        bool under_emulation()
         {
             if (magic != 0xdeadbeef)
             {
-                is_simulator = (dsn::tools::get_current_tool()->name() == "simulator");
+                is_emulator = (dsn::tools::get_current_tool()->name() == "emulator");
                 magic = 0xdeadbeef;
             }
-            return is_simulator;
+            return is_emulator;
         }
     };
 
@@ -108,7 +108,7 @@ namespace dsn
                 {
                 // tracker get the lock
                 case trackable_task::OWNER_DELETE_NOT_LOCKED:
-                    if (s_hack.under_simulation())
+                    if (s_hack.under_emulation())
                     {
                         tsk = (task*)(tcm->_task);
                         tsk->add_ref();    // released after delete commit           
@@ -156,7 +156,7 @@ namespace dsn
                 switch (prepare_state)
                 {
                 case trackable_task::OWNER_DELETE_NOT_LOCKED:
-                    if (s_hack.under_simulation())
+                    if (s_hack.under_emulation())
                     {
                         tsk = (task*)(tcm->_task);
                         tsk->add_ref();    // released after delete commit           

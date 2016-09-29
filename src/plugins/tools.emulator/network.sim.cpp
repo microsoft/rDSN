@@ -94,7 +94,7 @@ namespace dsn { namespace tools {
             sim_network_provider* rnet = nullptr;
             if (!s_switch[task_spec::get(msg->local_rpc_code)->rpc_call_channel][msg->hdr_format].get(remote_address(), rnet))
             {
-                derror("cannot find destination node %s in simulator",
+                derror("cannot find destination node %s in emulator",
                     remote_address().to_string()
                     );
                 //on_disconnected();  // disable this to avoid endless resending
@@ -167,10 +167,10 @@ namespace dsn { namespace tools {
         _min_message_delay_microseconds = 1;
         _max_message_delay_microseconds = 100000;
 
-        _min_message_delay_microseconds = (uint32_t)dsn_config_get_value_uint64("tools.simulator",
+        _min_message_delay_microseconds = (uint32_t)dsn_config_get_value_uint64("tools.emulator",
             "min_message_delay_microseconds", _min_message_delay_microseconds,
             "min message delay (us)");
-        _max_message_delay_microseconds = (uint32_t)dsn_config_get_value_uint64("tools.simulator",
+        _max_message_delay_microseconds = (uint32_t)dsn_config_get_value_uint64("tools.emulator",
             "max_message_delay_microseconds", _max_message_delay_microseconds,
             "max message delay (us)");
     }

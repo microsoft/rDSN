@@ -56,7 +56,7 @@
  *        such as loggers, performance counters, etc.
  *  (5) rich debug, development tools and runtime policies support
  *      - tool API with task granularity semantic for further tool and runtime policy development.
- *      - rich existing tools, tracer, profiler, simulator, model checker, replayer, global checker
+ *      - rich existing tools, tracer, profiler, emulator, model checker, replayer, global checker
  *  (7) PRINCIPLE: all non-determinims must be go through these system calls so that powerful
  *      internal tools are possible - replay, model checking, replication, ...,
  *      AND, it is still OK to call other DETERMINISTIC APIs for applications.

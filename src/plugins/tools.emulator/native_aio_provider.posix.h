@@ -35,27 +35,38 @@
 
 #pragma once
 
-#include <dsn/tool_api.h>
-#if defined(_WIN32)
-#define NATIVE_AIO_PROVIDER native_win_aio_provider
-#include "native_aio_provider.win.h"
-#elif defined(__linux__)
-#define NATIVE_AIO_PROVIDER native_linux_aio_provider
-#include "native_aio_provider.linux.h"
-#else
-#define NATIVE_AIO_PROVIDER native_posix_aio_provider
-#include "native_aio_provider.posix.h"
-#endif
+# ifndef _WIN32
 
-namespace dsn { namespace tools {
+# include <dsn/tool_api.h>
+# include <dsn/utility/synchronize.h>
 
-class sim_aio_provider : public NATIVE_AIO_PROVIDER
-{
-public:
-    sim_aio_provider(disk_engine* disk, aio_provider* inner_provider);
-    ~sim_aio_provider(void);
+# include <aio.h>
+# include <fcntl.h>
 
-    virtual void    aio(aio_task* aio) override;
-};
+namespace dsn {
+    namespace tools {
+        class native_posix_aio_provider : public aio_provider
+        {
+        public:
+            native_posix_aio_provider(disk_engine* disk, aio_provider* inner_provider);
+            ~native_posix_aio_provider();
 
-}} // end namespace
+            virtual dsn_handle_t open(const char* file_name, int flag, int pmode) override;
+            virtual error_code close(dsn_handle_t fh) override;
+            virtual error_code flush(dsn_handle_t fh) override;
+            virtual void    aio(aio_task* aio) override;
+            virtual disk_aio* prepare_aio_context(aio_task* tsk) override;
+            
+            virtual void start(io_modifer& ctx) override {}
+
+        protected:
+            error_code aio_internal(aio_task* aio, bool async, /*out*/ uint32_t* pbytes = nullptr);
+
+        private:
+            friend void aio_completed(sigval sigval);
+        };
+    }
+}
+
+# endif
+

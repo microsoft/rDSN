@@ -254,8 +254,8 @@ TEST(core, dsn_file)
         }
         ASSERT_LT(0u, rin.sz);
         ASSERT_EQ(rin.sz, dsn_file_get_io_size(tin));
-        // this is only true for simulator
-        if (dsn::tools::get_current_tool()->name() == "simulator")
+        // this is only true for emulator
+        if (dsn::tools::get_current_tool()->name() == "emulator")
         {
             ASSERT_EQ(1, dsn_task_get_ref(tin));
         }
@@ -278,8 +278,8 @@ TEST(core, dsn_file)
         ASSERT_EQ(ERR_OK, dsn_task_error(tout));
         ASSERT_EQ(rin.sz, rout.sz);
         ASSERT_EQ(rin.sz, dsn_file_get_io_size(tout));
-        // this is only true for simulator
-        if (dsn::tools::get_current_tool()->name() == "simulator")
+        // this is only true for emulator
+        if (dsn::tools::get_current_tool()->name() == "emulator")
         {
             ASSERT_EQ(1, dsn_task_get_ref(tout));
         }
@@ -338,8 +338,8 @@ TEST(core, dsn_nfs)
         ASSERT_EQ(ERR_OK, r.err);
         ASSERT_EQ(r.sz, dsn_file_get_io_size(t));
         ASSERT_EQ(0, r.sz);
-        // this is only true for simulator
-        if (dsn::tools::get_current_tool()->name() == "simulator")
+        // this is only true for emulator
+        if (dsn::tools::get_current_tool()->name() == "emulator")
         {
             ASSERT_EQ(1, dsn_task_get_ref(t));
         }
@@ -381,8 +381,8 @@ TEST(core, dsn_nfs)
         ASSERT_EQ(ERR_OK, r.err);
         ASSERT_EQ(r.sz, dsn_file_get_io_size(t));
         ASSERT_EQ(0, r.sz);
-        // this is only true for simulator
-        if (dsn::tools::get_current_tool()->name() == "simulator")
+        // this is only true for emulator
+        if (dsn::tools::get_current_tool()->name() == "emulator")
         {
             ASSERT_EQ(1, dsn_task_get_ref(t));
         }
@@ -410,8 +410,8 @@ TEST(core, dsn_nfs)
         ASSERT_EQ(ERR_OK, r.err);
         ASSERT_EQ(r.sz, dsn_file_get_io_size(t));
         ASSERT_EQ(0, r.sz);
-        // this is only true for simulator
-        if (dsn::tools::get_current_tool()->name() == "simulator")
+        // this is only true for emulator
+        if (dsn::tools::get_current_tool()->name() == "emulator")
         {
             ASSERT_EQ(1, dsn_task_get_ref(t));
         }
@@ -439,7 +439,7 @@ TEST(core, dsn_nfs)
 
 TEST(core, dsn_env)
 {
-    if(dsn::service_engine::fast_instance().spec().tool == "simulator")
+    if(dsn::service_engine::fast_instance().spec().tool == "emulator")
         return;
     uint64_t now1 = dsn_now_ns();
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
