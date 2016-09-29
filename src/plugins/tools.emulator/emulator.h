@@ -26,7 +26,7 @@
 
 /*
  * Description:
- *     the simulation tool (include simulation, replay, model-checking, ...)
+ *     the emulation tool (include emulation, replay, model-checking, ...)
  *
  * Revision history:
  *     Mar., 2015, @imzhenyu (Zhenyu Guo), first version
@@ -39,10 +39,10 @@
 
 namespace dsn { namespace tools {
 
-class simulator : public tool_app
+class emulator : public tool_app
 {
 public:
-    simulator(const char* name)
+    emulator(const char* name)
         : tool_app(name)
     {
     }

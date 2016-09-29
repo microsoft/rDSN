@@ -40,7 +40,6 @@
 #include <dsn/tool_api.h>
 
 #include "asio_net_provider.h"
-#include "network.sim.h"
 #include <dsn/cpp/test_utils.h>
 //
 //using namespace dsn;

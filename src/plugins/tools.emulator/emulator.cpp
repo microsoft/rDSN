@@ -34,31 +34,19 @@
  */
 
 
-# include "simulator.h"
+# include "emulator.h"
 # include "scheduler.h"
-
-# include "diske.sim.h"
 # include "env.sim.h"
-# include "task_engine.sim.h"
 
 # ifdef __TITLE__
 # undef __TITLE__
 # endif
-# define __TITLE__ "tools.simulator"
+# define __TITLE__ "tools.emulator"
 
 namespace dsn { namespace tools {
 
-void simulator::install(service_spec& spec)
+void emulator::install(service_spec& spec)
 {   
-    register_component_provider<sim_aio_provider>("dsn::tools::sim_aio_provider");
-    register_component_provider<sim_env_provider>("dsn::tools::sim_env_provider");
-    register_component_provider<sim_task_queue>("dsn::tools::sim_task_queue");
-    register_component_provider<sim_timer_service>("dsn::tools::sim_timer_service");
-    register_component_provider<sim_semaphore_provider>("dsn::tools::sim_semaphore_provider");
-    register_component_provider<sim_lock_provider>("dsn::tools::sim_lock_provider");
-    register_component_provider<sim_lock_nr_provider>("dsn::tools::sim_lock_nr_provider");
-    register_component_provider<sim_rwlock_nr_provider>("dsn::tools::sim_rwlock_nr_provider");
-
     scheduler::instance();
 
     if (spec.aio_factory_name == "")
@@ -124,19 +112,19 @@ void simulator::install(service_spec& spec)
     }
 
     sys_init_after_app_created.put_back(
-        simulator::on_system_init_for_add_global_checker,
+        emulator::on_system_init_for_add_global_checker,
         "checkers.install"
     );
 
-    sys_exit.put_front(simulator::on_system_exit, "simulator");
+    sys_exit.put_front(emulator::on_system_exit, "emulator");
 }
 
-void simulator::on_system_init_for_add_global_checker()
+void emulator::on_system_init_for_add_global_checker()
 {
     safe_vector<global_checker> checkers;
     ::dsn::get_registered_checkers(checkers);
 
-    auto t = dynamic_cast<dsn::tools::simulator*>(::dsn::tools::get_current_tool());
+    auto t = dynamic_cast<dsn::tools::emulator*>(::dsn::tools::get_current_tool());
     if (t != nullptr)
     {
         for (auto& c : checkers)
@@ -146,19 +134,19 @@ void simulator::on_system_init_for_add_global_checker()
     }
 }
 
-void simulator::on_system_exit(sys_exit_type st)
+void emulator::on_system_exit(sys_exit_type st)
 {
     derror("system exits, you can replay this process using random seed %d",        
         sim_env_provider::seed()
         );
 }
 
-void simulator::add_checker(const char* name, dsn_checker_create create, dsn_checker_apply apply)
+void emulator::add_checker(const char* name, dsn_checker_create create, dsn_checker_apply apply)
 {
     scheduler::instance().add_checker(name, create, apply);
 }
 
-void simulator::run()
+void emulator::run()
 {
     scheduler::instance().start();
     tool_app::run();

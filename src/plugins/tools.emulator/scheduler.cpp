@@ -33,7 +33,7 @@
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
-# include "simulator.h"
+# include "emulator.h"
 # include <dsn/service_api_c.h>
 # include <dsn/tool-api/node_scoper.h>
 # include "scheduler.h"
@@ -43,7 +43,7 @@
 # ifdef __TITLE__
 # undef __TITLE__
 # endif
-# define __TITLE__ "simulator"
+# define __TITLE__ "emulator"
 
 namespace dsn { namespace tools {
 
@@ -115,13 +115,13 @@ scheduler::scheduler(void)
     _time_ns = 0;
     _running = false;
     _running_thread = nullptr;
-    task_worker::on_create.put_back(on_task_worker_create, "simulation.on_task_worker_create");
-    task_worker::on_start.put_back(on_task_worker_start, "simulation.on_task_worker_start");
+    task_worker::on_create.put_back(on_task_worker_create, "emulation.on_task_worker_create");
+    task_worker::on_start.put_back(on_task_worker_start, "emulation.on_task_worker_start");
         
     for (int i = 0; i <= dsn_task_code_max(); i++)
     {
-        task_spec::get(i)->on_task_wait_pre.put_back(scheduler::on_task_wait, "simulation.on_task_wait");
-        task_spec::get(i)->on_task_wait_notified.put_back(scheduler::on_task_wait_notified, "simulation.on_task_wait_notified");
+        task_spec::get(i)->on_task_wait_pre.put_back(scheduler::on_task_wait, "emulation.on_task_wait");
+        task_spec::get(i)->on_task_wait_notified.put_back(scheduler::on_task_wait_notified, "emulation.on_task_wait_notified");
     }
 
     task_ext::register_ext(task_state_ext::deletor);

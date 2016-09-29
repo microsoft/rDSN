@@ -18,6 +18,7 @@ $default_serialize_format = $default_serialize_format."_".strtoupper($idl_format
 ?>
 [modules]
 dsn.tools.common
+dsn.tools.emulator
 dsn.tools.nfs
 dsn.dist.uri.resolver
 dsn.dist.service.meta_server
@@ -92,7 +93,7 @@ stateful = true
 start_nfs = true
 
 tool = nativerun
-;tool = simulator
+;tool = emulator
 toollets = tracer
 ;toollets = tracer,profiler,fault_injector
 pause_on_start = false

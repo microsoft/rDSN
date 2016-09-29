@@ -45,7 +45,7 @@
 # include "task_engine.sim.h"
 # include "scheduler.h"
 
-TEST(tools_simulator, dsn_semaphore)
+TEST(tools_emulator, dsn_semaphore)
 {
     if(dsn::task::get_current_worker() == nullptr)
         return;
@@ -59,12 +59,12 @@ TEST(tools_simulator, dsn_semaphore)
     dsn_semaphore_destroy(s);
 }
 
-TEST(tools_simulator, dsn_lock_nr)
+TEST(tools_emulator, dsn_lock_nr)
 {
     if(dsn::task::get_current_worker() == nullptr)
         return;
     
-    if (dsn::tools::get_current_tool()->name() != "simulator")
+    if (dsn::tools::get_current_tool()->name() != "emulator")
         return;
 
     dsn::tools::sim_lock_nr_provider* s = new dsn::tools::sim_lock_nr_provider(nullptr);
@@ -76,12 +76,12 @@ TEST(tools_simulator, dsn_lock_nr)
 }
 
 
-TEST(tools_simulator, dsn_lock)
+TEST(tools_emulator, dsn_lock)
 {
     if(dsn::task::get_current_worker() == nullptr)
         return;
 
-    if (dsn::tools::get_current_tool()->name() != "simulator")
+    if (dsn::tools::get_current_tool()->name() != "emulator")
         return;
 
     dsn::tools::sim_lock_provider* s = new dsn::tools::sim_lock_provider(nullptr);
@@ -95,12 +95,12 @@ TEST(tools_simulator, dsn_lock)
 namespace dsn{ namespace test{
 typedef std::function<void()> system_callback;
 }}
-TEST(tools_simulator, scheduler)
+TEST(tools_emulator, scheduler)
 {
     if(dsn::task::get_current_worker() == nullptr)
         return;
 
-    if (dsn::tools::get_current_tool()->name() != "simulator")
+    if (dsn::tools::get_current_tool()->name() != "emulator")
         return;
 
      dsn::tools::sim_worker_state* s = dsn::tools::scheduler::task_worker_ext::get(dsn::task::get_current_worker());
