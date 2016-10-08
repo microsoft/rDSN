@@ -233,6 +233,9 @@ function generate_files_from_dir($dr)
     global $g_idl_format;
     global $g_php_path;
     
+    if (!file_exists($dr) || !is_dir($dr))
+        return;
+    
     foreach (scandir($dr) as $template)
     {
         if ($template == "type.php" 
