@@ -55,5 +55,5 @@ MODULE_INIT_BEGIN(tools_emulator)
     dsn::tools::register_tool<dsn::tools::emulator>("emulator");
 
     // for legacy reasons
-    dsn::tools::register_tool<dsn::tools::emulator>("emulator");
+    dsn::tools::register_tool<dsn::tools::emulator>("simulator");
 MODULE_INIT_END
