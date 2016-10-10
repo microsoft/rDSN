@@ -17,7 +17,7 @@ IF "%install_dir%" EQU "" (
 
 pushd %build_dir%
 
-XCOPY /Y /S /D output\* %install_dir%\
+XCOPY /Y /S /D /Q output\* %install_dir%\
 
 IF EXIST "dsn.sln" COPY /Y bin\dsn.svchost\%build_type%\dsn.svchost.exe %install_dir%\bin\dsn.svchost.exe
 
