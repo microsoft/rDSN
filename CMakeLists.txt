@@ -36,6 +36,8 @@ endif()
 
 dsn_add_pseudo_projects()
 
+configure_file("bin/config.onecluster.ini.template" "${CMAKE_CURRENT_SOURCE_DIR}/bin/config.onecluster.ini")
+
 include(${GIT_SOURCE_FILE})
 add_subdirectory(ext/thrift)
 add_subdirectory(ext/gtest)
@@ -47,7 +49,6 @@ add_subdirectory(ext/protobuf)
 
 add_subdirectory(src)
 
-configure_file("bin/config.onecluster.ini.template" "bin/config.onecluster.ini")
 
 
 
