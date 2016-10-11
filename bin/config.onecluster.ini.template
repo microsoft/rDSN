@@ -1,7 +1,7 @@
 [config.args]
 meta_port = 24601
 daemon_port = 24801
-package_dir = C:\work\rDSN\src\tools\webstudio\app_package\local\packages
+package_dir = ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/webstudio/app_package/local/packages
 
 [modules]
 dsn.tools.common
