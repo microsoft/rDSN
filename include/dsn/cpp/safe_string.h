@@ -43,6 +43,7 @@
 # include <string>
 # include <sstream>
 # include <map>
+# include <unordered_map>
 
 namespace dsn
 {
@@ -65,6 +66,12 @@ namespace dsn
 
     template<typename T>
     using safe_list = ::std::list<T, safe_allocator<T> >;
+
+    template<typename TKey, typename TValue>
+    using safe_map = ::std::map<TKey, TValue, safe_allocator<TKey> >;
+
+    template<typename TKey, typename TValue>
+    using safe_unordered_map = ::std::unordered_map<TKey, TValue, safe_allocator<TKey> >;
 
     using safe_string = ::std::basic_string<char, ::std::char_traits<char>, safe_allocator<char> >;
 

@@ -9,11 +9,12 @@
 
 ### Top Links
  * [[Case](https://github.com/imzhenyu/rocksdb)] RocksDB made replicated using rDSN!
+ * [[Tutorial](https://github.com/Microsoft/rDSN/wiki/Tutorial:-one-box-cluster)] A cluster demo to understand how rDSN helps service registration, deployment, monitoring etc..
  * [[Tutorial](https://github.com/Microsoft/rDSN/wiki/Tutorial:-Build-A-Single-Node-Counter-Service)] Build a counter service with built-in tools (e.g., codegen, auto-test, fault injection, bug replay, tracing)
  * [[Tutorial](https://github.com/Microsoft/rDSN/wiki/Tutorial:-Build-A-Scalable-and-Reliable-Counter-Service)] Build a scalable and reliable counter service with built-in replication support
  * [[Tutorial](https://github.com/Microsoft/rDSN/wiki/Tutorial:-Perfect-Failure-Detector)] Build a perfect failure detector with progressively added system complexity
  * [[Tutorial](https://github.com/Microsoft/rDSN/wiki/Tutorial:-Plugin-A-New-Network-Implementation)] Plugin my own network implementation for higher performance
- * [Latest documentation](http://imzhenyu.github.io/rDSN/documents/v1/html/index.html)
+ * [API Reference](http://imzhenyu.github.io/rDSN/documents/v1/html/index.html)
  * [Installation](https://github.com/Microsoft/rDSN/wiki/Installation)
 
  
@@ -23,11 +24,11 @@ The core of rDSN is a service kernel with which we can develop (via [Service API
 
 | Pluggable modules | Description | Demo |
 |--------|-------------|------|
-| [dsn.dist.service.stateless](https://github.com/imzhenyu/rDSN.dist.service/tree/master/src/app_daemon)      | scale-out and fail-over for stateless services (e.g., HA micro-services) | todo |
-| [dsn.dist.service.stateful.type1](https://github.com/imzhenyu/rDSN.dist.service/tree/master/src/replica_server) | scale-out, replicate, and fail-over for stateful services (e.g., Spanner) | todo |
-| [dsn.dist.service.meta_server](https://github.com/imzhenyu/rDSN.dist.service/tree/master/src/meta_server)    | membership, load balance, and machine pool management for the above dist.service.xxx modules | todo |
+| [dsn.dist.service.stateless](https://github.com/imzhenyu/rDSN.dist.service/tree/master/src/app_daemon)      | scale-out and fail-over for stateless services (e.g., micro services) | todo |
+| [dsn.dist.service.stateful.type1](https://github.com/imzhenyu/rDSN.dist.service/tree/master/src/replica_server) | scale-out, replicate, and fail-over for stateful services (e.g., storage) | todo |
+| [dsn.dist.service.meta_server](https://github.com/imzhenyu/rDSN.dist.service/tree/master/src/meta_server)    | membership, load balance, and machine pool management for the above service frameworks | todo |
 | [dsn.dist.uri.resolver](https://github.com/Microsoft/rDSN/tree/master/src/plugins/dist.uri.resolver)           | a client-side helper module that resolves service URL to target machine | todo |
-| [dsn.dist.traffic.router](https://github.com/imzhenyu/rDSN.dist.traffic.router)         | fine-grain RPC request routing/splitting/forking to multiple services | todo |
+| [dsn.dist.traffic.router](https://github.com/imzhenyu/rDSN.dist.traffic.router)         | fine-grain RPC request routing/splitting/forking to multiple services (e.g., A/B test) | todo |
 | [dsn.tools.common](https://github.com/Microsoft/rDSN/tree/master/src/plugins/tools.common)                | deployment runtime (e.g., network, aio, lock, timer, perf counters, loggers) for both Windows and Linux; simple toollets, such as tracer, profiler, and fault-injector | todo |
 | [dsn.tools.nfs](https://github.com/Microsoft/rDSN/tree/master/src/plugins/tools.nfs)                   | an implementation of remote file copy based on rpc and aio | todo |
 | [dsn.tools.emulator](https://github.com/Microsoft/rDSN/tree/master/src/plugins/tools.emulator)              | an emulation runtime for whole distributed system emulation with auto-test, replay, global state checking, etc. | todo |
@@ -36,7 +37,7 @@ The core of rDSN is a service kernel with which we can develop (via [Service API
 | [dsn.tools.log.monitor](https://github.com/imzhenyu/rDSN.tools.log.monitor)           | collect critical logs (e.g., log-level >= WARNING) in cluster | todo |
 | [dsn.apps.skv](https://github.com/Microsoft/rDSN/tree/master/src/plugins/apps.skv)                    | an example application module | todo | 
 
-rDSN also provides a web portal that enables quick deployment of the above modules in a cluster, and allows easy operations through simple clicks as well as rich visualization. 
+rDSN also provides a [web portal](https://github.com/Microsoft/rDSN/tree/master/src/tools/webstudio) that enables quick deployment of the above modules in a cluster, and allows easy operations through simple clicks as well as rich visualization. 
 
 ### <a name="novel"> How does rDSN build robustness? </a>
 

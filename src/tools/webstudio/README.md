@@ -1,58 +1,30 @@
+**rDSN.WebStudio** is a web portal for service registration, deployment, testing, and monitoring, as well as cluster management, atop of the service frameworks and tool modules built with rDSN. 
 
-#rDSN.WebStudio
+#### Serivce registration and cluster machine view 
+![registration](app_package/static/img/register.jpg)
 
-##Overview
+#### Service deployment as a stateless service 
+![deploy](app_package/static/img/deploy.jpg)
 
-**rDSN.WebStudio** (previously known as **rDSN.Monitor**) is a lightweight and powerful toolkit for rDSN application profiling and deployment.
+#### Service monitoring with built-in profiler toollet 
+![monitor](app_package/static/img/monitor.jpg)
 
-![Main Screen](https://raw.githubusercontent.com/mcfatealan/rDSN.Screenshots/master/main.png)
+#### Service deployed as a replicated stateful service 
+![stateful](app_package/static/img/stateful.jpg)
 
-##Features
+## Installation
 
-* Profiling data visualization
-* Service automatic deployment and management 
-
-
-##To start
-
-To start rDSN.WebStudio, you should install python 2.7.11+, due to some package dependency, we don't support python 3.
-
-Previously rDSN.WebStudio needed to attach on rDSN process, but now we've already used HTTP header RPC to replace function calls. Now all you need is python.
-
-##Simple Installation
-1. install python 2.7.11+
-2. upgrade your pip to 8+: `python -m pip install --upgrade pip`
-3. run `python -m pip install -r requirement.txt`
-
-###Open HTTP port for webstudio in rDSN app config
-
-```bash
-[apps.meta]
-type = meta
-dmodule = dsn.meta_server
-arguments = 
-ports = 34601
-run = true
-count = 1 
-pools = THREAD_POOL_DEFAULT,THREAD_POOL_META_SERVER,THREAD_POOL_FD
+To start rDSN.WebStudio, you should install python 2.7.11+, and run the following commands.
 
 ```
-
-add new port for webstudio like `34602` to ports:
-```bash
-ports = 34601, 34602
+python -m pip install --upgrade pip
+python -m pip install -r requirement.txt
 ```
 
-then add the following line in the same section:
-```bash
-network.server.34602.RPC_CHANNEL_TCP = NET_HDR_HTTP, dsn::tools::asio_network_provider, 65536
-```
+Then you can simply start ```rDSN.WebStudio.py```, and visit ```http://localhost/8080``` to start with.  
 
-###Launch target program and http server
-```bash
-cd .\webstudio
-python rDSN.WebStudio.py 8088
-```
+## How to use
 
+Check out this [Tutorial](https://github.com/Microsoft/rDSN/wiki/Tutorial:-one-box-cluster).
 
 
