@@ -101,7 +101,6 @@ th, td {
             <tr>
                 <th>&nbsp;</th>
                 <th>Name</th>
-                <th>Stateful</th>
                 <th>Author</th>
                 <th>Details</th>
                 <th>Instances</th>
@@ -113,9 +112,7 @@ th, td {
             <tbody>
                 <tr v-for="pack in packList">
                     <td><img :src="pack.imgsrc" width="50" height="50" ></td> 
-                    <td>{{pack.name}}</td> 
-                    <td v-if="pack.is_stateful.toString() == 'true'"> <font color=green> Y </font> </td>
-                    <td v-else> <font color=red> N </font> </td>
+                    <td>{{pack.name}}</td>                     
                     <td>{{pack.author}}</td> 
                     <td><span class="glyphicon glyphicon-list-alt" aria-hidden="true" @click="showDetail(pack)"></span></td>
                     <!--<td><a href="local/pack/{{pack.name}}/{{pack.name}}.Tron.Composition.dll" download><span class="glyphicon glyphicon-save-file" aria-hidden="true"></span></a></td>-->
@@ -147,7 +144,7 @@ th, td {
           <div class="modal-header">
             <div class="row">
                 <div class="col-xs-12">
-Service packages are registered as <i>%name%.tar.gz</i> (Linux, or <i>%name%.zip</i> on Windows), with <i>%name%</i> as the top directory name in the tar ball, and <i>%name%/config.ini</i>. rDSN starts the packages as <i>dsn.svchost config.ini -cargs port=%port%;k1=v1;k2=v2;...;</i> where <i>port</i> is the assigned network listen port and <i>k1,v1,...</i> are environment variables defined at deployment time. 
+Service packages are registered as <i>%name%.tar.gz</i> (Linux, or <i>%name%.zip</i> on Windows), with <i>%name%</i> as the top directory name in the tar ball, and <i>%name%/config.deploy.ini</i>. rDSN starts the packages as <i>dsn.svchost config.deploy.ini -cargs port=%port%;k1=v1;k2=v2;...;</i> where <i>port</i> is the assigned network listen port and <i>k1,v1,...</i> are environment variables defined at deployment time. 
                 <h4 class="modal-title" />
                 </div>
             </div>
@@ -168,16 +165,7 @@ Service packages are registered as <i>%name%.tar.gz</i> (Linux, or <i>%name%.zip
             <div class="row">
                 <div class="col-xs-12">
                     <label for="description" >Descrption</label>
-                    <textarea class="form-control" rows="2" id="description"></textarea>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-xs-12">
-                    <label for="is_stateful" > If stateful</label>
-                    <select class = "form-control" id = "is_stateful">
-                      <option value = "false">false</option>
-                      <option value = "true">true</option>
-                    </select>
+                    <textarea class="form-control" rows="2" id="description"></textarea>                    
                 </div>
             </div>
             <div class="row">
@@ -196,6 +184,7 @@ Service packages are registered as <i>%name%.tar.gz</i> (Linux, or <i>%name%.zip
                             <h4 v-if="ifNameDuplicated"><font color="red">Package name duplicated!</font></h4>
                         </div>
                     </div>
+                    <input id="is_stateful" name="is_stateful" type="hidden" value="false">
                     <input id="source" name="source" type="hidden" value=""></input>
                     <input id="file_name" name="file_name" type="hidden" value=""></input>
                     <input id="author" name="author" type="hidden" value=""></input>
