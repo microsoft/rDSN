@@ -3,9 +3,9 @@
 **Robust Distributed System Nucleus (rDSN)** is a framework for quickly building robust distributed systems. It has a microkernel for pluggable components, including applications, distributed frameworks, devops tools, and local runtime/resource providers, enabling their independent development and seamless integration. The project was originally developed for Microsoft Bing, and now has been adopted in production both inside and outside Microsoft.
 
 * [What are the existing modules I can immediately use?](#existing)
+* [What scenaios are enabled by combining these modules differently?](#scenarios)
 * [How does rDSN build robustness?](#novel)
 * [Related papers](#papers)
-
 
 ### Top Links
  * [[Case](https://github.com/imzhenyu/rocksdb)] RocksDB made replicated using rDSN!
@@ -20,8 +20,9 @@
 
 The core of rDSN is a service kernel with which we can develop (via [Service API](http://imzhenyu.github.io/rDSN/documents/v1/html/group__service-api.html) and [Tool API](http://imzhenyu.github.io/rDSN/documents/v1/html/group__tool-api.html)) and plugin lots of different application, framework, tool, and local runtime modules, so that they can seamlessly benefit each other. Here is an incomplete list of the pluggable modules.
 
-| Pluggable modules | Description | Demo |
+| Pluggable modules | Description | Release |
 |--------|-------------|------|
+| [dsn.core](https://github.com/Microsoft/rDSN/tree/master/src/core) | rDSN service kernel | todo | 
 | [dsn.dist.service.stateless](https://github.com/imzhenyu/rDSN.dist.service/tree/master/src/app_daemon)      | scale-out and fail-over for stateless services (e.g., micro services) | todo |
 | [dsn.dist.service.stateful.type1](https://github.com/imzhenyu/rDSN.dist.service/tree/master/src/replica_server) | scale-out, replicate, and fail-over for stateful services (e.g., storage) | todo |
 | [dsn.dist.service.meta_server](https://github.com/imzhenyu/rDSN.dist.service/tree/master/src/meta_server)    | membership, load balance, and machine pool management for the above service frameworks | todo |
@@ -33,9 +34,21 @@ The core of rDSN is a service kernel with which we can develop (via [Service API
 | [dsn.tools.hpc](https://github.com/imzhenyu/rDSN.tools.hpc)                   | high performance counterparts for the modules as implemented in tools.common | todo |
 | [dsn.tools.explorer](https://github.com/imzhenyu/rDSN.tools.explorer)              | extracts task-level dependencies automatically | todo |
 | [dsn.tools.log.monitor](https://github.com/imzhenyu/rDSN.tools.log.monitor)           | collect critical logs (e.g., log-level >= WARNING) in cluster | todo |
-| [dsn.apps.skv](https://github.com/Microsoft/rDSN/tree/master/src/plugins/apps.skv)                    | an example application module | todo | 
+| [dsn.app.simple_kv](https://github.com/Microsoft/rDSN/tree/master/src/plugins/apps.skv)                    | an example application module | todo | 
 
-rDSN also provides a [web portal](https://github.com/Microsoft/rDSN/tree/master/src/tools/webstudio) that enables quick deployment of the above modules in a cluster, and allows easy operations through simple clicks as well as rich visualization. 
+### <a name="scenarios"> Scenarios by different module combination and configuration </a>
+
+rDSN provides flexible configuration so that developers can combine and configure the modules differently to enable different scenarios. All modules are loaded by [dsn.svchost](https://github.com/Microsoft/rDSN/tree/master/src/tools/svchost), a common process runner in rDSN, with the given configuration file. The following table lists some examples (note **dsn.core** is always required therefore omitted in ```Modules``` column).
+
+| Scenarios | Modules  | Config | Demo | 
+|----------|---------------|--------|------|
+| logic correctness development | dsn.app.simple_kv + dsn.tools.emulator + dsn.tools.common | [config](https://github.com/Microsoft/rDSN/blob/master/tutorial/simple_kv/config.logic.ini)  | todo |
+| logic correctness with failure | dsn.app.simple_kv + dsn.tools.emulator + dsn.tools.common | [config](https://github.com/Microsoft/rDSN/blob/master/tutorial/simple_kv/config.logic.failure.ini)  | todo |
+| performance tuning | dsn.app.simple_kv + dsn.tools.common | [config](https://github.com/Microsoft/rDSN/blob/master/tutorial/simple_kv/config.logic.perf.ini)  | todo |
+| progressive performance tuning | dsn.app.simple_kv + dsn.tools.common + dsn.tools.emulator | [config](https://github.com/Microsoft/rDSN/blob/master/tutorial/simple_kv/config.logic.perf.prog.ini)  | todo |
+| Paxos enabled stateful service | dsn.app.simple_kv + dsn.tools.common + dsn.tools.emulator + dsn.dist.uri.resolver + dsn.dist.serivce.meta_server + dsn.dist.service.stateful.type1 | [config](https://github.com/Microsoft/rDSN/blob/master/tutorial/simple_kv/config.stateful.ini)  | todo |
+
+There are a lot more possibilities. rDSN provides a [web portal](https://github.com/Microsoft/rDSN/tree/master/src/tools/webstudio) to enable quick deployment of these scenarios in a cluster, and allow easy operations through simple clicks as well as rich visualization. Deployment scenarios are defined [here](https://github.com/Microsoft/rDSN/blob/master/src/tools/webstudio/app_package/static/js/rdsn.envs.js), and developers can add more on demand. 
 
 ### <a name="novel"> How does rDSN build robustness? </a>
 

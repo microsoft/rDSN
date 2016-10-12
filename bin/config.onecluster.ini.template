@@ -51,7 +51,7 @@ arguments = localhost:%meta_port%
 start_nfs = true
 
 tool = nativerun
-;tool = simulator
+;tool = emulator
 toollets = tracer
 ;toollets = tracer,profiler,fault_injector
 pause_on_start = false
