@@ -145,8 +145,7 @@ public:
             return ::dsn::ERR_INVALID_PARAMETERS;
 
         // argv[1]: e.g., dsn://mycluster/simple-kv.instance0
-        rpc_address service_addr;
-        service_addr.assign_uri(dsn_uri_build(argv[1]));
+        url_host_address service_addr(argv[1]);
 
         _simple_kv_client.reset(new simple_kv_perf_test_client(service_addr));
         _simple_kv_client->start_test("simple_kv.simple_kv.perf-test.case", 3);

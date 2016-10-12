@@ -87,7 +87,7 @@ public:
         memset((void*)_extensions, 0, sizeof(_extensions));
     }
 
-    ~extensible_object()
+    DSN_API ~extensible_object()
     {
         int maxId = static_cast<int>(get_extension_count());
 
@@ -98,9 +98,17 @@ public:
                 s_extensionDeletors[i]((void*)_extensions[i]);
             }
         }
+
+        // impossible branch to ensure the used apis are exported:-)
+        if (maxId > 0x0eadbeef)
+        {
+            extensible_object<T, MAX_EXTENSION_COUNT> r;
+            copy_to(r);
+            register_extension(nullptr);
+        }
     }
 
-    void copy_to(extensible_object<T, MAX_EXTENSION_COUNT>& r)
+    DSN_API void copy_to(extensible_object<T, MAX_EXTENSION_COUNT>& r)
     {
         int maxId = static_cast<int>(get_extension_count());
 
@@ -113,7 +121,7 @@ public:
         }
     }
 
-    static uint32_t register_extension(extension_deletor deletor = nullptr)
+    DSN_API static uint32_t register_extension(extension_deletor deletor = nullptr)
     {
         int idx = s_nextExtensionIndex++;
         if (idx < MAX_EXTENSION_COUNT)
@@ -128,7 +136,7 @@ public:
         return idx;
     }
 
-    static uint32_t get_extension_count()
+    DSN_API static uint32_t get_extension_count()
     {
         return s_nextExtensionIndex.load();
     }
