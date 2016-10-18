@@ -22,19 +22,19 @@ The core of rDSN is a service kernel with which we can develop (via [Service API
 
 | Pluggable modules | Description | Release |
 |--------|-------------|------|
-| [dsn.core](https://github.com/Microsoft/rDSN/tree/master/src/core) | rDSN service kernel | todo | 
-| [dsn.dist.service.stateless](https://github.com/imzhenyu/rDSN.dist.service/tree/master/src/app_daemon)      | scale-out and fail-over for stateless services (e.g., micro services) | todo |
-| [dsn.dist.service.stateful.type1](https://github.com/imzhenyu/rDSN.dist.service/tree/master/src/replica_server) | scale-out, replicate, and fail-over for stateful services (e.g., storage) | todo |
-| [dsn.dist.service.meta_server](https://github.com/imzhenyu/rDSN.dist.service/tree/master/src/meta_server)    | membership, load balance, and machine pool management for the above service frameworks | todo |
-| [dsn.dist.uri.resolver](https://github.com/Microsoft/rDSN/tree/master/src/plugins/dist.uri.resolver)           | a client-side helper module that resolves service URL to target machine | todo |
+| [dsn.core](https://github.com/Microsoft/rDSN/tree/master/src/core) | rDSN service kernel | [1.0.0](https://github.com/Microsoft/rDSN/releases/tag/v1.0.0) | 
+| [dsn.dist.service.stateless](https://github.com/imzhenyu/rDSN.dist.service/tree/master/src/app_daemon)      | scale-out and fail-over for stateless services (e.g., micro services) | [1.0.0](https://github.com/imzhenyu/rDSN.dist.service/releases/tag/v1.0.0) |
+| [dsn.dist.service.stateful.type1](https://github.com/imzhenyu/rDSN.dist.service/tree/master/src/replica_server) | scale-out, replicate, and fail-over for stateful services (e.g., storage) | [1.0.0](https://github.com/imzhenyu/rDSN.dist.service/releases/tag/v1.0.0) |
+| [dsn.dist.service.meta_server](https://github.com/imzhenyu/rDSN.dist.service/tree/master/src/meta_server)    | membership, load balance, and machine pool management for the above service frameworks | [1.0.0](https://github.com/imzhenyu/rDSN.dist.service/releases/tag/v1.0.0) |
+| [dsn.dist.uri.resolver](https://github.com/Microsoft/rDSN/tree/master/src/plugins/dist.uri.resolver)           | a client-side helper module that resolves service URL to target machine | [1.0.0](https://github.com/Microsoft/rDSN/releases/tag/v1.0.0) |
 | [dsn.dist.traffic.router](https://github.com/imzhenyu/rDSN.dist.traffic.router)         | fine-grain RPC request routing/splitting/forking to multiple services (e.g., A/B test) | todo |
-| [dsn.tools.common](https://github.com/Microsoft/rDSN/tree/master/src/plugins/tools.common)                | deployment runtime (e.g., network, aio, lock, timer, perf counters, loggers) for both Windows and Linux; simple toollets, such as tracer, profiler, and fault-injector | todo |
-| [dsn.tools.nfs](https://github.com/Microsoft/rDSN/tree/master/src/plugins/tools.nfs)                   | an implementation of remote file copy based on rpc and aio | todo |
-| [dsn.tools.emulator](https://github.com/Microsoft/rDSN/tree/master/src/plugins/tools.emulator)              | an emulation runtime for whole distributed system emulation with auto-test, replay, global state checking, etc. | todo |
+| [dsn.tools.common](https://github.com/Microsoft/rDSN/tree/master/src/plugins/tools.common)                | deployment runtime (e.g., network, aio, lock, timer, perf counters, loggers) for both Windows and Linux; simple toollets, such as tracer, profiler, and fault-injector | [1.0.0](https://github.com/Microsoft/rDSN/releases/tag/v1.0.0) |
+| [dsn.tools.nfs](https://github.com/Microsoft/rDSN/tree/master/src/plugins/tools.nfs)                   | an implementation of remote file copy based on rpc and aio | [1.0.0](https://github.com/Microsoft/rDSN/releases/tag/v1.0.0) |
+| [dsn.tools.emulator](https://github.com/Microsoft/rDSN/tree/master/src/plugins/tools.emulator)              | an emulation runtime for whole distributed system emulation with auto-test, replay, global state checking, etc. | [1.0.0](https://github.com/Microsoft/rDSN/releases/tag/v1.0.0) |
 | [dsn.tools.hpc](https://github.com/imzhenyu/rDSN.tools.hpc)                   | high performance counterparts for the modules as implemented in tools.common | todo |
 | [dsn.tools.explorer](https://github.com/imzhenyu/rDSN.tools.explorer)              | extracts task-level dependencies automatically | todo |
-| [dsn.tools.log.monitor](https://github.com/imzhenyu/rDSN.tools.log.monitor)           | collect critical logs (e.g., log-level >= WARNING) in cluster | todo |
-| [dsn.app.simple_kv](https://github.com/Microsoft/rDSN/tree/master/src/plugins/apps.skv)                    | an example application module | todo | 
+| [dsn.tools.log.monitor](https://github.com/imzhenyu/rDSN.tools.log.monitor)           | collect critical logs (e.g., log-level >= WARNING) in cluster | [1.0.0](https://github.com/imzhenyu/rDSN.tools.log.monitor/releases/tag/v1.0.0) |
+| [dsn.app.simple_kv](https://github.com/Microsoft/rDSN/tree/master/src/plugins/apps.skv)                    | an example application module | [1.0.0](https://github.com/Microsoft/rDSN/releases/tag/v1.0.0) | 
 
 ### <a name="scenarios"> Scenarios by different module combination and configuration </a>
 
