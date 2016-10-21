@@ -32,7 +32,7 @@ The core of rDSN is a service kernel with which we can develop (via [Service API
 | [dsn.tools.nfs](https://github.com/Microsoft/rDSN/tree/master/src/plugins/tools.nfs)                   | an implementation of remote file copy based on rpc and aio | [1.0.0](https://github.com/Microsoft/rDSN/releases/tag/v1.0.0) |
 | [dsn.tools.emulator](https://github.com/Microsoft/rDSN/tree/master/src/plugins/tools.emulator)              | an emulation runtime for whole distributed system emulation with auto-test, replay, global state checking, etc. | [1.0.0](https://github.com/Microsoft/rDSN/releases/tag/v1.0.0) |
 | [dsn.tools.hpc](https://github.com/imzhenyu/rDSN.tools.hpc)                   | high performance counterparts for the modules as implemented in tools.common | todo |
-| [dsn.tools.explorer](https://github.com/imzhenyu/rDSN.tools.explorer)              | extracts task-level dependencies automatically | todo |
+| [dsn.tools.explorer](https://github.com/imzhenyu/rDSN.tools.explorer)              | extracts task-level dependencies automatically | [1.0.0](https://github.com/imzhenyu/rDSN.tools.explorer/releases/tag/v1.0.0) |
 | [dsn.tools.log.monitor](https://github.com/imzhenyu/rDSN.tools.log.monitor)           | collect critical logs (e.g., log-level >= WARNING) in cluster | [1.0.0](https://github.com/imzhenyu/rDSN.tools.log.monitor/releases/tag/v1.0.0) |
 | [dsn.app.simple_kv](https://github.com/Microsoft/rDSN/tree/master/src/plugins/apps.skv)                    | an example application module | [1.0.0](https://github.com/Microsoft/rDSN/releases/tag/v1.0.0) | 
 
