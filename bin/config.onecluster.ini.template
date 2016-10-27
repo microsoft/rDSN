@@ -31,7 +31,7 @@ type = daemon
 arguments = 
 ports = %daemon_port%
 pools = THREAD_POOL_DEFAULT,THREAD_POOL_REPLICATION,THREAD_POOL_FD,THREAD_POOL_LOCAL_APP
-count = 8
+
 app_port_min = 59001
 app_port_max = 60001
 

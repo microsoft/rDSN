@@ -21,19 +21,24 @@ start dsn.svchost.exe config.onecluster.ini -app_list meta
 REM -overwrite core.pause_on_start=true
 popd
 
+ECHO ON
 pushd %data_dir%\daemon
-for /l %%x in (1, 1, 8) do (
-    @mkdir d%%x
-    pushd d%%x
-    start dsn.svchost.exe ..\config.onecluster.ini -app_list daemon@%%x -cargs package_dir=%bin_dir%\..\..\src\tools\webstudio\app_package\local\packages
-    popd
-)
+for /l %%x in (1, 1, 8) do call :start_daemon %%x
 popd
 
 REM START web studio
 start python %bin_dir%\..\..\src\tools\webstudio\rDSN.WebStudio.py 
 
 ECHO Now you can visit http://localhost:8088 to start playing with rDSN ...
+
+goto :eof 
+
+:start_daemon
+    SET /a port=%1+24801
+    @mkdir d%port%
+    pushd d%port%
+    start dsn.svchost.exe ..\config.onecluster.ini -app_list daemon -cargs daemon_port=%port%
+    popd
 
 
 

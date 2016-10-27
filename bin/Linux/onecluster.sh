@@ -25,9 +25,11 @@ popd
 pushd $DATA_DIR/daemon
 for i in $(seq 1 8);
 do
-    mkdir d$i
-    pushd d$i
-    ../dsn.svchost ../config.onecluster.ini -app_list daemon@$i -cargs package_dir=$ROOT/src/tools/webstudio/app_package/local/packages &
+    port=$(($i+24801))
+    echo start daemon at port $port ...
+    mkdir d$port
+    pushd d$port
+    ../dsn.svchost ../config.onecluster.ini -app_list daemon -cargs daemon_port=$port &
     echo $!>pid
     popd
 done
