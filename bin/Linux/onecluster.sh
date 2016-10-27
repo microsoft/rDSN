@@ -25,7 +25,8 @@ popd
 pushd $DATA_DIR/daemon
 for i in $(seq 1 8);
 do
-    $port=$(($i+24801))
+    port=$(($i+24801))
+    echo start daemon at port $port ...
     mkdir d$port
     pushd d$port
     ../dsn.svchost ../config.onecluster.ini -app_list daemon -cargs daemon_port=$port &
