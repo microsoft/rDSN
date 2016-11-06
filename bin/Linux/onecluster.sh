@@ -2,7 +2,6 @@
 #
 # Options:
 
-ROOT=`pwd`
 DATA_DIR=./cluster
 
 # copy binaries and common config files 
@@ -36,7 +35,7 @@ done
 popd
 
 # START web studio
-python $ROOT/src/tools/webstudio/rDSN.WebStudio.py &
+python $DSN_ROOT/webstudio/rDSN.WebStudio.py &
 
 echo Now you can visit http://localhost:8088 to start playing with rDSN ...
 
