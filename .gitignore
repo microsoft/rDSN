@@ -3,6 +3,7 @@
 .kdev4/
 .zk_install/
 
+bin/config.onecluster.ini
 bin/Linux/thrift
 builder/
 install/
