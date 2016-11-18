@@ -1084,9 +1084,9 @@ namespace dsn {
         auto sp = task_spec::get(response->local_rpc_code);
         auto s = response->io_session.get();
 
-        //when a message doesn't need to reply, we should skip the on_rpc_reply hook to avoid mistakes
-        //for example, the profiler may be mistakenly calculated
-        if (s==nullptr && response->to_address.is_invalid())
+        // when a message doesn't need to reply, we should skip the on_rpc_reply hook to avoid mistakes
+        // for example, the profiler may be mistakenly calculated
+        if (s == nullptr && response->to_address.is_invalid())
         {
             dinfo("rpc reply %s is dropped (invalid to-address), trace_id = %016" PRIx64,
                   response->header->rpc_name,
