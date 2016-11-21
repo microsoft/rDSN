@@ -269,8 +269,12 @@ namespace dsn {
         void time_ms_to_string(uint64_t ts_ms, char* str)
         {
             auto t = (time_t)(ts_ms / 1000);
+#if defined(_WIN32)
+            auto ret = localtime(&t);
+#else
             struct tm tmp;
             auto ret = localtime_r(&t, &tmp);
+#endif
             auto ms = static_cast<uint32_t>(ts_ms % 1000);
 
             sprintf(str, "%02d:%02d:%02d.%03u", ret->tm_hour, ret->tm_min, ret->tm_sec, ms);
