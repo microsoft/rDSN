@@ -146,7 +146,7 @@ DSN_API uint32_t dsn_ipv4_local(const char* network_interface)
                    )
                 {
                     if (i->ifa_addr->sa_family == AF_INET && 
-                        strncmp((const char*)&((struct sockaddr_in *)i->ifa_addr)->sin_addr.s_addr, loopback, 4) != 0)
+                        (network_interface[0] != '\0' || strncmp((const char*)&((struct sockaddr_in *)i->ifa_addr)->sin_addr.s_addr, loopback, 4) != 0))
                     {
                         ret = (uint32_t)ntohl(((struct sockaddr_in *)i->ifa_addr)->sin_addr.s_addr);
                         break;
@@ -162,7 +162,8 @@ DSN_API uint32_t dsn_ipv4_local(const char* network_interface)
                         strncpy(ifr.ifr_name, i->ifa_name, IFNAMSIZ - 1);
 
                         auto err = ioctl(fd, SIOCGIFADDR, &ifr);
-                        if (err == 0 && strncmp((const char*)&((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr, loopback, 4) != 0)
+                        if (err == 0 &&
+                            (network_interface[0] != '\0' || strncmp((const char*)&((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr, loopback, 4) != 0))
                         {
                             ret = (uint32_t)ntohl(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr);
                             break;
