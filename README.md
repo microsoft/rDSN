@@ -2,18 +2,17 @@
 
 **Robust Distributed System Nucleus (rDSN)** is a framework for quickly building robust distributed systems. It has a microkernel for pluggable components, including applications, distributed frameworks, devops tools, and local runtime/resource providers, enabling their independent development and seamless integration. The project was originally developed for Microsoft Bing, and now has been adopted in production both inside and outside Microsoft.
 
+* [PPT][rDSN Full Introduction](https://github.com/imzhenyu/rDSN/raw/master/resources/rDSN.full.2016.10.pdf)
 * [What are the existing modules I can immediately use?](#existing)
 * [What scenaios are enabled by combining these modules differently?](#scenarios)
 * [How does rDSN build robustness?](#novel)
 * [Related papers](#papers)
-
-### Top Links
- * [[Case](https://github.com/imzhenyu/rocksdb)] RocksDB made replicated using rDSN!
- * [[Tutorial](https://github.com/Microsoft/rDSN/wiki/Tutorial:-one-box-cluster)] A one-box cluster demo to understand how rDSN helps service registration, deployment, monitoring etc..
- * [[Tutorial](https://github.com/Microsoft/rDSN/wiki/Tutorial:-Build-A-Single-Node-Counter-Service)] Build a counter service with built-in tools (e.g., codegen, auto-test, fault injection, bug replay, tracing)
- * [[Tutorial](https://github.com/Microsoft/rDSN/wiki/Tutorial:-Build-A-Scalable-and-Reliable-Counter-Service)] Build a scalable and reliable counter service with built-in replication support
- * [API Reference](http://imzhenyu.github.io/rDSN/documents/v1/html/index.html)
- * [Installation](https://github.com/Microsoft/rDSN/wiki/Installation)
+* [[Case](https://github.com/imzhenyu/rocksdb)] RocksDB made replicated using rDSN!
+* [[Tutorial](https://github.com/Microsoft/rDSN/wiki/Tutorial:-one-box-cluster)] A one-box cluster demo to understand how rDSN helps service registration, deployment, monitoring etc..
+* [[Tutorial](https://github.com/Microsoft/rDSN/wiki/Tutorial:-Build-A-Single-Node-Counter-Service)] Build a counter service with built-in tools (e.g., codegen, auto-test, fault injection, bug replay, tracing)
+* [[Tutorial](https://github.com/Microsoft/rDSN/wiki/Tutorial:-Build-A-Scalable-and-Reliable-Counter-Service)] Build a scalable and reliable counter service with built-in replication support
+* [API Reference](http://imzhenyu.github.io/rDSN/documents/v1/html/index.html)
+* [Installation](https://github.com/Microsoft/rDSN/wiki/Installation)
 
  
 ### <a name="existing">Existing pluggable modules (and growing) </a>
