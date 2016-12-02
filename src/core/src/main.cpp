@@ -228,13 +228,13 @@ static void load_all_modules(::dsn::configuration_ptr config)
         auto hmod = ::dsn::utils::load_dynamic_library(m.first.c_str(), search_dirs);
         if (nullptr == hmod)
         {
-            dassert(false, "cannot load shared library %s specified in config file",
+            dassert(false, "cannot load shared library '%s' specified in config file",
                 m.first.c_str());
             break;
         }
         else
         {
-            dwarn("load shared library %s successfully", m.first.c_str());
+            dwarn("load shared library '%s' successfully", m.first.c_str());
         }
 
 // attribute(contructor) is not reliable on *nix
@@ -301,6 +301,7 @@ bool run(
         printf("Fail to load config file %s\n", config_file);
         return false;
     }
+    dwarn("load config file '%s' successfully", config_file);
 
     // pause when necessary
     if (dsn_all.config->get_value<bool>("core", "pause_on_start", false,

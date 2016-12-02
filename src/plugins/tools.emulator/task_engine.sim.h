@@ -116,7 +116,6 @@ private:
     sim_semaphore_provider _sema;
 };
 
-
 // degrade to lock_nr for simplicity
 class sim_rwlock_nr_provider : public rwlock_nr_provider
 {
