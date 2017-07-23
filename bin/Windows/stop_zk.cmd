@@ -12,8 +12,12 @@ IF "%PORT%" EQU "" (
     SET PORT=12181
 )
 
-TASKKILL /F /FI "WINDOWTITLE eq zk-%PORT% - %INSTALL_DIR%\%zk%\bin\zkServer.cmd"
-TASKKILL /F /FI "WINDOWTITLE eq zk-%PORT% - %INSTALL_DIR%\%zk%\bin\zkServer.cmd"
+REM TASKKILL /F /FI "WINDOWTITLE eq zk-%PORT% - %INSTALL_DIR%\%zk%\bin\zkServer.cmd"
+REM TASKKILL /F /FI "WINDOWTITLE eq zk-%PORT% - %INSTALL_DIR%\%zk%\bin\zkServer.cmd"
+FOR /L %%i IN (0, 1, 1) DO (
+    TASKKILL /F /FI "WINDOWTITLE eq zk-%PORT%-%ZOOKEEPER_HOME%\bin\zkServer.cmd"
+)
+
 GOTO exit
 
 :usage
