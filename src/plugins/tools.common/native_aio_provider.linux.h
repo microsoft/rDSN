@@ -41,12 +41,12 @@
 # include <dsn/tool_api.h>
 # include <dsn/utility/synchronize.h>
 # include <queue>
-# include <stdio.h>        /* for perror() */
-# include <sys/syscall.h>    /* for __NR_* definitions */
+# include <cinttypes>     /* uint64_t */
+# include <cstring>       /* memset() */
+# include <cstdio>        /* for perror() */
+# include <sys/syscall.h> /* for __NR_* definitions */
 # include <libaio.h>
-# include <fcntl.h>        /* O_RDWR */
-# include <string.h>        /* memset() */
-# include <inttypes.h>    /* uint64_t */
+# include <fcntl.h>       /* O_RDWR */
 
 namespace dsn {
     namespace tools {

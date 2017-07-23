@@ -70,8 +70,8 @@ __pragma(warning(disable:4127))
 # include <list>
 # include <algorithm>
 
-# define __STDC_FORMAT_MACROS
 // common c headers
+# include <cinttypes>
 # include <cassert>
 # include <cstring>
 # include <cstdlib>
@@ -79,8 +79,6 @@ __pragma(warning(disable:4127))
 # include <cstdio>
 # include <climits>
 # include <cerrno>
-# include <cstdint>
-# include <inttypes.h>
 
 // common utilities
 # include <atomic>
