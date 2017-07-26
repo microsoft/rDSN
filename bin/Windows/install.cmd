@@ -27,7 +27,7 @@ goto exit
 
 :error
     CALL %bin_dir%\echoc.exe 4  "Usage: run.cmd install build_type(Debug|Release|RelWithDebInfo|MinSizeRel) build_dir [install_dir (DSN_ROOT by default)]"
-    exit 1
+    exit /B 1
     
 :exit
-    exit /b 0
+    exit /B 0

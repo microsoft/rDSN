@@ -24,7 +24,7 @@ IF NOT EXIST %INSTALL_DIR%\%zk% (
     IF NOT EXIST %zk%.tar.gz (
         CALL %bin_dir%\echoc.exe 4 download zookeeper package failed from  https://github.com/shengofsun/packages/raw/master/%zk%.tar.gz?raw=true
         popd
-        exit /b 1
+        exit /B 1
     ) 
     
     CALL %bin_dir%\7z.exe x %zk%.tar.gz -y -o"%INSTALL_DIR%"
@@ -65,4 +65,4 @@ GOTO exit
     GOTO:EOF
     
 :exit
-    exit /b 0
+    exit /B 0
