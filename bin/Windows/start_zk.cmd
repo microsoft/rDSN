@@ -51,7 +51,7 @@ for /F  %%A in (%ZK_SRC_CONFIG%) do (
 @mkdir %ZOOKEEPER_HOME%\data
 
 REM powershell -command "Start-Process %ZOOKEEPER_HOME%\bin\zkServer.cmd"
-powershell -command "Start-Process -FilePath cmd.exe  -ArgumentList '/c title zk-%PORT%-%ZOOKEEPER_HOME%\bin\zkServer.cmd&&%ZOOKEEPER_HOME%\bin\zkServer.cmd'"
+powershell -command "Start-Process -FilePath cmd.exe  -ArgumentList '/C title zk-%PORT%-%ZOOKEEPER_HOME%\bin\zkServer.cmd&&%ZOOKEEPER_HOME%\bin\zkServer.cmd'"
 
 REM CALL start cmd.exe /k "title zk-%PORT%&& %ZOOKEEPER_HOME%\bin\zkServer.cmd"
 
