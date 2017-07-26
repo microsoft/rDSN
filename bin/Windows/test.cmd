@@ -17,6 +17,13 @@ IF NOT EXIST %build_dir% (
 
 CALL %bin_dir%\echoc.exe 2 run the tests here ...
 
+:: set the path of built binaries
+SET DSN_TMP_BUILD_DIR_IN_PATH=
+@FOR %%P in ("%Path:;=";"%") DO @IF /I %%P=="%build_dir%\bin\%build_type%" SET DSN_TMP_BUILD_DIR_IN_PATH=true
+:: SET DSN_TMP_OLD_PATH=%Path%
+IF NOT DEFINED DSN_TMP_BUILD_DIR_IN_PATH SET Path=%build_dir%\bin\%build_type%;%build_dir%\lib;%Path%
+SET DSN_TMP_BUILD_DIR_IN_PATH=
+
 :: run dll-embedded unit tests
 SET DSN_TEST_HOST=%DSN_ROOT:/=\%\bin\dsn.svchost.exe
 IF EXIST "%build_dir%\bin\dsn.svchost\%build_type%\dsn.svchost.exe"  SET DSN_TEST_HOST=%build_dir%\bin\dsn.svchost\%build_type%\dsn.svchost.exe
