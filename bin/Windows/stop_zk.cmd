@@ -1,5 +1,10 @@
+@ECHO OFF
+
 SET bin_dir=%~dp0
 SET TOP_DIR=%bin_dir%\..\..
+PUSHD "%TOP_DIR%"
+SET TOP_DIR=%CD%
+POPD
 SET INSTALL_DIR=%~f1
 SET PORT=%2
 SET zk=zookeeper-3.4.6
