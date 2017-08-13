@@ -1,27 +1,32 @@
+@ECHO OFF
+
 SET bin_dir=%~dp0
 SET TOP_DIR=%bin_dir%\..\..\
+PUSHD "%TOP_DIR%"
+SET TOP_DIR=%CD%
+POPD
 SET build_type=%1
 SET build_dir=%~f2
 SET install_dir=%~f3
 
 IF NOT EXIST "%build_dir%\output" (
-    CALL %bin_dir%\echoc.exe 4 "not build yet"
+    CALL "%bin_dir%\echoc.exe" 4 "not build yet"
     GOTO error
 )
 
 IF "%install_dir%" EQU "" SET install_dir=%DSN_ROOT:/=\%
 IF "%install_dir%" EQU "" (
-    CALL %bin_dir%\echoc.exe 4 "install_dir not specified and DSN_ROOT not set"
+    CALL "%bin_dir%\echoc.exe" 4 "install_dir not specified and DSN_ROOT not set"
     GOTO error
 )
 
-pushd %build_dir%
+PUSHD "%build_dir%"
 
-XCOPY /Y /S /D /Q output\* %install_dir%\
+XCOPY /Y /S /D /Q output\* "%install_dir%\"
 
-IF EXIST "dsn.sln" COPY /Y bin\dsn.svchost\%build_type%\dsn.svchost.exe %install_dir%\bin\dsn.svchost.exe
+IF EXIST "dsn.sln" COPY /Y "bin\dsn.svchost\%build_type%\dsn.svchost.exe" "%install_dir%\bin\dsn.svchost.exe"
 
-popd
+POPD
  
 goto exit
 
