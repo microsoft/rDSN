@@ -43,12 +43,12 @@ SET ZK_DST_CONFIG=%ZOOKEEPER_HOME%\conf\zoo.cfg
 
 ECHO # GENERATD BY rDSN SCRIPT > "%ZK_DST_CONFIG%"
 
-for /F  %%A in ("%ZK_SRC_CONFIG%") do (
+FOR /F "usebackq" %%A in ("%ZK_SRC_CONFIG%") do (
     SET "line=%%A"
     setlocal enabledelayedexpansion    
-    set "line=!line:2181=12181!"
-    if defined line (
-        echo(!line! >> "%ZK_DST_CONFIG%"
+    SET "line=!line:2181=12181!"
+    IF defined line (
+        ECHO(!line! >> "%ZK_DST_CONFIG%"
     )
     endlocal
 )
