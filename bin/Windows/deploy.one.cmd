@@ -10,7 +10,7 @@ TITLE %cmd% %deploy_name% @ %machine%
 ECHO %cmd% %machine% %1 %2 %3 %4 %5 ... && CALL :%cmd% %machine%
 
 IF ERRORLEVEL 1 (
-    CALL %bin_dir%\echoc.exe 4 unknow command '%cmd%'
+    CALL "%bin_dir%\echoc.exe" 4 unknow command '%cmd%'
     CALL :usage
     GOTO exit
 )
@@ -83,6 +83,6 @@ REM
 
 IF ERRORLEVEL 0 exit
 
-CALL %bin_dir%\echoc.exe 4 error happens...
+CALL "%bin_dir%\echoc.exe" 4 error happens...
 
 
