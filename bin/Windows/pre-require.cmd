@@ -11,7 +11,7 @@ POPD
 IF "%VisualStudioVersion%"=="15.0" GOTO find_vs
 IF "%VisualStudioVersion%"=="14.0" GOTO find_vs
 SET DSN_TMP_VS_INSTALL_DIR=
-FOR /f "usebackq tokens=1* delims=: " %%i in (`"%bin_dir%\vswhere.exe" -latest`) DO (
+FOR /F "usebackq tokens=1* delims=: " %%i in (`"%bin_dir%\vswhere.exe" -latest`) DO (
   IF /i "%%i"=="installationPath" set DSN_TMP_VS_INSTALL_DIR=%%j
 )
 IF DEFINED DSN_TMP_VS_INSTALL_DIR (
