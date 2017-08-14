@@ -3,7 +3,7 @@ SET cmd=%1
 SET src_dir=%~f2
 
 IF EXIST "%src_dir%\apps.txt" (
-    FOR /F "tokens=*" %%A IN (%src_dir%\apps.txt) DO CALL %bin_dir%\deploy.cmd %1 %2\%%A %3 %4 %5
+    FOR /F "usebackq" "tokens=*" %%A IN ("%src_dir%\apps.txt") DO CALL "%bin_dir%\deploy.cmd" %1 %2\%%A %3 %4 %5
     GOTO exit
 )
 
