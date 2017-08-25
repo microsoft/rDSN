@@ -1,12 +1,17 @@
+@ECHO OFF
+
 SET bin_dir=%~dp0
 IF %bin_dir:~-1%==\ SET bin_dir=%bin_dir:~0,-1%
 SET TOP_DIR=%bin_dir%\..\..
+PUSHD "%TOP_DIR%"
+SET TOP_DIR=%CD%
+POPD
 
 :: detect VS
 IF "%VisualStudioVersion%"=="15.0" GOTO find_vs
 IF "%VisualStudioVersion%"=="14.0" GOTO find_vs
 SET DSN_TMP_VS_INSTALL_DIR=
-FOR /f "usebackq tokens=1* delims=: " %%i in (`%bin_dir%\vswhere.exe -latest`) DO (
+FOR /F "usebackq tokens=1* delims=: " %%i in (`"%bin_dir%\vswhere.exe" -latest`) DO (
   IF /i "%%i"=="installationPath" set DSN_TMP_VS_INSTALL_DIR=%%j
 )
 IF DEFINED DSN_TMP_VS_INSTALL_DIR (

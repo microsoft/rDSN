@@ -1,6 +1,6 @@
-ECHO OFF
-SET PROJ_LIB_DIR=%1
-SET DST_LIB_DIR=%2
+@ECHO OFF
+SET PROJ_LIB_DIR=%~1
+SET DST_LIB_DIR=%~2
 SET max_time=
 SET max_config=
 
@@ -18,7 +18,7 @@ GOTO copy_latest
     SET lconfig=%1
     SET ltime=
     IF EXIST "%PROJ_LIB_DIR%\%lconfig%" (
-        ECHO CHECK dir %PROJ_LIB_DIR%\%lconfig% ... 
+        ECHO CHECK dir "%PROJ_LIB_DIR%\%lconfig%" ... 
         FOR /f "tokens=1,2,3" %%i IN ('dir /o:d /TW "%PROJ_LIB_DIR%\%lconfig%" ^| find "/"' ) DO (
             SET valid_k=0
             if "%%k" EQU "AM" SET valid_k=1
@@ -50,9 +50,9 @@ IF "%max_config%" EQU "" (
     GOTO exit
 )
 
-ECHO latest build is in dir %PROJ_LIB_DIR%\%max_config%
+ECHO latest build is in dir "%PROJ_LIB_DIR%\%max_config%"
 
 @ECHO ON
-XCOPY /F /Y /S %PROJ_LIB_DIR%\%max_config% %DST_LIB_DIR%
+XCOPY /F /Y /S "%PROJ_LIB_DIR%\%max_config%" "%DST_LIB_DIR%"
     
 :exit

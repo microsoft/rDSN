@@ -3,7 +3,7 @@ SET cmd=%1
 SET src_dir=%~f2
 
 IF EXIST "%src_dir%\apps.txt" (
-    FOR /F "tokens=*" %%A IN (%src_dir%\apps.txt) DO CALL %bin_dir%\deploy.cmd %1 %2\%%A %3 %4 %5
+    FOR /F "usebackq" "tokens=*" %%A IN ("%src_dir%\apps.txt") DO CALL "%bin_dir%\deploy.cmd" %1 %2\%%A %3 %4 %5
     GOTO exit
 )
 
@@ -14,30 +14,30 @@ SET rdst_dir=%ldst_dir::=$%
 SET machine_list=%src_dir%\machines.txt
 
 IF "%src_dir%" EQU "" (
-    CALL %bin_dir%\echoc.exe 4 source directory not specified
+    CALL "%bin_dir%\echoc.exe" 4 source directory not specified
     CALL :usage
     GOTO exit
 )
 
 IF NOT EXIST "%src_dir%" (
-    CALL %bin_dir%\echoc.exe 4 cannot find source directory '%src_dir%'
+    CALL "%bin_dir%\echoc.exe" 4 cannot find source directory '%src_dir%'
     CALL :usage
     GOTO exit
 )
 
 IF NOT EXIST "%src_dir%\start.cmd" (
-    CALL %bin_dir%\echoc.exe 4 please create start.cmd in source directory '%src_dir%'
+    CALL "%bin_dir%\echoc.exe" 4 please create start.cmd in source directory '%src_dir%'
     GOTO exit
 )
 
 IF NOT EXIST "%machine_list%" (
-    CALL %bin_dir%\echoc.exe 4 cannot find machine_list file '%machine_list%'
+    CALL "%bin_dir%\echoc.exe" 4 cannot find machine_list file '%machine_list%'
     CALL :usage
     GOTO exit
 )
 
 IF "%3" EQU "" (
-    CALL %bin_dir%\echoc.exe 4 destination dir not specified
+    CALL "%bin_dir%\echoc.exe" 4 destination dir not specified
     CALL :usage
     GOTO exit
 )
@@ -51,7 +51,7 @@ IF "%3" EQU "" (
 FOR /F %%i IN (%machine_list%) DO ECHO %cmd% %%i %src_dir% %ldst_dir% %deploy_name% ... && start %bin_dir%\deploy.one.cmd %cmd% %src_dir% %ldst_dir% %deploy_name% %%i
 
 IF ERRORLEVEL 1 (
-    CALL %bin_dir%\echoc.exe 4 unknow command '%cmd%'
+    CALL "%bin_dir%\echoc.exe" 4 unknow command '%cmd%'
     CALL :usage
     GOTO exit
 )

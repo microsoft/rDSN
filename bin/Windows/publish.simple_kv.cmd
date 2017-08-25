@@ -1,6 +1,8 @@
+@ECHO OFF
+
 SET cmd=%1
 SET build_dir=%~f2
-SET build_type=%3
+SET build_type=%~3
 SET webstudio_url=%4
 SET bin_dir=%~dp0
 
@@ -25,13 +27,13 @@ GOTO exit
 
     IF "%webstudio_url%" NEQ "" (
         SET webstudio_str=;webstudio
-        COPY /Y %webstudio_url% .\skv\%app%\WebStudio.7z
+        COPY /Y "%webstudio_url%" .\skv\%app%\WebStudio.7z
     )
     
-    CALL %bin_dir%\copy_dsn_shared.cmd .\skv\%app% %build_dir% %build_type%
-    COPY /Y %build_dir%\bin\dsn.replication.simple_kv\%build_type%\dsn.replication.simple_kv.* .\skv\%app%
+    CALL "%bin_dir%\copy_dsn_shared.cmd" .\skv\%app% "%build_dir%" %build_type%    
+    COPY /Y "%build_dir%\bin\dsn.replication.simple_kv\%build_type%\dsn.replication.simple_kv.*" .\skv\%app%
     if "%cmd%" NEQ "republish" (
-        COPY /Y %build_dir%\bin\dsn.replication.simple_kv\config.ini .\skv\%app%
+        COPY /Y "%build_dir%\bin\dsn.replication.simple_kv\config.ini" .\skv\%app%
     )
 
     SET has_webstudio=
@@ -73,6 +75,6 @@ GOTO exit
     GOTO:EOF
 
 :error
-    CALL %bin_dir%\echoc.exe 4  Usage: run publish^|republish build_dir build_type(Debug^|Release^|RelWithDebInfo^|MinSizeRel) [webstudio_package_url]
+    CALL "%bin_dir%\echoc.exe" 4  Usage: run publish^|republish build_dir build_type(Debug^|Release^|RelWithDebInfo^|MinSizeRel) [webstudio_package_url]
 
 :exit
