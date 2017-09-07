@@ -29,10 +29,14 @@ echo "Copying files..."
 
 cp -r -v `pwd`/builder/output/* $INSTALL_DIR
 
+rm -f src/tools/webstudio/app_package/local
+mkdir -p $INSTALL_DIR/webstudio/app_package/local
+ln -s $INSTALL_DIR/webstudio/app_package/local src/tools/webstudio/app_package/local
+
 if [ -f "builder/bin/dsn.svchost/dsn.svchost" ]
 then
     cp builder/bin/dsn.svchost/dsn.svchost $INSTALL_DIR/bin
-    echo "Install succeed"    
+    echo "Install succeed"
     if [ -z "$DSN_ROOT" -o "$DSN_ROOT" != "$INSTALL_DIR" ]
     then
         if ! grep -q '^export DSN_ROOT=' ~/.bashrc
