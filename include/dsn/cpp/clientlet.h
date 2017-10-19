@@ -285,11 +285,12 @@ namespace dsn
             dsn_message_t request,
             clientlet* svc,
             TCallback&& callback,
-            int reply_thread_hash = 0
+            int reply_thread_hash = 0, 
+            int is_write = true
             )
         {
             task_ptr t = create_rpc_response_task(request, svc, std::forward<TCallback>(callback), reply_thread_hash);
-            dsn_rpc_call(server.c_addr(), t->native_handle());
+            dsn_rpc_call(server.c_addr(), t->native_handle(), is_write);
             return t;
         }
 
@@ -303,12 +304,13 @@ namespace dsn
             std::chrono::milliseconds timeout = std::chrono::milliseconds(0),
             int thread_hash = 0, ///< if thread_hash == 0 && partition_hash != 0, thread_hash is computed from partition_hash
             uint64_t partition_hash = 0,
-            int reply_thread_hash = 0
+            int reply_thread_hash = 0,
+            bool is_write = true
             )
         {
             dsn_message_t msg = dsn_msg_create_request(code, static_cast<int>(timeout.count()), thread_hash, partition_hash);
             ::dsn::marshall(msg, std::forward<TRequest>(req));
-            return call(server, msg, owner, std::forward<TCallback>(callback), reply_thread_hash);
+            return call(server, msg, owner, std::forward<TCallback>(callback), reply_thread_hash, is_write);
         }
 
         struct rpc_message_helper

@@ -85,7 +85,7 @@ namespace dsn
             virtual void resolve(
                 uint64_t partition_hash,
                 std::function<void(dist::partition_resolver::resolve_result&&)>&& callback,
-                int timeout_ms
+                int timeout_ms, bool is_write = true
                 ) = 0;
 
             /*!

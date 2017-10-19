@@ -60,7 +60,7 @@ namespace dsn
         void partition_resolver_simple::resolve(
             uint64_t partition_hash,
             std::function<void(resolve_result&&)>&& callback,
-            int timeout_ms
+            int timeout_ms, bool is_write
             )
         {
             int idx = -1;
@@ -68,7 +68,7 @@ namespace dsn
             {
                 idx = get_partition_index(_app_partition_count, partition_hash);
                 rpc_address target;
-                if (ERR_OK == get_address(idx, target))
+                if (ERR_OK == get_address(idx, target, is_write))
                 {
                     callback(resolve_result{
                         ERR_OK,
@@ -470,10 +470,30 @@ namespace dsn
         }
 
         /*search in cache*/
-        rpc_address partition_resolver_simple::get_address(const partition_configuration& config) const
+        rpc_address partition_resolver_simple::get_address(const partition_configuration& config, bool is_write) const
         {
             if (_app_is_stateful)
             {
+                if (is_write)
+                    return config.primary;
+                else
+                {
+                    bool has_primary = false;
+                    int N = static_cast<int>(config.secondaries.size());
+                    if (!config.primary.is_invalid())
+                    {
+                        N++;
+                        has_primary = true;
+                    }
+
+                    if (0 == N) return config.primary;
+
+                    int r = random32(0, 1000) % N;
+                    if (has_primary && r == N - 1)
+                        return config.primary;
+                    else
+                        return config.secondaries[r];
+                }
                 return config.primary;
             }
             else
@@ -515,7 +535,7 @@ namespace dsn
         //ERR_OBJECT_NOT_FOUND  not in cache.
         //ERR_IO_PENDING        in cache but invalid, remove from cache.
         //ERR_OK                in cache and valid
-        error_code partition_resolver_simple::get_address(int partition_index, /*out*/ rpc_address& addr)
+        error_code partition_resolver_simple::get_address(int partition_index, /*out*/ rpc_address& addr, bool is_write)
         {
             //partition_configuration config;
             {
@@ -524,7 +544,7 @@ namespace dsn
                 if (it != _config_cache.end())
                 {
                     //config = it->second->config;
-                    addr = get_address(it->second->config);
+                    addr = get_address(it->second->config, is_write);
                     if (addr.is_invalid())
                     {
                         return ERR_IO_PENDING;

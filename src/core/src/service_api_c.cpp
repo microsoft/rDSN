@@ -600,14 +600,14 @@ DSN_API dsn_task_t dsn_rpc_create_response_task_ex(dsn_message_t request, dsn_rp
     return t;
 }
 
-DSN_API void dsn_rpc_call(dsn_address_t server, dsn_task_t rpc_call)
+DSN_API void dsn_rpc_call(dsn_address_t server, dsn_task_t rpc_call, bool is_write)
 {
     ::dsn::rpc_response_task* task = (::dsn::rpc_response_task*)rpc_call;
     dassert(task->spec().type == TASK_TYPE_RPC_RESPONSE, "");
     
     auto msg = task->get_request();
     msg->server_address = server;
-    ::dsn::task::get_current_rpc()->call(msg, task);
+    ::dsn::task::get_current_rpc()->call(msg, task, is_write);
 }
 
 DSN_API dsn_message_t dsn_rpc_call_wait(dsn_address_t server, dsn_message_t request)

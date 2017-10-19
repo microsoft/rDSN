@@ -898,7 +898,8 @@ extern DSN_API dsn_task_t    dsn_rpc_create_response_task_ex(
 /*! client invokes the RPC call */
 extern DSN_API void          dsn_rpc_call(
                                 dsn_address_t server,
-                                dsn_task_t rpc_call
+                                dsn_task_t rpc_call,
+                                bool is_write = true
                                 );
 
 /*! 

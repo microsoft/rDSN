@@ -834,7 +834,7 @@ namespace dsn {
         delete msg;
     }
 
-    void rpc_engine::call(message_ex* request, rpc_response_task* call)
+    void rpc_engine::call(message_ex* request, rpc_response_task* call, bool is_write)
     {
         auto& hdr = *request->header;
         hdr.from_address = primary_address();
@@ -843,12 +843,12 @@ namespace dsn {
             std::numeric_limits<decltype(hdr.trace_id)>::max()
             );
 
-        call_address(request->server_address, request, call);
+        call_address(request->server_address, request, call, is_write);
     }
 
     DEFINE_TASK_CODE(LPC_RPC_DELAY_CALL, TASK_PRIORITY_COMMON, THREAD_POOL_DEFAULT)
 
-    void rpc_engine::call_uri(rpc_address addr, message_ex* request, rpc_response_task* call)
+    void rpc_engine::call_uri(rpc_address addr, message_ex* request, rpc_response_task* call, bool is_write)
     {
         dbg_dassert(addr.type() == HOST_TYPE_URI, "only URI is now supported");
         auto& hdr = *request->header;
@@ -954,6 +954,7 @@ namespace dsn {
                             }
                         }
 
+//                        printf("%d %s\n", is_write?1:0, result.address.to_string());
                         call_address(result.address, request, call);
                     }
                     else
@@ -970,7 +971,8 @@ namespace dsn {
                         }
                     }
                 },
-                hdr.client.timeout_ms
+                hdr.client.timeout_ms,
+                is_write
                 );
         }
     }

@@ -57,7 +57,7 @@ namespace dsn
             virtual void resolve(
                 uint64_t partition_hash,
                 std::function<void(resolve_result&&)>&& callback,
-                int timeout_ms
+                int timeout_ms, bool is_write = true
                 ) override;
 
             virtual void on_access_failure(int partition_index, error_code err) override;
@@ -109,8 +109,8 @@ namespace dsn
             task_ptr                         _query_config_task;
 
             // local routines
-            rpc_address get_address(const partition_configuration& config) const;
-            error_code get_address(int partition_index, /*out*/ rpc_address& addr);
+            rpc_address get_address(const partition_configuration& config, bool is_write = true) const;
+            error_code get_address(int partition_index, /*out*/ rpc_address& addr, bool is_write = true);
             void handle_pending_requests(std::deque<request_context_ptr>& reqs, error_code err);
             void clear_all_pending_requests();
 

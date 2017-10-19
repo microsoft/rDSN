@@ -1,0 +1,47 @@
+sudo: required
+dist: trusty
+
+language: cpp
+
+os: linux
+
+compiler: 
+    - gcc
+
+before_install:
+    # - sudo apt-get install php5-cli
+    # - sudo wget https://raw.githubusercontent.com/shengofsun/packages/master/source.list
+    # - sudo cp source.list /etc/apt/sources.list
+    # - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y 
+    # - sudo apt-get update -qq
+    - wget https://raw.githubusercontent.com/shengofsun/packages/master/build-depends.tar.gz
+    - tar xf build-depends.tar.gz
+    - cd packages
+    - ls | xargs sudo dpkg -i --force-depends
+    - cd ..
+    - sudo aptitude install mono-xbuild -y
+    - sudo aptitude install php5 -y    
+
+install:
+    - git clone https://github.com/Microsoft/rDSN.git main
+    - export DSN_ROOT=`pwd`/main/builder/output
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$DSN_ROOT/lib
+    - export PATH=$DSN_ROOT/bin:$PATH
+    - pushd main
+    - ./run.sh build
+    - ./run.sh install
+    - popd
+
+before_script:
+    - echo DSN_ROOT=$DSN_ROOT
+    - dsn.run.sh build
+    - dsn.run.sh install
+
+script:
+    - echo DSN_ROOT=$DSN_ROOT
+    - ulimit -c unlimited -S
+    - dsn.run.sh start_zk
+    - dsn.run.sh test
+
+notifications:
+  email: false

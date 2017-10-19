@@ -4,9 +4,9 @@
 [submodule "src/plugins_ext/rDSN.tools.hpc"]
 	path = src/plugins_ext/rDSN.tools.hpc
 	url = https://github.com/imzhenyu/rDSN.tools.hpc.git
-[submodule "src/plugins_ext/rDSN.dist.service"]
-	path = src/plugins_ext/rDSN.dist.service
-	url = https://github.com/imzhenyu/rDSN.dist.service.git
+#[submodule "src/plugins_ext/rDSN.dist.service"]
+#	path = src/plugins_ext/rDSN.dist.service
+#	url = https://github.com/imzhenyu/rDSN.dist.service.git
 [submodule "src/plugins_ext/rDSN.dist.deployment"]
 	path = src/plugins_ext/rDSN.dist.deployment
 	url = https://github.com/imzhenyu/rDSN.dist.deployment.git

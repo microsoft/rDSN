@@ -1,0 +1,33 @@
+version: 1.0.{build}
+
+before_build:
+    - cmd: >-        
+        git clone https://github.com/Microsoft/rDSN.git main
+        
+        cd main 
+        
+        SET DSN_AUTO_TEST=1
+        
+        run.cmd setup-env
+        
+        run.cmd build Debug .\build
+        
+        run.cmd install Debug .\build
+        
+        cd ..
+        
+build_script:
+    - cmd: >-
+        echo DSN_ROOT=%DSN_ROOT%
+        
+        dsn.run.cmd build Debug .\build
+        
+        dsn.run.cmd install Debug .\build
+        
+test_script:
+    - cmd: >-
+        echo DSN_ROOT=%DSN_ROOT%
+        
+        dsn.run.cmd test Debug .\build
+
+

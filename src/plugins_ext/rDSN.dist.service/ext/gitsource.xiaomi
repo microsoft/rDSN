@@ -1,0 +1,9 @@
+#You can modify following options to use different git sources or git tags.
+
+#for zookeeper
+set(ZOOKEEPER_GIT_SOURCE "http://git.n.xiaomi.com/pegasus/zookeeper_client_c.git")
+set(ZOOKEEPER_GIT_TAG "master")
+
+#for rapidjson
+set(RAPIDJSON_GIT_SOURCE "http://git.n.xiaomi.com/pegasus/rapidjson-header.git")
+set(RAPIDJSON_GIT_TAG "master")

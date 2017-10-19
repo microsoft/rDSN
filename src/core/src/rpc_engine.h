@@ -151,7 +151,7 @@ public:
     //
     // rpc routines
     //
-    void call(message_ex* request, rpc_response_task* call);    
+    void call(message_ex* request, rpc_response_task* call, bool is_write = true);    
     void on_recv_request(network* net, message_ex* msg, int delay_ms);
     void reply(message_ex* response, error_code err = ERR_OK);
     void forward(message_ex* request, rpc_address address);
@@ -166,7 +166,7 @@ public:
     void get_runtime_info(const safe_string& indent, const safe_vector<safe_string>& args, /*out*/ safe_sstream& ss);
 
     // call with URI address only
-    void call_uri(rpc_address addr, message_ex* request, rpc_response_task* call);
+    void call_uri(rpc_address addr, message_ex* request, rpc_response_task* call, bool is_write = true);
 
     // call with group address only
     void call_group(rpc_address addr, message_ex* request, rpc_response_task* call);
@@ -175,7 +175,7 @@ public:
     void call_ip(rpc_address addr, message_ex* request, rpc_response_task* call, bool reset_request_id = false, bool set_forwarded = false);
 
     // call with explicit address
-    void call_address(rpc_address addr, message_ex* request, rpc_response_task* call);
+    void call_address(rpc_address addr, message_ex* request, rpc_response_task* call, bool is_write = true);
     
 private:
     network* create_network(
@@ -205,7 +205,8 @@ private:
 inline void rpc_engine::call_address(
     rpc_address addr, 
     message_ex* request, 
-    rpc_response_task* call
+    rpc_response_task* call,
+    bool is_write
     )
 {
     switch (addr.type())
@@ -214,7 +215,7 @@ inline void rpc_engine::call_address(
         call_ip(addr, request, call);
         break;
     case HOST_TYPE_URI:
-        call_uri(addr, request, call);
+        call_uri(addr, request, call, is_write);
         break;
     case HOST_TYPE_GROUP:
         call_group(addr, request, call);
