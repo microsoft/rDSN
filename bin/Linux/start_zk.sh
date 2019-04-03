@@ -18,7 +18,7 @@ fi
 
 if [ -z "$GIT_SOURCE" -o "$GIT_SOURCE" == "github" ]
 then
-    download_url="https://github.com/shengofsun/packages/raw/master/zookeeper-3.4.6.tar.gz"
+    download_url="https://archive.apache.org/dist/zookeeper/zookeeper-3.4.6/zookeeper-3.4.6.tar.gz"
 elif [ "$GIT_SOURCE" == "xiaomi" ]
 then
     download_url="http://git.n.xiaomi.com/pegasus/packages/raw/master/zookeeper-3.4.6.tar.gz"
