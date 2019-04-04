@@ -13,17 +13,26 @@ function getGUID()
     }
     else
     {
-        mt_srand((double)microtime()*10000);//optional for php 4.2.0 and up.
-        $charid = strtoupper(md5(uniqid(rand(), true)));
-        $hyphen = chr(45);// "-"
-        $uuid = chr(123)// "{"
-            .substr($charid, 0, 8).$hyphen
-            .substr($charid, 8, 4).$hyphen
-            .substr($charid,12, 4).$hyphen
-            .substr($charid,16, 4).$hyphen
-            .substr($charid,20,12)
-            .chr(125);// "}"
-        return $uuid;
+        // Referenced from phunction (https://github.com/alixaxel/phunction, MIT License)
+        // Commit: f52d50ae6a80aaea0a6b1339e3d0289d76a26ac4
+        // Text.php, line 101-121
+        $result = array();
+        for ($i = 0; $i < 8; ++$i)
+        {
+            switch ($i)
+            {
+                case 3:
+                    $result[$i] = mt_rand(16384, 20479);
+                break;
+                case 4:
+                    $result[$i] = mt_rand(32768, 49151);
+                break;
+                default:
+                    $result[$i] = mt_rand(0, 65535);
+                break;
+            }
+        }
+        return vsprintf('{%04X%04X-%04X-%04X-%04X-%04X%04X%04X}', $result);
     }
 }
 
