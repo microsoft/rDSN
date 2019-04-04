@@ -4,6 +4,7 @@ matrix:
     include:
         - os: windows
           script:
+            - export PATH="/c/Program Files (x86)/Microsoft Visual Studio/2017/BuildTools/MSBuild/15.0/Bin":$PATH
             - export DSN_AUTO_TEST=1
             - export DSN_TRAVIS=1
             - ./run.cmd setup-env

@@ -31,6 +31,7 @@ IF ERRORLEVEL 1 (
 )
 
 :: detect VS
+IF DEFINED DSN_TRAVIS GOTO find_vs2017
 IF "%VisualStudioVersion%"=="16.0" GOTO find_vs2019
 IF "%VisualStudioVersion%"=="15.0" GOTO find_vs2017
 IF "%VisualStudioVersion%"=="14.0" GOTO find_vs2015
