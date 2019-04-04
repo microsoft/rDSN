@@ -5,10 +5,26 @@
 
 bin/config.onecluster.ini
 bin/Linux/thrift
+bin/7z.dll
+bin/7z.exe
+bin/Windows/7z.dll
+bin/Windows/7z.exe
+bin/Windows/php.exe
+bin/Windows/php.ini
+bin/Windows/php5.dll
+bin/Windows/ssed.exe
+bin/Windows/thrift.exe
+zk/
 builder/
 install/
+builddbg/
 test_reports/
 include/thrift/
+
+ext/boost_1_64_0.7z
+ext/boost_1_64_0/
+ext/cmake-3.14.1.7z
+ext/cmake-3.14.1/
 
 rdsn.github.config
 rdsn.github.creator
