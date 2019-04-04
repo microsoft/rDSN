@@ -8,7 +8,7 @@ matrix:
             - export DSN_AUTO_TEST=1
             - export DSN_TRAVIS=1
             - ./run.cmd setup-env
-            - ./run.cmd build Debug builddbg build_plugins
+            - ./run.cmd build Debug builddbg
             - ./run.cmd install Debug builddbg
             - ./run.cmd start_zk
             - ./run.cmd test Debug builddbg
