@@ -9,6 +9,8 @@ matrix:
             - export PATH="/c/Program Files (x86)/Microsoft Visual Studio/2017/BuildTools/MSBuild/15.0/Bin":"c/ProgramData/chocolatey/bin":$PATH
             - export DSN_AUTO_TEST=1
             - export DSN_TRAVIS=1
+            - git config --global user.name "travis"
+            - git config --global user.email ""
             - ./run.cmd setup-env
             - ./run.cmd build Debug builddbg build_plugins
             - ./run.cmd install Debug builddbg
