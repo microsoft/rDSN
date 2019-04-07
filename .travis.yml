@@ -3,12 +3,14 @@ language: cpp
 matrix:
     include:
         - os: windows
+          install:
+            - choco install jdk8 -params "source=false"
           script:
-            - export PATH="/c/Program Files (x86)/Microsoft Visual Studio/2017/BuildTools/MSBuild/15.0/Bin":$PATH
+            - export PATH="/c/Program Files (x86)/Microsoft Visual Studio/2017/BuildTools/MSBuild/15.0/Bin":"c/ProgramData/chocolatey/bin":$PATH
             - export DSN_AUTO_TEST=1
             - export DSN_TRAVIS=1
             - ./run.cmd setup-env
-            - ./run.cmd build Debug builddbg
+            - ./run.cmd build Debug builddbg build_plugins
             - ./run.cmd install Debug builddbg
             - ./run.cmd start_zk
             - ./run.cmd test Debug builddbg
