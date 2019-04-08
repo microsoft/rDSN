@@ -31,7 +31,8 @@ matrix:
             - ./run.sh build --build_plugins
             - ./run.sh install
             - ./run.sh start_zk
-            - ./run.sh test        
+            - ./run.sh test
+            - ./run.sh stop_zk
 
 
 notifications:
