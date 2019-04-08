@@ -5,7 +5,7 @@ PUSHD "%TOP_DIR%"
 SET TOP_DIR=%CD%
 POPD
 
-SET bin_dir=%TOP_DIR%\bin\windows
+SET bin_dir=%TOP_DIR%\bin\Windows
 SET old_dsn_root=%DSN_ROOT%
 IF "%1" EQU "" GOTO usage
 IF "%1" NEQ "setup-env" IF "%DSN_ROOT%" NEQ "" GOTO main
@@ -48,13 +48,26 @@ CALL "%bin_dir%\echoc.exe" 2 DSN_ROOT ("%DSN_ROOT%") is setup, and rDSN SDK will
 CALL "%bin_dir%\echoc.exe" 2 DSN_ROOT\lib and DSN_ROOT\bin are added to PATH env.
 
 :main
+
+SET DSN_TMP_CMAKE_VERSION=3.14.1
+SET DSN_TMP_BOOST_VERSION=1_64_0
+SET DSN_TMP_WGET_OPT=--no-check-certificate -nv
+
 CALL :%1 %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 IF ERRORLEVEL 1 (
-    CALL "%bin_dir%\echoc.exe" 4 unknown command '%1'
+    SET DSN_TMP_CMAKE_VERSION=
+    SET DSN_TMP_BOOST_VERSION=
+    SET DSN_TMP_WGET_OPT=
+
+    CALL "%bin_dir%\echoc.exe" 4 command '%1' fails or is unknown.
     CALL :usage
     exit /B 1
 )
+
+SET DSN_TMP_CMAKE_VERSION=
+SET DSN_TMP_BOOST_VERSION=
+SET DSN_TMP_WGET_OPT=
 
 exit /B 0
 

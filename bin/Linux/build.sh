@@ -125,7 +125,7 @@ then
     then
         wget http://git.n.xiaomi.com/pegasus/packages/raw/master/rdsn/thrift
     else
-        wget --no-check-certificate https://github.com/imzhenyu/thrift/raw/master/pre-built/ubuntu14.04/thrift
+        wget --no-check-certificate -nv https://github.com/imzhenyu/thrift/raw/master/pre-built/ubuntu14.04/thrift
     fi
     chmod u+x thrift
     mv thrift $TOP_DIR/bin/Linux
