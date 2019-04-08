@@ -2,6 +2,7 @@
 .arcconfig
 .kdev4/
 .zk_install/
+.vscode/
 
 bin/config.onecluster.ini
 bin/Linux/thrift
@@ -15,9 +16,10 @@ bin/Windows/php5.dll
 bin/Windows/ssed.exe
 bin/Windows/thrift.exe
 zk/
+builddbg/
 builder/
 install/
-builddbg/
+data/
 test_reports/
 include/thrift/
 

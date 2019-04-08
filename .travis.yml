@@ -12,10 +12,11 @@ matrix:
             - git config --global user.name "travis"
             - git config --global user.email ""
             - ./run.cmd setup-env
-            - ./run.cmd build RelWithDebInfo build build_plugins
-            - ./run.cmd install RelWithDebInfo build
+            - ./run.cmd build RelWithDebInfo builder build_plugins
+            - ./run.cmd install RelWithDebInfo builder
             - ./run.cmd start_zk
-            - ./run.cmd test RelWithDebInfo build
+            - ./run.cmd test RelWithDebInfo builder
+            - ./run.cmd stop_zk
         - os: linux
           sudo: required
           dist: xenial
