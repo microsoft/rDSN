@@ -12,10 +12,10 @@ matrix:
             - git config --global user.name "travis"
             - git config --global user.email ""
             - ./run.cmd setup-env
-            - ./run.cmd build Debug builddbg build_plugins
-            - ./run.cmd install Debug builddbg
+            - ./run.cmd build Release build build_plugins
+            - ./run.cmd install Release build
             - ./run.cmd start_zk
-            - ./run.cmd test Debug builddbg
+            - ./run.cmd test Release build
         - os: linux
           sudo: required
           dist: xenial
