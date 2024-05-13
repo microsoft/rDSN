@@ -143,7 +143,7 @@ template<> inline double configuration::get_value<double>(const char* section, c
 {
     const char* value;
     char defaultstr[32];
-    sprintf(defaultstr, "%lf", default_value);
+    snprintf_p(defaultstr, ARRAYSIZE(defaultstr), "%lf", default_value);
 
     if (!get_string_value_internal(section, key, defaultstr, &value, dsptr))
     {
@@ -169,7 +169,7 @@ template<> inline long long configuration::get_value<long long>(const char* sect
 {
     const char* value;
     char defaultstr[32];
-    sprintf(defaultstr, "%lld", default_value);
+    snprintf_p(defaultstr, ARRAYSIZE(defaultstr), "%lld", default_value);
 
     if (!get_string_value_internal(section, key, defaultstr, &value, dsptr))
     {
@@ -201,7 +201,7 @@ template<> inline long configuration::get_value<long>(const char* section, const
 {
     const char* value;
     char defaultstr[32];
-    sprintf(defaultstr, "%d", (int)default_value);
+    snprintf_p(defaultstr, ARRAYSIZE(defaultstr), "%d", (int)default_value);
 
     if (!get_string_value_internal(section, key, defaultstr, &value, dsptr))
     {
