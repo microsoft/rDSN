@@ -284,7 +284,7 @@ message_ex* message_ex::create_receive_message_with_standalone_header(const blob
     message_ex* msg = new message_ex();
     std::shared_ptr<char> header_holder(static_cast<char*>(dsn_transient_malloc(sizeof(message_header))), [](char* c) {dsn_transient_free(c);});
     msg->header = reinterpret_cast<message_header*>(header_holder.get());
-    memset(msg->header, 0, sizeof(message_header));
+    memset(reinterpret_cast<void*>(msg->header), 0, sizeof(message_header));
     msg->buffers.emplace_back(blob(std::move(header_holder), sizeof(message_header)));
     msg->buffers.push_back(data);
 
@@ -396,7 +396,7 @@ message_ex* message_ex::create_request(dsn_task_code_t rpc_code, int timeout_mil
 
     // init header
     auto& hdr = *msg->header;
-    memset(&hdr, 0, sizeof(hdr));
+    memset(reinterpret_cast<void*>(&hdr), 0, sizeof(hdr));
     hdr.hdr_type = *(uint32_t*)"RDSN";
     hdr.hdr_length = sizeof(message_header);
     hdr.hdr_crc32 = hdr.body_crc32 = CRC_INVALID;
