@@ -10,6 +10,8 @@ set(my_cmake_args "-Dgtest_force_shared_crt=OFF;-DBUILD_SHARED_LIBS=ON;")
 
 if(WIN32)
     set(target_binaries gtest.lib gtest_main.lib gtest.dll gtest_main.dll)
+elseif(APPLE)
+    set(target_binaries libgtest.dylib libgtest_main.dylib)
 else()
     set(target_binaries libgtest.so libgtest_main.so)
 endif()
