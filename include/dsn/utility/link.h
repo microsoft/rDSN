@@ -37,7 +37,7 @@
 
 # include <cassert>
 
- //
+//
 // assuming public T::T* next; exists and inited to nullptr in T::T(...)
 //
 template<typename T>

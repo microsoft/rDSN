@@ -33,7 +33,7 @@
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
-#pragma once
+# pragma once
 
 # include <atomic>
 # include <cassert>
