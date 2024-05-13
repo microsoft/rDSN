@@ -506,14 +506,14 @@ extern DSN_API int  dsn_get_all_apps(/*out*/ dsn_app_info* info_buffer, int coun
  */
 extern DSN_API bool dsn_get_current_app_info(/*out*/ dsn_app_info* app_info);
 
-extern DSN_API dsn_app_info* dsn_get_app_info_ptr(dsn_gpid gpid DEFAULT(dsn_gpid{ 0 }));
+extern DSN_API dsn_app_info* dsn_get_app_info_ptr(dsn_gpid gpid DEFAULT(dsn_gpid{ .value = 0 }));
 
 /*!
  get current application data dir.
 
  \return null if it fails, else a pointer to the data path string.
  */
-extern DSN_API const char* dsn_get_app_data_dir(dsn_gpid gpid DEFAULT(dsn_gpid{ 0 }));
+extern DSN_API const char* dsn_get_app_data_dir(dsn_gpid gpid DEFAULT(dsn_gpid{ .value = 0 }));
 
 /*!
  signal the application loader that application types are registered.

@@ -826,13 +826,13 @@ extern DSN_API bool          dsn_rpc_register_handler(
                                 const char* name,
                                 dsn_rpc_request_handler_t cb, 
                                 void* context,
-                                dsn_gpid gpid DEFAULT(dsn_gpid{ 0 })
+                                dsn_gpid gpid DEFAULT(dsn_gpid{ .value = 0 })
                                 );
 
 /*! unregister callback to handle RPC request, and returns void* context upon \ref dsn_rpc_register_handler  */
 extern DSN_API void*         dsn_rpc_unregiser_handler(
                                 dsn_task_code_t code,
-                                dsn_gpid gpid DEFAULT(dsn_gpid{ 0 })
+                                dsn_gpid gpid DEFAULT(dsn_gpid{ .value = 0 })
                                 );
 
 /*! reply with a response which is created using dsn_msg_create_response */
