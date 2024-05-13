@@ -115,7 +115,9 @@ TEST(dev_cpp, clientlet_rpc)
         [str_command](error_code ec, std::string&& resp)
         {
             if (ERR_OK == ec)
+            {
                 EXPECT_TRUE(str_command->substr(5) == resp);
+            }
         }
     );
     task_vec.push_back(t);
