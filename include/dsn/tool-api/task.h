@@ -409,6 +409,7 @@ public:
         );
     DSN_API ~aio_task();
 
+    using task::enqueue;
     DSN_API void    enqueue(error_code err, size_t transferred_size);
     size_t          get_transferred_size() const { return _transferred_size; }
     disk_aio*       aio() { return _aio; }

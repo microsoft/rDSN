@@ -128,6 +128,7 @@ public:
         return r;
     }
 
+    using priority_queue<T, priority_count, TQueue>::dequeue;
     virtual T dequeue(/*out*/ long& ct, int millieseconds = 0xffffffff)
     {
         if (!_sema.wait(millieseconds))
