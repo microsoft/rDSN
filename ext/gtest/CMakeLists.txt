@@ -3,7 +3,7 @@ set(project_name googletest)
 if(DSN_GIT_SOURCE STREQUAL "xiaomi")
     set(target_url "http://git.n.xiaomi.com/pegasus/googletest.git")
 else()
-    set(target_url "https://github.com/imzhenyu/googletest.git")
+    set(target_url "https://github.com/linmajia/googletest.git")
 endif()
 
 set(my_cmake_args "-Dgtest_force_shared_crt=OFF;-DBUILD_SHARED_LIBS=ON;")

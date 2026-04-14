@@ -6,7 +6,8 @@ set(CONQUEUE_GIT_TAG "master")
 
 #for gflag
 set(GFLAGS_GIT_SOURCE "https://github.com/gflags/gflags.git")
-set(GFLAGS_GIT_TAG "master")
+#v2.3.0
+set(GFLAGS_GIT_TAG "33bb3461e10864b5406353d3a1fb7ff34c2314b8")
 
 #for zookeeper
 set(ZOOKEEPER_GIT_SOURCE "https://github.com/linmajia/zookeeper_client_c.git")
