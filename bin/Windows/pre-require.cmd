@@ -28,29 +28,29 @@ exit /B 1
 :find_vs
 
 IF NOT EXIST "%bin_dir%\ssed.exe" (
-    CALL "%bin_dir%\wget.exe" %DSN_TMP_WGET_OPT% https://raw.githubusercontent.com/imzhenyu/packages/master/windows/ssed.exe -P "%bin_dir%"
+    CALL "%bin_dir%\wget.exe" %DSN_TMP_WGET_OPT% https://raw.githubusercontent.com/linmajia/packages/master/windows/ssed.exe -P "%bin_dir%"
 )
 
 IF NOT EXIST "%bin_dir%\thrift.exe" (
-    CALL "%bin_dir%\wget.exe" %DSN_TMP_WGET_OPT% https://raw.githubusercontent.com/imzhenyu/thrift/master/pre-built/windows8.1/thrift.exe -P "%bin_dir%"
+    CALL "%bin_dir%\wget.exe" %DSN_TMP_WGET_OPT% https://raw.githubusercontent.com/linmajia/thrift/master/pre-built/windows8.1/thrift.exe -P "%bin_dir%"
 )
 
 IF NOT EXIST "%bin_dir%\7z.exe" (
-    CALL "%bin_dir%\wget.exe" %DSN_TMP_WGET_OPT% https://raw.githubusercontent.com/imzhenyu/packages/master/windows/7z.dll -P "%bin_dir%"
-    CALL "%bin_dir%\wget.exe" %DSN_TMP_WGET_OPT% https://raw.githubusercontent.com/imzhenyu/packages/master/windows/7z.exe -P "%bin_dir%"
+    CALL "%bin_dir%\wget.exe" %DSN_TMP_WGET_OPT% https://raw.githubusercontent.com/linmajia/packages/master/windows/7z.dll -P "%bin_dir%"
+    CALL "%bin_dir%\wget.exe" %DSN_TMP_WGET_OPT% https://raw.githubusercontent.com/linmajia/packages/master/windows/7z.exe -P "%bin_dir%"
     @copy /y "%bin_dir%\7z.dll" "%bin_dir%\..\"
     @copy /y "%bin_dir%\7z.exe" "%bin_dir%\..\"
 )
 
 IF NOT EXIST "%bin_dir%\php.exe" (
-    CALL "%bin_dir%\wget.exe" %DSN_TMP_WGET_OPT% https://raw.githubusercontent.com/imzhenyu/packages/master/windows/php5.dll -P "%bin_dir%"
-    CALL "%bin_dir%\wget.exe" %DSN_TMP_WGET_OPT% https://raw.githubusercontent.com/imzhenyu/packages/master/windows/php.exe -P "%bin_dir%"
-    CALL "%bin_dir%\wget.exe" %DSN_TMP_WGET_OPT% https://raw.githubusercontent.com/imzhenyu/packages/master/windows/php.ini -P "%bin_dir%"
+    CALL "%bin_dir%\wget.exe" %DSN_TMP_WGET_OPT% https://raw.githubusercontent.com/linmajia/packages/master/windows/php5.dll -P "%bin_dir%"
+    CALL "%bin_dir%\wget.exe" %DSN_TMP_WGET_OPT% https://raw.githubusercontent.com/linmajia/packages/master/windows/php.exe -P "%bin_dir%"
+    CALL "%bin_dir%\wget.exe" %DSN_TMP_WGET_OPT% https://raw.githubusercontent.com/linmajia/packages/master/windows/php.ini -P "%bin_dir%"
 )
 
 SET DSN_TMP_BOOST_PACKAGE_NAME=boost_%DSN_TMP_BOOST_VERSION%.7z
 IF NOT EXIST "%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%" (
-    IF NOT EXIST "%TOP_DIR%\ext\%DSN_TMP_BOOST_PACKAGE_NAME%" CALL "%bin_dir%\wget.exe" %DSN_TMP_WGET_OPT% https://raw.githubusercontent.com/imzhenyu/packages/master/windows/%DSN_TMP_BOOST_PACKAGE_NAME% -P "%TOP_DIR%\ext"
+    IF NOT EXIST "%TOP_DIR%\ext\%DSN_TMP_BOOST_PACKAGE_NAME%" CALL "%bin_dir%\wget.exe" %DSN_TMP_WGET_OPT% https://raw.githubusercontent.com/linmajia/packages/master/windows/%DSN_TMP_BOOST_PACKAGE_NAME% -P "%TOP_DIR%\ext"
     CALL "%bin_dir%\echoc.exe" 2 "Decompressing Boost %DSN_TMP_BOOST_VERSION% to \"%TOP_DIR%\ext\""
     CALL "%bin_dir%\7z.exe" x "%TOP_DIR%\ext\%DSN_TMP_BOOST_PACKAGE_NAME%" -y -o"%TOP_DIR%\ext" > nul
 )
@@ -62,7 +62,7 @@ IF NOT EXIST "%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%" (
 
 SET DSN_TMP_CMAKE_PACKAGE_NAME=cmake-%DSN_TMP_CMAKE_VERSION%.7z
 IF NOT EXIST "%TOP_DIR%\ext\cmake-%DSN_TMP_CMAKE_VERSION%" (
-    IF NOT EXIST "%TOP_DIR%\ext\%DSN_TMP_CMAKE_PACKAGE_NAME%" CALL "%bin_dir%\wget.exe" %DSN_TMP_WGET_OPT% https://raw.githubusercontent.com/imzhenyu/packages/master/windows/%DSN_TMP_CMAKE_PACKAGE_NAME% -P "%TOP_DIR%\ext"
+    IF NOT EXIST "%TOP_DIR%\ext\%DSN_TMP_CMAKE_PACKAGE_NAME%" CALL "%bin_dir%\wget.exe" %DSN_TMP_WGET_OPT% https://raw.githubusercontent.com/linmajia/packages/master/windows/%DSN_TMP_CMAKE_PACKAGE_NAME% -P "%TOP_DIR%\ext"
     CALL "%bin_dir%\echoc.exe" 2 "Decompressing cmake %DSN_TMP_CMAKE_VERSION% to \"%TOP_DIR%\ext\""
     CALL "%bin_dir%\7z.exe" x "%TOP_DIR%\ext\%DSN_TMP_CMAKE_PACKAGE_NAME%" -y -o"%TOP_DIR%\ext" > nul
 )

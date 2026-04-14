@@ -1,6 +1,6 @@
 
 #set(project_name googletest)
-#set(target_url  https://github.com/imzhenyu/googletest.git)
+#set(target_url  https://github.com/linmajia/googletest.git)
 #set(my_cmake_args "-Dgtest_force_shared_crt=OFF;")
 #if(WIN32)
 #    set(target_binaries gtest.lib gtest_main.lib)
