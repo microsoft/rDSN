@@ -8,16 +8,15 @@ on:
 
 jobs:
   build-and-test:
-    name: ${{ matrix.os }}
+    name: ${{ matrix.runner }}
     runs-on: ${{ matrix.runner }}
 
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: linux
-            runner: ubuntu-20.04
-            runner: ubuntu-22.04
+        runner:
+          - ubuntu-20.04
+          - ubuntu-22.04
 
     env:
       DSN_AUTO_TEST: 1
