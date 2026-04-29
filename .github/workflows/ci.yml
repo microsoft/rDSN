@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-22.04
+
+    env:
+      DSN_AUTO_TEST: 1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential git cmake php-cli wget mono-xbuild libaio-dev libboost-all-dev
+
+      - name: Format check on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: ./run.sh format
+
+      - name: Build on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          ulimit -c unlimited -S
+          export DSN_ROOT="$GITHUB_WORKSPACE"
+          ./run.sh build --build_plugins
+          ./run.sh install
+
+      - name: Start ZooKeeper on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: ./run.sh start_zk
+
+      - name: Test on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: ./run.sh test
+
+      - name: Stop ZooKeeper on Linux
+        if: always() && runner.os == 'Linux'
+        shell: bash
+        run: ./run.sh stop_zk
