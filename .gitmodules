@@ -1,15 +1,20 @@
 [submodule "src/plugins_ext/rDSN.tools.explorer"]
 	path = src/plugins_ext/rDSN.tools.explorer
 	url = https://github.com/linmajia/rDSN.tools.explorer.git
+	branch = master
 [submodule "src/plugins_ext/rDSN.tools.hpc"]
 	path = src/plugins_ext/rDSN.tools.hpc
 	url = https://github.com/linmajia/rDSN.tools.hpc.git
+	branch = master
 [submodule "src/plugins_ext/rDSN.dist.service"]
 	path = src/plugins_ext/rDSN.dist.service
 	url = https://github.com/linmajia/rDSN.dist.service.git
+	branch = master
 [submodule "src/plugins_ext/rDSN.dist.deployment"]
 	path = src/plugins_ext/rDSN.dist.deployment
 	url = https://github.com/linmajia/rDSN.dist.deployment.git
+	branch = master
 [submodule "src/plugins_ext/rDSN.tools.log.monitor"]
 	path = src/plugins_ext/rDSN.tools.log.monitor
 	url = https://github.com/linmajia/rDSN.tools.log.monitor.git
+	branch = master
