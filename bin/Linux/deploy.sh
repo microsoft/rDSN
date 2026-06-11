@@ -1,7 +1,7 @@
 #!/bin/bash
 os=linux
-scripts_path=`readlink -f $0`
-scripts_dir=`dirname $scripts_path`
+scripts_path=`readlink -f "$0"`
+scripts_dir=`dirname "$scripts_path"`
 
 function usage() {
     echo "Option for subcommand 'deploy|start|stop|clean|scds(stop-clean-deploy-start)"
@@ -38,12 +38,12 @@ while [ $# -gt 0 ];do
 
 done
 
-if [ -z $s_dir ] || [ -z $t_dir ];then
+if [ -z "$s_dir" ] || [ -z "$t_dir" ];then
     usage
     exit -1
 fi
 
-if [ ! -d $s_dir ];then
+if [ ! -d "$s_dir" ];then
     echo "$s_dir no such directory"
     exit -1
 fi
@@ -53,48 +53,56 @@ fi
 function deploy_files(){
 
     echo "deploy $2 at $3 to $4 at $1"
-    ssh $1 "mkdir -p '${4}'"
-    scp $3/* "${1}:'${4}'"
+    local remote_dir
+    remote_dir=$(printf "%q" "$4")
+    ssh "$1" "mkdir -p $remote_dir"
+    scp "$3"/* "$1:$4"
 }
 
 
 #$1 machine $2 app $3 sdir $4 tdir
 function clean_files(){
     echo "cleaning $2 at $1"
-    ssh $1 'rm -fr '${4}''
+    local remote_dir
+    remote_dir=$(printf "%q" "$4")
+    ssh "$1" "rm -fr $remote_dir"
 }
 
 #$1 machine $2 app $3 sdir $4 tdir
 function start_server(){
     echo "starting $2 at $1"
-    ssh $1 'cd '${4}'; export LD_LIBRARY_PATH=${4}:$LD_LIBRARY_PATH; nohup sh -c "(( ./start.sh >foo.out 2>foo.err </dev/null)&)"'
+    local remote_dir
+    remote_dir=$(printf "%q" "$4")
+    ssh "$1" "cd $remote_dir; export LD_LIBRARY_PATH=$remote_dir:\$LD_LIBRARY_PATH; nohup sh -c '(( ./start.sh >foo.out 2>foo.err </dev/null)&)'"
 }
 
 #$1 machine $2 app $3 sdir $4 tdir
 function stop_server(){
     echo "stopping $2 at $1"
-    ssh $1 'cd '${4}'; export LD_LIBRARY_PATH=${4}:$LD_LIBRARY_PATH; nohup sh -c "(( ./stop.sh >foo.out 2>foo.err </dev/null)&)"'
+    local remote_dir
+    remote_dir=$(printf "%q" "$4")
+    ssh "$1" "cd $remote_dir; export LD_LIBRARY_PATH=$remote_dir:\$LD_LIBRARY_PATH; nohup sh -c '(( ./stop.sh >foo.out 2>foo.err </dev/null)&)'"
 }
 
 #$1 cmd $2 app $3 sdir $4 tdir
 function run_one()
 {    
-    machines=$(cat $3/machines.txt)
+    machines=$(cat "$3/machines.txt")
     for mac in $machines;do
-        $1 $mac $2 $3 $4
+        "$1" "$mac" "$2" "$3" "$4"
     done
 }
 
 #$1 cmd
 function run_()
 {
-    if [ -f ${s_dir}/apps.txt ]; then
-        applist=$(cat ${s_dir}/apps.txt)
+    if [ -f "${s_dir}/apps.txt" ]; then
+        applist=$(cat "${s_dir}/apps.txt")
         for app in $applist;do
-            run_one $1 $app ${s_dir}/$app ${t_dir}/$app
+            run_one "$1" "$app" "${s_dir}/$app" "${t_dir}/$app"
         done        
     else
-        run_one $1 $(basename "$s_dir") $s_dir $t_dir
+        run_one "$1" "$(basename "$s_dir")" "$s_dir" "$t_dir"
     fi
 }
 
@@ -123,4 +131,3 @@ case $CMD in
         echo
         ;;
 esac
-

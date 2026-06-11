@@ -56,7 +56,7 @@ task_worker_pool::task_worker_pool(const threadpool_spec& opts, task_engine* own
 
 void task_worker_pool::create()
 {
-    if (_is_running)
+    if (_is_running.load(std::memory_order_acquire))
         return;
     
     int qCount = _spec.partitioned ?  _spec.worker_count : 1;
@@ -112,7 +112,7 @@ void task_worker_pool::create()
 
 void task_worker_pool::start()
 {
-    if (_is_running)
+    if (_is_running.load(std::memory_order_acquire))
         return;
 
     for (auto& wk : _workers)
@@ -140,7 +140,7 @@ void task_worker_pool::start()
         _per_node_timer_svc = node()->tsvc(nullptr);
     }
 
-    _is_running = true;
+    _is_running.store(true, std::memory_order_release);
 }
 
 void task_worker_pool::add_timer(task* t)
@@ -164,7 +164,7 @@ void task_worker_pool::enqueue(task* t)
     dassert(t->delay_milliseconds() == 0,
         "task delayed should be dispatched to timer service first");
 
-    if (_is_running)
+    if (_is_running.load(std::memory_order_acquire))
     {
         unsigned int idx = (_spec.partitioned ? static_cast<unsigned int>(t->hash()) % static_cast<unsigned int>(_queues.size()) : 0);
         return _queues[idx]->enqueue_internal(t);
@@ -251,7 +251,7 @@ task_engine::task_engine(service_node* node)
 
 void task_engine::create(const safe_list<dsn_threadpool_code_t>& pools)
 {
-    if (_is_running)
+    if (_is_running.load(std::memory_order_acquire))
         return;
     
     // init pools
@@ -267,7 +267,7 @@ void task_engine::create(const safe_list<dsn_threadpool_code_t>& pools)
 
 void task_engine::start()
 {
-    if (_is_running)
+    if (_is_running.load(std::memory_order_acquire))
         return;
 
     for (auto& pl : _pools)
@@ -276,7 +276,7 @@ void task_engine::start()
             pl->start();
     }
 
-    _is_running = true;
+    _is_running.store(true, std::memory_order_release);
 }
 
 volatile int* task_engine::get_task_queue_virtual_length_ptr(

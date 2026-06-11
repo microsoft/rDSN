@@ -108,12 +108,12 @@ http_message_parser::http_message_parser()
         }
 
         // rpc-code
-        if (args[2].length() > DSN_MAX_TASK_CODE_NAME_LENGTH)
+        if (args[2].length() >= DSN_MAX_TASK_CODE_NAME_LENGTH)
         {
             derror("too long rpc code in url %s", url.c_str());
             return 1;
         }
-        strcpy(hdr->rpc_name, args[2].c_str());
+        snprintf(hdr->rpc_name, sizeof(hdr->rpc_name), "%s", args[2].c_str());
         
         return 0;
     };
@@ -205,8 +205,7 @@ http_message_parser::http_message_parser()
                 derror("too long header.rpc_name '%.*s'", length, at);
                 return 1;
             }
-            strncpy(header->rpc_name, at, length);
-            header->rpc_name[length] = 0;
+            snprintf(header->rpc_name, sizeof(header->rpc_name), "%.*s", static_cast<int>(length), at);
             break;
         }
         case parsing_app_id:
@@ -314,8 +313,7 @@ http_message_parser::http_message_parser()
                 derror("too long header.server_error '%.*s'", length, at);
                 return 1;
             }
-            strncpy(header->server.error_name, at, length);
-            header->server.error_name[length] = 0;
+            snprintf(header->server.error_name, sizeof(header->server.error_name), "%.*s", static_cast<int>(length), at);
             break;
         }
         case parsing_nothing:

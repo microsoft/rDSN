@@ -417,7 +417,7 @@ message_ex* message_ex::create_request(dsn_task_code_t rpc_code, int timeout_mil
     }
 
     msg->local_rpc_code = rpc_code;
-    strncpy(hdr.rpc_name, sp->name.c_str(), sizeof(hdr.rpc_name));
+    snprintf(hdr.rpc_name, sizeof(hdr.rpc_name), "%s", sp->name.c_str());
     hdr.rpc_code.local_code = (uint32_t)rpc_code;
     hdr.rpc_code.local_hash = s_local_hash;
 

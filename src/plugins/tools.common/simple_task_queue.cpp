@@ -57,7 +57,7 @@ namespace dsn
                 task::set_tls_dsn_context(node(), nullptr, ctx.queue);
 
                 char buffer[128];
-                sprintf(buffer, "%s.%s.timer", 
+                snprintf(buffer, sizeof(buffer), "%s.%s.timer",
                     get_service_node_name(node()), 
                     ctx.queue ? ctx.queue->get_name().c_str():""
                     );

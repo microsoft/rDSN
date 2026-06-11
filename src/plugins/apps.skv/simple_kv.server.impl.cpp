@@ -214,7 +214,7 @@ namespace dsn {
             ::dsn::error_code simple_kv_service_impl::sync_checkpoint(int64_t last_commit)
             {
                 char name[256];
-                sprintf(name, "%s/checkpoint.%" PRId64, data_dir(), last_commit);
+                snprintf(name, sizeof(name), "%s/checkpoint.%" PRId64, data_dir(), last_commit);
 
                 zauto_lock l(_lock);
 
@@ -268,7 +268,7 @@ namespace dsn {
                 if (last_durable_decree() > 0)
                 {
                     char name[256];
-                    sprintf(name, "%s/checkpoint.%" PRId64,
+                    snprintf(name, sizeof(name), "%s/checkpoint.%" PRId64,
                         data_dir(),
                         last_durable_decree()
                         );
@@ -302,7 +302,7 @@ namespace dsn {
                     dassert(state.to_decree_included > last_durable_decree(), "checkpoint's decree is smaller than current");
 
                     char name[256];
-                    sprintf(name, "%s/checkpoint.%" PRId64,
+                    snprintf(name, sizeof(name), "%s/checkpoint.%" PRId64,
                         data_dir(),
                         state.to_decree_included
                         );

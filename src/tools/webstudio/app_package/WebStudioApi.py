@@ -43,20 +43,10 @@ sqlDataType['cmd_scenario'] = {
 
 TCreate = jinja2.Template('CREATE TABLE IF NOT EXISTS {{dataType}} ({% for elem in elems %}{{elem.name}} {{elem.type}}{% if not loop.last %},{% endif %}{% endfor %});')
 
-TDelete = jinja2.Template("DELETE FROM {{dataType}} WHERE name = '{{dataName}}';")
-
-TDeleteall = jinja2.Template('DELETE FROM {{dataType}};')
-
-TInsert = jinja2.Template("INSERT INTO {{dataType}} VALUES ({% for val in val_list %}'{{val}}'{% if not loop.last %},{% endif %}{% endfor %});")
-
-TSelect = jinja2.Template('SELECT * FROM {{dataType}}')
-
-TSelectone = jinja2.Template("SELECT * FROM {{dataType}} WHERE name = '{{dataName}}';")
-
-TUpdate = jinja2.Template("UPDATE {{dataType}} SET {{updateColumn}}='{{updateValue}}' WHERE name='{{dataName}}';")
-
 def sqlOp(op='',dataType='',dataName='',val_list=''):
     res = None
+    if dataType not in sqlDataType:
+        raise ValueError("Invalid data type: %s" % dataType)
 
     local_dir = os.path.join(GetWebStudioDirPath(),'local')
     if not os.path.exists(local_dir):
@@ -67,15 +57,18 @@ def sqlOp(op='',dataType='',dataName='',val_list=''):
     
     c.execute(TCreate.render({'dataType':dataType,'elems': sqlDataType[dataType]['elems']}))
     if op == 'save':
-        c.execute(TDelete.render({'dataType':dataType,'dataName':val_list[0]}))
-        c.execute(TInsert.render({'dataType':dataType,'val_list':val_list}))
+        placeholders = ','.join(['?' for _ in val_list])
+        c.execute("DELETE FROM %s WHERE name = ?" % dataType, (val_list[0],))
+        c.execute("INSERT INTO %s VALUES (%s)" % (dataType, placeholders), val_list)
     elif op == 'load':
-        res = list(c.execute(TSelect.render({'dataType':dataType})))
+        c.execute("SELECT * FROM %s" % dataType)
+        res = list(c.fetchall())
     elif op == 'delete':
-        c.execute(TDelete.render({'dataType':dataType,'dataName':dataName}))
+        c.execute("DELETE FROM %s WHERE name = ?" % dataType, (dataName,))
     elif op == 'detail':
-        c.execute(TSelectone.render({'dataType':dataType,'dataName':dataName}))
-        res = list(c.fetchone())
+        c.execute("SELECT * FROM %s WHERE name = ?" % dataType, (dataName,))
+        row = c.fetchone()
+        res = list(row) if row else []
         
     conn.commit()
     conn.close()
@@ -83,9 +76,8 @@ def sqlOp(op='',dataType='',dataName='',val_list=''):
 
 class ApiBashHandler(BaseHandler):
     def get(self):
-        command = self.request.get('command');
-        queryRes = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read()
-        self.response.write(queryRes)
+        self.response.set_status(403)
+        self.response.write('Bash API is disabled')
 
 class ApiPsutilHandler(BaseHandler):
     def get(self):
@@ -140,7 +132,7 @@ class ApiPackDetailHandler(BaseHandler):
         pack_info = sqlOp(op='detail',dataType='app_package',dataName=self.request.get('id'))
 
         if pack_info == [] :
-            self.response.write('cannot find the package : ' + pack_id)
+            self.response.write('cannot find the package : ' + self.request.get('id'))
             return
 
         ret = {'name' : pack_info[0], \
@@ -166,7 +158,7 @@ class ApiDelPackHandler(BaseHandler):
         try:            
             pack_dir = os.path.join(GetWebStudioDirPath(),'local','packages', packName);
             shutil.rmtree(pack_dir)
-            print "remove " + pack_dir
+            print("remove " + pack_dir)
             self.response.write('success')
         except:
             self.response.write('fail')

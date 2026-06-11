@@ -623,7 +623,7 @@ namespace dsn {
         io_modifer& ctx
         )
     {
-        if (_is_running)
+        if (_is_running.load(std::memory_order_acquire))
         {
             return ERR_SERVICE_ALREADY_RUNNING;
         }
@@ -745,7 +745,7 @@ namespace dsn {
         ddebug("=== service_node=[%s], primary_address=[%s] ===",
             _node->name(), _local_primary_address.to_string());
 
-        _is_running = true;
+        _is_running.store(true, std::memory_order_release);
         return ERR_OK;
     }
 
@@ -761,7 +761,7 @@ namespace dsn {
 
     void rpc_engine::on_recv_request(network* net, message_ex* msg, int delay_ms)
     {
-        if (!_is_serving)
+        if (!_is_serving.load(std::memory_order_acquire))
         {
             dwarn(
                 "recv message with rpc name %s from %s when rpc engine is not serving, trace_id = %" PRIu64,
@@ -1078,7 +1078,7 @@ namespace dsn {
 
     void rpc_engine::reply(message_ex* response, error_code err)
     {
-        strncpy(response->header->server.error_name, err.to_string(), sizeof(response->header->server.error_name));
+        snprintf(response->header->server.error_name, sizeof(response->header->server.error_name), "%s", err.to_string());
         response->header->server.error_code.local_code = err;
         response->header->server.error_code.local_hash = message_ex::s_local_hash;
         auto sp = task_spec::get(response->local_rpc_code);

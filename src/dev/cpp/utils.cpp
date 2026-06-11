@@ -277,7 +277,7 @@ namespace dsn {
 #endif
             auto ms = static_cast<uint32_t>(ts_ms % 1000);
 
-            sprintf(str, "%02d:%02d:%02d.%03u", ret->tm_hour, ret->tm_min, ret->tm_sec, ms);
+            snprintf(str, 13, "%02d:%02d:%02d.%03u", ret->tm_hour, ret->tm_min, ret->tm_sec, ms);
         }
     }
 }
@@ -596,7 +596,6 @@ namespace  dsn
         return true;
     }
 } // end namespace dsn
-
 
 
 

@@ -149,6 +149,8 @@ namespace dsn {
 
                 uint64_t now = ::dsn::utils::get_current_rdtsc();
                 double interval = (now - _last_time) / 1e9;
+                if (interval <= 0.0)
+                    return _rate;
                 if (interval <= 0.1)
                     return _rate;
 

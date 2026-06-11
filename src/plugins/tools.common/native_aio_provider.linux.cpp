@@ -129,7 +129,7 @@ namespace dsn {
 
             const char* name = ::dsn::tools::get_service_node_name(node());
             char buffer[128];
-            sprintf(buffer, "%s.aio", name);
+            snprintf(buffer, sizeof(buffer), "%s.aio", name);
             task_worker::set_name(buffer);
 
             while (true)

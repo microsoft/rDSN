@@ -48,42 +48,43 @@ public:
 
     static T& instance()
     {
-        if (nullptr == _instance)
+        T* instance = _instance.load(std::memory_order_acquire);
+        if (nullptr == instance)
         {
             // lock 
             while (0 != _l.exchange(1, std::memory_order_acquire))
             {
-                while (_l.load(std::memory_order_consume) == 1)
+                while (_l.load(std::memory_order_acquire) == 1)
                 {
                 }
             }
 
             // re-check and assign
-            if (nullptr == _instance)
+            instance = _instance.load(std::memory_order_acquire);
+            if (nullptr == instance)
             {
-                auto tmp = new T();
-                std::atomic_thread_fence(std::memory_order::memory_order_seq_cst);
-                _instance = tmp;
+                instance = new T();
+                _instance.store(instance, std::memory_order_release);
             }            
 
             // unlock
             _l.store(0, std::memory_order_release);
         }
-        return *_instance;
+        return *instance;
     }
 
     static T& fast_instance()
     {
-        return *_instance;
+        return *_instance.load(std::memory_order_acquire);
     }
 
     static bool is_instance_created()
     {
-        return nullptr != _instance;
+        return nullptr != _instance.load(std::memory_order_acquire);
     }
     
 protected:
-    static T*    _instance;
+    static std::atomic<T*> _instance;
     static std::atomic<int> _l;
     
 private:
@@ -93,7 +94,7 @@ private:
 
 // ----- inline implementations -------------------------------------------------------------------
 
-template<typename T> T*  singleton<T>::_instance = 0;
+template<typename T> std::atomic<T*>  singleton<T>::_instance(nullptr);
 template<typename T> std::atomic<int>  singleton<T>::_l(0);
 
 }} // end namespace dsn::utils

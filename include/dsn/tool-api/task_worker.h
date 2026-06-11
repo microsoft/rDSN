@@ -40,6 +40,7 @@
 # include <dsn/utility/synchronize.h>
 # include <dsn/utility/dlib.h>
 # include <dsn/tool-api/perf_counter.h>
+# include <atomic>
 # include <thread>
 
 namespace dsn {
@@ -87,7 +88,7 @@ private:
     int               _native_tid;
     safe_string       _name;
     std::thread      *_thread;
-    bool             _is_running;
+    std::atomic<bool> _is_running;
     utils::notify_event _started;
     int              _processed_task_count;
 
@@ -110,5 +111,4 @@ public:
 };
 /*@}*/
 } // end namespace
-
 

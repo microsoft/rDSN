@@ -72,7 +72,7 @@ task_worker::task_worker(task_worker_pool* pool, task_queue* q, int index, task_
     _native_tid = ::dsn::utils::get_invalid_tid();
 
     char name[256];
-    sprintf(name, "%5s.%s.%u", pool->node()->name(), pool->spec().name.c_str(), index);
+    snprintf(name, sizeof(name), "%5s.%s.%u", pool->node()->name(), pool->spec().name.c_str(), index);
     _name = name;
     _is_running = false;
 
@@ -87,10 +87,10 @@ task_worker::~task_worker()
 
 void task_worker::start()
 {    
-    if (_is_running)
+    if (_is_running.load(std::memory_order_acquire))
         return;
 
-    _is_running = true;
+    _is_running.store(true, std::memory_order_release);
 
     _thread = new std::thread(std::bind(&task_worker::run_internal, this));
 
@@ -99,16 +99,16 @@ void task_worker::start()
 
 void task_worker::stop()
 {
-    if (!_is_running)
+    if (!_is_running.load(std::memory_order_acquire))
         return;
 
-    _is_running = false;
+    _is_running.store(false, std::memory_order_release);
 
     _thread->join();
     delete _thread;
     _thread = nullptr;
 
-    _is_running = false;
+    _is_running.store(false, std::memory_order_release);
 }
 
 void task_worker::set_name(const char* name)
@@ -340,7 +340,7 @@ void task_worker::loop()
     int best_batch_size = pool_spec().dequeue_batch_size;
 
     //try {
-        while (_is_running)
+        while (_is_running.load(std::memory_order_acquire))
         {
             int batch_size = best_batch_size;
             task* task = q->dequeue(batch_size), *next;

@@ -87,6 +87,10 @@ namespace dsn {
             {
                 uint64_t now = dsn_now_ns();
                 uint64_t interval = now - qts;
+                if (interval == 0)
+                {
+                    return 0.0;
+                }
                 double val = static_cast<double>(_val.load(std::memory_order_relaxed));
                 qts = now;
                 _val = 0;

@@ -110,7 +110,7 @@ namespace dsn {
                 MINIDUMPWRITEDUMP pDump = (MINIDUMPWRITEDUMP)::GetProcAddress(hDll, "MiniDumpWriteDump");
                 if (pDump)
                 {
-                    sprintf(szDumpPath, "%s\\%s_%d_%" PRId64 ".dmp", s_dump_dir.c_str(), s_app_name, ::GetCurrentProcessId(), (int64_t)time(NULL));
+                    snprintf(szDumpPath, sizeof(szDumpPath), "%s\\%s_%d_%" PRId64 ".dmp", s_dump_dir.c_str(), s_app_name, ::GetCurrentProcessId(), (int64_t)time(NULL));
 
                     // create the file
                     HANDLE fh = ::CreateFileA(szDumpPath, GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS,
@@ -128,20 +128,20 @@ namespace dsn {
                         BOOL bOK = pDump(GetCurrentProcess(), GetCurrentProcessId(), fh, MiniDumpWithFullMemory, &ExInfo, NULL, NULL);
                         if (bOK)
                         {
-                            sprintf(szScratch, "saved dump file to '%s'", szDumpPath);
+                            snprintf(szScratch, sizeof(szScratch), "saved dump file to '%s'", szDumpPath);
                             szResult = szScratch;
                             retval = EXCEPTION_EXECUTE_HANDLER;
                         }
                         else
                         {
-                            sprintf(szScratch, "failed to save dump file to '%s' (error %d)", szDumpPath, GetLastError());
+                            snprintf(szScratch, sizeof(szScratch), "failed to save dump file to '%s' (error %d)", szDumpPath, GetLastError());
                             szResult = szScratch;
                         }
                         ::CloseHandle(fh);
                     }
                     else
                     {
-                        sprintf(szScratch, "failed to create dump file '%s' (error %d)", szDumpPath, GetLastError());
+                        snprintf(szScratch, sizeof(szScratch), "failed to create dump file '%s' (error %d)", szDumpPath, GetLastError());
                         szResult = szScratch;
                     }
                 }

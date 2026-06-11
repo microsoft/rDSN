@@ -50,7 +50,7 @@ namespace dsn {
 task_queue::task_queue(task_worker_pool* pool, int index, task_queue* inner_provider) : _pool(pool), _controller(nullptr), _queue_length(0)
 {
     char num[30];
-    sprintf(num, "%u", index);
+    snprintf(num, sizeof(num), "%u", index);
     _index = index;
     _name = pool->spec().name + '.';
     _name.append(num);

@@ -156,9 +156,9 @@ namespace dsn
                 memset(&app->info, 0, sizeof(app->info));
                 app->info.app_id = gpid.u.app_id;
                 app->info.index = gpid.u.partition_index;
-                strncpy(app->info.role, _owner_node->spec().role_name.c_str(), sizeof(app->info.role));
-                strncpy(app->info.name, _owner_node->spec().name.c_str(), sizeof(app->info.name));
-                strncpy(app->info.data_dir, data_dir, sizeof(app->info.data_dir));
+                snprintf(app->info.role, sizeof(app->info.role), "%s", _owner_node->spec().role_name.c_str());
+                snprintf(app->info.name, sizeof(app->info.name), "%s", _owner_node->spec().name.c_str());
+                snprintf(app->info.data_dir, sizeof(app->info.data_dir), "%s", data_dir);
 
                 _apps.emplace(gpid.value,
                     std::unique_ptr<app_manager::app_internal>(app));
@@ -262,4 +262,3 @@ namespace dsn
     }
 
 }
-

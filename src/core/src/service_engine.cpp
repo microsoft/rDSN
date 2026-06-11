@@ -73,10 +73,10 @@ service_node::service_node(service_app_spec& app_spec)
     _app_info.app.app_context_ptr = nullptr;
     _app_info.app_id = id();
     _app_info.index = spec().index;
-    strncpy(_app_info.role, spec().role_name.c_str(), sizeof(_app_info.role));
-    strncpy(_app_info.type, spec().type.c_str(), sizeof(_app_info.type));
-    strncpy(_app_info.name, spec().name.c_str(), sizeof(_app_info.name));
-    strncpy(_app_info.data_dir, spec().data_dir.c_str(), sizeof(_app_info.data_dir)); 
+    snprintf(_app_info.role, sizeof(_app_info.role), "%s", spec().role_name.c_str());
+    snprintf(_app_info.type, sizeof(_app_info.type), "%s", spec().type.c_str());
+    snprintf(_app_info.name, sizeof(_app_info.name), "%s", spec().name.c_str());
+    snprintf(_app_info.data_dir, sizeof(_app_info.data_dir), "%s", spec().data_dir.c_str());
     
     _layer2_rpc_read_handler.name = "RPC_L2_CLIENT_READ";
     _layer2_rpc_read_handler.c_handler = [](dsn_message_t req, void* this_) 
@@ -602,6 +602,7 @@ void service_engine::register_system_rpc_handler(
 
     if (port == -1)
     {
+        utils::auto_read_lock l(_nodes_lock);
         for (auto& n : _nodes_by_app_id)
         {
             for (auto& io : n.second->ios())
@@ -616,6 +617,7 @@ void service_engine::register_system_rpc_handler(
     }
     else
     {
+        utils::auto_read_lock l(_nodes_lock);
         auto it = _nodes_by_app_port.find(port);
         if (it != _nodes_by_app_port.end())
         {
@@ -640,6 +642,7 @@ void service_engine::register_system_rpc_handler(
 
 service_node* service_engine::start_node(service_app_spec& app_spec)
 {
+    utils::auto_write_lock l(_nodes_lock);
     auto it = _nodes_by_app_id.find(app_spec.id);
     if (it != _nodes_by_app_id.end())
     {
@@ -680,11 +683,13 @@ service_node* service_engine::start_node(service_app_spec& app_spec)
 safe_string service_engine::get_runtime_info(const safe_vector<safe_string>& args)
 {
     safe_sstream ss;
+    service_engine& engine = service_engine::fast_instance();
+    utils::auto_read_lock l(engine._nodes_lock);
     if (args.size() == 0)
     {
-        ss << "" << service_engine::fast_instance()._nodes_by_app_id.size() 
+        ss << "" << engine._nodes_by_app_id.size()
             << " nodes available:" << std::endl;
-        for (auto& kv : service_engine::fast_instance()._nodes_by_app_id)
+        for (auto& kv : engine._nodes_by_app_id)
         {
             ss << "\t" << kv.second->id() << "." << kv.second->name() << std::endl;
         }
@@ -693,8 +698,8 @@ safe_string service_engine::get_runtime_info(const safe_vector<safe_string>& arg
     {
         auto indent = "";
         int id = atoi(args[0].c_str());
-        auto it = service_engine::fast_instance()._nodes_by_app_id.find(id);
-        if (it != service_engine::fast_instance()._nodes_by_app_id.end())
+        auto it = engine._nodes_by_app_id.find(id);
+        if (it != engine._nodes_by_app_id.end())
         {
             auto args2 = args;
             args2.erase(args2.begin());
@@ -711,10 +716,14 @@ safe_string service_engine::get_runtime_info(const safe_vector<safe_string>& arg
 safe_string service_engine::get_queue_info(const safe_vector<safe_string>& args)
 {
     safe_sstream ss;
+    service_engine& engine = service_engine::fast_instance();
+    utils::auto_read_lock l(engine._nodes_lock);
     ss << "[";
-    for (auto &it : service_engine::fast_instance()._nodes_by_app_id)
+    bool first = true;
+    for (auto &it : engine._nodes_by_app_id)
     {
-        if (it.first != service_engine::fast_instance()._nodes_by_app_id.begin()->first) ss << ",";
+        if (!first) ss << ",";
+        first = false;
         it.second->get_queue_info(ss);
     }
     ss << "]";

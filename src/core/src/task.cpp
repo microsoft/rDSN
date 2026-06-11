@@ -345,14 +345,14 @@ bool task::cancel(bool wait_until_finished, /*out*/ bool* finished /*= nullptr*/
         return false;
     }
     
-    if (_state.compare_exchange_strong(READY_STATE, TASK_STATE_CANCELLED, std::memory_order_relaxed))
+    task_state old_state = READY_STATE;
+    if (_state.compare_exchange_strong(old_state, TASK_STATE_CANCELLED, std::memory_order_relaxed))
     {
         succ = true;
         finish = true;
     }
     else
     {
-        task_state old_state = READY_STATE;
         if (old_state == TASK_STATE_CANCELLED)
         {
             succ = false; // this cancellation fails

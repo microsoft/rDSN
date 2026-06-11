@@ -188,12 +188,12 @@ disk_engine::~disk_engine()
 
 void disk_engine::start(aio_provider* provider, io_modifer& ctx)
 {
-    if (_is_running)
+    if (_is_running.load(std::memory_order_acquire))
         return;  
 
     _provider = provider;
     _provider->start(ctx);
-    _is_running = true;
+    _is_running.store(true, std::memory_order_release);
 }
 
 void disk_engine::ctrl(dsn_handle_t fh, dsn_ctrl_code_t code, int param)
@@ -248,7 +248,7 @@ error_code disk_engine::flush(dsn_handle_t fh)
 
 void disk_engine::read(aio_task* aio)
 {
-    if (!_is_running)
+    if (!_is_running.load(std::memory_order_acquire))
     {
         aio->enqueue(ERR_SERVICE_NOT_FOUND, 0);
         return;
@@ -302,7 +302,7 @@ public:
 
 void disk_engine::write(aio_task* aio)
 {
-    if (!_is_running)
+    if (!_is_running.load(std::memory_order_acquire))
     {
         aio->enqueue(ERR_SERVICE_NOT_FOUND, 0);
         return;

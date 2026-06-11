@@ -111,7 +111,7 @@ namespace dsn {
                 *ptr++ = c;
             }
             else {
-                sprintf(ptr, "\\%02X", c);
+                snprintf(ptr, sizeof(buf) - (ptr - buf), "\\%02X", c);
                 ptr += 3;
             }
         }

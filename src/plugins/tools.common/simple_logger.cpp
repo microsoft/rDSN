@@ -35,6 +35,8 @@
 
 # include "simple_logger.h"
 # include <sstream>
+# include <cerrno>
+# include <cstring>
 
 namespace dsn {
     namespace tools {
@@ -209,6 +211,11 @@ namespace dsn {
             // so now the start index is from 0
             str << _log_dir << "/log." << _index++ << ".txt";
             _log = ::fopen(str.str().c_str(), "w+");
+            if (_log == nullptr)
+            {
+                fprintf(stderr, "failed to open log file %s: %s\n", str.str().c_str(), strerror(errno));
+                return;
+            }
 
             // TODO: move gc out of criticial path
             while (_index - _start_index > _max_number_of_log_files_on_disk)
@@ -228,13 +235,19 @@ namespace dsn {
         simple_logger::~simple_logger(void) 
         { 
             utils::auto_lock< ::dsn::utils::ex_lock_nr> l(_lock);
-            ::fclose(_log);
+            if (_log != nullptr)
+            {
+                ::fclose(_log);
+            }
         }
 
         void simple_logger::flush()
         {
             utils::auto_lock< ::dsn::utils::ex_lock_nr> l(_lock);
-            ::fflush(_log);
+            if (_log != nullptr)
+            {
+                ::fflush(_log);
+            }
             ::fflush(stdout);
         }
 
@@ -254,6 +267,28 @@ namespace dsn {
             }
 
             utils::auto_lock< ::dsn::utils::ex_lock_nr> l(_lock);
+            if (_log == nullptr)
+            {
+                create_log_file();
+                if (_log == nullptr)
+                {
+                    if (log_level >= _stderr_start_level)
+                    {
+                        print_header(stderr, log_level);
+                        if (!_short_header)
+                        {
+                            fprintf(stderr, "%s:%d:%s(): ", title, line, function);
+                        }
+                        vfprintf(stderr, fmt, args);
+                        fprintf(stderr, "\n");
+                    }
+                    if (log_level >= _stderr_start_level)
+                    {
+                        va_end(args2);
+                    }
+                    return;
+                }
+            }
          
             print_header(_log, log_level);
             if (!_short_header)
@@ -276,6 +311,7 @@ namespace dsn {
                 }
                 vprintf(fmt, args2);
                 printf("\n");
+                va_end(args2);
             }
 
             if (++_lines >= 200000)

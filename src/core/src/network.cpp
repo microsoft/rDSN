@@ -67,9 +67,9 @@ namespace dsn
         dassert(is_client(), "must be client session");
 
         utils::auto_lock<utils::ex_lock_nr> l(_lock);
-        if (_connect_state == SS_DISCONNECTED)
+        if (_connect_state.load(std::memory_order_acquire) == SS_DISCONNECTED)
         {
-            _connect_state = SS_CONNECTING;
+            _connect_state.store(SS_CONNECTING, std::memory_order_release);
             return true;
         }
         else
@@ -84,8 +84,8 @@ namespace dsn
 
         {
             utils::auto_lock<utils::ex_lock_nr> l(_lock);
-            dassert(_connect_state == SS_CONNECTING, "session must be connecting");
-            _connect_state = SS_CONNECTED;
+            dassert(_connect_state.load(std::memory_order_acquire) == SS_CONNECTING, "session must be connecting");
+            _connect_state.store(SS_CONNECTED, std::memory_order_release);
         }
 
         rpc_session_ptr sp = this;
@@ -98,9 +98,9 @@ namespace dsn
     {
         {
             utils::auto_lock<utils::ex_lock_nr> l(_lock);
-            if (_connect_state != SS_DISCONNECTED)
+            if (_connect_state.load(std::memory_order_acquire) != SS_DISCONNECTED)
             {
-                _connect_state = SS_DISCONNECTED;
+                _connect_state.store(SS_DISCONNECTED, std::memory_order_release);
             }
             else
             {
@@ -300,9 +300,9 @@ namespace dsn
             msg->dl.insert_before(&_messages);
             ++_message_count;
 
-            if (SS_CONNECTED == _connect_state && !_is_sending_next)
+            if (SS_CONNECTED == _connect_state.load(std::memory_order_acquire) && !_is_sending_next.load(std::memory_order_acquire))
             {
-                _is_sending_next = true;
+                _is_sending_next.store(true, std::memory_order_release);
                 sig = _message_sent + 1;
                 unlink_message_for_send();
             }
@@ -342,15 +342,15 @@ namespace dsn
             utils::auto_lock<utils::ex_lock_nr> l(_lock);
             if (signature != 0)
             {
-                dassert(_is_sending_next
+                dassert(_is_sending_next.load(std::memory_order_acquire)
                     && signature == _message_sent + 1,
                     "sent msg must be sending");
-                _is_sending_next = false;
+                _is_sending_next.store(false, std::memory_order_release);
 
                 // the _sending_msgs may have been cleared when reading of the rpc_session is failed.
                 if (_sending_msgs.size() == 0)
                 {
-                    dassert(_connect_state == SS_DISCONNECTED,
+                    dassert(_connect_state.load(std::memory_order_acquire) == SS_DISCONNECTED,
                             "assume sending queue is cleared due to session closed");
                     return;
                 }
@@ -365,12 +365,12 @@ namespace dsn
                 _sending_buffers.clear();
             }
             
-            if (!_is_sending_next)
+            if (!_is_sending_next.load(std::memory_order_acquire))
             {
                 if (unlink_message_for_send())
                 {
                     sig = _message_sent + 1;
-                    _is_sending_next = true;
+                    _is_sending_next.store(true, std::memory_order_release);
                 }
             }
         }

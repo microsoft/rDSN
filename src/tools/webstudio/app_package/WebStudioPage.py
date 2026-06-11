@@ -3,6 +3,13 @@ from WebStudioUtil import *
 from WebStudioBase import *
 from WebStudioApi import *
 
+def SafeJoin(base_path, *paths):
+    base_path = os.path.realpath(base_path)
+    target_path = os.path.realpath(os.path.join(base_path, *paths))
+    if target_path != base_path and not target_path.startswith(base_path + os.sep):
+        raise ValueError("invalid path")
+    return target_path
+
 class PageMainHandler(BaseHandler):
     def get(self):
         self.render_template('main.html')
@@ -164,25 +171,23 @@ class PageStoreHandler(BaseHandler):
         if_stateful = self.request.get('if_stateful')
         
         # 
-        pack_dir = os.path.join(GetWebStudioDirPath(),'local','packages', pack_name);
+        packages_dir = os.path.join(GetWebStudioDirPath(),'local','packages')
+        pack_dir = SafeJoin(packages_dir, pack_name)
         if not os.path.exists(pack_dir):
             os.makedirs(pack_dir)
 
         # save uploaded package 
-        savedFile = open(os.path.join(GetWebStudioDirPath(),'local','packages', file_path), 'wb')
+        savedFile = open(SafeJoin(packages_dir, file_path), 'wb')
         savedFile.write(raw_file)
         savedFile.close()
 
         # save icon file 
-        iconFile = open(os.path.join(pack_dir, icon_path), 'wb')
+        iconFile = open(SafeJoin(pack_dir, icon_path), 'wb')
         iconFile.write(raw_icon)
         iconFile.close()
         
-        # save to db 
-        conn = sqlite3.connect(os.path.join(GetWebStudioDirPath(),'local','data.db'))
-        c = conn.cursor()
-        c.execute(TCreate.render({'dataType':'app_package','elems': sqlDataType['app_package']['elems']}))
-        c.execute(TInsert.render({'dataType':'app_package','val_list':[
+        # save to db
+        sqlOp(op='save',dataType='app_package',val_list=[
             pack_name,            
             author,
             description,
@@ -193,8 +198,7 @@ class PageStoreHandler(BaseHandler):
             if_stateful,
             file_path,
             icon_path
-        ]}))
-        conn.commit()
+        ])
 
         return webapp2.redirect('/store.html')
 
@@ -213,4 +217,3 @@ class PageMachineHandler(BaseHandler):
 class PageSettingHandler(BaseHandler):
     def get(self):
         self.render_template_Vue('setting.html')
-

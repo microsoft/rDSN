@@ -3,6 +3,8 @@
 import os
 import sys
 import platform
+import shutil
+import subprocess
 
 '''
 the default thrift generator
@@ -170,15 +172,29 @@ def modify_struct_define(header_file, enum_class):
     src_fd.close()
     res_fd.close()
 
-    os.system("rm %s"%(header_file))
-    os.system("mv %s %s"%(tmp_result, header_file))
+    os.remove(header_file)
+    os.rename(tmp_result, header_file)
 
 def remove_struct_impl(impl_file, enum_class):
-    os.system("sed -i \'/VALUES_TO_NAMES/\'d %s"%(impl_file))
+    tmp_result = impl_file + ".swapfile"
+    src_fd, dst_fd = open(impl_file, "r"), open(tmp_result, "w")
+    for line in src_fd:
+        if "VALUES_TO_NAMES" not in line:
+            dst_fd.write(line)
+    src_fd.close()
+    dst_fd.close()
+    os.remove(impl_file)
+    os.rename(tmp_result, impl_file)
 
 def replace_struct_usage(cpp_file, enum_class):
-    sed_exp = "sed -i " + " ".join(["-e \'s/%s::type/%s/\'"%(i,i) for i in enum_class]) + " " + cpp_file
-    os.system(sed_exp)
+    src_fd = open(cpp_file, "r")
+    content = src_fd.read()
+    src_fd.close()
+    for enum_name in enum_class:
+        content = content.replace("%s::type" % enum_name, enum_name)
+    dst_fd = open(cpp_file, "w")
+    dst_fd.write(content)
+    dst_fd.close()
 
 def fix_include_file(filename, fix_commands):
     tmp_result = filename + ".swapfile"
@@ -226,10 +242,13 @@ def toggle_serialization_in_cpp(thrift_name):
     cpp_file = thrift_name + "_types.cpp"
     new_file = cpp_file + ".swapfile"
 
-    os.system("pwd")
-    os.system("echo \"#ifdef DSN_USE_THRIFT_SERIALIZATION\" > %s"%(new_file) )
-    os.system("cat %s >> %s"%(cpp_file, new_file))
-    os.system("echo \"#endif\" >> %s"%(new_file) )
+    src_fd = open(cpp_file, "r")
+    dst_fd = open(new_file, "w")
+    dst_fd.write("#ifdef DSN_USE_THRIFT_SERIALIZATION\n")
+    dst_fd.write(src_fd.read())
+    dst_fd.write("#endif\n")
+    src_fd.close()
+    dst_fd.close()
 
     os.remove(cpp_file)
     os.rename(new_file, cpp_file)
@@ -237,7 +256,7 @@ def toggle_serialization_in_cpp(thrift_name):
 
 def compile_thrift_file(thrift_info):
     thrift_name = thrift_info["name"]
-    print ">>>compiling thrift file %s.thrift ..."%(thrift_name)
+    print(">>>compiling thrift file %s.thrift ..." % (thrift_name))
 
     if "path" not in thrift_info:
         raise CompileError("can't find thrift file")
@@ -247,15 +266,15 @@ def compile_thrift_file(thrift_info):
         raise CompileError("can't find thrift file")
 
     ## generate the files
-    os.system("rm -rf output")
-    os.system("mkdir output")
+    shutil.rmtree("output", ignore_errors=True)
+    os.mkdir("output")
     #### first generate .types.h
-    os.system("%s %s.thrift cpp build binary"%(env_tools["dsn_gentool"], thrift_name))
+    subprocess.check_call([env_tools["dsn_gentool"], thrift_name + ".thrift", "cpp", "build", "binary"])
 
-    os.system("cp build/%s.types.h output"%(thrift_name))
-    os.system("cp build/%s_types.h output"%(thrift_name))
-    os.system("cp build/%s_types.cpp output"%(thrift_name))
-    os.system("rm -rf build")
+    shutil.copy2(os.path.join("build", thrift_name + ".types.h"), "output")
+    shutil.copy2(os.path.join("build", thrift_name + "_types.h"), "output")
+    shutil.copy2(os.path.join("build", thrift_name + "_types.cpp"), "output")
+    shutil.rmtree("build")
 
     if "include_fix" in thrift_info:
         fix_include(thrift_name, thrift_info["include_fix"])
@@ -271,12 +290,12 @@ def compile_thrift_file(thrift_info):
             dest_path = env_tools["root_dir"] + "/" + pair[1]
             for postfix in pair[0].split():
                 src_path = "output/%s%s"%(thrift_name, postfix)
-                cmd = "mv %s %s"%(src_path, dest_path)
-                os.system(cmd)
+                shutil.move(src_path, dest_path)
 
     if len(os.listdir("output"))>0:
-        os.system("mv output/* ./")
-    os.system("rm -rf output")
+        for file_name in os.listdir("output"):
+            shutil.move(os.path.join("output", file_name), ".")
+    shutil.rmtree("output")
 
     os.chdir( env_tools["root_dir"] )
 

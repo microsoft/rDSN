@@ -41,6 +41,7 @@
 # include <dsn/tool-api/perf_counter.h>
 # include <dsn/tool-api/task_worker.h>
 # include <dsn/tool-api/timer_service.h>
+# include <atomic>
 
 namespace dsn {
 
@@ -92,7 +93,7 @@ private:
     timer_service*                     _per_node_timer_svc;
     std::vector<timer_service*>        _per_queue_timer_svcs;
 
-    bool                              _is_running;
+    std::atomic<bool>                 _is_running;
 };
 
 class task_engine
@@ -112,7 +113,7 @@ public:
     task_worker_pool* get_pool(int code) const { return _pools[code]; }
     std::vector<task_worker_pool*>& pools() { return _pools; }
 
-    bool is_started() const { return _is_running; }
+    bool is_started() const { return _is_running.load(std::memory_order_acquire); }
 
     volatile int* get_task_queue_virtual_length_ptr(
         dsn_task_code_t code,
@@ -124,7 +125,7 @@ public:
     void get_queue_info(/*out*/ safe_sstream& ss);
 private:
     std::vector<task_worker_pool*> _pools;
-    volatile bool                  _is_running;
+    std::atomic<bool>              _is_running;
     service_node                   *_node;
 };
 

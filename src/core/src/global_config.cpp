@@ -387,7 +387,7 @@ bool service_spec::init_app_specs()
     dsn_app dapp;
     memset(&dapp, 0, sizeof(dapp));
     dapp.mask = DSN_APP_MASK_APP;
-    strcpy(dapp.type_name, mimic_app_role_name);
+    snprintf(dapp.type_name, sizeof(dapp.type_name), "%s", mimic_app_role_name);
     dapp.layer1.create = mimic_app_create;
     dapp.layer1.destroy = mimic_app_destroy;
     dapp.layer1.start = mimic_app_start;
@@ -474,7 +474,7 @@ bool service_spec::init_app_specs()
             for (int i = 1; i <= app.count; i++)
             {
                 char buf[16];
-                sprintf(buf, "%u", i);
+                snprintf(buf, sizeof(buf), "%u", i);
                 app.name = (app.count > 1 ? (app.role_name + buf) : app.role_name);
                 app.id = ++app_id;
                 app.index = i;

@@ -171,6 +171,7 @@ private:
     typedef std::map<int, service_node*> node_engines_by_port; // multiple ports may share the same node
     service_nodes_by_app_id         _nodes_by_app_id;
     node_engines_by_port            _nodes_by_app_port;
+    mutable utils::rw_lock_nr       _nodes_lock;
 };
 
 // ------------ inline impl ---------------------

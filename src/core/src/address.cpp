@@ -51,6 +51,7 @@
 # include <arpa/inet.h>
 # include <sys/ioctl.h>
 # include <net/if.h>
+# include <unistd.h>
 
 # if defined(__FreeBSD__)
 # include <netinet/in.h>
@@ -156,12 +157,18 @@ DSN_API uint32_t dsn_ipv4_local(const char* network_interface)
                     else
                     {
                         int fd = socket(AF_INET, SOCK_DGRAM, 0);
+                        if (fd < 0)
+                        {
+                            i = i->ifa_next;
+                            continue;
+                        }
                         struct ifreq ifr;
                         
                         ifr.ifr_addr.sa_family = AF_INET;
-                        strncpy(ifr.ifr_name, i->ifa_name, IFNAMSIZ - 1);
+                        snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "%s", i->ifa_name);
 
                         auto err = ioctl(fd, SIOCGIFADDR, &ifr);
+                        close(fd);
                         if (err == 0 &&
                             (network_interface[0] != '\0' || strncmp((const char*)&((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr, loopback, 4) != 0))
                         {

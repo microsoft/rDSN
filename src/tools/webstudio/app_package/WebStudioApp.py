@@ -6,6 +6,7 @@ from WebStudioPage import *
 from WebStudioApi import *
 
 def start_http_server(portNum):  
+    debug_mode = os.environ.get('DSN_WEBSTUDIO_DEBUG', 'false').lower() == 'true'
     web_app = webapp2.WSGIApplication([
         ('/', PageMainHandler),
         ('/main.html', PageMainHandler),
@@ -25,7 +26,6 @@ def start_http_server(portNum):
         ('/machine.html', PageMachineHandler),
         ('/setting.html', PageSettingHandler),
 
-        ('/api/bash', ApiBashHandler),
         ('/api/psutil', ApiPsutilHandler),
         ('/api/view/save', ApiSaveViewHandler),
         ('/api/view/load', ApiLoadViewHandler),
@@ -39,7 +39,7 @@ def start_http_server(portNum):
 
         ('/app/(.+)', AppStaticFileHandler),
         ('/local/(.+)', LocalStaticFileHandler),
-    ], debug=True)
+    ], debug=debug_mode)
 
     static_app = webob.static.DirectoryApp(os.path.join(GetWebStudioDirPath(),"static"))
     app_list = Cascade([static_app, web_app])

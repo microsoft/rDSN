@@ -229,6 +229,11 @@ namespace dsn {
             for (int i = 0; i < k; i++)
             {
                 utils::split_args(args[i].c_str(), val, ':');
+                if (val.size() < 3)
+                {
+                    val.clear();
+                    continue;
+                }
                 task_id = find_task_id(val[0].c_str());
                 counter_type = find_counter_type(val[1].c_str());
                 percentile_type = find_percentail_type(val[2].c_str());
@@ -254,6 +259,7 @@ namespace dsn {
                             ss << dsn_task_code_to_string(i) << ":" << counter_info_ptr[j]->title << ":" << percentail_counter_string[percentile_type] << ":" << s_spec_profilers[task_id].ptr[j]->get_percentile(percentile_type) << " ";
                         }
                     }
+                    val.clear();
                 }
             }
             return ss.str().c_str();
@@ -419,7 +425,7 @@ namespace dsn {
                                 continue;
 
                             char name[20] = { 0 };
-                            strcpy(name, counter_info_ptr[counter_type]->title);
+                            snprintf(name, sizeof(name), "%s", counter_info_ptr[counter_type]->title);
 
                             char name_suffix[10] = { 0 };
                             switch (task_spec::get(task_id)->type)
@@ -592,7 +598,7 @@ namespace dsn {
                                 continue;
 
                             char name[20] = { 0 };
-                            strcpy(name, counter_info_ptr[counter_type]->title);
+                            snprintf(name, sizeof(name), "%s", counter_info_ptr[counter_type]->title);
 
                             char name_suffix[10] = { 0 };
                             switch (task_spec::get(task_id)->type)

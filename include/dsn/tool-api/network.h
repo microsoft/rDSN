@@ -227,7 +227,7 @@ namespace dsn {
         DSN_API void send_message(message_ex* msg);
         DSN_API bool cancel(message_ex* request);
         void delay_recv(int delay_ms);
-        bool is_connected() const { return _connect_state == SS_CONNECTED; }
+        bool is_connected() const { return _connect_state.load(std::memory_order_acquire) == SS_CONNECTED; }
         DSN_API bool on_recv_message(message_ex* msg, int delay_ms);
 
     // for client session
@@ -262,8 +262,8 @@ namespace dsn {
         DSN_API bool try_connecting(); // return true when it is permitted
         DSN_API void set_connected();
         DSN_API bool set_disconnected(); // return true when it is permitted
-        bool is_disconnected() const { return _connect_state == SS_DISCONNECTED; }
-        bool is_connecting() const { return _connect_state == SS_CONNECTING; }        
+        bool is_disconnected() const { return _connect_state.load(std::memory_order_acquire) == SS_DISCONNECTED; }
+        bool is_connecting() const { return _connect_state.load(std::memory_order_acquire) == SS_CONNECTING; }
         DSN_API void on_send_completed(uint64_t signature = 0); // default value for nothing is sent
 
     private:
@@ -297,10 +297,10 @@ namespace dsn {
 
         // TODO: expose the queue to be customizable
         ::dsn::utils::ex_lock_nr           _lock; // [
-        volatile bool                      _is_sending_next;
+        std::atomic<bool>                  _is_sending_next;
         int                                _message_count; // count of _messages
         dlink                              _messages;        
-        volatile session_state             _connect_state;
+        std::atomic<session_state>         _connect_state;
         uint64_t                           _message_sent;
         // ]
 

@@ -39,6 +39,7 @@
 # include <dsn/utility/synchronize.h>
 # include <dsn/tool-api/aio_provider.h>
 # include <dsn/utility/work_queue.h>
+# include <atomic>
 
 namespace dsn {
 
@@ -103,7 +104,7 @@ private:
     void complete_io(aio_task* aio, error_code err, uint32_t bytes, int delay_milliseconds = 0);
 
 private:
-    volatile bool   _is_running;
+    std::atomic<bool> _is_running;
     aio_provider    *_provider;
     service_node    *_node;
 };

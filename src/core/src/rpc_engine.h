@@ -40,6 +40,7 @@
 # include <dsn/utility/synchronize.h>
 # include <dsn/tool-api/global_config.h>
 # include <dsn/utility/configuration.h>
+# include <atomic>
 
 namespace dsn {
 
@@ -140,7 +141,7 @@ public:
         const service_app_spec& spec, 
         io_modifer& ctx
         );
-    void start_serving() { _is_serving = true; }
+    void start_serving() { _is_serving.store(true, std::memory_order_release); }
 
     //
     // rpc registrations
@@ -196,8 +197,8 @@ private:
 
     std::unique_ptr<uri_resolver_manager>            _uri_resolver_mgr;
     
-    volatile bool                                    _is_running;
-    volatile bool                                    _is_serving;
+    std::atomic<bool>                               _is_running;
+    std::atomic<bool>                               _is_serving;
 };
 
 // ------------------------ inline implementations --------------------
@@ -226,4 +227,3 @@ inline void rpc_engine::call_address(
 }
 
 } // end namespace
-

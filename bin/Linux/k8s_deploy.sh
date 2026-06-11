@@ -1,7 +1,7 @@
 #!/bin/bash
 os=linux
-scripts_path=`readlink -f $0`
-export scripts_dir=`dirname $scripts_path`
+scripts_path=`readlink -f "$0"`
+export scripts_dir=`dirname "$scripts_path"`
 
 function usage() {
     echo "Option for subcommand 'k8s_deploy|k8s_undeploy"
@@ -52,31 +52,31 @@ while [ $# -gt 0 ];do
     esac
 done
 
-if [ -z $i_name ] || [ -z $s_dir ];then
+if [ -z "$i_name" ] || [ -z "$s_dir" ];then
     usage
     exit -1
 fi
 
 function deployment(){
     echo "deployment svc onto k8s"
-    cd $s_dir
-    svc_files=`instance_name=$i_name ./gensvcyaml.sh`
+    cd "$s_dir"
+    svc_files=`instance_name="$i_name" ./gensvcyaml.sh`
     for svc_file in $svc_files;do
-        kubectl create -f $svc_file
+        kubectl create -f "$svc_file"
     done
     echo "deployment rc onto k8s"
-    rc_files=`instance_name=$i_name ./genrcyaml.sh`
+    rc_files=`instance_name="$i_name" ./genrcyaml.sh`
     for rc_file in $rc_files;do
-        kubectl create -f $rc_file
+        kubectl create -f "$rc_file"
     done
 }
 
 function undeployment(){
     echo "undeployment rc and svc"
-    cd $s_dir
+    cd "$s_dir"
     d_unit=$(cat d_unit)
-    kubectl delete rc  -l d_unit=${d_unit} -l instance=${i_name}
-    kubectl delete svc -l d_unit=${d_unit} -l instance=${i_name}
+    kubectl delete rc  -l "d_unit=${d_unit}" -l "instance=${i_name}"
+    kubectl delete svc -l "d_unit=${d_unit}" -l "instance=${i_name}"
 }
 
 

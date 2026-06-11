@@ -594,9 +594,9 @@ DSN_API int dsn_get_all_apps(dsn_app_info* info_buffer, int count)
         info.app_id = node->id();
         info.index = node->spec().index;
         info.primary_address = node->rpc(nullptr)->primary_address().c_addr();
-        strncpy(info.role, node->spec().role_name.c_str(), sizeof(info.role));
-        strncpy(info.type, node->spec().type.c_str(), sizeof(info.type));
-        strncpy(info.name, node->spec().name.c_str(), sizeof(info.name));
+        snprintf(info.role, sizeof(info.role), "%s", node->spec().role_name.c_str());
+        snprintf(info.type, sizeof(info.type), "%s", node->spec().type.c_str());
+        snprintf(info.name, sizeof(info.name), "%s", node->spec().name.c_str());
     }
     return i;
 }
@@ -622,4 +622,3 @@ namespace dsn
         }
     }
 }
-

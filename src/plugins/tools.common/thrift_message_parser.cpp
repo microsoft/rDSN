@@ -281,7 +281,7 @@ namespace dsn
         dsn_hdr->hdr_crc32 = dsn_hdr->body_crc32 = CRC_INVALID;
 
         dsn_hdr->id = seqid;
-        strncpy(dsn_hdr->rpc_name, fname.c_str(), DSN_MAX_TASK_CODE_NAME_LENGTH);
+        snprintf(dsn_hdr->rpc_name, sizeof(dsn_hdr->rpc_name), "%s", fname.c_str());
         dsn_hdr->gpid.u.app_id = thrift_header.app_id;
         dsn_hdr->gpid.u.partition_index = thrift_header.partition_index;
         dsn_hdr->client.timeout_ms = thrift_header.client_timeout;

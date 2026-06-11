@@ -65,7 +65,7 @@ namespace dsn {
 
                     const char* name = ::dsn::tools::get_service_node_name(node());
                     char buffer[128];
-                    sprintf(buffer, "%s.asio.%d", name, i);
+                    snprintf(buffer, sizeof(buffer), "%s.asio.%d", name, i);
                     task_worker::set_name(buffer);
 
                     boost::asio::io_service::work work(_io_service);
@@ -320,7 +320,7 @@ namespace dsn {
 
                     const char* name = ::dsn::tools::get_service_node_name(node());
                     char buffer[128];
-                    sprintf(buffer, "%s.asio.udp.%d.%d", name, (int)(this->address().port()), i);
+                    snprintf(buffer, sizeof(buffer), "%s.asio.udp.%d.%d", name, (int)(this->address().port()), i);
                     task_worker::set_name(buffer);
 
                     boost::asio::io_service::work work(_io_service);

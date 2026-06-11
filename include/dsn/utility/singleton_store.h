@@ -48,6 +48,7 @@ class singleton_store : public dsn::utils::singleton<singleton_store<TKey, TValu
 public:
     bool put(TKey key, TValue val)
     {
+        auto_write_lock l(_lock);
         auto it = _store.find(key);
         if (it != _store.end())
             return false;
@@ -60,6 +61,7 @@ public:
 
     bool get(TKey key, /*out*/ TValue& val) const
     {
+        auto_read_lock l(_lock);
         auto it = _store.find(key);
         if (it != _store.end())
         {
@@ -72,11 +74,13 @@ public:
 
     bool remove(TKey key)
     {
+        auto_write_lock l(_lock);
         return _store.erase(key) > 0;
     }
 
     void get_all_keys(/*out*/ std::vector<TKey>& keys)
     {
+        auto_read_lock l(_lock);
         for (auto it = _store.begin(); it != _store.end(); ++it)
         {
             keys.push_back(it->first);
@@ -85,6 +89,7 @@ public:
 
 private:
     std::map<TKey, TValue, TCompare> _store;
+    mutable rw_lock_nr               _lock;
 };
 
 template<typename TKey, typename TValue, typename TCompare = std::less<TKey>>
