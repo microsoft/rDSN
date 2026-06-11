@@ -43,6 +43,19 @@ namespace dsn {
         {
             //dinfo(">>> on call RPC_COPY end, exec RPC_NFS_COPY");
 
+            // request.size is supplied by the (untrusted) client but the read below targets a
+            // buffer of exactly nfs_copy_block_bytes. Reject out-of-range sizes to avoid a heap
+            // buffer overflow when reading the file content into the fixed-size block buffer.
+            if (request.size <= 0 || static_cast<uint32_t>(request.size) > _opts.nfs_copy_block_bytes)
+            {
+                derror("nfs: invalid copy request size %d (allowed range is (0, %u]) for file %s",
+                    request.size, _opts.nfs_copy_block_bytes, request.file_name.c_str());
+                ::dsn::service::copy_response resp;
+                resp.error = ERR_INVALID_PARAMETERS;
+                reply(resp);
+                return;
+            }
+
             std::string file_path = dsn::utils::filesystem::path_combine(request.source_dir, request.file_name);
             dsn_handle_t hfile;
 

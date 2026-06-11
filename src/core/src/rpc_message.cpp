@@ -447,7 +447,11 @@ message_ex* message_ex::create_response()
 
     task_spec* sp = task_spec::get(local_rpc_code);
     msg->local_rpc_code = sp->rpc_paired_code;
-    strncat(hdr.rpc_name, "_ACK", sizeof(hdr.rpc_name));
+    // ATTENTION: the 3rd argument of strncat is the maximum number of bytes to copy from the
+    // source, i.e. the space still available in the destination, NOT the total buffer size.
+    // Passing sizeof(hdr.rpc_name) here could overflow rpc_name (and corrupt the adjacent
+    // rpc_code field) when the rpc_name is close to DSN_MAX_TASK_CODE_NAME_LENGTH.
+    strncat(hdr.rpc_name, "_ACK", sizeof(hdr.rpc_name) - strlen(hdr.rpc_name) - 1);
     hdr.rpc_code.local_code = msg->local_rpc_code;
     hdr.rpc_code.local_hash = s_local_hash;
 

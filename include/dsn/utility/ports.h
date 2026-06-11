@@ -79,6 +79,7 @@ __pragma(warning(disable:4127))
 # include <cstdio>
 # include <climits>
 # include <cerrno>
+# include <cstdint>
 
 // common utilities
 # include <atomic>

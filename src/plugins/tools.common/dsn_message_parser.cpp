@@ -72,7 +72,19 @@ namespace dsn
                 }
             }
 
-            unsigned int msg_sz = sizeof(message_header) + message_ex::get_body_length(buf_ptr);
+            unsigned int body_length = message_ex::get_body_length(buf_ptr);
+
+            // body_length comes from the wire; compute the total size in 64-bit and reject a
+            // value that would overflow the 32-bit msg_sz and wrap to a small size (which would
+            // desynchronize the stream and cause the rest of the message to be misparsed).
+            uint64_t msg_sz64 = (uint64_t)sizeof(message_header) + body_length;
+            if (msg_sz64 > UINT32_MAX)
+            {
+                derror("dsn message body length is too large: %u", body_length);
+                read_next = -1;
+                return nullptr;
+            }
+            unsigned int msg_sz = (unsigned int)msg_sz64;
 
             // msg done
             if (buf_len >= msg_sz)
@@ -191,6 +203,23 @@ namespace dsn
 
     /*static*/ bool dsn_message_parser::is_right_header(char* hdr)
     {
+        // rpc_name and error_name are consumed as C-strings throughout the runtime (handler
+        // lookup, task/error code resolution, "%s" logging, ...). A legitimate sender's names are
+        // always shorter than the field, so a header whose rpc_name/error_name fills the whole
+        // field with no NUL terminator is malformed: reject it here at the trust boundary instead
+        // of reading past the field downstream. We validate (not mutate) the received buffer.
+        message_header* header = reinterpret_cast<message_header*>(hdr);
+        if (memchr(header->rpc_name, '\0', sizeof(header->rpc_name)) == nullptr)
+        {
+            derror("dsn message header check failed: rpc_name is not null-terminated");
+            return false;
+        }
+        if (memchr(header->server.error_name, '\0', sizeof(header->server.error_name)) == nullptr)
+        {
+            derror("dsn message header check failed: error_name is not null-terminated");
+            return false;
+        }
+
         uint32_t* pcrc = reinterpret_cast<uint32_t*>(hdr + FIELD_OFFSET(message_header, hdr_crc32));
         uint32_t crc32 = *pcrc;
         if (crc32 != CRC_INVALID)

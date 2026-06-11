@@ -158,7 +158,7 @@ namespace dsn {
             if (szResult)
             {
                 derror("%s", szResult);
-                printf(szResult);
+                printf("%s", szResult);
             }
 
             ::dsn::tools::sys_exit.execute(SYS_EXIT_EXCEPTION);

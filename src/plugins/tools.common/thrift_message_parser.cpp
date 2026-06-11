@@ -76,7 +76,17 @@ namespace dsn
                 }
             }
 
-            unsigned int msg_sz = sizeof(thrift_message_header) + _thrift_header.body_length;
+            // body_length comes from the wire; compute the total size in 64-bit and reject a
+            // value that would overflow the 32-bit msg_sz and wrap to a small size (which would
+            // desynchronize the stream and cause the rest of the message to be misparsed).
+            uint64_t msg_sz64 = (uint64_t)sizeof(thrift_message_header) + _thrift_header.body_length;
+            if (msg_sz64 > UINT32_MAX)
+            {
+                derror("thrift message body length is too large: %u", _thrift_header.body_length);
+                read_next = -1;
+                return nullptr;
+            }
+            unsigned int msg_sz = (unsigned int)msg_sz64;
 
             // msg done
             if (buf_len >= msg_sz)

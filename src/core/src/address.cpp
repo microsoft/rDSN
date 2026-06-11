@@ -113,6 +113,15 @@ DSN_API uint32_t dsn_ipv4_from_host(const char* name)
         }
         else
         {
+            // gethostbyname() should only return IPv4 addresses (4 bytes) here; guard against an
+            // unexpected address family/length so a longer h_addr can not overflow s_addr (4 bytes).
+            if (hp->h_addrtype != AF_INET || hp->h_length != static_cast<int>(sizeof(addr.sin_addr.s_addr)))
+            {
+                derror("gethostbyname returned unexpected address for name = %s (addrtype = %d, length = %d).",
+                    name, hp->h_addrtype, hp->h_length);
+                return 0;
+            }
+
             memcpy(
                 (void*)&(addr.sin_addr.s_addr),
                 (const void*)hp->h_addr,
