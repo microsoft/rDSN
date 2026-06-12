@@ -123,12 +123,16 @@ namespace dsn {
 
         inline uint64_t get_current_rdtsc()
         {
+# if defined(_M_X64) || defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
 # ifdef _WIN32
             return __rdtsc();
 # else
             unsigned hi, lo;
             __asm__ __volatile__("rdtsc" : "=a"(lo), "=d"(hi));
             return ((unsigned long long)lo) | (((unsigned long long)hi) << 32);
+# endif
+# else
+            return get_current_physical_time_ns();
 # endif
         }
 
@@ -216,4 +220,3 @@ namespace dsn {
         }
     }
 } // end namespace dsn::utils
-
