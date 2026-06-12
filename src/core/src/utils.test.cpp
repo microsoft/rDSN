@@ -81,6 +81,80 @@ TEST(core, binary_io)
     EXPECT_TRUE(value3 == value);
 }
 
+TEST(core, binary_io_string)
+{
+    // an empty string round-trips as empty and consumes only the length prefix
+    {
+        binary_writer writer;
+        writer.write(std::string());
+
+        binary_reader reader(writer.get_buffer());
+        std::string s = "should be overwritten";
+        int consumed = reader.read(s);
+
+        EXPECT_TRUE(s.empty());
+        EXPECT_EQ((int)sizeof(int), consumed);
+        EXPECT_EQ(0, reader.get_remaining_size());
+    }
+
+    // a non-empty string round-trips and consumes the length prefix + payload
+    {
+        std::string value = "hello, rDSN";
+        binary_writer writer;
+        writer.write(value);
+
+        binary_reader reader(writer.get_buffer());
+        std::string s;
+        int consumed = reader.read(s);
+
+        EXPECT_EQ(value, s);
+        EXPECT_EQ((int)(sizeof(int) + value.size()), consumed);
+        EXPECT_EQ(0, reader.get_remaining_size());
+    }
+}
+
+TEST(core, binary_io_blob)
+{
+    // an empty blob round-trips as empty AND resets a previously non-empty output blob
+    {
+        binary_writer writer;
+        writer.write(blob());
+
+        binary_reader reader(writer.get_buffer());
+
+        std::string preset = "preset";
+        auto preset_buf = make_shared_array<char>(preset.size());
+        memcpy(preset_buf.get(), preset.data(), preset.size());
+        blob b(preset_buf, (unsigned int)preset.size()); // start non-empty
+
+        int consumed = reader.read(b);
+
+        EXPECT_EQ(0u, b.length()); // must be reset to empty, not left stale
+        EXPECT_EQ((int)sizeof(int), consumed);
+        EXPECT_EQ(0, reader.get_remaining_size());
+    }
+
+    // a non-empty blob round-trips with matching length and content
+    {
+        std::string content = "blob content";
+        auto src = make_shared_array<char>(content.size());
+        memcpy(src.get(), content.data(), content.size());
+        blob in(src, (unsigned int)content.size());
+
+        binary_writer writer;
+        writer.write(in);
+
+        binary_reader reader(writer.get_buffer());
+        blob out;
+        int consumed = reader.read(out);
+
+        EXPECT_EQ((unsigned int)content.size(), out.length());
+        EXPECT_EQ(0, memcmp(out.data(), content.data(), content.size()));
+        EXPECT_EQ((int)(sizeof(int) + content.size()), consumed);
+        EXPECT_EQ(0, reader.get_remaining_size());
+    }
+}
+
 
 TEST(core, split_args)
 {

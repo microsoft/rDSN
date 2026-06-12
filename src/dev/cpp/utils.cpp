@@ -300,29 +300,57 @@ namespace  dsn
     int binary_reader::read(/*out*/ std::string& s)
     {
         int len;
-        if (0 == read(len))
-            return 0;
-    
-        s.resize(len, 0);
-
-        if (len > 0)
+        int ret = read(len);
+        if (0 == ret)
         {
-            int x = read((char*)&s[0], len);
-            return x == 0 ? x : (x + sizeof(len));
+            // something error happened, return 0 to indicate error.
+            return 0;
+        }
+
+        // now ret should be sizeof(len).
+        if (len < 0)
+        {
+            dassert(false, "len is negative: %d", len);
+        }
+        else if (len == 0)
+        {
+            s.clear();
+        }
+        else if (len <= get_remaining_size())
+        {
+            s.resize(len, 0);
+            // read should not fail since we have checked the size, so we can directly return the size of string read.
+            // Even if read fails, it returns 0, therefore, ret actually unchanges, which is also correct.
+            ret += read((char*)&s[0], len);
         }
         else
         {
-            return static_cast<int>(sizeof(len));
-        }        
+            dassert(false, "read beyond the end of buffer");
+        }
+        
+        return ret;
     }
 
     int binary_reader::read(blob& blob)
     {
         int len;
-        if (0 == read(len))
+        int ret = read(len);
+        if (0 == ret)
+        {
+            // something error happened, return 0 to indicate error.
             return 0;
+        }
 
-        if (len <= get_remaining_size())
+        // now ret should be sizeof(len).
+        if (len < 0)
+        {
+            dassert(false, "len is negative: %d", len);
+        }
+        else if (len == 0)
+        {
+            blob = ::dsn::blob();
+        }
+        else if (len <= get_remaining_size())
         {
             blob = _blob.range(static_cast<int>(_ptr - _blob.data()), len);
 
@@ -336,18 +364,29 @@ namespace  dsn
             
             _ptr += len;
             _remaining_size -= len;
-            return len + sizeof(len);
+            ret += len;
         }
         else
         {
             dassert(false, "read beyond the end of buffer");
-            return 0;
         }
+
+        return ret;
     }
 
     int binary_reader::read(char* buffer, int sz)
     {
-        if (sz <= get_remaining_size())
+        if (sz < 0)
+        {
+            dassert(false, "sz is negative: %d", sz);
+            return 0;
+        }
+        else if (sz == 0)
+        {
+            // 0 bytes read.
+            return 0;
+        }
+        else if (sz <= get_remaining_size())
         {
             memcpy((void*)buffer, _ptr, sz);
             _ptr += sz;
@@ -378,8 +417,9 @@ namespace  dsn
 
     bool binary_reader::backup(int count)
     {
-        if (count <= static_cast<int>(_ptr - _blob.data()))
+        if (0 <= count && count <= static_cast<int>(_ptr - _blob.data()))
         {
+            // count could be 0. In this case, we return true without changing _ptr and _remaining_size.
             _ptr -= count;
             _remaining_size += count;
             return true;
@@ -390,8 +430,14 @@ namespace  dsn
 
     bool binary_reader::skip(int count)
     {
-        if (count <= get_remaining_size())
+        if (count < 0)
         {
+            dassert(false, "count is negative: %d", count);
+            return false;
+        }
+        else if (count <= get_remaining_size())
+        {
+            // count could be 0. In this case, we return true without changing _ptr and _remaining_size.
             _ptr += count;
             _remaining_size -= count;
             return true;
