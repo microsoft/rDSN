@@ -63,7 +63,6 @@
 # include <unistd.h>
 # else
 # include <TlHelp32.h>
-# include <cstdlib>
 # endif
 
 # ifdef __TITLE__
@@ -288,12 +287,11 @@ bool run(
 )
 {
 # ifdef _WIN32
-    // On Windows, abort() (e.g. triggered by dassert/dsn_coredump) pops up a modal
-    // "Abort, Retry, Ignore" message box in "Debug" builds. This blocks waiting for
-    // user input and hangs unattended/automated testing. Clear the abort message and
-    // Windows Error Reporting flags so abort() terminates the process directly.
-    // See https://github.com/Microsoft/rDSN/issues/218
-    _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+    // On Windows, abort() (e.g. triggered by dassert/dsn_coredump) pops up a modal "Abort, Retry, Ignore" message box in "Debug" builds.
+    // This blocks waiting for user input and hangs unattended/automated testing.
+    // Clear the abort message and Windows Error Reporting flags so abort() terminates the process directly.
+    // See https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/abort
+    ::_set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
 # endif
 
     ::dsn::task::set_tls_dsn_context(nullptr, nullptr, nullptr);
