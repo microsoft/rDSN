@@ -38,6 +38,7 @@
 # include <dsn/tool-api/node_scoper.h>
 # include "scheduler.h"
 # include "env.sim.h"
+# include <algorithm>
 # include <set>
 
 # ifdef __TITLE__
@@ -291,7 +292,19 @@ void scheduler::schedule()
             }
 
             // randomize the events, and see
+# if 0
             std::random_shuffle(events->begin(), events->end(), [](int n) { return dsn_random32(0, n - 1); });
+# endif
+            auto n = events->size();
+            if (n > 1)
+            {
+                auto first = events->begin();
+                for (auto i = n - 1; i > 0; --i)
+                {
+                    auto j = static_cast<decltype(n)>(dsn_random32(0, static_cast<uint32_t>(i)));
+                    std::iter_swap(first + i, first + j);
+                }
+            }
 
             for (auto e : *events)
             {
