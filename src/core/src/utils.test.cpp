@@ -51,20 +51,6 @@
 using namespace ::dsn;
 using namespace ::dsn::utils;
 
-static std::string signed_integer_to_string(std::intmax_t value)
-{
-    std::ostringstream oss;
-    oss << value;
-    return oss.str();
-}
-
-static std::string unsigned_integer_to_string(std::uintmax_t value)
-{
-    std::ostringstream oss;
-    oss << value;
-    return oss.str();
-}
-
 TEST(core, get_last_component)
 {
     ASSERT_EQ("a", get_last_component("a", "/"));
@@ -205,8 +191,45 @@ TEST(core, trim_string)
     EXPECT_EQ(std::string(r), "x x x x");
 }
 
+static std::string signed_integer_to_string(std::intmax_t value)
+{
+    std::ostringstream oss;
+    oss << value;
+    return oss.str();
+}
+
+static std::string unsigned_integer_to_string(std::uintmax_t value)
+{
+    std::ostringstream oss;
+    oss << value;
+    return oss.str();
+}
+
 TEST(core, lexical_cast_integer_accepts_valid_values)
 {
+    EXPECT_EQ(-12, static_cast<int>(lexical_cast<int8_t>("-12")));
+    EXPECT_EQ(12, static_cast<int>(lexical_cast<int8_t>("12")));
+    EXPECT_EQ(123, static_cast<int>(lexical_cast<uint8_t>("123")));
+
+    EXPECT_EQ((int16_t)-12345, lexical_cast<int16_t>("-12345"));
+    EXPECT_EQ((uint16_t)12345, lexical_cast<uint16_t>("12345"));
+
+    EXPECT_EQ((int32_t)-123456789, lexical_cast<int32_t>("-123456789"));
+    EXPECT_EQ((uint32_t)123456789u, lexical_cast<uint32_t>("123456789"));
+
+    EXPECT_EQ((int64_t)-123456789012345LL, lexical_cast<int64_t>("-123456789012345"));
+    EXPECT_EQ((uint64_t)123456789012345ULL, lexical_cast<uint64_t>("123456789012345"));
+
+    EXPECT_EQ((size_t)42, lexical_cast<size_t>("42"));
+# ifdef _WIN32
+    EXPECT_EQ((SSIZE_T)-42, lexical_cast<SSIZE_T>("-42"));
+    EXPECT_EQ((SSIZE_T)42, lexical_cast<SSIZE_T>("42"));
+# else
+    EXPECT_EQ((ssize_t)-42, lexical_cast<ssize_t>("-42"));
+    EXPECT_EQ((ssize_t)42, lexical_cast<ssize_t>("42"));
+# endif
+    EXPECT_EQ(123, lexical_cast<int>("+123"));
+
     EXPECT_EQ(static_cast<int>(std::numeric_limits<int8_t>::min()),
               static_cast<int>(lexical_cast<int8_t>(
                   signed_integer_to_string(std::numeric_limits<int8_t>::min()))));
@@ -280,7 +303,6 @@ TEST(core, lexical_cast_integer_accepts_valid_values)
               lexical_cast<ssize_t>(
                   signed_integer_to_string(std::numeric_limits<ssize_t>::max())));
 # endif
-    EXPECT_EQ(123, lexical_cast<int>("+123"));
 }
 
 TEST(core, lexical_cast_integer_rejects_invalid_values)
