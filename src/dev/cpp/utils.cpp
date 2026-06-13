@@ -33,11 +33,18 @@
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
+# if defined(_WIN32)
+# include <WinSock2.h>
+# else
+# include <unistd.h>
+# endif
 # include <dsn/cpp/utils.h>
 # include <dsn/cpp/blob.h>
 # include <dsn/cpp/address.h>
 # include <dsn/cpp/auto_codes.h>
 # include <dsn/utility/singleton.h>
+# include <cerrno>
+# include <cstring>
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <random>
@@ -282,7 +289,30 @@ namespace dsn {
     }
 }
 
-namespace  dsn 
+namespace dsn
+{
+    namespace utils
+    {
+        namespace asio
+        {
+            std::string host_name()
+            {
+                char name[1024];
+
+                int result = ::gethostname(name, sizeof(name));
+                if (result != 0)
+                {
+                    derror("gethostname failed, err = %s", strerror(errno));
+                    return std::string();
+                }
+                name[sizeof(name) - 1] = '\0';
+                return std::string(name);
+            }
+        }
+    }
+}
+
+namespace dsn
 {
     binary_reader::binary_reader(const blob& blob)
     {
@@ -642,7 +672,3 @@ namespace  dsn
         return true;
     }
 } // end namespace dsn
-
-
-
-

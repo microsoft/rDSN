@@ -191,6 +191,13 @@ TEST(core, trim_string)
     EXPECT_EQ(std::string(r), "x x x x");
 }
 
+TEST(core, host_name)
+{
+    auto hostname = asio::host_name();
+    EXPECT_FALSE(hostname.empty());
+    EXPECT_EQ(std::string::npos, hostname.find('\0'));
+}
+
 static std::string signed_integer_to_string(std::intmax_t value)
 {
     std::ostringstream oss;

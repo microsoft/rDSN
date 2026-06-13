@@ -313,6 +313,10 @@ namespace dsn {
             return lexical_cast_floating_point<T>(str);
         }
 
+        namespace asio {
+            extern std::string host_name();
+        }
+
         namespace filesystem {
 
             extern bool get_absolute_path(const std::string& path1, std::string& path2);

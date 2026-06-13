@@ -180,7 +180,8 @@ namespace dsn { namespace tools {
         dassert(channel == RPC_CHANNEL_TCP || channel == RPC_CHANNEL_UDP, "invalid given channel %s", channel.to_string());
 
         _address = ::dsn::rpc_address("localhost", port);
-        auto hostname = boost::asio::ip::host_name();
+        auto hostname = ::dsn::utils::asio::host_name();
+        dassert(!hostname.empty(), "fail to get local hostname");
         if (!client_only)
         {
             for (int i = NET_HDR_INVALID + 1; i <= network_header_format::max_value(); i++)
