@@ -179,12 +179,22 @@ namespace dsn {
                 throw std::invalid_argument("lexical_cast_integer: empty string");
             }
 
+            if (str == "-" || str == "+")
+            {
+                throw std::invalid_argument("lexical_cast_integer: cannot convert \"" + str + "\"");
+            }
+
             std::istringstream iss(str);
             iss >> std::noskipws;
 
             std::intmax_t value = 0;
             if (!(iss >> value) || !iss.eof())
             {
+                if (iss.eof())
+                {
+                    throw std::out_of_range("lexical_cast_integer: out of range \"" + str + "\"");
+                }
+
                 throw std::invalid_argument("lexical_cast_integer: cannot convert \"" + str + "\"");
             }
 
@@ -210,6 +220,11 @@ namespace dsn {
                 throw std::invalid_argument("lexical_cast_integer: empty string");
             }
 
+            if (str == "-" || str == "+")
+            {
+                throw std::invalid_argument("lexical_cast_integer: cannot convert \"" + str + "\"");
+            }
+
             if (str[0] == '-')
             {
                 throw std::out_of_range("lexical_cast_integer: out of range \"" + str + "\"");
@@ -221,6 +236,11 @@ namespace dsn {
             std::uintmax_t value = 0;
             if (!(iss >> value) || !iss.eof())
             {
+                if (iss.eof())
+                {
+                    throw std::out_of_range("lexical_cast_integer: out of range \"" + str + "\"");
+                }
+
                 throw std::invalid_argument("lexical_cast_integer: cannot convert \"" + str + "\"");
             }
 
