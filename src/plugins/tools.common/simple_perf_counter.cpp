@@ -201,7 +201,7 @@ namespace dsn {
             };
 
         private:
-            inline void insert_calc_queue(boost::shared_ptr<compute_context>& ctx, int left, int right, int qleft, int qright, int &calc_tail)
+            inline void insert_calc_queue(std::shared_ptr<compute_context>& ctx, int left, int right, int qleft, int qright, int &calc_tail)
             {
                 calc_tail++;
                 ctx->calc_queue[calc_tail][_LEFT] = left;
@@ -211,7 +211,7 @@ namespace dsn {
                 return;
             }
 
-            uint64_t find_mid(boost::shared_ptr<compute_context>& ctx, int left, int right)
+            uint64_t find_mid(std::shared_ptr<compute_context>& ctx, int left, int right)
             {
                 if (left == right)
                     return ctx->mid_tmp[left];
@@ -234,7 +234,7 @@ namespace dsn {
                 return find_mid(ctx, 0, (right - left - 1) / 5);
             }
 
-            inline void select(boost::shared_ptr<compute_context>& ctx, int left, int right, int qleft, int qright, int &calc_tail)
+            inline void select(std::shared_ptr<compute_context>& ctx, int left, int right, int qleft, int qright, int &calc_tail)
             {
                 int i, j, index, now;
                 uint64_t mid;
@@ -281,7 +281,7 @@ namespace dsn {
                 return;
             }
 
-            void   calc(boost::shared_ptr<compute_context>& ctx)
+            void   calc(std::shared_ptr<compute_context>& ctx)
             {
                 if (_tail == 0)
                     return;
@@ -315,7 +315,7 @@ namespace dsn {
                     // only when others also hold the reference
                     if (this->get_count() > 1)
                     {
-                        boost::shared_ptr<compute_context> ctx(new compute_context());
+                        std::shared_ptr<compute_context> ctx(new compute_context());
                         calc(ctx);
 
                         timer->expires_from_now(boost::posix_time::seconds(_counter_computation_interval_seconds));
