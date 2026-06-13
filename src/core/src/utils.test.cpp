@@ -39,6 +39,13 @@
 # include <dsn/utility/link.h>
 # include <dsn/utility/autoref_ptr.h>
 # include <gtest/gtest.h>
+# include <limits>
+# include <string>
+# ifdef _WIN32
+# include <BaseTsd.h>
+# else
+# include <sys/types.h>
+# endif
 
 using namespace ::dsn;
 using namespace ::dsn::utils;
@@ -183,6 +190,91 @@ TEST(core, trim_string)
     EXPECT_EQ(std::string(r), "x x x x");
 }
 
+TEST(core, lexical_cast_integer_accepts_valid_values)
+{
+    EXPECT_EQ(-128, static_cast<int>(lexical_cast<int8_t>("-128")));
+    EXPECT_EQ(127, static_cast<int>(lexical_cast<int8_t>("127")));
+    EXPECT_EQ(255, static_cast<int>(lexical_cast<uint8_t>("255")));
+
+    EXPECT_EQ((int16_t)-32768, lexical_cast<int16_t>("-32768"));
+    EXPECT_EQ((uint16_t)65535, lexical_cast<uint16_t>("65535"));
+
+    EXPECT_EQ((int32_t)-2147483647 - 1, lexical_cast<int32_t>("-2147483648"));
+    EXPECT_EQ((uint32_t)4294967295u, lexical_cast<uint32_t>("4294967295"));
+
+    EXPECT_EQ((int64_t)std::numeric_limits<int64_t>::min(),
+              lexical_cast<int64_t>("-9223372036854775808"));
+    EXPECT_EQ((uint64_t)std::numeric_limits<uint64_t>::max(),
+              lexical_cast<uint64_t>("18446744073709551615"));
+
+    EXPECT_EQ((size_t)42, lexical_cast<size_t>("42"));
+# ifdef _WIN32
+    EXPECT_EQ((SSIZE_T)-42, lexical_cast<SSIZE_T>("-42"));
+    EXPECT_EQ((SSIZE_T)42, lexical_cast<SSIZE_T>("42"));
+# else
+    EXPECT_EQ((ssize_t)-42, lexical_cast<ssize_t>("-42"));
+    EXPECT_EQ((ssize_t)42, lexical_cast<ssize_t>("42"));
+# endif
+    EXPECT_EQ(123, lexical_cast<int>("+123"));
+}
+
+TEST(core, lexical_cast_integer_rejects_invalid_values)
+{
+    EXPECT_THROW(lexical_cast<int>(""), std::invalid_argument);
+    EXPECT_THROW(lexical_cast<int>(" 123"), std::invalid_argument);
+    EXPECT_THROW(lexical_cast<int>("123 "), std::invalid_argument);
+    EXPECT_THROW(lexical_cast<int>("12 3"), std::invalid_argument);
+    EXPECT_THROW(lexical_cast<int>("123abc"), std::invalid_argument);
+    EXPECT_THROW(lexical_cast<int>("--12"), std::invalid_argument);
+
+    EXPECT_THROW(lexical_cast<int8_t>("-129"), std::out_of_range);
+    EXPECT_THROW(lexical_cast<int8_t>("128"), std::out_of_range);
+    EXPECT_THROW(lexical_cast<uint8_t>("256"), std::out_of_range);
+    EXPECT_THROW(lexical_cast<uint16_t>("65536"), std::out_of_range);
+    EXPECT_THROW(lexical_cast<uint16_t>("-1"), std::out_of_range);
+    EXPECT_THROW(lexical_cast<size_t>("-1"), std::out_of_range);
+    EXPECT_THROW(lexical_cast<uint64_t>("-1"), std::out_of_range);
+# ifdef _WIN32
+    EXPECT_THROW(lexical_cast<SSIZE_T>("9223372036854775808"), std::out_of_range);
+# else
+    EXPECT_THROW(lexical_cast<ssize_t>("9223372036854775808"), std::out_of_range);
+# endif
+}
+
+TEST(core, lexical_cast_bool_accepts_valid_values)
+{
+    EXPECT_FALSE(lexical_cast<bool>("0"));
+    EXPECT_TRUE(lexical_cast<bool>("1"));
+}
+
+TEST(core, lexical_cast_bool_rejects_invalid_values)
+{
+    EXPECT_THROW(lexical_cast<bool>(""), std::invalid_argument);
+    EXPECT_THROW(lexical_cast<bool>("2"), std::invalid_argument);
+    EXPECT_THROW(lexical_cast<bool>("true"), std::invalid_argument);
+    EXPECT_THROW(lexical_cast<bool>("false"), std::invalid_argument);
+    EXPECT_THROW(lexical_cast<bool>("False"), std::invalid_argument);
+    EXPECT_THROW(lexical_cast<bool>(" 1"), std::invalid_argument);
+    EXPECT_THROW(lexical_cast<bool>("1 "), std::invalid_argument);
+}
+
+TEST(core, lexical_cast_floating_point_accepts_valid_values)
+{
+    EXPECT_FLOAT_EQ(1.25f, lexical_cast<float>("1.25"));
+    EXPECT_DOUBLE_EQ(-0.03125, lexical_cast<double>("-3.125e-2"));
+    EXPECT_EQ((long double)0.125, lexical_cast<long double>("0.125"));
+    EXPECT_DOUBLE_EQ(123.0, lexical_cast<double>("+123"));
+}
+
+TEST(core, lexical_cast_floating_point_rejects_invalid_values)
+{
+    EXPECT_THROW(lexical_cast<float>(""), std::invalid_argument);
+    EXPECT_THROW(lexical_cast<float>(" 1.25"), std::invalid_argument);
+    EXPECT_THROW(lexical_cast<float>("1.25 "), std::invalid_argument);
+    EXPECT_THROW(lexical_cast<double>("1.2.3"), std::invalid_argument);
+    EXPECT_THROW(lexical_cast<double>("abc"), std::invalid_argument);
+}
+
 TEST(core, dlink)
 {
     dlink links[10];
@@ -293,5 +385,3 @@ TEST(core, ref_ptr)
     z = std::move(foo_ptr());
     EXPECT_TRUE(count == 0);
 }
-
-

@@ -38,7 +38,12 @@
 # include <dsn/cpp/auto_codes.h>
 # include <dsn/cpp/callocator.h>
 # include <dsn/cpp/safe_string.h>
+# include <cstdint>
 # include <functional>
+# include <limits>
+# include <sstream>
+# include <stdexcept>
+# include <type_traits>
 
 # ifdef __TITLE__
 # undef __TITLE__
@@ -160,6 +165,133 @@ namespace dsn {
         }
 
         inline int get_invalid_tid() { return -1; }
+
+        template <typename T>
+        inline typename std::enable_if<
+            std::is_integral<T>::value &&
+            std::is_signed<T>::value &&
+            !std::is_same<T, bool>::value,
+            T>::type
+        lexical_cast_integer(const std::string& str)
+        {
+            if (str.empty())
+            {
+                throw std::invalid_argument("lexical_cast_integer: empty string");
+            }
+
+            std::istringstream iss(str);
+            iss >> std::noskipws;
+
+            std::intmax_t value = 0;
+            if (!(iss >> value) || !iss.eof())
+            {
+                throw std::invalid_argument("lexical_cast_integer: cannot convert \"" + str + "\"");
+            }
+
+            if (value < static_cast<std::intmax_t>(std::numeric_limits<T>::min()) ||
+                value > static_cast<std::intmax_t>(std::numeric_limits<T>::max()))
+            {
+                throw std::out_of_range("lexical_cast_integer: out of range \"" + str + "\"");
+            }
+
+            return static_cast<T>(value);
+        }
+
+        template <typename T>
+        inline typename std::enable_if<
+            std::is_integral<T>::value &&
+            std::is_unsigned<T>::value &&
+            !std::is_same<T, bool>::value,
+            T>::type
+        lexical_cast_integer(const std::string& str)
+        {
+            if (str.empty())
+            {
+                throw std::invalid_argument("lexical_cast_integer: empty string");
+            }
+
+            if (str[0] == '-')
+            {
+                throw std::out_of_range("lexical_cast_integer: out of range \"" + str + "\"");
+            }
+
+            std::istringstream iss(str);
+            iss >> std::noskipws;
+
+            std::uintmax_t value = 0;
+            if (!(iss >> value) || !iss.eof())
+            {
+                throw std::invalid_argument("lexical_cast_integer: cannot convert \"" + str + "\"");
+            }
+
+            if (value > static_cast<std::uintmax_t>(std::numeric_limits<T>::max()))
+            {
+                throw std::out_of_range("lexical_cast_integer: out of range \"" + str + "\"");
+            }
+
+            return static_cast<T>(value);
+        }
+
+        inline bool lexical_cast_bool(const std::string& str)
+        {
+            if (str == "0")
+            {
+                return false;
+            }
+            else if (str == "1")
+            {
+                return true;
+            }
+            else
+            {
+                throw std::invalid_argument("lexical_cast_bool: cannot convert \"" + str + "\"");
+            }
+        }
+
+        template <typename T>
+        inline typename std::enable_if<std::is_floating_point<T>::value, T>::type
+        lexical_cast_floating_point(const std::string& str)
+        {
+            if (str.empty())
+            {
+                throw std::invalid_argument("lexical_cast_floating_point: empty string");
+            }
+
+            std::istringstream iss(str);
+            iss >> std::noskipws;
+
+            T value = 0;
+            if (!(iss >> value) || !iss.eof())
+            {
+                throw std::invalid_argument("lexical_cast_floating_point: cannot convert \"" + str + "\"");
+            }
+
+            return value;
+        }
+
+        template <typename T>
+        inline typename std::enable_if<
+            std::is_integral<T>::value &&
+            !std::is_same<T, bool>::value,
+            T>::type
+        lexical_cast(const std::string& str)
+        {
+            return lexical_cast_integer<T>(str);
+        }
+
+        template <typename T>
+        inline typename std::enable_if<std::is_same<T, bool>::value, bool>::type
+        lexical_cast(const std::string& str)
+        {
+            return lexical_cast_bool(str);
+        }
+
+        template <typename T>
+        inline typename std::enable_if<std::is_floating_point<T>::value, T>::type
+        lexical_cast(const std::string& str)
+        {
+            return lexical_cast_floating_point<T>(str);
+        }
 
         namespace filesystem {
 

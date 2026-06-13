@@ -36,7 +36,6 @@
 #include <gtest/gtest.h>
 #include <dsn/service_api_cpp.h>
 #include <dsn/cpp/test_utils.h>
-#include <boost/lexical_cast.hpp>
 
 void aio_testcase(uint64_t block_size, size_t concurrency, bool is_write, bool shared)
 {

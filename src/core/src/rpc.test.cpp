@@ -38,7 +38,6 @@
 #include <dsn/utility/priority_queue.h>
 #include "group_address.h"
 #include <dsn/cpp/test_utils.h>
-#include <boost/lexical_cast.hpp>
 #include <vector>
 #include <string>
 #include <queue>
@@ -66,7 +65,7 @@ static ::dsn::rpc_address dsn_address_from_string(const std::string& str)
     if (pos != std::string::npos)
     {
         std::string host = str.substr(0, pos);
-        uint16_t port = boost::lexical_cast<uint16_t>(str.substr(pos + 1));
+        uint16_t port = ::dsn::utils::lexical_cast<uint16_t>(str.substr(pos + 1));
         return ::dsn::rpc_address(host.c_str(), port);
     }
     else

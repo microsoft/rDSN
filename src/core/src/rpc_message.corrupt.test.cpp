@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include <dsn/service_api_cpp.h>
-#include <boost/lexical_cast.hpp>
 #include <iostream>
 #include <vector>
 #include <string>

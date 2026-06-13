@@ -35,7 +35,6 @@
 #include <gtest/gtest.h>
 #include <dsn/service_api_cpp.h>
 #include <dsn/utility/priority_queue.h>
-#include <boost/lexical_cast.hpp>
 #include <dsn/cpp/test_utils.h>
 #include <mutex>
 #include <condition_variable>
