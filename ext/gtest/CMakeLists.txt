@@ -13,7 +13,7 @@ set(git_tag ${GTEST_GIT_TAG})
 #     set(target_binaries libgtest.so libgtest_main.so)
 # endif()
 
-set(my_cmake_args "-Wno-dev;-DCMAKE_SUPPRESS_DEVELOPER_WARNINGS=ON;-Dgtest_force_shared_crt=OFF;-DBUILD_SHARED_LIBS=OFF;")
+set(my_cmake_args "-Wno-dev;-DCMAKE_SUPPRESS_DEVELOPER_WARNINGS=ON;-Dgtest_force_shared_crt=OFF;-DBUILD_SHARED_LIBS=OFF;-DCMAKE_POSITION_INDEPENDENT_CODE=ON;")
 
 if(WIN32)
     set(target_binaries gtest.lib gtest_main.lib)
