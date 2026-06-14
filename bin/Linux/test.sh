@@ -113,7 +113,7 @@ do
     echo $dir
     if [ -f "$dir/gtests" ]
     then
-        pushd $dir
+        pushd "$dir" >/dev/null
         cat $dir/gtests | while read -r line || [ -n "$line" ]; do
             echo "============ run unit tests in $dir with $line ============"
             rm -fr ./data
@@ -131,11 +131,11 @@ do
                     echo "---- gdb $SVC_HOST core ----"
                     gdb $SVC_HOST core -ex "thread apply all bt" -ex "set pagination 0" -batch
                 fi
-                popd
+                popd >/dev/null
                 exit -1
             fi
         done
-        popd
+        popd >/dev/null
     fi    
 done
 
@@ -146,16 +146,16 @@ do
     echo $dir
     if [ -f "$dir/test.sh" ]
     then
-        pushd $dir
+        pushd "$dir" >/dev/null
         echo "============ run test.sh in $dir ============"
         REPORT_DIR=$REPORT_DIR ./test.sh
 
         if [ $? -ne 0 ]; then
             echo "run test.sh in $dir failed"
-            popd
+            popd >/dev/null
             exit -1
         fi
-        popd
+        popd >/dev/null
     fi    
 done
 
