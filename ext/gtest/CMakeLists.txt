@@ -1,6 +1,7 @@
 set(project_name googletest)
 
-set(target_url "https://github.com/linmajia/googletest.git")
+set(target_url ${GTEST_GIT_SOURCE})
+set(git_tag ${GTEST_GIT_TAG})
 
 set(my_cmake_args "-Dgtest_force_shared_crt=OFF;-DBUILD_SHARED_LIBS=ON;")
 

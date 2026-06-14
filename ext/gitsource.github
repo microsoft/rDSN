@@ -24,3 +24,7 @@ set(PROTOBUF_GIT_TAG "master")
 #for thrift
 set(THRIFT_GIT_SOURCE "https://github.com/linmajia/thrift.git")
 set(THRIFT_GIT_TAG "master")
+
+#for googletest
+set(GTEST_GIT_SOURCE "https://github.com/linmajia/googletest.git")
+set(GTEST_GIT_TAG "master")
