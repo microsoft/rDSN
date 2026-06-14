@@ -9,6 +9,7 @@ else()
 endif()
 
 add_definitions(-DDSN_ROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../..")
+add_definitions(-DDSN_INSTALL_ROOT_DIR="${CMAKE_INSTALL_PREFIX}")
 
 set(MY_PROJ_NAME dsn.idl.tests)
 

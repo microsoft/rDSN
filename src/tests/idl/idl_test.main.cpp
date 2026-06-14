@@ -143,6 +143,16 @@ void rm_dir(const char* dir, bool &result)
     execute(cmd, result);
 }
 
+std::string get_generated_project_dsn_root()
+{
+    if (::dsn::utils::filesystem::file_exists(combine(DSN_INSTALL_ROOT_DIR, "bin/dsn.cmake")))
+    {
+        return file(DSN_INSTALL_ROOT_DIR);
+    }
+
+    return file(DSN_ROOT_DIR);
+}
+
 void cmake(Language lang, bool &result)
 {
     create_dir("builder", result);
@@ -153,7 +163,7 @@ void cmake(Language lang, bool &result)
 #else
     std::string cmake_cmd = std::string("cd builder && cmake ") + file("../src");
 #endif
-    cmake_cmd += std::string(" -DDSN_ROOT=") + file(DSN_ROOT_DIR);
+    cmake_cmd += std::string(" -DDSN_ROOT=") + get_generated_project_dsn_root();
     
     execute(cmake_cmd, result);
     if (!result)
