@@ -76,7 +76,7 @@ namespace dsn
             timer->expires_from_now(boost::posix_time::milliseconds(task->delay_milliseconds()));
             task->set_delay(0);
 
-            timer->async_wait([this, task, timer](const boost::system::error_code& ec)
+            timer->async_wait([task, timer](const boost::system::error_code& ec)
             {
                 if (!ec)
                 {
@@ -107,7 +107,7 @@ namespace dsn
         task* simple_task_queue::dequeue(/*inout*/int& batch_size)
         {
             long c = 0;
-            auto t = _samples.dequeue(c);
+            auto t = _samples.dequeue(c, TIME_MS_MAX);
             dassert(t != nullptr, "dequeue does not return empty tasks");
             batch_size = 1;
             return t;

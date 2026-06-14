@@ -62,27 +62,27 @@ namespace dsn {
             }
             ~perf_counter_number_v2_fast(void) {}
 
-            virtual void   increment()
+            virtual void   increment() override
             {
                 uint64_t task_id = static_cast<uint64_t>(::dsn::utils::get_current_tid());
                 _val[task_id % DIVIDE_CONTAINER]++;
             }
-            virtual void   decrement()
+            virtual void   decrement() override
             {
                 uint64_t task_id = static_cast<uint64_t>(::dsn::utils::get_current_tid());
                 _val[task_id % DIVIDE_CONTAINER]--;
             }
-            virtual void   add(uint64_t val)
+            virtual void   add(uint64_t val) override
             {
                 uint64_t task_id = static_cast<uint64_t>(::dsn::utils::get_current_tid());
                 _val[task_id % DIVIDE_CONTAINER] += val;
             }
-            virtual void   set(uint64_t val)
+            virtual void   set(uint64_t val) override
             {
                 uint64_t task_id = static_cast<uint64_t>(::dsn::utils::get_current_tid());
                 _val[task_id % DIVIDE_CONTAINER] = val;
             }
-            virtual double get_value()
+            virtual double get_value() override
             {
                 double val = 0;
                 for (int i = 0; i < DIVIDE_CONTAINER; i++)
@@ -91,7 +91,7 @@ namespace dsn {
                 }
                 return val;
             }
-            virtual uint64_t get_integer_value() 
+            virtual uint64_t get_integer_value() override
             {
                 uint64_t val = 0;
                 for (int i = 0; i < DIVIDE_CONTAINER; i++)
@@ -100,7 +100,7 @@ namespace dsn {
                 }
                 return val;
             }
-            virtual double get_percentile(dsn_perf_counter_percentile_type_t type) { dassert(false, "invalid execution flow"); return 0.0; }
+            virtual double get_percentile(dsn_perf_counter_percentile_type_t type) override { dassert(false, "invalid execution flow"); return 0.0; }
 
         private:
             uint64_t              _val[DIVIDE_CONTAINER];
@@ -122,23 +122,23 @@ namespace dsn {
             }
             ~perf_counter_rate_v2_fast(void) {}
 
-            virtual void   increment()
+            virtual void   increment() override
             {
                 uint64_t task_id = static_cast<int>(::dsn::utils::get_current_tid());
                 _val[task_id % DIVIDE_CONTAINER]++;
             }
-            virtual void   decrement()
+            virtual void   decrement() override
             {
                 uint64_t task_id = static_cast<int>(::dsn::utils::get_current_tid());
                 _val[task_id % DIVIDE_CONTAINER]--;
             }
-            virtual void   add(uint64_t val)
+            virtual void   add(uint64_t val) override
             {
                 uint64_t task_id = static_cast<int>(::dsn::utils::get_current_tid());
                 _val[task_id % DIVIDE_CONTAINER] += val;
             }
-            virtual void   set(uint64_t val) { dassert(false, "invalid execution flow"); }
-            virtual double get_value()
+            virtual void   set(uint64_t val) override { dassert(false, "invalid execution flow"); }
+            virtual double get_value() override
             {
                 double val = 0;
                 for (int i = 0; i < DIVIDE_CONTAINER; i++)
@@ -162,8 +162,8 @@ namespace dsn {
                 _rate = val / interval;
                 return _rate;
             }
-            virtual uint64_t get_integer_value() { return (uint64_t)get_value(); }
-            virtual double get_percentile(dsn_perf_counter_percentile_type_t type) { dassert(false, "invalid execution flow"); return 0.0; }
+            virtual uint64_t get_integer_value() override { return (uint64_t)get_value(); }
+            virtual double get_percentile(dsn_perf_counter_percentile_type_t type) override { dassert(false, "invalid execution flow"); return 0.0; }
 
         private:
             std::atomic<double> _rate;
@@ -208,19 +208,19 @@ namespace dsn {
                 _timer->cancel();
             }
 
-            virtual void   increment() { dassert(false, "invalid execution flow"); }
-            virtual void   decrement() { dassert(false, "invalid execution flow"); }
-            virtual void   add(uint64_t val) { dassert(false, "invalid execution flow"); }
-            virtual void   set(uint64_t val)
+            virtual void   increment() override { dassert(false, "invalid execution flow"); }
+            virtual void   decrement() override { dassert(false, "invalid execution flow"); }
+            virtual void   add(uint64_t val) override { dassert(false, "invalid execution flow"); }
+            virtual void   set(uint64_t val) override
             {
                 auto idx = _tail++;
                 _samples[idx % MAX_QUEUE_LENGTH] = val;
             }
 
-            virtual double get_value() { dassert(false, "invalid execution flow");  return 0.0; }
-            virtual uint64_t get_integer_value() { return (uint64_t)get_value(); }
+            virtual double get_value() override { dassert(false, "invalid execution flow");  return 0.0; }
+            virtual uint64_t get_integer_value() override { return (uint64_t)get_value(); }
 
-            virtual double get_percentile(dsn_perf_counter_percentile_type_t type)
+            virtual double get_percentile(dsn_perf_counter_percentile_type_t type) override
             {
                 if ((type < 0) || (type >= COUNTER_PERCENTILE_COUNT))
                 {

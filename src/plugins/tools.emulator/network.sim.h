@@ -49,7 +49,7 @@ namespace dsn { namespace tools {
             message_parser_ptr& parser
             );
 
-        virtual void connect();
+        virtual void connect() override;
         
         virtual void send(uint64_t signature) override;
 
@@ -70,7 +70,7 @@ namespace dsn { namespace tools {
 
         virtual void send(uint64_t signature) override;
 
-        virtual void connect() {}
+        virtual void connect() override {}
 
         virtual void do_read(int sz) override {}
 
@@ -86,11 +86,11 @@ namespace dsn { namespace tools {
         sim_network_provider(rpc_engine* rpc, network* inner_provider);
         ~sim_network_provider(void) {}
 
-        virtual error_code start(rpc_channel channel, int port, bool client_only, io_modifer& ctx);
+        virtual error_code start(rpc_channel channel, int port, bool client_only, io_modifer& ctx) override;
     
-        virtual ::dsn::rpc_address address() { return _address; }
+        virtual ::dsn::rpc_address address() override { return _address; }
 
-        virtual rpc_session_ptr create_client_session(::dsn::rpc_address server_addr)
+        virtual rpc_session_ptr create_client_session(::dsn::rpc_address server_addr) override
         {
             message_parser_ptr parser(new_message_parser(_client_hdr_format));
             return rpc_session_ptr(new sim_client_session(*this, server_addr, parser));
@@ -108,4 +108,3 @@ namespace dsn { namespace tools {
 
 
 }} // end namespace
-
