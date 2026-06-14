@@ -55,13 +55,13 @@ namespace dsn {
                 : perf_counter(app, section, name, type, dsptr), _val(0){}
             ~perf_counter_number(void) {}
 
-            virtual void   increment() { _val.fetch_add(1, std::memory_order_relaxed); }
-            virtual void   decrement() { _val.fetch_sub(1, std::memory_order_relaxed); }
-            virtual void   add(uint64_t val) { _val.fetch_add(val, std::memory_order_relaxed); }
-            virtual void   set(uint64_t val) { _val.store(val, std::memory_order_relaxed); }
-            virtual double get_value() { return static_cast<double>(_val.load(std::memory_order_relaxed)); }
-            virtual uint64_t get_integer_value() { return _val.load(std::memory_order_relaxed); }            
-            virtual double get_percentile(dsn_perf_counter_percentile_type_t type) { dassert(false, "invalid execution flow"); return 0.0; }
+            virtual void   increment() override { _val.fetch_add(1, std::memory_order_relaxed); }
+            virtual void   decrement() override { _val.fetch_sub(1, std::memory_order_relaxed); }
+            virtual void   add(uint64_t val) override { _val.fetch_add(val, std::memory_order_relaxed); }
+            virtual void   set(uint64_t val) override { _val.store(val, std::memory_order_relaxed); }
+            virtual double get_value() override { return static_cast<double>(_val.load(std::memory_order_relaxed)); }
+            virtual uint64_t get_integer_value() override { return _val.load(std::memory_order_relaxed); }
+            virtual double get_percentile(dsn_perf_counter_percentile_type_t type) override { dassert(false, "invalid execution flow"); return 0.0; }
 
         private:
             std::atomic<uint64_t> _val;
@@ -79,11 +79,11 @@ namespace dsn {
             }
             ~perf_counter_rate(void) {}
 
-            virtual void   increment() { _val.fetch_add(1, std::memory_order_relaxed); }
-            virtual void   decrement() { _val.fetch_sub(1, std::memory_order_relaxed); }
-            virtual void   add(uint64_t val) { _val.fetch_add(val, std::memory_order_relaxed); }
-            virtual void   set(uint64_t val) { dassert(false, "invalid execution flow"); }
-            virtual double get_value()
+            virtual void   increment() override { _val.fetch_add(1, std::memory_order_relaxed); }
+            virtual void   decrement() override { _val.fetch_sub(1, std::memory_order_relaxed); }
+            virtual void   add(uint64_t val) override { _val.fetch_add(val, std::memory_order_relaxed); }
+            virtual void   set(uint64_t val) override { dassert(false, "invalid execution flow"); }
+            virtual double get_value() override
             {
                 uint64_t now = dsn_now_ns();
                 uint64_t interval = now - qts;
@@ -96,8 +96,8 @@ namespace dsn {
                 _val = 0;
                 return val / interval * 1000 * 1000 * 1000;
             }
-            virtual uint64_t get_integer_value() { return (uint64_t)get_value(); }
-            virtual double get_percentile(dsn_perf_counter_percentile_type_t type) { dassert(false, "invalid execution flow"); return 0.0; }
+            virtual uint64_t get_integer_value() override { return (uint64_t)get_value(); }
+            virtual double get_percentile(dsn_perf_counter_percentile_type_t type) override { dassert(false, "invalid execution flow"); return 0.0; }
 
         private:
             std::atomic<uint64_t> _val;
@@ -137,19 +137,19 @@ namespace dsn {
             {
             }
 
-            virtual void   increment() { dassert(false, "invalid execution flow"); }
-            virtual void   decrement() { dassert(false, "invalid execution flow"); }
-            virtual void   add(uint64_t val) { dassert(false, "invalid execution flow"); }
-            virtual void   set(uint64_t val)
+            virtual void   increment() override { dassert(false, "invalid execution flow"); }
+            virtual void   decrement() override { dassert(false, "invalid execution flow"); }
+            virtual void   add(uint64_t val) override { dassert(false, "invalid execution flow"); }
+            virtual void   set(uint64_t val) override
             {
                 auto idx = _tail.fetch_add(1, std::memory_order_relaxed);
                 _samples[idx % MAX_QUEUE_LENGTH] = val;
             }
 
-            virtual double get_value() { dassert(false, "invalid execution flow");  return 0.0; }
-            virtual uint64_t get_integer_value() { return (uint64_t)get_value(); }
+            virtual double get_value() override { dassert(false, "invalid execution flow");  return 0.0; }
+            virtual uint64_t get_integer_value() override { return (uint64_t)get_value(); }
 
-            virtual double get_percentile(dsn_perf_counter_percentile_type_t type)
+            virtual double get_percentile(dsn_perf_counter_percentile_type_t type) override
             {
                 if (_tail == 0)
                     return -1.0;

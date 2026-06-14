@@ -73,7 +73,7 @@ namespace dsn
                     callback(resolve_result{
                         ERR_OK,
                         target,
-                        {_app_id, idx}
+                        {{_app_id, idx}}
                     });
                     return;
                 }
@@ -157,7 +157,7 @@ namespace dsn
             request->callback(resolve_result{
                 err, 
                 addr, 
-                {_app_id, request->partition_index}
+                {{_app_id, request->partition_index}}
             });
             request->completed = true;
         }

@@ -139,4 +139,34 @@ static_assert (sizeof(int32_t) == sizeof(long),
 # endif
 
 
+# endif // _WIN32
+
+# if defined(__APPLE__)
+
+# include <libkern/OSByteOrder.h>
+
+# ifndef be16toh
+# define be16toh(x) OSSwapBigToHostInt16(x)
+# endif
+
+# ifndef htobe16
+# define htobe16(x) OSSwapHostToBigInt16(x)
+# endif
+
+# ifndef be32toh
+# define be32toh(x) OSSwapBigToHostInt32(x)
+# endif
+
+# ifndef htobe32
+# define htobe32(x) OSSwapHostToBigInt32(x)
+# endif
+
+# ifndef be64toh
+# define be64toh(x) OSSwapBigToHostInt64(x)
+# endif
+
+# ifndef htobe64
+# define htobe64(x) OSSwapHostToBigInt64(x)
+# endif
+
 # endif

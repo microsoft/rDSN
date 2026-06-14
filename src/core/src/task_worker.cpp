@@ -155,6 +155,7 @@ void task_worker::set_name(const char* name)
     # elif defined(__linux__)
     err = pthread_setname_np(tid, thread_name.c_str());
     # elif defined(__APPLE__)
+    (void)tid;
     err = pthread_setname_np(thread_name.c_str());
     # endif
     if (err != 0)
