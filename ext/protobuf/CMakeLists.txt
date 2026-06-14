@@ -6,6 +6,8 @@ set(git_tag ${PROTOBUF_GIT_TAG})
 set(PROTOBUF_INSTALL_PREFIX "${PROJECT_BINARY_DIR}/ext/protobuf")
 
 set (PROTOBUF_CMAKE_ARGS 
+    "-Wno-dev;"
+    "-DCMAKE_SUPPRESS_DEVELOPER_WARNINGS=ON;"
     "-Dprotobuf_BUILD_TESTS=OFF;"
     "-DCMAKE_INSTALL_PREFIX=${PROTOBUF_INSTALL_PREFIX};"
     "-DCMAKE_INSTALL_BINDIR=${PROTOBUF_INSTALL_PREFIX}/bin;"
@@ -21,6 +23,8 @@ endif ()
 ExternalProject_Add(protobuf
     GIT_REPOSITORY ${target_url}
     GIT_TAG ${git_tag}
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
     CMAKE_ARGS ${PROTOBUF_CMAKE_ARGS}
 )
 
