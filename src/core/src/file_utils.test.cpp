@@ -29,7 +29,7 @@
  *     Unit tests for file utility.
  *
  * Revision history:
- *     2015-08-25, HX Lin(linmajia@live.com), first version
+ *     2015-08-25, HX Lin, first version
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
