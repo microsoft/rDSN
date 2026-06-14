@@ -160,19 +160,22 @@ fi
 echo "CMAKE_OPTIONS=$CMAKE_OPTIONS"
 echo "MAKE_OPTIONS=$MAKE_OPTIONS"
 
-if [ ! -f "$TOP_DIR/bin/Linux/thrift" ]
-then
-    echo "Downloading thrift..."
-    download_file https://github.com/linmajia/thrift/raw/master/pre-built/ubuntu14.04/thrift thrift
-    if [ $? -ne 0 ]
-    then
-        echo "ERROR: download thrift failed"
-        rm -f thrift
-        exit -1
-    fi
-    chmod u+x thrift
-    mv thrift "$TOP_DIR/bin/Linux"
-fi
+# rDSN now uses the thrift compiler built from ext/thrift and installed under
+# builder/output/bin/${CMAKE_SYSTEM_NAME}. Keep the old prebuilt-binary download
+# path commented out below for easy rollback if needed.
+# if [ ! -f "$TOP_DIR/bin/Linux/thrift" ]
+# then
+#     echo "Downloading thrift..."
+#     download_file https://github.com/linmajia/thrift/raw/master/pre-built/ubuntu14.04/thrift thrift
+#     if [ $? -ne 0 ]
+#     then
+#         echo "ERROR: download thrift failed"
+#         rm -f thrift
+#         exit -1
+#     fi
+#     chmod u+x thrift
+#     mv thrift "$TOP_DIR/bin/Linux"
+# fi
 
 echo "############################ BUILD #################################################"
 if [ "$BUILD_PLUGINS" == "YES" ]; then

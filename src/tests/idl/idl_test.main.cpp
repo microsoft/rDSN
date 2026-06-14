@@ -153,6 +153,22 @@ std::string get_generated_project_dsn_root()
     return file(DSN_ROOT_DIR);
 }
 
+std::string get_codegen_script()
+{
+#ifdef WIN32
+    const char* script = "bin/dsn.cg.bat";
+#else
+    const char* script = "bin/dsn.cg.sh";
+#endif
+    std::string installed_script = combine(DSN_INSTALL_ROOT_DIR, script);
+    if (::dsn::utils::filesystem::file_exists(installed_script))
+    {
+        return file(installed_script);
+    }
+
+    return file(combine(DSN_ROOT_DIR, script));
+}
+
 void cmake(Language lang, bool &result)
 {
     create_dir("builder", result);
@@ -201,12 +217,7 @@ void cmake(Language lang, bool &result)
 bool test_code_generation(Language lang, IDL idl, Format format)
 {
     bool result = true;
-#ifdef WIN32
-    std::string codegen_bash(DSN_ROOT_DIR "/bin/dsn.cg.bat");
-#else
-    std::string codegen_bash(DSN_ROOT_DIR "/bin/dsn.cg.sh");
-#endif
-    std::string codegen_cmd = codegen_bash
+    std::string codegen_cmd = get_codegen_script()
         + std::string(" counter.")
         + (idl == idl_protobuf ? "proto" : "thrift")
         + (lang == lang_cpp ? " cpp" : " csharp")

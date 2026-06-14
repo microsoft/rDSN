@@ -65,6 +65,17 @@ install(DIRECTORY ${THRIFT_INSTALL_PREFIX}/lib
     FILES_MATCHING PATTERN "*.lib" PATTERN "*.dll" PATTERN "*.so*" PATTERN "*.a*"
 )
 
+# Copy the thrift compiler built from source into the SDK codegen folder.
+if (WIN32)
+    install(PROGRAMS ${THRIFT_INSTALL_PREFIX}/bin/thrift.exe
+        DESTINATION bin/Windows
+    )
+else()
+    install(PROGRAMS ${THRIFT_INSTALL_PREFIX}/bin/thrift
+        DESTINATION bin/${CMAKE_SYSTEM_NAME}
+    )
+endif()
+
 if (WIN32)
     STRING(REGEX REPLACE "/" "\\\\" WIN_BOOST_INCLUDE_DIR ${BOOST_INCLUDEDIR})
     STRING(REGEX REPLACE "/" "\\\\" WIN_INSTALL_BOOST_DIR ${CMAKE_INSTALL_PREFIX}/include/ext/boost)
