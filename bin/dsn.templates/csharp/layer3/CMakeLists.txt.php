@@ -3,18 +3,30 @@ require_once($argv[1]); // type.php
 require_once($argv[2]); // program.php
 $file_prefix = $argv[3];
 $idl_format = $argv[4];
+$dsn_root = str_replace("\\", "/", dirname(dirname(dirname(dirname(__DIR__)))));
 ?>
+cmake_minimum_required(VERSION 3.22)
+
+set(MY_PROJ_NAME "<?=$_PROG->name?>")
+
 if (DEFINED DSN_CMAKE_INCLUDED)
 else()
-    set(DSN_ROOT "$ENV{DSN_ROOT}")
-    if(NOT EXISTS "${DSN_ROOT}/")
-        message(FATAL_ERROR "Please make sure that ${DSN_ROOT} exists.")
+    project(${MY_PROJ_NAME} C CXX)
+    if(NOT DEFINED DSN_ROOT)
+        set(DSN_ROOT "$ENV{DSN_ROOT}")
+    endif()
+    if("${DSN_ROOT}" STREQUAL "")
+        set(DSN_ROOT "$ENV{DSN_ROOT}")
+    endif()
+    if(NOT EXISTS "${DSN_ROOT}/bin/dsn.cmake")
+        set(DSN_ROOT "<?=$dsn_root?>")
+    endif()
+    if(NOT EXISTS "${DSN_ROOT}/bin/dsn.cmake")
+        message(FATAL_ERROR "Please make sure that ${DSN_ROOT}/bin/dsn.cmake exists.")
     endif()
 
     include("${DSN_ROOT}/bin/dsn.cmake")
 endif()
-
-set(MY_PROJ_NAME "<?=$_PROG->name?>")
 
 # Source files under CURRENT project directory will be automatically included.
 # You can manually set MY_PROJ_SRC to include source files under other directories.

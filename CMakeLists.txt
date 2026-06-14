@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.7)
+cmake_minimum_required(VERSION 3.22)
 
 #set(DSN_DEBUG_CMAKE TRUE)
 
@@ -52,6 +52,4 @@ add_subdirectory(ext/protobuf)
 #
 
 add_subdirectory(src)
-
-
 
