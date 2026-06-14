@@ -3,22 +3,14 @@ set(project_name googletest)
 set(target_url ${GTEST_GIT_SOURCE})
 set(git_tag ${GTEST_GIT_TAG})
 
-# Build shared googletest libraries.
-# set(my_cmake_args "-Wno-dev;-DCMAKE_SUPPRESS_DEVELOPER_WARNINGS=ON;-Dgtest_force_shared_crt=OFF;-DBUILD_SHARED_LIBS=ON;")
-# if(WIN32)
-#     set(target_binaries gtest.lib gtest_main.lib gtest.dll gtest_main.dll)
-# elseif(APPLE)
-#     set(target_binaries libgtest.dylib libgtest_main.dylib)
-# else()
-#     set(target_binaries libgtest.so libgtest_main.so)
-# endif()
-
-set(my_cmake_args "-Wno-dev;-DCMAKE_SUPPRESS_DEVELOPER_WARNINGS=ON;-Dgtest_force_shared_crt=OFF;-DBUILD_SHARED_LIBS=OFF;-DCMAKE_POSITION_INDEPENDENT_CODE=ON;")
+set(my_cmake_args "-Wno-dev;-DCMAKE_SUPPRESS_DEVELOPER_WARNINGS=ON;-Dgtest_force_shared_crt=OFF;-DBUILD_SHARED_LIBS=ON;")
 
 if(WIN32)
-    set(target_binaries gtest.lib gtest_main.lib)
+    set(target_binaries gtest.lib gtest_main.lib gtest.dll gtest_main.dll)
+elseif(APPLE)
+    set(target_binaries libgtest.dylib libgtest_main.dylib)
 else()
-    set(target_binaries libgtest.a libgtest_main.a)
+    set(target_binaries libgtest.so libgtest_main.so)
 endif()
 
 include(${PROJECT_SOURCE_DIR}/bin/dsn.ext.cmake)
