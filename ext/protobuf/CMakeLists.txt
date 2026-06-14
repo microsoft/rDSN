@@ -39,13 +39,12 @@ install(DIRECTORY ${PROTOBUF_INSTALL_PREFIX}/lib
 )
 
 if (WIN32)
-    install(FILES ${PROTOBUF_INSTALL_PREFIX}/bin/protoc.exe
+    install(PROGRAMS ${PROTOBUF_INSTALL_PREFIX}/bin/protoc.exe
         DESTINATION bin/Windows
     )
 else()
-    install(FILES ${PROTOBUF_INSTALL_PREFIX}/bin/protoc
-        DESTINATION bin/Linux
-        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+    install(PROGRAMS ${PROTOBUF_INSTALL_PREFIX}/bin/protoc
+        DESTINATION bin/${CMAKE_SYSTEM_NAME}
     )
 endif ()
 
