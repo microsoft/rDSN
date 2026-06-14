@@ -29,7 +29,7 @@ BUILD_DIR="$ROOT/builder"
 GCOV_DIR="$ROOT/gcov_report"
 GCOV_TMP="$ROOT/.gcov_tmp"
 GCOV_PATTERN=`find $ROOT/include $ROOT/src -name '*.h' -o -name '*.cpp'`
-TIME=`date --rfc-3339=seconds`
+TIME=`date '+%Y-%m-%d %H:%M:%S%z'`
 CMAKE_OPTIONS="$CMAKE_OPTIONS -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
 MAKE_OPTIONS="$MAKE_OPTIONS -j$JOB_NUM"
 
@@ -37,6 +37,23 @@ scripts_path=`readlink -f $0`
 CBIN_DIR=`dirname $scripts_path`
 
 TOP_DIR=$CBIN_DIR/../..
+
+function download_file()
+{
+    local url="$1"
+    local output="$2"
+
+    if command -v wget >/dev/null 2>&1
+    then
+        wget --no-check-certificate -nv -O "$output" "$url"
+    elif command -v curl >/dev/null 2>&1
+    then
+        curl -fL --insecure -o "$output" "$url"
+    else
+        echo "ERROR: neither wget nor curl is installed"
+        return 1
+    fi
+}
 
 if [ "$CLEAR" == "YES" ]
 then
@@ -146,9 +163,15 @@ echo "MAKE_OPTIONS=$MAKE_OPTIONS"
 if [ ! -f "$TOP_DIR/bin/Linux/thrift" ]
 then
     echo "Downloading thrift..."
-    wget --no-check-certificate -nv https://github.com/linmajia/thrift/raw/master/pre-built/ubuntu14.04/thrift
+    download_file https://github.com/linmajia/thrift/raw/master/pre-built/ubuntu14.04/thrift thrift
+    if [ $? -ne 0 ]
+    then
+        echo "ERROR: download thrift failed"
+        rm -f thrift
+        exit -1
+    fi
     chmod u+x thrift
-    mv thrift $TOP_DIR/bin/Linux
+    mv thrift "$TOP_DIR/bin/Linux"
 fi
 
 echo "############################ BUILD #################################################"
@@ -169,6 +192,12 @@ then
     fi
 fi
 
+if [ -d "$BUILD_DIR" -a ! -f "$BUILD_DIR/Makefile" ]
+then
+    echo "Builder is incomplete, clear environment first"
+    CLEAR=YES
+fi
+
 if [ "$CLEAR" == "YES" -a -d "$BUILD_DIR" ]
 then
     echo "Clear builder..."
@@ -179,6 +208,11 @@ fi
 if [ ! -d "$BUILD_DIR" ]
 then
     echo "Running cmake..."
+    if ! command -v cmake >/dev/null 2>&1
+    then
+        echo "ERROR: cmake is not installed or not in PATH"
+        exit -1
+    fi
     mkdir -p $BUILD_DIR
     cd $BUILD_DIR
     echo "$CMAKE_OPTIONS" >CMAKE_OPTIONS
