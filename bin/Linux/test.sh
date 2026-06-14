@@ -36,12 +36,7 @@ fi
 if [ ! -f "$TOP_DIR/bin/Linux/thrift" ]
 then
     echo "Downloading thrift..."
-    if [ "$GIT_SOURCE" == "xiaomi" ]
-    then
-        wget http://git.n.xiaomi.com/pegasus/packages/raw/master/rdsn/thrift
-    else
-        wget --no-check-certificate -nv https://github.com/linmajia/thrift/raw/master/pre-built/ubuntu14.04/thrift
-    fi
+    wget --no-check-certificate -nv https://github.com/linmajia/thrift/raw/master/pre-built/ubuntu14.04/thrift
     chmod u+x thrift
     mv thrift $TOP_DIR/bin/Linux
 fi
@@ -164,4 +159,3 @@ then
 fi
 
 echo "Test succeed"
-

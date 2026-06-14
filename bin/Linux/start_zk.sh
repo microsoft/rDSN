@@ -19,11 +19,8 @@ fi
 if [ -z "$GIT_SOURCE" -o "$GIT_SOURCE" == "github" ]
 then
     download_url="https://raw.githubusercontent.com/linmajia/packages/master/common/zookeeper-3.4.6.tar.gz"
-elif [ "$GIT_SOURCE" == "xiaomi" ]
-then
-    download_url="http://git.n.xiaomi.com/pegasus/packages/raw/master/zookeeper-3.4.6.tar.gz"
 else
-    echo "ERROR: invalid git source '$GIT_SOURCE', should be github or xiaomi"
+    echo "ERROR: invalid git source '$GIT_SOURCE', should be github"
     exit -1
 fi
 

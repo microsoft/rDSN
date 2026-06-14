@@ -5,7 +5,7 @@
 #    CLEAR          YES|NO
 #    JOB_NUM        <num>
 #    BUILD_TYPE     debug|release
-#    GIT_SOURCE     github|xiaomi
+#    GIT_SOURCE     github
 #    RUN_VERBOSE    YES|NO
 #    WARNING_ALL    YES|NO
 #    ENABLE_GCOV    YES|NO
@@ -16,7 +16,7 @@
 #    -DCMAKE_C_COMPILER=gcc
 #    -DCMAKE_CXX_COMPILER=g++
 #    [-DCMAKE_BUILD_TYPE=Debug]
-#    [-DDSN_GIT_SOURCE=github|xiaomi]
+#    [-DDSN_GIT_SOURCE=github]
 #    [-DWARNING_ALL=TRUE]
 #    [-DENABLE_GCOV=TRUE]
 #    [-DBoost_NO_BOOST_CMAKE=ON -DBOOST_ROOT=$BOOST_DIR -DBoost_NO_SYSTEM_PATHS=ON]
@@ -121,12 +121,7 @@ echo "MAKE_OPTIONS=$MAKE_OPTIONS"
 if [ ! -f "$TOP_DIR/bin/Linux/thrift" ]
 then
     echo "Downloading thrift..."
-    if [ "$GIT_SOURCE" == "xiaomi" ]
-    then
-        wget http://git.n.xiaomi.com/pegasus/packages/raw/master/rdsn/thrift
-    else
-        wget --no-check-certificate -nv https://github.com/linmajia/thrift/raw/master/pre-built/ubuntu14.04/thrift
-    fi
+    wget --no-check-certificate -nv https://github.com/linmajia/thrift/raw/master/pre-built/ubuntu14.04/thrift
     chmod u+x thrift
     mv thrift $TOP_DIR/bin/Linux
 fi
@@ -184,5 +179,4 @@ fi
 cd ..
 
 exit 0
-
 

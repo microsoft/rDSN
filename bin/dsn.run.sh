@@ -43,7 +43,7 @@ function usage_build()
     echo "Options for subcommand 'build':"
     echo "   -h|--help         print the help info"
     echo "   -t|--type         build type: debug|release, default is debug"
-    echo "   -g|--git          git source of ext module: github|xiaomi, default is github"
+    echo "   -g|--git          git source of ext module: github, default is github"
     echo "   -c|--clear        clear the environment before building"
     echo "   -j|--jobs <num>"
     echo "                     the number of jobs to run simultaneously, default 8"
@@ -119,7 +119,7 @@ function run_build()
         usage_build
         exit -1
     fi
-    if [ "$GIT_SOURCE" != "github" -a "$GIT_SOURCE" != "xiaomi" ]; then
+    if [ "$GIT_SOURCE" != "github" ]; then
         echo "ERROR: invalid git source \"$GIT_SOURCE\""
         echo
         usage_build
@@ -231,7 +231,7 @@ function usage_start_zk()
     echo "                     zookeeper install directory,"
     echo "                     if not set, then default is './.zk_install'"
     echo "   -p|--port <port>  listen port of zookeeper, default is 12181"
-    echo "   -g|--git          git source to download zookeeper: github|xiaomi, default is github"
+    echo "   -g|--git          git source to download zookeeper: github, default is github"
 }
 function run_start_zk()
 {
@@ -447,4 +447,3 @@ case $cmd in
         usage
         exit -1
 esac
-

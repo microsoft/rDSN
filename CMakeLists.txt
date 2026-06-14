@@ -17,6 +17,10 @@ if((NOT DEFINED DSN_GIT_SOURCE) OR (DSN_GIT_SOURCE STREQUAL ""))
     set(DSN_GIT_SOURCE "github")
 endif()
 
+if(NOT DSN_GIT_SOURCE STREQUAL "github")
+    message(FATAL_ERROR "Unsupported DSN_GIT_SOURCE '${DSN_GIT_SOURCE}'. Only 'github' is supported.")
+endif()
+
 set(GIT_SOURCE_FILE "ext/gitsource.${DSN_GIT_SOURCE}")
 
 include(bin/dsn.cmake)
@@ -48,8 +52,6 @@ add_subdirectory(ext/protobuf)
 #
 
 add_subdirectory(src)
-
-
 
 
 
