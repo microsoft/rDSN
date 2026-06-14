@@ -965,7 +965,7 @@ DSN_API const char* dsn_get_app_data_dir(dsn_gpid gpid)
 
 DSN_API bool dsn_get_current_app_info(/*out*/ dsn_app_info* app_info)
 {
-    auto info = dsn_get_app_info_ptr(dsn_gpid{ 0 });
+    auto info = dsn_get_app_info_ptr(dsn_gpid{ .value = 0 });
     if (info)
     {
         memcpy(app_info, info, sizeof(*info));

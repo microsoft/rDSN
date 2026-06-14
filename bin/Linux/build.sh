@@ -19,7 +19,9 @@
 #    [-DDSN_GIT_SOURCE=github]
 #    [-DWARNING_ALL=TRUE]
 #    [-DENABLE_GCOV=TRUE]
-#    [-DBoost_NO_BOOST_CMAKE=ON -DBOOST_ROOT=$BOOST_DIR -DBoost_NO_SYSTEM_PATHS=ON]
+#    [-DBoost_NO_BOOST_CMAKE=ON -DBOOST_ROOT=$BOOST_DIR -DBOOST_INCLUDEDIR=$BOOST_INCLUDEDIR -DBoost_NO_SYSTEM_PATHS=ON]
+#    [-DBOOST_LIBRARYDIR=$BOOST_LIBRARYDIR]
+#    [-DDSN_BOOST_HEADER_ONLY=ON]
 
 ROOT=`pwd`
 REPORT_DIR=$ROOT/test_reports
@@ -98,7 +100,9 @@ fi
 
 
 # You can specify customized boost by defining BOOST_DIR.
-# Install boost like this:
+# Use boost source like this:
+#   export BOOST_DIR=/path/to/boost_1_68_0
+# Or install boost like this:
 #   wget http://downloads.sourceforge.net/project/boost/boost/1.54.0/boost_1_54_0.zip?r=&ts=1442891144&use_mirror=jaist
 #   unzip -q boost_1_54_0.zip
 #   cd boost_1_54_0
@@ -110,7 +114,28 @@ fi
 if [ -n "$BOOST_DIR" ]
 then
     echo "Use customized boost: $BOOST_DIR"
-    CMAKE_OPTIONS="$CMAKE_OPTIONS -DBoost_NO_BOOST_CMAKE=ON -DBOOST_ROOT=$BOOST_DIR -DBoost_NO_SYSTEM_PATHS=ON"
+    BOOST_LIBRARYDIR=""
+    if [ -d "$BOOST_DIR/boost" ]; then
+        BOOST_INCLUDEDIR="$BOOST_DIR"
+        CMAKE_OPTIONS="$CMAKE_OPTIONS -DDSN_BOOST_HEADER_ONLY=ON"
+    elif [ -d "$BOOST_DIR/include/boost" ]; then
+        BOOST_INCLUDEDIR="$BOOST_DIR/include"
+        if [ -d "$BOOST_DIR/lib" ]; then
+            BOOST_LIBRARYDIR="$BOOST_DIR/lib"
+        elif [ -d "$BOOST_DIR/lib64" ]; then
+            BOOST_LIBRARYDIR="$BOOST_DIR/lib64"
+        else
+            echo "ERROR: invalid BOOST_DIR '$BOOST_DIR', cannot find boost libraries"
+            exit -1
+        fi
+    else
+        echo "ERROR: invalid BOOST_DIR '$BOOST_DIR', cannot find boost headers"
+        exit -1
+    fi
+    CMAKE_OPTIONS="$CMAKE_OPTIONS -DBoost_NO_BOOST_CMAKE=ON -DBOOST_ROOT=$BOOST_DIR -DBOOST_INCLUDEDIR=$BOOST_INCLUDEDIR -DBoost_INCLUDE_DIR=$BOOST_INCLUDEDIR -DBoost_NO_SYSTEM_PATHS=ON"
+    if [ -n "$BOOST_LIBRARYDIR" ]; then
+        CMAKE_OPTIONS="$CMAKE_OPTIONS -DBOOST_LIBRARYDIR=$BOOST_LIBRARYDIR -DBoost_LIBRARY_DIR=$BOOST_LIBRARYDIR -DBoost_LIBRARY_DIRS=$BOOST_LIBRARYDIR"
+    fi
 else
     echo "Use system boost"
 fi
@@ -179,4 +204,3 @@ fi
 cd ..
 
 exit 0
-

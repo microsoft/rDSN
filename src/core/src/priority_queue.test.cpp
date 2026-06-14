@@ -134,7 +134,7 @@ TEST(core, blocking_priority_queue)
 
         flag = true;
 
-        d = q.dequeue(ct);
+        d = q.dequeue(ct, TIME_MS_MAX);
         ASSERT_NE(nullptr, d);
         ASSERT_EQ(0, ct);
         ASSERT_EQ(1, d->priority);
