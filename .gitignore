@@ -6,8 +6,6 @@
 
 bin/config.onecluster.ini
 bin/Linux/thrift
-bin/7z.dll
-bin/7z.exe
 bin/Windows/7z.dll
 bin/Windows/7z.exe
 bin/Windows/php.exe

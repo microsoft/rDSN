@@ -32,13 +32,9 @@ IF NOT EXIST "%bin_dir%\ssed.exe" (
     IF ERRORLEVEL 1 GOTO error
 )
 
-IF 0 EQU 1 (
-    REM Keep the old prebuilt thrift download for easy rollback. The build now
-    REM compiles thrift from source and installs thrift.exe into bin\Windows.
-    IF NOT EXIST "%bin_dir%\thrift.exe" (
-        CALL "%bin_dir%\download.cmd" https://raw.githubusercontent.com/linmajia/thrift/master/pre-built/windows8.1/thrift.exe "%bin_dir%" thrift.exe
-        IF ERRORLEVEL 1 GOTO error
-    )
+IF NOT EXIST "%bin_dir%\thrift.exe" (
+    CALL "%bin_dir%\download.cmd" https://raw.githubusercontent.com/linmajia/thrift/master/pre-built/windows8.1/thrift.exe "%bin_dir%" thrift.exe
+    IF ERRORLEVEL 1 GOTO error
 )
 
 IF NOT EXIST "%bin_dir%\7z.exe" (
@@ -46,8 +42,6 @@ IF NOT EXIST "%bin_dir%\7z.exe" (
     IF ERRORLEVEL 1 GOTO error
     CALL "%bin_dir%\download.cmd" https://raw.githubusercontent.com/linmajia/packages/master/windows/7z.exe "%bin_dir%" 7z.exe
     IF ERRORLEVEL 1 GOTO error
-    @copy /y "%bin_dir%\7z.dll" "%bin_dir%\..\"
-    @copy /y "%bin_dir%\7z.exe" "%bin_dir%\..\"
 )
 
 IF NOT EXIST "%bin_dir%\php.exe" (

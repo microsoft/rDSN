@@ -20,7 +20,6 @@ set(THRIFT_CMAKE_ARGS
     "-DWITH_QT5=OFF;"
     "-DWITH_QT4=OFF;"
     "-DWITH_OPENSSL=OFF;"
-    "-DBUILD_COMPILER=ON;"
     "-DBUILD_TUTORIALS=OFF;"
     "-DWITH_LIBEVENT=OFF;"
     "-DCMAKE_INSTALL_PREFIX=${THRIFT_INSTALL_PREFIX};"
@@ -35,6 +34,7 @@ endif()
 
 if(WIN32)
     list(APPEND THRIFT_CMAKE_ARGS
+        "-DBUILD_COMPILER=OFF;"
         "-DBUILD_CSHARP=ON;"
         "-DWITH_MT=ON;"
         "-DWITH_SHARED_LIB=OFF;"
@@ -43,6 +43,7 @@ if(WIN32)
     )
 else()
     list(APPEND THRIFT_CMAKE_ARGS
+        "-DBUILD_COMPILER=ON;"
         "-DWITH_STATIC_LIB=OFF;"
     )
 endif()
@@ -66,11 +67,8 @@ install(DIRECTORY ${THRIFT_INSTALL_PREFIX}/lib
 )
 
 # Copy the thrift compiler built from source into the SDK codegen folder.
-if (WIN32)
-    install(PROGRAMS ${THRIFT_INSTALL_PREFIX}/bin/thrift.exe
-        DESTINATION bin/Windows
-    )
-else()
+# Windows uses the prebuilt compiler downloaded by bin/Windows/pre-require.cmd.
+if (NOT WIN32)
     install(PROGRAMS ${THRIFT_INSTALL_PREFIX}/bin/thrift
         DESTINATION bin/${CMAKE_SYSTEM_NAME}
     )
