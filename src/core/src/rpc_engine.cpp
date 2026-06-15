@@ -840,8 +840,8 @@ namespace dsn {
         auto& hdr = *request->header;
         hdr.from_address = primary_address();
         hdr.trace_id = dsn_random64(
-            std::numeric_limits<decltype(hdr.trace_id)>::min(),
-            std::numeric_limits<decltype(hdr.trace_id)>::max()
+            (std::numeric_limits<decltype(hdr.trace_id)>::min)(),
+            (std::numeric_limits<decltype(hdr.trace_id)>::max)()
             );
 
         call_address(request->server_address, request, call);

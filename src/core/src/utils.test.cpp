@@ -237,78 +237,78 @@ TEST(core, lexical_cast_integer_accepts_valid_values)
 # endif
     EXPECT_EQ(123, lexical_cast<int>("+123"));
 
-    EXPECT_EQ(static_cast<int>(std::numeric_limits<int8_t>::min()),
+    EXPECT_EQ(static_cast<int>((std::numeric_limits<int8_t>::min)()),
               static_cast<int>(lexical_cast<int8_t>(
-                  signed_integer_to_string(std::numeric_limits<int8_t>::min()))));
-    EXPECT_EQ(static_cast<int>(std::numeric_limits<int8_t>::max()),
+                  signed_integer_to_string((std::numeric_limits<int8_t>::min)()))));
+    EXPECT_EQ(static_cast<int>((std::numeric_limits<int8_t>::max)()),
               static_cast<int>(lexical_cast<int8_t>(
-                  signed_integer_to_string(std::numeric_limits<int8_t>::max()))));
-    EXPECT_EQ(static_cast<int>(std::numeric_limits<uint8_t>::min()),
+                  signed_integer_to_string((std::numeric_limits<int8_t>::max)()))));
+    EXPECT_EQ(static_cast<int>((std::numeric_limits<uint8_t>::min)()),
               static_cast<int>(lexical_cast<uint8_t>(
-                  unsigned_integer_to_string(std::numeric_limits<uint8_t>::min()))));
-    EXPECT_EQ(static_cast<int>(std::numeric_limits<uint8_t>::max()),
+                  unsigned_integer_to_string((std::numeric_limits<uint8_t>::min)()))));
+    EXPECT_EQ(static_cast<int>((std::numeric_limits<uint8_t>::max)()),
               static_cast<int>(lexical_cast<uint8_t>(
-                  unsigned_integer_to_string(std::numeric_limits<uint8_t>::max()))));
+                  unsigned_integer_to_string((std::numeric_limits<uint8_t>::max)()))));
 
-    EXPECT_EQ(std::numeric_limits<int16_t>::min(),
+    EXPECT_EQ((std::numeric_limits<int16_t>::min)(),
               lexical_cast<int16_t>(
-                  signed_integer_to_string(std::numeric_limits<int16_t>::min())));
-    EXPECT_EQ(std::numeric_limits<int16_t>::max(),
+                  signed_integer_to_string((std::numeric_limits<int16_t>::min)())));
+    EXPECT_EQ((std::numeric_limits<int16_t>::max)(),
               lexical_cast<int16_t>(
-                  signed_integer_to_string(std::numeric_limits<int16_t>::max())));
-    EXPECT_EQ(std::numeric_limits<uint16_t>::min(),
+                  signed_integer_to_string((std::numeric_limits<int16_t>::max)())));
+    EXPECT_EQ((std::numeric_limits<uint16_t>::min)(),
               lexical_cast<uint16_t>(
-                  unsigned_integer_to_string(std::numeric_limits<uint16_t>::min())));
-    EXPECT_EQ(std::numeric_limits<uint16_t>::max(),
+                  unsigned_integer_to_string((std::numeric_limits<uint16_t>::min)())));
+    EXPECT_EQ((std::numeric_limits<uint16_t>::max)(),
               lexical_cast<uint16_t>(
-                  unsigned_integer_to_string(std::numeric_limits<uint16_t>::max())));
+                  unsigned_integer_to_string((std::numeric_limits<uint16_t>::max)())));
 
-    EXPECT_EQ(std::numeric_limits<int32_t>::min(),
+    EXPECT_EQ((std::numeric_limits<int32_t>::min)(),
               lexical_cast<int32_t>(
-                  signed_integer_to_string(std::numeric_limits<int32_t>::min())));
-    EXPECT_EQ(std::numeric_limits<int32_t>::max(),
+                  signed_integer_to_string((std::numeric_limits<int32_t>::min)())));
+    EXPECT_EQ((std::numeric_limits<int32_t>::max)(),
               lexical_cast<int32_t>(
-                  signed_integer_to_string(std::numeric_limits<int32_t>::max())));
-    EXPECT_EQ(std::numeric_limits<uint32_t>::min(),
+                  signed_integer_to_string((std::numeric_limits<int32_t>::max)())));
+    EXPECT_EQ((std::numeric_limits<uint32_t>::min)(),
               lexical_cast<uint32_t>(
-                  unsigned_integer_to_string(std::numeric_limits<uint32_t>::min())));
-    EXPECT_EQ(std::numeric_limits<uint32_t>::max(),
+                  unsigned_integer_to_string((std::numeric_limits<uint32_t>::min)())));
+    EXPECT_EQ((std::numeric_limits<uint32_t>::max)(),
               lexical_cast<uint32_t>(
-                  unsigned_integer_to_string(std::numeric_limits<uint32_t>::max())));
+                  unsigned_integer_to_string((std::numeric_limits<uint32_t>::max)())));
 
-    EXPECT_EQ(std::numeric_limits<int64_t>::min(),
+    EXPECT_EQ((std::numeric_limits<int64_t>::min)(),
               lexical_cast<int64_t>(
-                  signed_integer_to_string(std::numeric_limits<int64_t>::min())));
-    EXPECT_EQ(std::numeric_limits<int64_t>::max(),
+                  signed_integer_to_string((std::numeric_limits<int64_t>::min)())));
+    EXPECT_EQ((std::numeric_limits<int64_t>::max)(),
               lexical_cast<int64_t>(
-                  signed_integer_to_string(std::numeric_limits<int64_t>::max())));
-    EXPECT_EQ(std::numeric_limits<uint64_t>::min(),
+                  signed_integer_to_string((std::numeric_limits<int64_t>::max)())));
+    EXPECT_EQ((std::numeric_limits<uint64_t>::min)(),
               lexical_cast<uint64_t>(
-                  unsigned_integer_to_string(std::numeric_limits<uint64_t>::min())));
-    EXPECT_EQ(std::numeric_limits<uint64_t>::max(),
+                  unsigned_integer_to_string((std::numeric_limits<uint64_t>::min)())));
+    EXPECT_EQ((std::numeric_limits<uint64_t>::max)(),
               lexical_cast<uint64_t>(
-                  unsigned_integer_to_string(std::numeric_limits<uint64_t>::max())));
+                  unsigned_integer_to_string((std::numeric_limits<uint64_t>::max)())));
 
-    EXPECT_EQ(std::numeric_limits<size_t>::min(),
+    EXPECT_EQ((std::numeric_limits<size_t>::min)(),
               lexical_cast<size_t>(
-                  unsigned_integer_to_string(std::numeric_limits<size_t>::min())));
-    EXPECT_EQ(std::numeric_limits<size_t>::max(),
+                  unsigned_integer_to_string((std::numeric_limits<size_t>::min)())));
+    EXPECT_EQ((std::numeric_limits<size_t>::max)(),
               lexical_cast<size_t>(
-                  unsigned_integer_to_string(std::numeric_limits<size_t>::max())));
+                  unsigned_integer_to_string((std::numeric_limits<size_t>::max)())));
 # if defined(_WIN32)
-    EXPECT_EQ(std::numeric_limits<SSIZE_T>::min(),
+    EXPECT_EQ((std::numeric_limits<SSIZE_T>::min)(),
               lexical_cast<SSIZE_T>(
-                  signed_integer_to_string(std::numeric_limits<SSIZE_T>::min())));
-    EXPECT_EQ(std::numeric_limits<SSIZE_T>::max(),
+                  signed_integer_to_string((std::numeric_limits<SSIZE_T>::min)())));
+    EXPECT_EQ((std::numeric_limits<SSIZE_T>::max)(),
               lexical_cast<SSIZE_T>(
-                  signed_integer_to_string(std::numeric_limits<SSIZE_T>::max())));
+                  signed_integer_to_string((std::numeric_limits<SSIZE_T>::max)())));
 # else
-    EXPECT_EQ(std::numeric_limits<ssize_t>::min(),
+    EXPECT_EQ((std::numeric_limits<ssize_t>::min)(),
               lexical_cast<ssize_t>(
-                  signed_integer_to_string(std::numeric_limits<ssize_t>::min())));
-    EXPECT_EQ(std::numeric_limits<ssize_t>::max(),
+                  signed_integer_to_string((std::numeric_limits<ssize_t>::min)())));
+    EXPECT_EQ((std::numeric_limits<ssize_t>::max)(),
               lexical_cast<ssize_t>(
-                  signed_integer_to_string(std::numeric_limits<ssize_t>::max())));
+                  signed_integer_to_string((std::numeric_limits<ssize_t>::max)())));
 # endif
 }
 

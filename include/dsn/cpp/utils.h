@@ -198,8 +198,8 @@ namespace dsn {
                 throw std::invalid_argument("lexical_cast_integer: cannot convert \"" + str + "\"");
             }
 
-            if (value < static_cast<std::intmax_t>(std::numeric_limits<T>::min()) ||
-                value > static_cast<std::intmax_t>(std::numeric_limits<T>::max()))
+            if (value < static_cast<std::intmax_t>((std::numeric_limits<T>::min)()) ||
+                value > static_cast<std::intmax_t>((std::numeric_limits<T>::max)()))
             {
                 throw std::out_of_range("lexical_cast_integer: out of range \"" + str + "\"");
             }
@@ -244,7 +244,7 @@ namespace dsn {
                 throw std::invalid_argument("lexical_cast_integer: cannot convert \"" + str + "\"");
             }
 
-            if (value > static_cast<std::uintmax_t>(std::numeric_limits<T>::max()))
+            if (value > static_cast<std::uintmax_t>((std::numeric_limits<T>::max)()))
             {
                 throw std::out_of_range("lexical_cast_integer: out of range \"" + str + "\"");
             }

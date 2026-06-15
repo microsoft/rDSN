@@ -330,7 +330,7 @@ namespace dsn {
             cs.timeout_rounds = 0;
             cs.error_rounds = 0;
             cs.max_latency_ns = 0;
-            cs.min_latency_ns = std::numeric_limits<uint64_t>::max();
+            cs.min_latency_ns = (std::numeric_limits<uint64_t>::max)();
 
             // setup for the case
             _current_case = &cs;

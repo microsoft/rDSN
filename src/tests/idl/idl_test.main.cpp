@@ -290,16 +290,16 @@ void test_thrift_basic_type_serialization(Format fmt)
     std::vector<bool> data_bool_t{true, false};
     thrift_basic_type_serialization_checker(data_bool_t, fmt);
 
-    std::vector<int8_t> data_int8_t{std::numeric_limits<int8_t>::min(), std::numeric_limits<int8_t>::max(), 0, 1 , -1, 13, -13};
+    std::vector<int8_t> data_int8_t{(std::numeric_limits<int8_t>::min)(), (std::numeric_limits<int8_t>::max)(), 0, 1 , -1, 13, -13};
     thrift_basic_type_serialization_checker(data_int8_t, fmt);
 
-    std::vector<int16_t> data_int16_t{std::numeric_limits<int16_t>::min(), std::numeric_limits<int16_t>::max(), 0, 1 , -1, 13, -13};
+    std::vector<int16_t> data_int16_t{(std::numeric_limits<int16_t>::min)(), (std::numeric_limits<int16_t>::max)(), 0, 1 , -1, 13, -13};
     thrift_basic_type_serialization_checker(data_int16_t, fmt);
 
-    std::vector<int32_t> data_int32_t{std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max(), 0, 1 , -1, 13, -13};
+    std::vector<int32_t> data_int32_t{(std::numeric_limits<int32_t>::min)(), (std::numeric_limits<int32_t>::max)(), 0, 1 , -1, 13, -13};
     thrift_basic_type_serialization_checker(data_int32_t, fmt);
 
-    std::vector<int64_t> data_int64_t{std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max(), 0, 1 , -1, 13, -13};
+    std::vector<int64_t> data_int64_t{(std::numeric_limits<int64_t>::min)(), (std::numeric_limits<int64_t>::max)(), 0, 1 , -1, 13, -13};
     thrift_basic_type_serialization_checker(data_int32_t, fmt);
 
     std::vector<std::string> data_string_t{std::string("hello"), std::string("world"), std::string("")};
@@ -368,10 +368,10 @@ void test_thrift_generated_type_serialization(Format fmt)
     check_thrift_generated_type_serialization(item, fmt);
 
     item.bool_item = true;
-    item.byte_item = std::numeric_limits<int8_t>::max();
-    item.i16_item = std::numeric_limits<int16_t>::max();
-    item.i32_item = std::numeric_limits<int32_t>::max();
-    item.i64_item = std::numeric_limits<int64_t>::max();
+    item.byte_item = (std::numeric_limits<int8_t>::max)();
+    item.i16_item = (std::numeric_limits<int16_t>::max)();
+    item.i32_item = (std::numeric_limits<int32_t>::max)();
+    item.i64_item = (std::numeric_limits<int64_t>::max)();
     item.double_item = 123.321;
     item.string_item = "hello world";
     for (int i = 0; i < container_n; i++)
@@ -444,10 +444,10 @@ void test_protobuf_generated_type_serialization(Format fmt)
     check_protobuf_generated_type_serialization(item, fmt);
 
     item.set_bool_item(true);
-    item.set_int32_item(std::numeric_limits<int32_t>::max());
-    item.set_int64_item(std::numeric_limits<int64_t>::max());
-    item.set_uint32_item(std::numeric_limits<uint32_t>::max());
-    item.set_uint64_item(std::numeric_limits<uint64_t>::max());
+    item.set_int32_item((std::numeric_limits<int32_t>::max)());
+    item.set_int64_item((std::numeric_limits<int64_t>::max)());
+    item.set_uint32_item((std::numeric_limits<uint32_t>::max)());
+    item.set_uint64_item((std::numeric_limits<uint64_t>::max)());
     item.set_float_item(123.321);
     item.set_double_item(1234.4321);
     item.set_string_item("hello world");

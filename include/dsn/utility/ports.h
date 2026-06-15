@@ -123,15 +123,15 @@ __pragma(warning(disable:4127))
 # define htobe16(x) htons(x)
 # endif
 
-static_assert (sizeof(uint32_t) == sizeof(u_long),
-    "sizeof(uint32_t) == sizeof(u_long) for use of ntohl");
+static_assert (sizeof(uint32_t) == sizeof(unsigned long),
+    "sizeof(uint32_t) == sizeof(unsigned long) for use of ntohl");
 
 # if !defined(be32toh)
-# define be32toh(x) static_cast<uint32_t>(ntohl(static_cast<u_long>(x)))
+# define be32toh(x) static_cast<uint32_t>(ntohl(static_cast<unsigned long>(x)))
 # endif
 
 # if !defined(htobe32)
-# define htobe32(x) static_cast<uint32_t>(htonl(static_cast<u_long>(x)))
+# define htobe32(x) static_cast<uint32_t>(htonl(static_cast<unsigned long>(x)))
 # endif
 
 # if !defined(be64toh)

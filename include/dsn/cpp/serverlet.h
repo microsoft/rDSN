@@ -96,17 +96,17 @@ namespace dsn
 
     protected:
         template<typename TRequest>
-        bool register_rpc_handler(dsn_task_code_t rpc_code, const char* rpc_name_, void (T::*handler)(const TRequest&), dsn_gpid gpid = dsn_gpid{ .value = 0 });
+        bool register_rpc_handler(dsn_task_code_t rpc_code, const char* rpc_name_, void (T::*handler)(const TRequest&), dsn_gpid gpid = dsn_gpid());
 
         template<typename TRequest, typename TResponse>
-        bool register_rpc_handler(dsn_task_code_t rpc_code, const char* rpc_name_, void (T::*handler)(const TRequest&, TResponse&), dsn_gpid gpid = dsn_gpid{ .value = 0 });
+        bool register_rpc_handler(dsn_task_code_t rpc_code, const char* rpc_name_, void (T::*handler)(const TRequest&, TResponse&), dsn_gpid gpid = dsn_gpid());
 
         template<typename TRequest, typename TResponse>
-        bool register_async_rpc_handler(dsn_task_code_t rpc_code, const char* rpc_name_, void (T::*handler)(const TRequest&, rpc_replier<TResponse>&), dsn_gpid gpid = dsn_gpid{ .value = 0 });
+        bool register_async_rpc_handler(dsn_task_code_t rpc_code, const char* rpc_name_, void (T::*handler)(const TRequest&, rpc_replier<TResponse>&), dsn_gpid gpid = dsn_gpid());
 
-        bool register_rpc_handler(dsn_task_code_t rpc_code, const char* rpc_name_, void (T::*handler)(dsn_message_t), dsn_gpid gpid = dsn_gpid{ .value = 0 });
+        bool register_rpc_handler(dsn_task_code_t rpc_code, const char* rpc_name_, void (T::*handler)(dsn_message_t), dsn_gpid gpid = dsn_gpid());
 
-        bool unregister_rpc_handler(dsn_task_code_t rpc_code, dsn_gpid gpid = dsn_gpid{ .value = 0 });
+        bool unregister_rpc_handler(dsn_task_code_t rpc_code, dsn_gpid gpid = dsn_gpid());
 
         template<typename TResponse>
         void reply(dsn_message_t request, const TResponse& resp);
@@ -238,4 +238,3 @@ namespace dsn
     }
     /*@}*/
 } // end namespace
-

@@ -416,7 +416,7 @@ namespace dsn {
 
             if (max_count == 0)
             {
-                max_count = std::numeric_limits<int>::max();
+                max_count = (std::numeric_limits<int>::max)();
             }
 
             safe_string cmd = args[2];

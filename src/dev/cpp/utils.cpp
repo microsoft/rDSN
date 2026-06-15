@@ -45,6 +45,7 @@
 # include <dsn/cpp/auto_codes.h>
 # include <dsn/utility/singleton.h>
 # include <cerrno>
+# include <chrono>
 # include <cstring>
 # include <sys/types.h>
 # include <sys/stat.h>
