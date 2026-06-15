@@ -8,9 +8,7 @@ SET TOP_DIR=%CD%
 POPD
 
 :: detect VS
-IF "%VisualStudioVersion%"=="16.0" GOTO find_vs
-IF "%VisualStudioVersion%"=="15.0" GOTO find_vs
-IF "%VisualStudioVersion%"=="14.0" GOTO find_vs
+IF NOT "%VisualStudioVersion%"=="" GOTO find_vs
 SET DSN_TMP_VS_INSTALL_DIR=
 FOR /F "usebackq tokens=1* delims=: " %%i in (`"%bin_dir%\vswhere.exe" -latest`) DO (
   IF /i "%%i"=="installationPath" set DSN_TMP_VS_INSTALL_DIR=%%j
@@ -21,7 +19,7 @@ IF DEFINED DSN_TMP_VS_INSTALL_DIR (
 )
 IF NOT "%VS140COMNTOOLS%"=="" GOTO find_vs
 
-CALL "%bin_dir%\echoc.exe" 4 "Visusal Studio 2015, 2017 or 2019 is not found, please run 'x64 Native Tools Command Prompt' and try later"
+CALL "%bin_dir%\echoc.exe" 4 "Visual Studio 2015, 2017, 2019, 2022 or 2026 is not found, please run 'x64 Native Tools Command Prompt' and try later"
 SET DSN_TMP_VS_INSTALL_DIR=
 exit /B 1
 
