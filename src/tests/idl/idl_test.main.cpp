@@ -174,7 +174,7 @@ void cmake(Language lang, bool &result)
     create_dir("builder", result);
         
 #ifdef _WIN32
-    std::string cmake_cmd = std::string("cd builder && " DSN_ROOT_DIR "/ext/cmake-3.2.2/bin/cmake.exe ") + file("../src");
+    std::string cmake_cmd = std::string("cd builder && cmake ") + file("../src");
     cmake_cmd += std::string(" -DCMAKE_GENERATOR_PLATFORM=x64");
 #else
     std::string cmake_cmd = std::string("cd builder && cmake ") + file("../src");

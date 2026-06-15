@@ -45,6 +45,13 @@ SET ZOOKEEPER_PORT=%PORT%
 SET ZK_SRC_CONFIG=%ZOOKEEPER_HOME%\conf\zoo_sample.cfg
 SET ZK_DST_CONFIG=%ZOOKEEPER_HOME%\conf\zoo.cfg
 
+java -version >NUL 2>NUL
+IF ERRORLEVEL 1 (
+    CALL "%bin_dir%\echoc.exe" 4 "Java runtime is required to start zookeeper. Please install Java and add it to PATH."
+    POPD
+    GOTO error
+)
+
 ECHO # GENERATD BY rDSN SCRIPT > "%ZK_DST_CONFIG%"
 
 FOR /F "usebackq" %%A in ("%ZK_SRC_CONFIG%") do (
