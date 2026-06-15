@@ -42,7 +42,7 @@
 # include <limits>
 # include <sstream>
 # include <string>
-# ifdef _WIN32
+# if defined(_WIN32)
 # include <basetsd.h>
 # else
 # include <sys/types.h>
@@ -228,7 +228,7 @@ TEST(core, lexical_cast_integer_accepts_valid_values)
     EXPECT_EQ((uint64_t)123456789012345ULL, lexical_cast<uint64_t>("123456789012345"));
 
     EXPECT_EQ((size_t)42, lexical_cast<size_t>("42"));
-# ifdef _WIN32
+# if defined(_WIN32)
     EXPECT_EQ((SSIZE_T)-42, lexical_cast<SSIZE_T>("-42"));
     EXPECT_EQ((SSIZE_T)42, lexical_cast<SSIZE_T>("42"));
 # else
@@ -295,7 +295,7 @@ TEST(core, lexical_cast_integer_accepts_valid_values)
     EXPECT_EQ(std::numeric_limits<size_t>::max(),
               lexical_cast<size_t>(
                   unsigned_integer_to_string(std::numeric_limits<size_t>::max())));
-# ifdef _WIN32
+# if defined(_WIN32)
     EXPECT_EQ(std::numeric_limits<SSIZE_T>::min(),
               lexical_cast<SSIZE_T>(
                   signed_integer_to_string(std::numeric_limits<SSIZE_T>::min())));
@@ -343,7 +343,7 @@ TEST(core, lexical_cast_integer_rejects_invalid_values)
     EXPECT_THROW(lexical_cast<size_t>("-1"), std::out_of_range);
     EXPECT_THROW(lexical_cast<size_t>("18446744073709551616"), std::out_of_range);
     EXPECT_THROW(lexical_cast<uint64_t>("-1"), std::out_of_range);
-# ifdef _WIN32
+# if defined(_WIN32)
     EXPECT_THROW(lexical_cast<SSIZE_T>("-9223372036854775809"), std::out_of_range);
     EXPECT_THROW(lexical_cast<SSIZE_T>("9223372036854775808"), std::out_of_range);
 # else

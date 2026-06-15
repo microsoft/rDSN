@@ -50,9 +50,9 @@
 # include <sys/stat.h>
 # include <random>
 
-#ifdef DSN_USE_THRIFT_SERIALIZATION
+# if defined(DSN_USE_THRIFT_SERIALIZATION)
 # include <dsn/cpp/serialization_helper/thrift_helper.h>
-#endif
+# endif
 
 # if defined(__linux__)
 # include <sys/syscall.h>
@@ -62,7 +62,7 @@
 # include <pthread.h>
 # endif
 
-# ifdef __TITLE__
+# if defined(__TITLE__)
 # undef __TITLE__
 # endif
 # define __TITLE__ "dsn.utils"
@@ -277,12 +277,12 @@ namespace dsn {
         void time_ms_to_string(uint64_t ts_ms, char* str)
         {
             auto t = (time_t)(ts_ms / 1000);
-#if defined(_WIN32)
+# if defined(_WIN32)
             auto ret = localtime(&t);
-#else
+# else
             struct tm tmp;
             auto ret = localtime_r(&t, &tmp);
-#endif
+# endif
             auto ms = static_cast<uint32_t>(ts_ms % 1000);
 
             snprintf(str, 13, "%02d:%02d:%02d.%03u", ret->tm_hour, ret->tm_min, ret->tm_sec, ms);

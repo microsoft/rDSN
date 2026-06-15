@@ -35,7 +35,7 @@
 
 # pragma once
 
-#if defined(_WIN32)
+# if defined(_WIN32)
 
 # include <windows.h>
 
@@ -50,14 +50,14 @@ __pragma(warning(disable:4127))
 
 # define __selectany __attribute__((weak)) extern 
 
-# ifndef O_BINARY
+# if !defined(O_BINARY)
 # define O_BINARY 0
-#endif
+# endif
 
-#else
+# else
 
-#error "unsupported platform"
-#endif
+# error "unsupported platform"
+# endif
 
 // stl headers
 # include <string>
@@ -85,25 +85,25 @@ __pragma(warning(disable:4127))
 # include <atomic>
 
 // common macros and data structures
-# ifndef FIELD_OFFSET
+# if !defined(FIELD_OFFSET)
 # define FIELD_OFFSET(s, field)  (((size_t)&((s *)(10))->field) - 10)
 # endif
 
-# ifndef CONTAINING_RECORD 
+# if !defined(CONTAINING_RECORD)
 # define CONTAINING_RECORD(address, type, field) \
     ((type *)((char*)(address)-FIELD_OFFSET(type, field)))
 # endif
 
-# ifndef MAX_COMPUTERNAME_LENGTH
+# if !defined(MAX_COMPUTERNAME_LENGTH)
 # define MAX_COMPUTERNAME_LENGTH 32
 # endif
 
-# ifndef ARRAYSIZE
+# if !defined(ARRAYSIZE)
 # define ARRAYSIZE(a) \
     ((sizeof(a) / sizeof(*(a))) / static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
 # endif
 
-# ifndef snprintf_p
+# if !defined(snprintf_p)
 # if defined(_WIN32)
 # define snprintf_p sprintf_s
 # else
@@ -111,30 +111,30 @@ __pragma(warning(disable:4127))
 # endif
 # endif
 
-# ifdef _WIN32
+# if defined(_WIN32)
 
 // make sure to include <winsock2.h> before the usage
 
-# ifndef be16toh
+# if !defined(be16toh)
 # define be16toh(x) ntohs(x)
 # endif
 
-# ifndef htobe16
+# if !defined(htobe16)
 # define htobe16(x) htons(x)
 # endif
 
 static_assert (sizeof(uint32_t) == sizeof(u_long),
     "sizeof(uint32_t) == sizeof(u_long) for use of ntohl");
 
-# ifndef be32toh
+# if !defined(be32toh)
 # define be32toh(x) static_cast<uint32_t>(ntohl(static_cast<u_long>(x)))
 # endif
 
-# ifndef htobe32
+# if !defined(htobe32)
 # define htobe32(x) static_cast<uint32_t>(htonl(static_cast<u_long>(x)))
 # endif
 
-# ifndef be64toh
+# if !defined(be64toh)
 # define be64toh(x) ( (be32toh((x)>>32)&0xffffffff) | ( be32toh( (x)&0xffffffff ) << 32 ) )
 # endif
 
@@ -145,27 +145,27 @@ static_assert (sizeof(uint32_t) == sizeof(u_long),
 
 # include <libkern/OSByteOrder.h>
 
-# ifndef be16toh
+# if !defined(be16toh)
 # define be16toh(x) OSSwapBigToHostInt16(x)
 # endif
 
-# ifndef htobe16
+# if !defined(htobe16)
 # define htobe16(x) OSSwapHostToBigInt16(x)
 # endif
 
-# ifndef be32toh
+# if !defined(be32toh)
 # define be32toh(x) OSSwapBigToHostInt32(x)
 # endif
 
-# ifndef htobe32
+# if !defined(htobe32)
 # define htobe32(x) OSSwapHostToBigInt32(x)
 # endif
 
-# ifndef be64toh
+# if !defined(be64toh)
 # define be64toh(x) OSSwapBigToHostInt64(x)
 # endif
 
-# ifndef htobe64
+# if !defined(htobe64)
 # define htobe64(x) OSSwapHostToBigInt64(x)
 # endif
 

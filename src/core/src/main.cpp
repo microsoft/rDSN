@@ -58,14 +58,14 @@
 # include "library_utils.h"
 # include <fstream>
 
-# ifndef _WIN32
+# if !defined(_WIN32)
 # include <signal.h>
 # include <unistd.h>
 # else
 # include <tlhelp32.h>
 # endif
 
-# ifdef __TITLE__
+# if defined(__TITLE__)
 # undef __TITLE__
 # endif
 # define __TITLE__ "service_api_main"
@@ -238,7 +238,7 @@ static void load_all_modules(::dsn::configuration_ptr config)
         }
 
 // attribute(contructor) is not reliable on *nix
-#ifndef  _WIN32
+# if !defined(_WIN32)
         typedef void(*dsn_module_init_fn)();
         dsn_module_init_fn init_fn = (dsn_module_init_fn)::dsn::utils::load_symbol(hmod, "dsn_module_init");
         dassert(init_fn != nullptr,
@@ -246,7 +246,7 @@ static void load_all_modules(::dsn::configuration_ptr config)
             m.first.c_str()
         );
         init_fn();
-#endif // ! _WIN32
+# endif // ! _WIN32
         
         // have dmodule_bridge_arguments?
         if (m.second.length() > 0)
@@ -286,7 +286,7 @@ bool run(
     std::string& app_list
 )
 {
-# ifdef _WIN32
+# if defined(_WIN32)
     // On Windows, abort() (e.g. triggered by dassert/dsn_coredump) pops up a modal "Abort, Retry, Ignore" message box in "Debug" builds.
     // This blocks waiting for user input and hangs unattended/automated testing.
     // Clear the abort message and Windows Error Reporting flags so abort() terminates the process directly.
@@ -315,11 +315,11 @@ bool run(
     if (dsn_all.config->get_value<bool>("core", "pause_on_start", false,
         "whether to pause at startup time for easier debugging"))
     {
-#if defined(_WIN32)
+# if defined(_WIN32)
         printf("\nPause for debugging (pid = %d)...\n", static_cast<int>(::GetCurrentProcessId()));
-#else
+# else
         printf("\nPause for debugging (pid = %d)...\n", static_cast<int>(getpid()));
-#endif
+# endif
         getchar();
     }
 

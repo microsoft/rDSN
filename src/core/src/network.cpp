@@ -33,7 +33,7 @@
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
-# ifdef _WIN32
+# if defined(_WIN32)
 # include <winsock2.h>
 # include <windows.h>
 # endif
@@ -42,7 +42,7 @@
 # include "message_parser_manager.h"
 # include "rpc_engine.h"
 
-# ifdef __TITLE__
+# if defined(__TITLE__)
 # undef __TITLE__
 # endif
 # define __TITLE__ "network"

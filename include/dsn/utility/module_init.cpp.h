@@ -63,12 +63,12 @@ extern void dsn_module_init();
 
 # define MODULE_INIT_END }
 
-# ifdef _WIN32
+# if defined(_WIN32)
 # include <windows.h>
 
-#ifdef _MANAGED
-#pragma managed(push, off)
-#endif
+# if defined(_MANAGED)
+# pragma managed(push, off)
+# endif
 
 bool APIENTRY DllMain(HMODULE hModule,
     DWORD  ul_reason_for_call,
@@ -89,8 +89,8 @@ bool APIENTRY DllMain(HMODULE hModule,
     return TRUE;
 }
 
-#ifdef _MANAGED
-#pragma managed(pop)
-#endif
+# if defined(_MANAGED)
+# pragma managed(pop)
+# endif
 
 # endif

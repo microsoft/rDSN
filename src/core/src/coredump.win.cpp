@@ -36,7 +36,7 @@
 # include <dsn/tool_api.h>
 # include "coredump.h"
 
-#ifdef _WIN32
+# if defined(_WIN32)
 
 # include <windows.h>
 # include <dbghelp.h>
@@ -44,7 +44,7 @@
 # include <ctime>
 # include <psapi.h>
 
-# ifdef __TITLE__
+# if defined(__TITLE__)
 # undef __TITLE__
 # endif
 # define __TITLE__ "coredump"

@@ -59,14 +59,14 @@
 # include "library_utils.h"
 # include <fstream>
 
-# ifndef _WIN32
+# if !defined(_WIN32)
 # include <signal.h>
 # include <unistd.h>
 # else
 # include <tlhelp32.h>
 # endif
 
-# ifdef __TITLE__
+# if defined(__TITLE__)
 # undef __TITLE__
 # endif
 # define __TITLE__ "service_api_c"
@@ -845,7 +845,7 @@ DSN_API uint64_t dsn_random64(uint64_t min, uint64_t max) // [min, max]
 //
 //------------------------------------------------------------------------------
 
-# ifdef _WIN32
+# if defined(_WIN32)
 static BOOL SuspendAllThreads()
 {
     std::map<uint32_t, HANDLE> threads;
@@ -902,7 +902,7 @@ err:
     ::CloseHandle(hSnapshot);
     return FALSE;
 }
-#endif
+# endif
 
 NORETURN DSN_API void dsn_exit(int code)
 {
