@@ -51,7 +51,6 @@ CALL "%bin_dir%\echoc.exe" 2 DSN_ROOT\lib and DSN_ROOT\bin are added to PATH env
 
 SET DSN_TMP_CMAKE_VERSION=3.22.6
 SET DSN_TMP_BOOST_VERSION=1_64_0
-SET DSN_TMP_WGET_OPT=--no-check-certificate -nv
 
 CALL :%1 %1 %2 %3 %4 %5 %6 %7 %8 %9
 
@@ -59,7 +58,6 @@ IF ERRORLEVEL 1 (
     SET DSN_TMP_CMAKE_VERSION=
     SET DSN_TMP_CMAKE_EXE=
     SET DSN_TMP_BOOST_VERSION=
-    SET DSN_TMP_WGET_OPT=
 
     CALL "%bin_dir%\echoc.exe" 4 command '%1' fails or is unknown.
     CALL :usage
@@ -69,7 +67,6 @@ IF ERRORLEVEL 1 (
 SET DSN_TMP_CMAKE_VERSION=
 SET DSN_TMP_CMAKE_EXE=
 SET DSN_TMP_BOOST_VERSION=
-SET DSN_TMP_WGET_OPT=
 
 exit /B 0
 

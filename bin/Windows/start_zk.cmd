@@ -28,7 +28,7 @@ IF NOT EXIST "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 PUSHD "%INSTALL_DIR%"
 
 IF NOT EXIST "%INSTALL_DIR%\%zk%" (    
-    CALL "%bin_dir%\wget.exe" %DSN_TMP_WGET_OPT% %DSN_TMP_ZOOKEEPER_URL%
+    CALL "%bin_dir%\download.cmd" %DSN_TMP_ZOOKEEPER_URL% "%INSTALL_DIR%" %zk%.tar.gz
     IF NOT EXIST %zk%.tar.gz (
         CALL "%bin_dir%\echoc.exe" 4 download zookeeper package failed from %DSN_TMP_ZOOKEEPER_URL%
         POPD
