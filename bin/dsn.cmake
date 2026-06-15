@@ -622,6 +622,10 @@ function(dsn_setup_packages)
         set(DSN_SYSTEM_LIBS ${DSN_SYSTEM_LIBS} ${DSN_LIB_UTIL})
     endif()
 
+    if(WIN32)
+        list(APPEND DSN_SYSTEM_LIBS ws2_32 psapi)
+    endif()
+
     set(DSN_SYSTEM_LIBS
         ${DSN_SYSTEM_LIBS}
         ${CMAKE_THREAD_LIBS_INIT}

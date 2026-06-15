@@ -64,7 +64,7 @@ extern void dsn_module_init();
 # define MODULE_INIT_END }
 
 # ifdef _WIN32
-# include <Windows.h>
+# include <windows.h>
 
 #ifdef _MANAGED
 #pragma managed(push, off)
@@ -94,4 +94,3 @@ bool APIENTRY DllMain(HMODULE hModule,
 #endif
 
 # endif
-

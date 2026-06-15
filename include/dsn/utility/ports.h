@@ -37,7 +37,7 @@
 
 #if defined(_WIN32)
 
-# include <Windows.h>
+# include <windows.h>
 
 __pragma(warning(disable:4127))
 
@@ -113,7 +113,7 @@ __pragma(warning(disable:4127))
 
 # ifdef _WIN32
 
-// make sure to include <Winsock2.h> before the usage
+// make sure to include <winsock2.h> before the usage
 
 # ifndef be16toh
 # define be16toh(x) ntohs(x)
@@ -123,15 +123,15 @@ __pragma(warning(disable:4127))
 # define htobe16(x) htons(x)
 # endif
 
-static_assert (sizeof(int32_t) == sizeof(long),
-    "sizeof(int32_t) == sizeof(u_long) for use of ntohl");
+static_assert (sizeof(uint32_t) == sizeof(u_long),
+    "sizeof(uint32_t) == sizeof(u_long) for use of ntohl");
 
 # ifndef be32toh
-# define be32toh(x) ntohl(x)
+# define be32toh(x) static_cast<uint32_t>(ntohl(static_cast<u_long>(x)))
 # endif
 
 # ifndef htobe32
-# define htobe32(x) htonl(x)
+# define htobe32(x) static_cast<uint32_t>(htonl(static_cast<u_long>(x)))
 # endif
 
 # ifndef be64toh

@@ -63,7 +63,7 @@
 # include <signal.h>
 # include <unistd.h>
 # else
-# include <TlHelp32.h>
+# include <tlhelp32.h>
 # endif
 
 # ifdef __TITLE__

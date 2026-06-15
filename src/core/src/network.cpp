@@ -34,7 +34,8 @@
  */
 
 # ifdef _WIN32
-# include <Winsock2.h>
+# include <winsock2.h>
+# include <windows.h>
 # endif
 # include <dsn/tool-api/network.h>
 # include <dsn/utility/factory_store.h>

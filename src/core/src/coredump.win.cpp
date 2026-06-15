@@ -38,12 +38,11 @@
 
 #ifdef _WIN32
 
-# include <Windows.h>
-# include <DbgHelp.h>
+# include <windows.h>
+# include <dbghelp.h>
 # include <cstdlib>
 # include <ctime>
-# include <PsApi.h>
-# pragma comment(lib, "PsApi.lib")
+# include <psapi.h>
 
 # ifdef __TITLE__
 # undef __TITLE__

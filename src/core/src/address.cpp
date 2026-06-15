@@ -38,10 +38,9 @@
 
 # define _WINSOCK_DEPRECATED_NO_WARNINGS 1
 
-# include <Winsock2.h>
+# include <winsock2.h>
 # include <ws2tcpip.h>
-# include <Windows.h>
-# pragma comment(lib, "ws2_32.lib")
+# include <windows.h>
 
 # else
 # include <sys/socket.h>

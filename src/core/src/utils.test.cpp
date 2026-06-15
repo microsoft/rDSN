@@ -43,7 +43,7 @@
 # include <sstream>
 # include <string>
 # ifdef _WIN32
-# include <BaseTsd.h>
+# include <basetsd.h>
 # else
 # include <sys/types.h>
 # endif
