@@ -59,11 +59,11 @@
 # include "library_utils.h"
 # include <fstream>
 
-# if !defined(_WIN32)
+# if defined(_WIN32)
+# include <tlhelp32.h>
+# else
 # include <signal.h>
 # include <unistd.h>
-# else
-# include <tlhelp32.h>
 # endif
 
 # if defined(__TITLE__)
