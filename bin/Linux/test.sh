@@ -18,23 +18,7 @@ MAKE_OPTIONS="$MAKE_OPTIONS -j$JOB_NUM"
 
 CBIN_DIR=$(dirname "$0")
 TOP_DIR=$CBIN_DIR/../..
-
-function download_file()
-{
-    local url="$1"
-    local output="$2"
-
-    if command -v wget >/dev/null 2>&1
-    then
-        wget --no-check-certificate -nv -O "$output" "$url"
-    elif command -v curl >/dev/null 2>&1
-    then
-        curl -fL --insecure -o "$output" "$url"
-    else
-        echo "ERROR: neither wget nor curl is installed"
-        return 1
-    fi
-}
+source "$CBIN_DIR/download.sh"
 
 if [ "$RUN_VERBOSE" == "YES" ]
 then

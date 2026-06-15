@@ -16,22 +16,8 @@ then
     exit -1
 fi
 
-function download_file()
-{
-    local url="$1"
-    local output="$2"
-
-    if command -v wget >/dev/null 2>&1
-    then
-        wget --no-check-certificate -nv -O "$output" "$url"
-    elif command -v curl >/dev/null 2>&1
-    then
-        curl -fL --retry 3 --insecure -o "$output" "$url"
-    else
-        echo "ERROR: neither wget nor curl is installed"
-        return 1
-    fi
-}
+CBIN_DIR=$(cd "$(dirname "$0")" && pwd)
+source "$CBIN_DIR/download.sh"
 
 function update_config()
 {

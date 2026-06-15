@@ -37,23 +37,7 @@ scripts_path=`readlink -f $0`
 CBIN_DIR=`dirname $scripts_path`
 
 TOP_DIR=$CBIN_DIR/../..
-
-function download_file()
-{
-    local url="$1"
-    local output="$2"
-
-    if command -v wget >/dev/null 2>&1
-    then
-        wget --no-check-certificate -nv -O "$output" "$url"
-    elif command -v curl >/dev/null 2>&1
-    then
-        curl -fL --insecure -o "$output" "$url"
-    else
-        echo "ERROR: neither wget nor curl is installed"
-        return 1
-    fi
-}
+source "$CBIN_DIR/download.sh"
 
 if [ "$CLEAR" == "YES" ]
 then
@@ -120,7 +104,7 @@ fi
 # Use boost source like this:
 #   export BOOST_DIR=/path/to/boost_1_68_0
 # Or install boost like this:
-#   wget http://downloads.sourceforge.net/project/boost/boost/1.54.0/boost_1_54_0.zip?r=&ts=1442891144&use_mirror=jaist
+#   curl -fL -o boost_1_54_0.zip http://downloads.sourceforge.net/project/boost/boost/1.54.0/boost_1_54_0.zip?r=&ts=1442891144&use_mirror=jaist
 #   unzip -q boost_1_54_0.zip
 #   cd boost_1_54_0
 #   ./bootstrap.sh --with-libraries=system,filesystem --with-toolset=gcc
