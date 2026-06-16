@@ -13,6 +13,39 @@ if (count($argv) < 4)
     exit(0);
 }
 
+function add_codegen_tool_candidate(&$candidates, $path)
+{
+    $candidates[] = $path;
+    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
+    {
+        $candidates[] = $path.".exe";
+    }
+}
+
+function get_codegen_tool($tool, $os_name)
+{
+    global $g_cg_dir;
+
+    $candidates = array();
+    add_codegen_tool_candidate($candidates, dirname($g_cg_dir)."/builder/output/bin/".$os_name."/".$tool);
+    add_codegen_tool_candidate($candidates, $g_cg_dir."/".$os_name."/".$tool);
+
+    foreach ($candidates as $candidate)
+    {
+        if (is_executable($candidate))
+        {
+            return $candidate;
+        }
+    }
+
+    echo "failed to find executable ".$tool." tool, checked:".PHP_EOL;
+    foreach ($candidates as $candidate)
+    {
+        echo "\t".$candidate.PHP_EOL;
+    }
+    exit(0);
+}
+
 global $g_idl;
 global $g_out_dir;
 global $g_cg_dir;
@@ -155,7 +188,8 @@ switch ($g_idl_type)
 {
 case "thrift":
     {
-        $command = $g_cg_dir."/".$os_name."/thrift --gen rdsn -out ".$g_out_dir." ".$g_idl;
+        $thrift = get_codegen_tool("thrift", $os_name);
+        $command = $thrift." --gen rdsn -out ".$g_out_dir." ".$g_idl;
         echo "exec: ".$command.PHP_EOL;
         system($command);
         if (!file_exists($g_idl_php))
@@ -169,15 +203,16 @@ case "thrift":
         {
             $lang_with_options = $g_lang.":moveable_types";
         }
-        $command = $g_cg_dir."/".$os_name."/thrift --gen ".$lang_with_options." -out ".$g_out_dir." ".$g_idl;
+        $command = $thrift." --gen ".$lang_with_options." -out ".$g_out_dir." ".$g_idl;
         echo "exec: ".$command.PHP_EOL;
         system($command);
     }
     break;
 case "proto":
     {
+        $protoc = get_codegen_tool("protoc", $os_name);
         $g_idl_dir = dirname($g_idl);
-        $command = $g_cg_dir."/".$os_name."/protoc --rdsn_out=".$g_out_dir." ".$g_idl." -I=".$g_idl_dir;
+        $command = $protoc." --rdsn_out=".$g_out_dir." ".$g_idl." -I=".$g_idl_dir;
         echo "exec: ".$command.PHP_EOL;
         system($command);
         if (!file_exists($g_idl_php))
@@ -186,7 +221,7 @@ case "proto":
             exit(0);
         }
 
-        $command = $g_cg_dir."/".$os_name."/protoc --".$g_lang."_out=".$g_out_dir." ".$g_idl." -I=".$g_idl_dir;
+        $command = $protoc." --".$g_lang."_out=".$g_out_dir." ".$g_idl." -I=".$g_idl_dir;
         echo "exec: ".$command.PHP_EOL;
         system($command);
     }
