@@ -133,7 +133,11 @@ DSN_API uint32_t dsn_ipv4_from_host(const char* name)
     return (uint32_t)ntohl(addr.sin_addr.s_addr);
 }
 
-// if network_interface is "", then return the first "eth" prefixed non-loopback ipv4 address.
+// If network_interface is "", this only returns the first "eth" prefixed non-loopback IPv4 address.
+// This Linux-centric default misses common macOS and FreeBSD interface names,
+// such as "en0", "em0", "vtnet0", "igb0", and "re0";
+// callers may then fall back to hostname resolution, which can choose
+// an address that is inconsistent with localhost-based tests.
 DSN_API uint32_t dsn_ipv4_local(const char* network_interface)
 {
     uint32_t ret = 0;
