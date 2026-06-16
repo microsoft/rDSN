@@ -305,6 +305,15 @@ namespace dsn {
         std::string cmdline;
         while (std::getline(std::cin, cmdline))
         {
+            // The local CLI may read from script files in tests; accept shell-style blank/comment
+            // lines instead of reporting them as unknown commands.
+            const auto first_non_space = cmdline.find_first_not_of(" \t");
+            if (first_non_space == std::string::npos || cmdline[first_non_space] == '#')
+            {
+                std::cout << ">";
+                continue;
+            }
+
             safe_string result;
             run_command(cmdline.c_str(), result);
             std::cout << result << std::endl;
