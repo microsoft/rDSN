@@ -64,7 +64,9 @@ namespace dsn {
             std::string module_name(module);
 # if defined(_WIN32)
             module_name += ".dll";
-# elif defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)
+# elif defined(__APPLE__)
+            module_name = "lib" + module_name + ".dylib";
+# elif defined(__linux__) || defined(__FreeBSD__)
             module_name = "lib" + module_name + ".so";
 # else
 # error not implemented yet
@@ -76,6 +78,10 @@ namespace dsn {
             {
                 passes.push_back(utils::filesystem::path_combine(dr, module_name));
             }
+
+# if defined(__APPLE__)
+            passes.push_back("@rpath/" + module_name);
+# endif
 
             // search OS given passes
             passes.push_back(module_name);
@@ -131,4 +137,3 @@ namespace dsn {
         }
     }
 }
-

@@ -31,7 +31,7 @@ protected:
     virtual void on_<?=$f->name?>(const <?=$f->get_cpp_request_type_name()?>& args, ::dsn::rpc_replier< <?=$f->get_cpp_return_type()?>>& reply)
     {
         std::cout << "... exec <?=$f->get_rpc_code()?> ... (not implemented) " << std::endl;
-        <?=$f->get_cpp_return_type()?> resp;
+        <?=$f->get_cpp_return_type()?> resp{};
         reply(resp);
     }
 <?php     } ?>

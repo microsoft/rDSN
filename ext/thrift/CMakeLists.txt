@@ -64,7 +64,7 @@ install(DIRECTORY ${THRIFT_INSTALL_PREFIX}/include/thrift
 
 install(DIRECTORY ${THRIFT_INSTALL_PREFIX}/lib
     DESTINATION .
-    FILES_MATCHING PATTERN "*.lib" PATTERN "*.dll" PATTERN "*.so*" PATTERN "*.a*"
+    FILES_MATCHING PATTERN "*.lib" PATTERN "*.dll" PATTERN "*.so*" PATTERN "*.dylib*" PATTERN "*.a*"
 )
 
 # Copy the thrift compiler built from source into the SDK codegen folder.
