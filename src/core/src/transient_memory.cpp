@@ -35,6 +35,9 @@
 
 # include "transient_memory.h"
 
+# include <cstddef>
+# include <cstdint>
+
 namespace dsn 
 {
     __thread tls_transient_memory_t tls_trans_memory;
@@ -114,20 +117,30 @@ namespace dsn
 
     void* tls_trans_malloc(size_t sz)
     {
-        sz += sizeof(std::shared_ptr<char>) + sizeof(uint32_t);
+        const size_t user_size = sz;
+        const size_t header_size = sizeof(std::shared_ptr<char>) + sizeof(uint32_t);
+        const size_t alignment = alignof(std::max_align_t);
+        const size_t alloc_size = user_size + header_size + alignment - 1;
         void* ptr;
         size_t sz2;
-        tls_trans_mem_next(&ptr, &sz2, sz);
+        tls_trans_mem_next(&ptr, &sz2, alloc_size);
+
+        char* const raw_ptr = static_cast<char*>(ptr);
+        const uintptr_t unaligned_user_ptr = reinterpret_cast<uintptr_t>(raw_ptr) + header_size;
+        const uintptr_t aligned_user_ptr =
+            ((unaligned_user_ptr + alignment - 1) / alignment) * alignment;
+        char* const user_ptr = reinterpret_cast<char*>(aligned_user_ptr);
+        char* const header_ptr = user_ptr - header_size;
 
         // add ref
-        new (ptr) std::shared_ptr<char>(*::dsn::tls_trans_memory.block);
+        new (header_ptr) std::shared_ptr<char>(*::dsn::tls_trans_memory.block);
 
         // add magic
-        *(uint32_t*)((char*)(ptr)+sizeof(std::shared_ptr<char>)) = 0xdeadbeef;
+        *(uint32_t*)(user_ptr - sizeof(uint32_t)) = 0xdeadbeef;
 
-        tls_trans_mem_commit(sz);
+        tls_trans_mem_commit(static_cast<size_t>(user_ptr + user_size - raw_ptr));
 
-        return (void*)((char*)(ptr)+sizeof(std::shared_ptr<char>) + sizeof(uint32_t));
+        return user_ptr;
     }
 
     void tls_trans_free(void* ptr)
