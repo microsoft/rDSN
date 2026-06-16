@@ -50,6 +50,7 @@
 enum Language {lang_cpp, lang_csharp};
 enum IDL{idl_protobuf, idl_thrift};
 enum Format{format_binary, format_json};
+const char* kGeneratedProjectScratchBuildDir = "generated_build";
 
 std::string file(const std::string &val)
 {
@@ -142,7 +143,7 @@ void rm_dir(const char* dir, bool &result)
 void cleanup_generated_project(bool &result)
 {
     rm_dir("data", result);
-    rm_dir("builder", result);
+    rm_dir(kGeneratedProjectScratchBuildDir, result);
     rm_dir("src", result);
 }
 
@@ -154,6 +155,15 @@ std::string get_generated_project_dsn_root()
     }
 
     return file(DSN_ROOT_DIR);
+}
+
+std::string get_dsn_build_dir()
+{
+#ifdef DSN_BUILD_DIR
+    return file(DSN_BUILD_DIR);
+#else
+    return file(combine(DSN_ROOT_DIR, "builder"));
+#endif
 }
 
 std::string get_codegen_script()
@@ -170,6 +180,15 @@ std::string get_codegen_script()
     }
 
     return file(combine(DSN_ROOT_DIR, script));
+}
+
+std::string get_codegen_command()
+{
+#ifdef _WIN32
+    return "set \"DSN_BUILD_DIR=" + get_dsn_build_dir() + "\" && " + get_codegen_script();
+#else
+    return "DSN_BUILD_DIR=\"" + get_dsn_build_dir() + "\" " + get_codegen_script();
+#endif
 }
 
 std::string get_boost_include_dir()
@@ -196,13 +215,13 @@ std::string run_generated_project_command(const std::string &cmd)
 
 void cmake(Language lang, bool &result)
 {
-    create_dir("builder", result);
+    create_dir(kGeneratedProjectScratchBuildDir, result);
         
 #ifdef _WIN32
-    std::string cmake_cmd = std::string("cd builder && cmake ") + file("../src");
+    std::string cmake_cmd = std::string("cd ") + file(kGeneratedProjectScratchBuildDir) + " && cmake " + file("../src");
     cmake_cmd += std::string(" -DCMAKE_GENERATOR_PLATFORM=x64");
 #else
-    std::string cmake_cmd = std::string("cd builder && cmake ") + file("../src");
+    std::string cmake_cmd = std::string("cd ") + file(kGeneratedProjectScratchBuildDir) + " && cmake " + file("../src");
 #endif
     cmake_cmd += std::string(" -DDSN_ROOT=") + get_generated_project_dsn_root();
     const std::string boost_include_dir = get_boost_include_dir();
@@ -221,28 +240,33 @@ void cmake(Language lang, bool &result)
     if (lang == lang_cpp)
     {
 #ifdef _WIN32
-        execute(std::string("msbuild ") + file("builder/counter.sln"), result);
+        execute(std::string("msbuild ") + file(combine(kGeneratedProjectScratchBuildDir, "counter.sln")), result);
         if (!result)
         {
             std::cerr << "Failed to build generated counter project with MSBuild." << std::endl;
             return;
         }
-        execute(file("builder/bin/counter/Debug/counter.exe") + " " + file("builder/bin/counter/config.ini"), result);
+        execute(file(combine(kGeneratedProjectScratchBuildDir, "bin/counter/Debug/counter.exe")) + " " +
+                    file(combine(kGeneratedProjectScratchBuildDir, "bin/counter/config.ini")),
+                result);
 #else
-        execute(std::string("cd builder && make "), result);
+        execute(std::string("cd ") + file(kGeneratedProjectScratchBuildDir) + " && make ", result);
         if (!result)
         {
             std::cerr << "Failed to build generated counter project with make." << std::endl;
             return;
         }
         execute(run_generated_project_command(
-                    file("builder/bin/counter/counter") + " " + file("builder/bin/counter/config.ini")),
+                    file(combine(kGeneratedProjectScratchBuildDir, "bin/counter/counter")) + " " +
+                        file(combine(kGeneratedProjectScratchBuildDir, "bin/counter/config.ini"))),
                 result);
 #endif
     }
     else
     {
-        execute(file("builder/bin/counter/counter.exe") + " " + file("builder/bin/counter/config.ini"), result);
+        execute(file(combine(kGeneratedProjectScratchBuildDir, "bin/counter/counter.exe")) + " " +
+                    file(combine(kGeneratedProjectScratchBuildDir, "bin/counter/config.ini")),
+                result);
     }
     if (!result)
     {
@@ -254,7 +278,7 @@ bool test_code_generation(Language lang, IDL idl, Format format)
 {
     bool result = true;
     cleanup_generated_project(result);
-    std::string codegen_cmd = get_codegen_script()
+    std::string codegen_cmd = get_codegen_command()
         + std::string(" counter.")
         + (idl == idl_protobuf ? "proto" : "thrift")
         + (lang == lang_cpp ? " cpp" : " csharp")

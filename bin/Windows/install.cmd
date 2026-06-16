@@ -9,6 +9,9 @@ SET build_type=%1
 SET build_dir=%~f2
 SET install_dir=%~f3
 
+IF "%build_type%" EQU "" SET build_type=Debug
+IF "%build_dir%" EQU "" SET build_dir=%TOP_DIR%\builder
+
 IF NOT EXIST "%build_dir%\output" (
     CALL "%bin_dir%\echoc.exe" 4 "not build yet"
     GOTO error
@@ -31,7 +34,7 @@ POPD
 goto exit
 
 :error
-    CALL %bin_dir%\echoc.exe 4  "Usage: run.cmd install build_type(Debug|Release|RelWithDebInfo|MinSizeRel) build_dir [install_dir (DSN_ROOT by default)]"
+    CALL %bin_dir%\echoc.exe 4  "Usage: run.cmd install build_type(Debug|Release|RelWithDebInfo|MinSizeRel) [build_dir=builder] [install_dir (DSN_ROOT by default)]"
     exit /B 1
     
 :exit

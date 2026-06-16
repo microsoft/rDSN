@@ -25,7 +25,11 @@
 
 ROOT=`pwd`
 REPORT_DIR=$ROOT/test_reports
-BUILD_DIR="$ROOT/builder"
+BUILD_DIR="${DSN_BUILD_DIR:-$ROOT/builder}"
+case "$BUILD_DIR" in
+    /*) ;;
+    *) BUILD_DIR="$ROOT/$BUILD_DIR" ;;
+esac
 GCOV_DIR="$ROOT/gcov_report"
 GCOV_TMP="$ROOT/.gcov_tmp"
 GCOV_PATTERN=`find $ROOT/include $ROOT/src -name '*.h' -o -name '*.cpp'`
@@ -145,7 +149,7 @@ echo "CMAKE_OPTIONS=$CMAKE_OPTIONS"
 echo "MAKE_OPTIONS=$MAKE_OPTIONS"
 
 # rDSN now uses the thrift compiler built from ext/thrift and installed under
-# builder/output/bin/${CMAKE_SYSTEM_NAME}. Keep the old prebuilt-binary download
+# ${DSN_BUILD_DIR}/output/bin/${CMAKE_SYSTEM_NAME}. Keep the old prebuilt-binary download
 # path disabled below for easy rollback if needed.
 if false
 then
@@ -190,7 +194,7 @@ fi
 
 if [ "$CLEAR" == "YES" -a -d "$BUILD_DIR" ]
 then
-    echo "Clear builder..."
+    echo "Clear $BUILD_DIR..."
     rm -rf $BUILD_DIR
 fi
 
@@ -206,7 +210,7 @@ then
     mkdir -p $BUILD_DIR
     cd $BUILD_DIR
     echo "$CMAKE_OPTIONS" >CMAKE_OPTIONS
-    cmake $ROOT -DCMAKE_INSTALL_PREFIX=$BUILD_DIR/output $CMAKE_OPTIONS
+    cmake $ROOT -DCMAKE_INSTALL_PREFIX=$BUILD_DIR/output -DDSN_BUILD_DIR=$BUILD_DIR $CMAKE_OPTIONS
     if [ $? -ne 0 ]
     then
         echo "ERROR: cmake failed"

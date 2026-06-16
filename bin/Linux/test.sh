@@ -8,7 +8,11 @@
 
 ROOT=`pwd`
 REPORT_DIR=$ROOT/test_reports
-BUILD_DIR="$ROOT/builder"
+BUILD_DIR="${DSN_BUILD_DIR:-$ROOT/builder}"
+case "$BUILD_DIR" in
+    /*) ;;
+    *) BUILD_DIR="$ROOT/$BUILD_DIR" ;;
+esac
 GCOV_DIR="$ROOT/gcov_report"
 GCOV_TMP="$ROOT/.gcov_tmp"
 GCOV_PATTERN=`find $ROOT/include $ROOT/src -name '*.h' -o -name '*.cpp'`
@@ -35,7 +39,7 @@ else
 fi
 
 # rDSN now uses the thrift compiler built from ext/thrift and installed under
-# builder/output/bin/${CMAKE_SYSTEM_NAME}. Keep the old prebuilt-binary download
+# ${DSN_BUILD_DIR}/output/bin/${CMAKE_SYSTEM_NAME}. Keep the old prebuilt-binary download
 # path disabled below for easy rollback if needed.
 if false
 then

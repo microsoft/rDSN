@@ -11,8 +11,7 @@ SET build_dir=%~f2
 IF "%build_type%" EQU "" SET build_type=Debug
 
 IF "%build_dir%" EQU "" (
-    CALL "%bin_dir%\echoc.exe" 4 please specify build_dir
-    GOTO error
+    SET build_dir=%TOP_DIR%\builder
 )
 
 IF NOT EXIST "%build_dir%" (
@@ -61,7 +60,7 @@ FOR /D %%A IN ("%build_dir%\bin\*") DO (
 goto exit
 
 :error
-    CALL "%bin_dir%\echoc.exe" 4  "Usage: run.cmd test build_type(Debug|Release|RelWithDebInfo|MinSizeRel) build_dir"
+    CALL "%bin_dir%\echoc.exe" 4  "Usage: run.cmd test build_type(Debug|Release|RelWithDebInfo|MinSizeRel) [build_dir=builder]"
     exit /B 1
 
 :exit

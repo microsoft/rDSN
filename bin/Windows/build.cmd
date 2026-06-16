@@ -21,8 +21,7 @@ IF "%3" EQU "build_plugins" (
 IF "%build_type%" EQU "" SET build_type=Debug
 
 IF "%build_dir%" EQU "" (
-    CALL "%bin_dir%\echoc.exe" 4 please specify build_dir
-    GOTO error_usage
+    SET build_dir=%TOP_DIR%\builder
 )
 
 SET DSN_TMP_BUILD_ARCH=%DSN_BUILD_ARCH%
@@ -139,8 +138,8 @@ IF NOT EXIST "%build_dir%" mkdir "%build_dir%"
 PUSHD "%build_dir%"
 
 :: call cmake
-echo CALL "%DSN_TMP_CMAKE_EXE%" "%cdir%" %buildall% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DCMAKE_BUILD_TYPE="%build_type%" -DBOOST_INCLUDEDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%" -DBOOST_LIBRARYDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%\%DSN_TMP_BOOST_LIB%" -DDSN_GIT_SOURCE="github" %DSN_TMP_CMAKE_ARCH% -G "%DSN_TMP_CMAKE_TARGET%"
-CALL "%DSN_TMP_CMAKE_EXE%" "%cdir%" %buildall% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DCMAKE_BUILD_TYPE="%build_type%" -DBOOST_INCLUDEDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%" -DBOOST_LIBRARYDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%\%DSN_TMP_BOOST_LIB%" -DDSN_GIT_SOURCE="github" %DSN_TMP_CMAKE_ARCH% -G "%DSN_TMP_CMAKE_TARGET%"
+echo CALL "%DSN_TMP_CMAKE_EXE%" "%cdir%" %buildall% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DDSN_BUILD_DIR="%build_dir%" -DCMAKE_BUILD_TYPE="%build_type%" -DBOOST_INCLUDEDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%" -DBOOST_LIBRARYDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%\%DSN_TMP_BOOST_LIB%" -DDSN_GIT_SOURCE="github" %DSN_TMP_CMAKE_ARCH% -G "%DSN_TMP_CMAKE_TARGET%"
+CALL "%DSN_TMP_CMAKE_EXE%" "%cdir%" %buildall% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DDSN_BUILD_DIR="%build_dir%" -DCMAKE_BUILD_TYPE="%build_type%" -DBOOST_INCLUDEDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%" -DBOOST_LIBRARYDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%\%DSN_TMP_BOOST_LIB%" -DDSN_GIT_SOURCE="github" %DSN_TMP_CMAKE_ARCH% -G "%DSN_TMP_CMAKE_TARGET%"
 IF ERRORLEVEL 1 (
     SET DSN_TMP_CMAKE_TARGET=
     SET DSN_TMP_CMAKE_ARCH=
@@ -192,6 +191,6 @@ POPD
 EXIT /B 0
 
 :error_usage
-    CALL "%bin_dir%\echoc.exe" 4 "Usage: run.cmd build build_type(Debug|Release|RelWithDebInfo|MinSizeRel) build_dir [build_plugins], optionally set DSN_BUILD_ARCH=x64|ARM64"
+    CALL "%bin_dir%\echoc.exe" 4 "Usage: run.cmd build build_type(Debug|Release|RelWithDebInfo|MinSizeRel) [build_dir=builder] [build_plugins], optionally set DSN_BUILD_ARCH=x64|ARM64"
 :error
     EXIT /B 1

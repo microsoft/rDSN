@@ -6,7 +6,7 @@ export scripts_dir=`dirname $scripts_path`
 function usage(){
     echo "Options for subcommand 'publish|publish_docker|republish|republish_docker'"
     echo " -b, --build-dir <dir> "
-    echo "                      rdsn build directory, by default is 'builder'"
+    echo "                      rdsn build directory, by default is DSN_BUILD_DIR or 'builder'"
     echo " -d, --deploy-name <name>"
     echo "                      deployment name to be deployed, like simple_kv"
     echo " -t, --target-dir <dir>"
@@ -50,7 +50,7 @@ done
 
 #process default variable
 
-b_dir=${b_dir:-"builder"}
+b_dir=${b_dir:-${DSN_BUILD_DIR:-"builder"}}
 
 
 if [  -z $b_dir ] || [ -z $d_unit ] || [ -z $t_dir ];then

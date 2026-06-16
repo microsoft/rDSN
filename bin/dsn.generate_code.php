@@ -22,12 +22,36 @@ function add_codegen_tool_candidate(&$candidates, $path)
     }
 }
 
+function is_absolute_path($path)
+{
+    return strlen($path) > 0 && ($path[0] == "/" || $path[0] == "\\" ||
+        (strlen($path) > 2 && ctype_alpha($path[0]) && $path[1] == ":" &&
+         ($path[2] == "/" || $path[2] == "\\")));
+}
+
+function get_source_build_dir()
+{
+    global $g_cg_dir;
+
+    $build_dir = getenv("DSN_BUILD_DIR");
+    if ($build_dir === FALSE || $build_dir == "")
+    {
+        $build_dir = dirname($g_cg_dir)."/builder";
+    }
+    else if (!is_absolute_path($build_dir))
+    {
+        $build_dir = dirname($g_cg_dir)."/".$build_dir;
+    }
+
+    return str_replace("\\", "/", $build_dir);
+}
+
 function get_codegen_tool($tool, $os_name)
 {
     global $g_cg_dir;
 
     $candidates = array();
-    add_codegen_tool_candidate($candidates, dirname($g_cg_dir)."/builder/output/bin/".$os_name."/".$tool);
+    add_codegen_tool_candidate($candidates, get_source_build_dir()."/output/bin/".$os_name."/".$tool);
     add_codegen_tool_candidate($candidates, $g_cg_dir."/".$os_name."/".$tool);
 
     foreach ($candidates as $candidate)

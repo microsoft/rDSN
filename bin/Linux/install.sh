@@ -10,7 +10,14 @@ then
     exit -1
 fi
 
-if [ ! -d "builder/output" ]
+ROOT=`pwd`
+BUILD_DIR="${DSN_BUILD_DIR:-$ROOT/builder}"
+case "$BUILD_DIR" in
+    /*) ;;
+    *) BUILD_DIR="$ROOT/$BUILD_DIR" ;;
+esac
+
+if [ ! -d "$BUILD_DIR/output" ]
 then
     echo "ERROR: not build yet"
     exit -1
@@ -27,11 +34,11 @@ echo "INSTALL_DIR=$INSTALL_DIR"
 
 echo "Copying files..."
 
-cp -r -v `pwd`/builder/output/* $INSTALL_DIR
+cp -r -v "$BUILD_DIR"/output/* $INSTALL_DIR
 
-if [ -f "builder/bin/dsn.svchost/dsn.svchost" ]
+if [ -f "$BUILD_DIR/bin/dsn.svchost/dsn.svchost" ]
 then
-    cp builder/bin/dsn.svchost/dsn.svchost $INSTALL_DIR/bin
+    cp "$BUILD_DIR/bin/dsn.svchost/dsn.svchost" $INSTALL_DIR/bin
     echo "Install succeed"    
     if [ -z "$DSN_ROOT" -o "$DSN_ROOT" != "$INSTALL_DIR" ]
     then
@@ -54,5 +61,3 @@ then
 else
     echo "Install succeed"
 fi
-
-
