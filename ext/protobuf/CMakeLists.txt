@@ -24,7 +24,7 @@ ExternalProject_Add(protobuf
     GIT_REPOSITORY ${target_url}
     GIT_TAG ${git_tag}
     GIT_SHALLOW TRUE
-    GIT_PROGRESS TRUE
+    GIT_PROGRESS FALSE
     CMAKE_ARGS ${PROTOBUF_CMAKE_ARGS}
 )
 

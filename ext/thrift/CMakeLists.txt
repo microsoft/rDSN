@@ -53,7 +53,7 @@ ExternalProject_Add(thrift
     GIT_REPOSITORY ${target_url}
     GIT_TAG ${git_tag}
     GIT_SHALLOW TRUE
-    GIT_PROGRESS TRUE
+    GIT_PROGRESS FALSE
     CMAKE_ARGS ${THRIFT_CMAKE_ARGS}
 )
 

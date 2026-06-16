@@ -46,6 +46,7 @@ endif()
 ExternalProject_Add(${project_name}
     GIT_REPOSITORY ${target_url}
     GIT_TAG ${git_tag}
+    GIT_PROGRESS FALSE
     CMAKE_ARGS "${CMAKE_ARGS};-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX};${my_cmake_args};"
     BINARY_DIR "${target_bin_dir}"
     INSTALL_DIR "${PROJECT_BINARY_DIR}/lib"
