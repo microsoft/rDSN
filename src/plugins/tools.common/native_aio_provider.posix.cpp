@@ -41,6 +41,9 @@
 # include <aio.h>
 # include <fcntl.h>
 # include <cstdlib>
+# if defined(__APPLE__)
+# include <thread>
+# endif
 
 # ifdef __TITLE__
 # undef __TITLE__
@@ -155,6 +158,24 @@ namespace dsn {
             }
         }
 
+# if defined(__APPLE__)
+        void wait_aio_completed(posix_disk_aio_context* ctx)
+        {
+            const struct aiocb* const cbs[] = {&ctx->cb};
+            while (aio_error(&ctx->cb) == EINPROGRESS)
+            {
+                if (aio_suspend(cbs, 1, nullptr) != 0 && errno != EINTR)
+                {
+                    derror("aio suspend failed, err = %d (%s).", errno, strerror(errno));
+                    break;
+                }
+            }
+            sigval sig;
+            sig.sival_ptr = ctx;
+            aio_completed(sig);
+        }
+# endif
+
         error_code native_posix_aio_provider::aio_internal(aio_task* aio_tsk, bool async, /*out*/ uint32_t* pbytes /*= nullptr*/)
         {
             auto aio = (posix_disk_aio_context *)aio_tsk->aio();
@@ -169,11 +190,17 @@ namespace dsn {
             aio->cb.aio_nbytes = aio->buffer_size;
             aio->cb.aio_offset = aio->file_offset;
 
+# if defined(__APPLE__)
+            // Darwin does not support SIGEV_THREAD for POSIX AIO. Use SIGEV_NONE
+            // and wait for completion explicitly with aio_suspend().
+            aio->cb.aio_sigevent.sigev_notify = SIGEV_NONE;
+# else
             // set up callback
             aio->cb.aio_sigevent.sigev_notify = SIGEV_THREAD;
             aio->cb.aio_sigevent.sigev_notify_function = aio_completed;
             aio->cb.aio_sigevent.sigev_notify_attributes = nullptr;
             aio->cb.aio_sigevent.sigev_value.sival_ptr = aio;
+# endif
 
             if (!async)
             {
@@ -215,11 +242,18 @@ namespace dsn {
             {
                 if (async)
                 {
+# if defined(__APPLE__)
+                    std::thread(wait_aio_completed, aio).detach();
+# endif
                     return ERR_IO_PENDING;
                 }
                 else
                 {
+# if defined(__APPLE__)
+                    wait_aio_completed(aio);
+# else
                     aio->evt->wait();
+# endif
                     delete aio->evt;
                     aio->evt = nullptr;
                     if (pbytes != nullptr)
