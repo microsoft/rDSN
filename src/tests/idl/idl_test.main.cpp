@@ -135,12 +135,15 @@ void create_dir(const char* dir, bool &result)
 
 void rm_dir(const char* dir, bool &result)
 {
-#ifdef _WIN32
-    std::string cmd = std::string("rd /S /Q ") + file(dir);
-#else
-    std::string cmd = std::string("rm -rf ") + file(dir);
-#endif
-    execute(cmd, result);
+    const bool ret = dsn::utils::filesystem::remove_path(file(dir));
+    result = result && ret;
+}
+
+void cleanup_generated_project(bool &result)
+{
+    rm_dir("data", result);
+    rm_dir("builder", result);
+    rm_dir("src", result);
 }
 
 std::string get_generated_project_dsn_root()
@@ -169,6 +172,15 @@ std::string get_codegen_script()
     return file(combine(DSN_ROOT_DIR, script));
 }
 
+std::string get_boost_include_dir()
+{
+#ifdef DSN_BOOST_INCLUDEDIR
+    return file(DSN_BOOST_INCLUDEDIR);
+#else
+    return std::string();
+#endif
+}
+
 void cmake(Language lang, bool &result)
 {
     create_dir("builder", result);
@@ -180,6 +192,11 @@ void cmake(Language lang, bool &result)
     std::string cmake_cmd = std::string("cd builder && cmake ") + file("../src");
 #endif
     cmake_cmd += std::string(" -DDSN_ROOT=") + get_generated_project_dsn_root();
+    const std::string boost_include_dir = get_boost_include_dir();
+    if (!boost_include_dir.empty())
+    {
+        cmake_cmd += std::string(" -DBOOST_INCLUDEDIR=") + boost_include_dir;
+    }
     
     execute(cmake_cmd, result);
     if (!result)
@@ -212,11 +229,16 @@ void cmake(Language lang, bool &result)
     {
         execute(file("builder/bin/counter/counter.exe") + " " + file("builder/bin/counter/config.ini"), result);
     }
+    if (!result)
+    {
+        std::cerr << "Failed to run generated counter project." << std::endl;
+    }
 }
 
 bool test_code_generation(Language lang, IDL idl, Format format)
 {
     bool result = true;
+    cleanup_generated_project(result);
     std::string codegen_cmd = get_codegen_script()
         + std::string(" counter.")
         + (idl == idl_protobuf ? "proto" : "thrift")
@@ -236,6 +258,16 @@ bool test_code_generation(Language lang, IDL idl, Format format)
             "dsn_add_shared_library()",
             "dsn_add_executable()",
             result);
+        replace_in_file(
+            combine("src", "config.ini"),
+            "dsn.tools.nfs\ncounter\n",
+            "dsn.tools.nfs\n",
+            result);
+        replace_in_file(
+            combine("src", "config.ini"),
+            "pause_on_start = false\n",
+            "pause_on_start = false\ncli_local = false\ncli_remote = false\n",
+            result);
     } else
     {
         src_files.push_back("counter.main.cs");
@@ -245,13 +277,9 @@ bool test_code_generation(Language lang, IDL idl, Format format)
         copy_file(combine(combine(DSN_ROOT_DIR "/src/tests/idl/resources", src_root), i), file("src"), result);
     }
     cmake(lang, result);
-    rm_dir("data", result);
-    rm_dir("builder", result);
-    rm_dir("src", result);
-    //return result;
-
-    printf("TODO: idl test to be fixed\n");
-    return true;
+    bool tmp = true;
+    cleanup_generated_project(tmp);
+    return result;
 }
 
 template<typename T>

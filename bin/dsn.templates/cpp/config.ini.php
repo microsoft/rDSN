@@ -20,30 +20,30 @@ $default_serialize_format = $default_serialize_format."_".strtoupper($idl_format
 dsn.tools.common
 dsn.tools.emulator
 dsn.tools.nfs
-<?=$_PROG->name?> 
+<?=$_PROG->name?>
 
 [apps.server]
-type = <?=$_PROG->name?> 
+type = <?=$_PROG->name?>
 arguments = 
 ports = 34888
 pools = THREAD_POOL_DEFAULT
 run = true
 
 [apps.client]
-type = <?=$_PROG->name?>.client 
+type = <?=$_PROG->name?>.client
 arguments = localhost:34888
 ;arguments = dsn://mycluster/<?=$_PROG->name?>.c1
 pools = THREAD_POOL_DEFAULT
 
 [apps.client.perf]
-type = <?=$_PROG->name?>.client.perf 
+type = <?=$_PROG->name?>.client.perf
 arguments = localhost:34888
 ;arguments = dsn://mycluster/<?=$_PROG->name?>.c1
 pools = THREAD_POOL_DEFAULT
 run = false
 
-<?php 
-foreach ($_PROG->services as $svc) 
+<?php
+foreach ($_PROG->services as $svc)
 {
     echo "[".$_PROG->name.".".$svc->name.".perf-test.case.1]".PHP_EOL;
     echo "perf_test_seconds  = 360000".PHP_EOL;
@@ -55,9 +55,9 @@ foreach ($_PROG->services as $svc)
     foreach ($svc->functions as $f) echo "1,";
     echo PHP_EOL;
     echo PHP_EOL;
-    foreach ($svc->functions as $f) { 
+    foreach ($svc->functions as $f) {
         if ($f->is_write)
-        {   
+        {
             echo "[task.". $f->get_rpc_code(). "]".PHP_EOL;
             echo "rpc_request_is_write_operation = true".PHP_EOL;
             echo PHP_EOL;

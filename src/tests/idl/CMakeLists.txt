@@ -10,6 +10,9 @@ endif()
 
 add_definitions(-DDSN_ROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../..")
 add_definitions(-DDSN_INSTALL_ROOT_DIR="${CMAKE_INSTALL_PREFIX}")
+if(DEFINED BOOST_INCLUDEDIR AND NOT "${BOOST_INCLUDEDIR}" STREQUAL "")
+    add_definitions(-DDSN_BOOST_INCLUDEDIR="${BOOST_INCLUDEDIR}")
+endif()
 
 set(MY_PROJ_NAME dsn.idl.tests)
 
