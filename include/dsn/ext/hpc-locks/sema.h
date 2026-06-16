@@ -92,9 +92,11 @@ public:
  
     bool wait(int timeout_milliseconds)
     {
-        // TODO: timeout
-        wait();
-        return true;
+        assert(timeout_milliseconds >= 0);
+        mach_timespec_t ts;
+        ts.tv_sec = timeout_milliseconds / 1000;
+        ts.tv_nsec = (timeout_milliseconds % 1000) * 1000000;
+        return semaphore_timedwait(m_sema, ts) == KERN_SUCCESS;
     }
 
     void signal()
@@ -158,6 +160,11 @@ public:
         clock_gettime(CLOCK_REALTIME, &ts);
         ts.tv_sec += timeout_milliseconds / 1000;
         ts.tv_nsec += timeout_milliseconds % 1000 * 1000000;
+        if (ts.tv_nsec >= 1000000000)
+        {
+            ts.tv_sec++;
+            ts.tv_nsec -= 1000000000;
+        }
         
         return sem_timedwait(&m_sema, &ts) == 0;
     }

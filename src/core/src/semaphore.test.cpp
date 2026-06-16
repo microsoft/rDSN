@@ -35,6 +35,7 @@
 
 # include <dsn/ext/hpc-locks/sema.h>
 # include <gtest/gtest.h>
+# include <atomic>
 # include <thread>
 
 TEST(core, Semaphore)
@@ -87,19 +88,19 @@ TEST(core, LightweightSemaphore)
     ASSERT_FALSE(s.tryWait());
     ASSERT_FALSE(s.wait(10));
 
-    bool flag = false;
+    std::atomic<bool> flag(false);
 
     std::thread t1([&s, &flag]() {
         ASSERT_FALSE(s.tryWait());
         ASSERT_FALSE(s.wait(10));
 
-        flag = true;
+        flag.store(true);
 
         s.wait();
     });
 
     std::thread t2([&s, &flag]() {
-        while (!flag)
+        while (!flag.load())
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         s.signal(2);
@@ -110,4 +111,3 @@ TEST(core, LightweightSemaphore)
     t1.join();
     t2.join();
 }
-

@@ -35,6 +35,7 @@
 
 # include <dsn/utility/priority_queue.h>
 # include <gtest/gtest.h>
+# include <atomic>
 # include <thread>
 
 using namespace ::dsn::utils;
@@ -121,8 +122,9 @@ TEST(core, blocking_priority_queue)
     ASSERT_EQ(0, ct);
     ASSERT_EQ(0, d->priority);
     ASSERT_EQ(10, d->queue_index);
+    delete d;
 
-    bool flag = false;
+    std::atomic<bool> flag(false);
 
     std::thread t1([&q, &flag]() {
         long ct;
@@ -132,7 +134,7 @@ TEST(core, blocking_priority_queue)
         ASSERT_EQ(nullptr, d);
         ASSERT_EQ(0, ct);
 
-        flag = true;
+        flag.store(true);
 
         d = q.dequeue(ct, TIME_MS_MAX);
         ASSERT_NE(nullptr, d);
@@ -147,7 +149,7 @@ TEST(core, blocking_priority_queue)
     });
 
     std::thread t2([&q, &flag]() {
-        while (!flag)
+        while (!flag.load())
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         ASSERT_EQ(1, q.enqueue(new queue_data(1, 20), 1));
     });
