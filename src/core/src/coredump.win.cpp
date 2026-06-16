@@ -40,6 +40,7 @@
 
 # include <windows.h>
 # include <dbghelp.h>
+# include <cstdio>
 # include <cstdlib>
 # include <ctime>
 # include <psapi.h>
@@ -157,7 +158,7 @@ namespace dsn {
             if (szResult)
             {
                 derror("%s", szResult);
-                printf("%s", szResult);
+                fprintf(stderr, "%s", szResult);
             }
 
             ::dsn::tools::sys_exit.execute(SYS_EXIT_EXCEPTION);

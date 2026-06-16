@@ -57,7 +57,7 @@ bool configuration::load_include(const char* inc, const char* arguments)
     configuration conf;
     if (!conf.load(inc, arguments))
     {
-        printf("load included configuration file %s failed\n", inc);
+        fprintf(stderr, "load included configuration file %s failed\n", inc);
         return false;
     }
 
@@ -85,14 +85,14 @@ bool configuration::load(const char* file_name, const char* arguments, const cha
     {
         std::string cdir;
         dsn::utils::filesystem::get_current_directory(cdir);
-        printf("ERROR: cannot open file %s in %s, err = %s\n", file_name, cdir.c_str(), strerror(errno));
+        fprintf(stderr, "ERROR: cannot open file %s in %s, err = %s\n", file_name, cdir.c_str(), strerror(errno));
         return false;
     }
     ::fseek(fd, 0, SEEK_END);
     int len = ftell(fd);
     if (len == -1 || len == 0)
     {
-        printf("ERROR: cannot get length of %s, err = %s\n", file_name, strerror(errno));
+        fprintf(stderr, "ERROR: cannot get length of %s, err = %s\n", file_name, strerror(errno));
         ::fclose(fd);
         return false;
     }
@@ -103,7 +103,7 @@ bool configuration::load(const char* file_name, const char* arguments, const cha
     ::fclose(fd);
     if (sz != 1)
     {
-        printf("ERROR: cannot read correct data of %s, err = %s\n", file_name, strerror(errno));
+        fprintf(stderr, "ERROR: cannot read correct data of %s, err = %s\n", file_name, strerror(errno));
         return false;
     }
     _file_data[len] = '\n';
@@ -122,7 +122,7 @@ bool configuration::load(const char* file_name, const char* arguments, const cha
             utils::split_args(kv.c_str(), vs, '=');
             if (vs.size() != 2)
             {
-                printf("ERROR: invalid configuration argument: '%s' in '%s'\n", kv.c_str(), arguments);
+                fprintf(stderr, "ERROR: invalid configuration argument: '%s' in '%s'\n", kv.c_str(), arguments);
                 return false;
             }
 
@@ -211,7 +211,7 @@ bool configuration::load(const char* file_name, const char* arguments, const cha
         {
 ConfReg:
             if (pSection == nullptr) {
-                printf("ERROR: configuration section not defined\n");
+                fprintf(stderr, "ERROR: configuration section not defined\n");
                 goto err;
             }
             if (pEqual)    *pEqual = '\0';
@@ -224,7 +224,7 @@ ConfReg:
             {
                 auto it = pSection->find((const char*)pKey);
 
-                printf("WARNING: overwrite option [%s] %s = (%s => %s) (line %u => %u)\n",
+                fprintf(stderr, "WARNING: overwrite option [%s] %s = (%s => %s) (line %u => %u)\n",
                     pSectionName,
                     pKey,
                     it->second->value.c_str(),
@@ -349,7 +349,7 @@ Next:
             utils::split_args(kv.c_str(), vs, '=');
             if (vs.size() != 2 && vs.size() != 1)
             {
-                printf("ERROR: invalid configuration overwrites: '%s' in '%s'\n", kv.c_str(), arguments);
+                fprintf(stderr, "ERROR: invalid configuration overwrites: '%s' in '%s'\n", kv.c_str(), arguments);
                 return false;
             }
 
@@ -359,7 +359,7 @@ Next:
             auto pos = section_and_key.find_last_of('.');
             if (pos == std::string::npos)
             {
-                printf("ERROR: invalid configuration overwrites: "
+                fprintf(stderr, "ERROR: invalid configuration overwrites: "
                     "'%s' does not represent section.key\n", 
                     section_and_key.c_str()
                 );
@@ -378,7 +378,7 @@ Next:
     return true;
     
 err:
-    printf("ERROR: unexpected configuration in %s(line %d): %s\n", file_name, lineno, pLine);
+    fprintf(stderr, "ERROR: unexpected configuration in %s(line %d): %s\n", file_name, lineno, pLine);
     return false;
 }
 
@@ -435,7 +435,7 @@ bool configuration::get_string_value_internal(const char* section, const char* k
             {
                 if (it2->second->value != default_value)
                 {
-                    printf("ERROR: configuration default value is different for '[%s] %s': %s <--> %s\n",
+                    fprintf(stderr, "ERROR: configuration default value is different for '[%s] %s': %s <--> %s\n",
                         section, key, it2->second->value.c_str(), default_value);
                     ::abort();
                 }
@@ -482,7 +482,7 @@ const char* configuration::get_string_value(const char* section, const char* key
     {
         if (_warning)
         {
-            printf("WARNING: configuration '[%s] %s' is not defined, default value is '%s'\n",
+            fprintf(stderr, "WARNING: configuration '[%s] %s' is not defined, default value is '%s'\n",
                 section,
                 key,
                 default_value
@@ -499,7 +499,7 @@ std::list<std::string> configuration::get_string_value_list(const char* section,
     {
         if (_warning)
         {
-            printf("WARNING: configuration '[%s] %s' is not defined, default value is '%s'\n",
+            fprintf(stderr, "WARNING: configuration '[%s] %s' is not defined, default value is '%s'\n",
                 section,
                 key,
                 ""
@@ -574,7 +574,7 @@ void configuration::set(const char* section, const char* key, const char* value,
     }
     else
     {        
-        printf("WARNING: overwrite [%s] %s = (%s => %s)\n",
+        fprintf(stderr, "WARNING: overwrite [%s] %s = (%s => %s)\n",
             section,
             key, 
             it2->second->value.c_str(),
@@ -589,7 +589,7 @@ void configuration::set(const char* section, const char* key, const char* value,
 
 void configuration::register_config_change_notification(config_file_change_notifier notifier)
 {
-    printf("ERROR: method register_config_change_notification() not implemented\n");
+    fprintf(stderr, "ERROR: method register_config_change_notification() not implemented\n");
     ::abort();
 }
 
@@ -599,7 +599,7 @@ bool configuration::has_section(const char* section)
     bool r = (it != _configs.end());
     if (!r && _warning)
     {
-        printf("WARNING: configuration section '[%s]' is not defined, using default settings\n", section);
+        fprintf(stderr, "WARNING: configuration section '[%s]' is not defined, using default settings\n", section);
     }
     return r;
 }

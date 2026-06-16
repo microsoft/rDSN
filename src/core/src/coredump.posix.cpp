@@ -38,6 +38,7 @@
 
 # include "coredump.h"
 # include <dsn/tool_api.h>
+# include <cstdio>
 # include <sys/types.h>
 # include <signal.h>
 
@@ -71,8 +72,8 @@ namespace dsn {
 
         static void handle_core_dump(int signal_id)
         {
-            printf("got signal id: %d\n", signal_id);
-            fflush(stdout);
+            fprintf(stderr, "got signal id: %d\n", signal_id);
+            fflush(stderr);
             /*
              * firstly we must set the sig_handler to default,
              * to prevent the possible inifinite loop
@@ -87,12 +88,11 @@ namespace dsn {
 
         static void handle_term(int signal_id)
         {
-            printf("got signal id: %d\n", signal_id);
-            fflush(stdout);
+            fprintf(stderr, "got signal id: %d\n", signal_id);
+            fflush(stderr);
             dsn_exit(0);
         }
     }
 }
 
 # endif
-

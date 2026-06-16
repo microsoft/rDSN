@@ -56,6 +56,7 @@
 # include "coredump.h"
 # include "transient_memory.h"
 # include "library_utils.h"
+# include <cstdio>
 # include <fstream>
 
 # if defined(_WIN32)
@@ -306,7 +307,7 @@ bool run(
 
     if (!dsn_all.config->load(config_file, config_arguments, config_overwrites))
     {
-        printf("Fail to load config file %s\n", config_file);
+        fprintf(stderr, "Fail to load config file %s\n", config_file);
         return false;
     }
     dwarn("load config file '%s' successfully", config_file);
@@ -338,7 +339,7 @@ bool run(
     ::dsn::service_spec spec;
     if (!spec.init())
     {
-        printf("error in config file %s, exit ...\n", config_file);
+        fprintf(stderr, "error in config file %s, exit ...\n", config_file);
         return false;
     }
 
@@ -377,7 +378,7 @@ bool run(
     // init app specs
     if (!spec.init_app_specs())
     {
-        printf("error in config file %s, exit ...\n", config_file);
+        fprintf(stderr, "error in config file %s, exit ...\n", config_file);
         return false;
     }
 
@@ -517,7 +518,7 @@ DSN_API void dsn_run(int argc, char** argv, bool sleep_after_init)
 {
     if (argc < 2)
     {
-        printf("invalid options for dsn_run\n"
+        fprintf(stderr, "invalid options for dsn_run\n"
             "// run the system with arguments\n"
             "//   config [-cargs k1=v1;k2=v2] [-overwrite section1.k1=v1;section2.k2=v2] [-app_list app_name1@index1;app_name2@index]\n"
             "// e.g., config.ini -app_list replica@1 to start the first replica as a new process\n"
@@ -562,7 +563,7 @@ DSN_API void dsn_run(int argc, char** argv, bool sleep_after_init)
         }
         else
         {
-            printf("unknown arguments %s\n", argv[i]);
+            fprintf(stderr, "unknown arguments %s\n", argv[i]);
             exit(1);
             return;
         }
@@ -575,7 +576,7 @@ DSN_API void dsn_run(int argc, char** argv, bool sleep_after_init)
         app_list
     ))
     {
-        printf("run the system failed\n");
+        fprintf(stderr, "run the system failed\n");
         dsn_exit(-1);
         return;
     }

@@ -149,7 +149,7 @@ template<> inline double configuration::get_value<double>(const char* section, c
     {
         if (_warning)
         {
-            printf("WARNING: configuration '[%s] %s' is not defined, default value is '%lf'\n",
+            fprintf(stderr, "WARNING: configuration '[%s] %s' is not defined, default value is '%lf'\n",
                 section,
                 key,
                 default_value
@@ -175,7 +175,7 @@ template<> inline long long configuration::get_value<long long>(const char* sect
     {
         if (_warning)
         {
-            printf("WARNING: configuration '[%s] %s' is not defined, default value is '%lld'\n",
+            fprintf(stderr, "WARNING: configuration '[%s] %s' is not defined, default value is '%lld'\n",
                 section,
                 key,
                 default_value
@@ -207,7 +207,7 @@ template<> inline long configuration::get_value<long>(const char* section, const
     {
         if (_warning)
         {
-            printf("WARNING: configuration '[%s] %s' is not defined, default value is '%ld'\n",
+            fprintf(stderr, "WARNING: configuration '[%s] %s' is not defined, default value is '%ld'\n",
                 section,
                 key,
                 default_value
@@ -268,7 +268,7 @@ template<> inline bool configuration::get_value<bool>(const char* section, const
     {
         if (_warning)
         {
-            printf("WARNING: configuration '[%s] %s' is not defined, default value is '%s'\n",
+            fprintf(stderr, "WARNING: configuration '[%s] %s' is not defined, default value is '%s'\n",
                 section,
                 key,
                 default_value ? "true" : "false"

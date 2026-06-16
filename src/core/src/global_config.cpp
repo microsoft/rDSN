@@ -34,6 +34,7 @@
  */
 
 # include <dsn/tool-api/global_config.h>
+# include <cstdio>
 # include <thread>
 # include <dsn/tool-api/task_spec.h>
 # include <dsn/tool-api/network.h>
@@ -88,7 +89,7 @@ static bool build_client_network_confs(
 
             if (vs.size() != 2)
             {
-                printf("invalid client network specification '%s', should be '$network-factory,$msg-buffer-size'\n",
+                fprintf(stderr, "invalid client network specification '%s', should be '$network-factory,$msg-buffer-size'\n",
                     v.c_str()
                     );
                 return false;
@@ -100,7 +101,7 @@ static bool build_client_network_confs(
 
             if (ns.message_buffer_block_size == 0)
             {
-                printf("invalid message buffer size specified: '%s'\n", vs.rbegin()->c_str());
+                fprintf(stderr, "invalid message buffer size specified: '%s'\n", vs.rbegin()->c_str());
                 return false;
             }
 
@@ -108,7 +109,7 @@ static bool build_client_network_confs(
         }
         else
         {
-            printf("invalid rpc channel type: %s\n", k2.c_str());
+            fprintf(stderr, "invalid rpc channel type: %s\n", k2.c_str());
             return false;
         }
     }
@@ -156,7 +157,7 @@ static bool build_server_network_confs(
         utils::split_args(k2.c_str(), ks, '.');
         if (ks.size() != 2)
         {
-            printf("invalid network server config '%s', should be like 'network.server.12345.RPC_CHANNEL_TCP' instead\n", k.c_str());
+            fprintf(stderr, "invalid network server config '%s', should be like 'network.server.12345.RPC_CHANNEL_TCP' instead\n", k.c_str());
             return false;
         }
 
@@ -167,9 +168,9 @@ static bool build_server_network_confs(
         {
             if (port != 0)
             {
-                printf("invalid network server configuration '%s'\n", k.c_str());
-                printf("port must be zero in [apps..default]\n");
-                printf(" e.g., network.server.0.RPC_CHANNEL_TCP = NET_HDR_DSN, dsn::tools::asio_network_provider,65536\n");
+                fprintf(stderr, "invalid network server configuration '%s'\n", k.c_str());
+                fprintf(stderr, "port must be zero in [apps..default]\n");
+                fprintf(stderr, " e.g., network.server.0.RPC_CHANNEL_TCP = NET_HDR_DSN, dsn::tools::asio_network_provider,65536\n");
                 return false;
             }
         }
@@ -200,7 +201,7 @@ static bool build_server_network_confs(
 
             if (vs.size() != 2)
             {
-                printf("invalid server network specification '%s', should be '$network-factory,$msg-buffer-size'\n",
+                fprintf(stderr, "invalid server network specification '%s', should be '$network-factory,$msg-buffer-size'\n",
                     v.c_str()
                     );
                 return false;
@@ -212,7 +213,7 @@ static bool build_server_network_confs(
 
             if (ns.message_buffer_block_size == 0)
             {
-                printf("invalid message buffer size specified: '%s'\n", vs.rbegin()->c_str());
+                fprintf(stderr, "invalid message buffer size specified: '%s'\n", vs.rbegin()->c_str());
                 return false;
             }
 
@@ -220,7 +221,7 @@ static bool build_server_network_confs(
         }
         else
         {
-            printf("invalid rpc channel type: %s\n", k3.c_str());
+            fprintf(stderr, "invalid rpc channel type: %s\n", k3.c_str());
             return false;
         }
     }
@@ -420,7 +421,7 @@ bool service_spec::init_app_specs()
             auto type = dsn_config_get_value_string("apps.mimic", "type", "", "app type, must be " mimic_app_role_name);
             if (strcmp(type, mimic_app_role_name) != 0)
             {
-                printf("invalid config value '%s' for [apps.mimic] type", type);
+                fprintf(stderr, "invalid config value '%s' for [apps.mimic] type", type);
                 return false;
             }
         }
@@ -463,7 +464,7 @@ bool service_spec::init_app_specs()
             dsn_app* role;
             if (!store.get(app.type.c_str(), role))
             {
-                printf("service type '%s' not registered\n", app.type.c_str());
+                fprintf(stderr, "service type '%s' not registered\n", app.type.c_str());
                 return false;
             }
 
