@@ -20,10 +20,10 @@ $default_serialize_format = $default_serialize_format."_".strtoupper($idl_format
 dsn.tools.common
 dsn.tools.emulator
 dsn.tools.nfs
-<?=$_PROG->name?>
+<?=$_PROG->name.PHP_EOL?>
 
 [apps.server]
-type = <?=$_PROG->name?>
+type = <?=$_PROG->name.PHP_EOL?>
 arguments = 
 ports = 34888
 pools = THREAD_POOL_DEFAULT

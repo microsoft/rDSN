@@ -260,8 +260,8 @@ bool test_code_generation(Language lang, IDL idl, Format format)
             result);
         replace_in_file(
             combine("src", "config.ini"),
-            "dsn.tools.nfs\ncounter\n",
-            "dsn.tools.nfs\n",
+            "dsn.tools.nfs\ncounter\n\n[apps.server]\n",
+            "dsn.tools.nfs\n\n[apps.server]\n",
             result);
         replace_in_file(
             combine("src", "config.ini"),
