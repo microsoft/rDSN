@@ -225,7 +225,7 @@ namespace dsn {
                 auto dp = utils::filesystem::path_combine(_log_dir, str2.str());
                 if (::remove(dp.c_str()) != 0)
                 {
-                    printf("Failed to remove garbage log file %s\n", dp.c_str());
+                    fprintf(stderr, "Failed to remove garbage log file %s\n", dp.c_str());
                     _start_index--;
                     break;
                 }
@@ -304,13 +304,13 @@ namespace dsn {
 
             if (log_level >= _stderr_start_level)
             {
-                print_header(stdout, log_level);
+                print_header(stderr, log_level);
                 if (!_short_header)
                 {
-                    printf("%s:%d:%s(): ", title, line, function);
+                    fprintf(stderr, "%s:%d:%s(): ", title, line, function);
                 }
-                vprintf(fmt, args2);
-                printf("\n");
+                vfprintf(stderr, fmt, args2);
+                fprintf(stderr, "\n");
                 va_end(args2);
             }
 
