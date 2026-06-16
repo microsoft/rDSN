@@ -79,7 +79,14 @@ TEST(core, dsn_ipv4_from_host)
 TEST(core, dsn_ipv4_local)
 {
 #ifndef _WIN32
-    ASSERT_EQ(host_ipv4(127, 0, 0, 1), dsn_ipv4_local("lo"));
+    const char* loopback_interface =
+# if defined(__APPLE__)
+        "lo0"
+# else
+        "lo"
+# endif
+        ;
+    ASSERT_EQ(host_ipv4(127, 0, 0, 1), dsn_ipv4_local(loopback_interface));
     ASSERT_EQ(host_ipv4(0, 0, 0, 0), dsn_ipv4_local("not_exist_interface"));
 #endif
 }
