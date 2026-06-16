@@ -181,6 +181,19 @@ std::string get_boost_include_dir()
 #endif
 }
 
+std::string run_generated_project_command(const std::string &cmd)
+{
+#if defined(__linux__)
+    std::string library_path = combine(get_generated_project_dsn_root(), "lib");
+#ifdef DSN_GTEST_LIB_DIR
+    library_path += ":" + file(DSN_GTEST_LIB_DIR);
+#endif
+    return "LD_LIBRARY_PATH=\"" + library_path + ":$LD_LIBRARY_PATH\" " + cmd;
+#else
+    return cmd;
+#endif
+}
+
 void cmake(Language lang, bool &result)
 {
     create_dir("builder", result);
@@ -222,7 +235,9 @@ void cmake(Language lang, bool &result)
             std::cerr << "Failed to build generated counter project with make." << std::endl;
             return;
         }
-        execute(file("builder/bin/counter/counter") + " " + file("builder/bin/counter/config.ini"), result);
+        execute(run_generated_project_command(
+                    file("builder/bin/counter/counter") + " " + file("builder/bin/counter/config.ini")),
+                result);
 #endif
     }
     else
