@@ -39,9 +39,18 @@ install(DIRECTORY ${PROTOBUF_INSTALL_PREFIX}/lib
 )
 
 if (WIN32)
-    install(PROGRAMS ${PROTOBUF_INSTALL_PREFIX}/bin/protoc.exe
-        DESTINATION bin/Windows
-    )
+    # Prefer protoc built by protobuf. Fall back to the prebuilt compiler
+    # downloaded by pre-require.cmd when this protobuf build does not produce it.
+    install(CODE "
+        set(PROTOC_EXE \"${PROTOBUF_INSTALL_PREFIX}/bin/protoc.exe\")
+        if(NOT EXISTS \"\${PROTOC_EXE}\")
+            set(PROTOC_EXE \"${PROJECT_SOURCE_DIR}/bin/${CMAKE_SYSTEM_NAME}/protoc.exe\")
+        endif()
+        if(NOT EXISTS \"\${PROTOC_EXE}\")
+            message(FATAL_ERROR \"Cannot find protoc.exe to install\")
+        endif()
+        file(INSTALL DESTINATION \"\${CMAKE_INSTALL_PREFIX}/bin/${CMAKE_SYSTEM_NAME}\" TYPE PROGRAM FILES \"\${PROTOC_EXE}\")
+    ")
 else()
     install(PROGRAMS ${PROTOBUF_INSTALL_PREFIX}/bin/protoc
         DESTINATION bin/${CMAKE_SYSTEM_NAME}

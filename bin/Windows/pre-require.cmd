@@ -35,6 +35,11 @@ IF NOT EXIST "%bin_dir%\thrift.exe" (
     IF ERRORLEVEL 1 GOTO error
 )
 
+IF NOT EXIST "%bin_dir%\protoc.exe" (
+    CALL "%bin_dir%\download.cmd" https://raw.githubusercontent.com/linmajia/protobuf/master/pre-built/windows8.1/protoc.exe "%bin_dir%" protoc.exe
+    IF ERRORLEVEL 1 GOTO error
+)
+
 IF NOT EXIST "%bin_dir%\7z.exe" (
     CALL "%bin_dir%\download.cmd" https://raw.githubusercontent.com/linmajia/packages/master/windows/7z.dll "%bin_dir%" 7z.dll
     IF ERRORLEVEL 1 GOTO error

@@ -5,7 +5,6 @@
 .vscode/
 
 bin/config.onecluster.ini
-bin/Linux/thrift
 bin/Windows/7z.dll
 bin/Windows/7z.exe
 bin/Windows/php.exe
@@ -13,6 +12,7 @@ bin/Windows/php.ini
 bin/Windows/php5.dll
 bin/Windows/ssed.exe
 bin/Windows/thrift.exe
+bin/Windows/protoc.exe
 zk/
 builddbg/
 builder/
