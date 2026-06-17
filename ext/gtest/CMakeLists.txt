@@ -2,8 +2,10 @@ set(project_name googletest)
 
 set(target_url ${GTEST_GIT_SOURCE})
 set(git_tag ${GTEST_GIT_TAG})
+set(target_bin_subdir src)
+set(gtest_lib_dir "${PROJECT_BINARY_DIR}/${project_name}/${target_bin_subdir}")
 
-set(my_cmake_args "-Wno-dev;-DCMAKE_SUPPRESS_DEVELOPER_WARNINGS=ON;-Dgtest_force_shared_crt=OFF;-DBUILD_SHARED_LIBS=ON;")
+set(my_cmake_args "-Wno-dev;-DCMAKE_SUPPRESS_DEVELOPER_WARNINGS=ON;-Dgtest_force_shared_crt=OFF;-DBUILD_SHARED_LIBS=ON;-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=${gtest_lib_dir};-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=${gtest_lib_dir};")
 
 if(WIN32)
     set(target_binaries gtest.lib gtest_main.lib gtest.dll gtest_main.dll)
@@ -21,4 +23,4 @@ install(DIRECTORY ${my_source_dir}/include/gtest
 )
 
 set(GTEST_INCLUDE_DIR ${my_source_dir}/include PARENT_SCOPE)
-set(GTEST_LIB_DIR ${my_binary_dir} PARENT_SCOPE)
+set(GTEST_LIB_DIR ${my_binary_dir}/${target_bin_subdir} PARENT_SCOPE)
