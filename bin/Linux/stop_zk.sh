@@ -9,7 +9,12 @@ then
     exit -1
 fi
 
-cd $INSTALL_DIR
+if [ ! -d "$INSTALL_DIR" ]
+then
+    exit 0
+fi
+
+cd "$INSTALL_DIR"
 
 ZOOKEEPER_HOME=`pwd`/zookeeper-3.4.6
 
