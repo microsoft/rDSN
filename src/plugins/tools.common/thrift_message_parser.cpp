@@ -33,6 +33,10 @@
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
+# if defined(_WIN32)
+# include <winsock2.h>
+# endif
+
 # include "thrift_message_parser.h"
 # include <dsn/service_api_c.h>
 # include <dsn/cpp/serialization_helper/thrift_helper.h>

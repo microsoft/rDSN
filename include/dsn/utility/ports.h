@@ -135,7 +135,7 @@ static_assert (sizeof(uint32_t) == sizeof(unsigned long),
 # endif
 
 # if !defined(be64toh)
-# define be64toh(x) ( (be32toh((x)>>32)&0xffffffff) | ( be32toh( (x)&0xffffffff ) << 32 ) )
+# define be64toh(x) ( static_cast<uint64_t>(be32toh(static_cast<uint32_t>((x) >> 32))) | ( static_cast<uint64_t>(be32toh(static_cast<uint32_t>(x))) << 32 ) )
 # endif
 
 
