@@ -224,19 +224,20 @@ namespace dsn {
 
             if (r != 0)
             {
+                const error_code err = (errno == EAGAIN) ? ERR_TRY_AGAIN : ERR_FILE_OPERATION_FAILED;
                 derror("file op failed, err = %d (%s). On FreeBSD, you may need to load"
                        " aio kernel module by running 'sudo kldload aio'.", errno, strerror(errno));
 
                 if (async)
                 {
-                    complete_io(aio_tsk, ERR_FILE_OPERATION_FAILED, 0);
+                    complete_io(aio_tsk, err, 0);
                 }
                 else
                 {
                     delete aio->evt;
                     aio->evt = nullptr;
                 }
-                return ERR_FILE_OPERATION_FAILED;
+                return err;
             }
             else 
             {
