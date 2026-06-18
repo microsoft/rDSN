@@ -104,7 +104,7 @@ do
     if [ -f "$dir/gtests" ]
     then
         pushd "$dir" >/dev/null
-        cat $dir/gtests | while read -r line || [ -n "$line" ]; do
+        while read -r line || [ -n "$line" ]; do
             echo "============ run unit tests in $dir with $line ============"
             rm -fr ./data
             $SVC_HOST $dir/$line
@@ -124,7 +124,7 @@ do
                 popd >/dev/null
                 exit -1
             fi
-        done
+        done < "$dir/gtests"
         popd >/dev/null
     fi    
 done
