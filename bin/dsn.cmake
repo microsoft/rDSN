@@ -507,6 +507,8 @@ function(dsn_setup_compiler_flags)
         add_definitions(-D_WIN32_WINNT=0x0600)
         add_definitions(-D_UNICODE)
         add_definitions(-DUNICODE)
+        # Boost may not recognize newer MSVC versions yet, such as VS 2026.
+        add_definitions(-DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
         add_compile_options(-MP)
         if(DEFINED DSN_PEDANTIC)
             add_compile_options(-WX)
