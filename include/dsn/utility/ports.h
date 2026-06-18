@@ -115,27 +115,57 @@ __pragma(warning(disable:4127))
 
 // make sure to include <winsock2.h> before the usage
 
+# if !defined(_WINSOCK2API_)
+template <typename TResult, typename TArg>
+inline TResult require_winsock2_for_byte_order(TArg)
+{
+    static_assert(sizeof(TArg) == 0,
+        "include <winsock2.h> before using Windows byte-order macros");
+    return TResult();
+}
+# endif
+
 # if !defined(be16toh)
+# if defined(_WINSOCK2API_)
 # define be16toh(x) ntohs(x)
+# else
+# define be16toh(x) ::require_winsock2_for_byte_order<uint16_t>(x)
+# endif
 # endif
 
 # if !defined(htobe16)
+# if defined(_WINSOCK2API_)
 # define htobe16(x) htons(x)
+# else
+# define htobe16(x) ::require_winsock2_for_byte_order<uint16_t>(x)
+# endif
 # endif
 
 static_assert (sizeof(uint32_t) == sizeof(unsigned long),
     "sizeof(uint32_t) == sizeof(unsigned long) for use of ntohl");
 
 # if !defined(be32toh)
+# if defined(_WINSOCK2API_)
 # define be32toh(x) static_cast<uint32_t>(ntohl(static_cast<unsigned long>(x)))
+# else
+# define be32toh(x) ::require_winsock2_for_byte_order<uint32_t>(x)
+# endif
 # endif
 
 # if !defined(htobe32)
+# if defined(_WINSOCK2API_)
 # define htobe32(x) static_cast<uint32_t>(htonl(static_cast<unsigned long>(x)))
+# else
+# define htobe32(x) ::require_winsock2_for_byte_order<uint32_t>(x)
+# endif
 # endif
 
 # if !defined(be64toh)
+# if defined(_WINSOCK2API_)
 # define be64toh(x) ( static_cast<uint64_t>(be32toh(static_cast<uint32_t>((x) >> 32))) | ( static_cast<uint64_t>(be32toh(static_cast<uint32_t>(x))) << 32 ) )
+# else
+# define be64toh(x) ::require_winsock2_for_byte_order<uint64_t>(x)
+# endif
 # endif
 
 
