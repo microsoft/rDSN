@@ -133,9 +133,48 @@ DSN_API uint32_t dsn_ipv4_from_host(const char* name)
     return (uint32_t)ntohl(addr.sin_addr.s_addr);
 }
 
-// If network_interface is "", this only returns the first "eth" prefixed non-loopback IPv4 address.
-// This Linux-centric default misses common macOS and FreeBSD interface names,
-// such as "en0", "em0", "vtnet0", "igb0", and "re0";
+static bool interface_has_prefix(const char* network_interface, const char* prefix)
+{
+    return strncmp(network_interface, prefix, strlen(prefix)) == 0;
+}
+
+# if !defined(_WIN32)
+static bool is_default_interface(const struct ifaddrs* ifa)
+{
+    if ((ifa->ifa_flags & IFF_UP) == 0 ||
+        (ifa->ifa_flags & IFF_LOOPBACK) != 0 ||
+        ifa->ifa_addr->sa_family != AF_INET)
+    {
+        return false;
+    }
+
+# if defined(__APPLE__)
+    return interface_has_prefix(ifa->ifa_name, "en");
+# elif defined(__FreeBSD__)
+    return interface_has_prefix(ifa->ifa_name, "em") ||
+           interface_has_prefix(ifa->ifa_name, "igb") ||
+           interface_has_prefix(ifa->ifa_name, "ix") ||
+           interface_has_prefix(ifa->ifa_name, "re") ||
+           interface_has_prefix(ifa->ifa_name, "bge") ||
+           interface_has_prefix(ifa->ifa_name, "vtnet") ||
+           interface_has_prefix(ifa->ifa_name, "vmx") ||
+           interface_has_prefix(ifa->ifa_name, "iwn") ||
+           interface_has_prefix(ifa->ifa_name, "iwm") ||
+           interface_has_prefix(ifa->ifa_name, "urtwn");
+# else
+    return interface_has_prefix(ifa->ifa_name, "eth") ||
+           interface_has_prefix(ifa->ifa_name, "en") ||
+           interface_has_prefix(ifa->ifa_name, "wl") ||
+           interface_has_prefix(ifa->ifa_name, "ww") ||
+           interface_has_prefix(ifa->ifa_name, "ib") ||
+           interface_has_prefix(ifa->ifa_name, "sl");
+# endif
+}
+# endif
+
+// If network_interface is empty, this returns the first hinted non-loopback IPv4 address.
+// The original Linux-centric "eth" prefix misses modern Linux names and common
+// macOS and FreeBSD interface names, such as "en0", "em0", "vtnet0", "igb0", and "re0";
 // callers may then fall back to hostname resolution, which can choose
 // an address that is inconsistent with localhost-based tests.
 DSN_API uint32_t dsn_ipv4_local(const char* network_interface)
@@ -143,6 +182,7 @@ DSN_API uint32_t dsn_ipv4_local(const char* network_interface)
     uint32_t ret = 0;
 
 # if !defined(_WIN32)
+    const bool use_default_interface = network_interface == nullptr || network_interface[0] == '\0';
     static const char loopback[4] = { 127, 0, 0, 1 };
     struct ifaddrs* ifa = nullptr;
     if (getifaddrs(&ifa) == 0)
@@ -154,12 +194,13 @@ DSN_API uint32_t dsn_ipv4_local(const char* network_interface)
                 i->ifa_addr != nullptr 
                 )
             {
-                if (strcmp(i->ifa_name, network_interface) == 0 ||
-                    (network_interface[0] == '\0' && strncmp(i->ifa_name, "eth", 3) == 0)
-                   )
+                if ((!use_default_interface && strcmp(i->ifa_name, network_interface) == 0) ||
+                    (use_default_interface && is_default_interface(i)))
                 {
+                    // Existing loopback detection checks IPv4 address bytes; IFF_LOOPBACK
+                    // would be a better signal for interface-level loopback status.
                     if (i->ifa_addr->sa_family == AF_INET && 
-                        (network_interface[0] != '\0' || strncmp((const char*)&((struct sockaddr_in *)i->ifa_addr)->sin_addr.s_addr, loopback, 4) != 0))
+                        (!use_default_interface || strncmp((const char*)&((struct sockaddr_in *)i->ifa_addr)->sin_addr.s_addr, loopback, 4) != 0))
                     {
                         ret = (uint32_t)ntohl(((struct sockaddr_in *)i->ifa_addr)->sin_addr.s_addr);
                         break;
@@ -182,7 +223,7 @@ DSN_API uint32_t dsn_ipv4_local(const char* network_interface)
                         auto err = ioctl(fd, SIOCGIFADDR, &ifr);
                         close(fd);
                         if (err == 0 &&
-                            (network_interface[0] != '\0' || strncmp((const char*)&((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr, loopback, 4) != 0))
+                            (!use_default_interface || strncmp((const char*)&((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr, loopback, 4) != 0))
                         {
                             ret = (uint32_t)ntohl(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr);
                             break;

@@ -80,7 +80,7 @@ TEST(core, dsn_ipv4_local)
 {
 #ifndef _WIN32
     const char* loopback_interface =
-# if defined(__APPLE__)
+# if defined(__APPLE__) || defined(__FreeBSD__)
         "lo0"
 # else
         "lo"
