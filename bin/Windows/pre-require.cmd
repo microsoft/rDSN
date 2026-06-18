@@ -119,7 +119,9 @@ IF NOT DEFINED DSN_TMP_CMAKE_EXE (
 )
 
 SET DSN_TMP_CMAKE_FOUND_VERSION=
-FOR /F "tokens=3" %%i IN ('"%DSN_TMP_CMAKE_EXE%" --version 2^>nul ^| findstr /B /C:"cmake version"') DO SET DSN_TMP_CMAKE_FOUND_VERSION=%%i
+FOR /F "tokens=1,2,3" %%i IN ('CALL "%DSN_TMP_CMAKE_EXE%" --version 2^>nul') DO (
+    IF /I "%%i %%j"=="cmake version" SET DSN_TMP_CMAKE_FOUND_VERSION=%%k
+)
 IF NOT DEFINED DSN_TMP_CMAKE_FOUND_VERSION (
     CALL "%bin_dir%\echoc.exe" 4 "failed to detect CMake version from %DSN_TMP_CMAKE_EXE%"
     GOTO error
