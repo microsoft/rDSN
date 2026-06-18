@@ -20,6 +20,11 @@ if (WIN32)
     list (APPEND PROTOBUF_CMAKE_ARGS "-DWITH_CSHARP=ON;")
 endif ()
 
+# Suppress macOS SDK deprecation warnings from protobuf's legacy OSAtomic usage.
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    list (APPEND PROTOBUF_CMAKE_ARGS "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations;")
+endif ()
+
 ExternalProject_Add(protobuf
     GIT_REPOSITORY ${target_url}
     GIT_TAG ${git_tag}
