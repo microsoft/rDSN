@@ -33,7 +33,7 @@ endif()
 set(THRIFT_CXX_FLAGS "")
 
 if(DEFINED DSN_BOOST_HEADER_ONLY AND DSN_BOOST_HEADER_ONLY)
-    list(APPEND THRIFT_CMAKE_ARGS "-DBOOST_ERROR_CODE_HEADER_ONLY;")
+    set(THRIFT_CXX_FLAGS "${THRIFT_CXX_FLAGS} -DBOOST_ERROR_CODE_HEADER_ONLY")
 endif()
 
 # Suppress macOS SDK warnings for deprecated functions such as sprintf.
