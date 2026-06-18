@@ -43,6 +43,10 @@
 # else
 # include <pthread.h>
 
+# ifdef __linux__
+# include <sys/resource.h>
+# endif
+
 # ifdef __FreeBSD__
 # include <pthread_np.h>
 # endif
@@ -217,7 +221,12 @@ void task_worker::set_priority(worker_priority_t pri)
 # ifdef _WIN32
     succ = (::SetThreadPriority(::GetCurrentThread(), prio) == TRUE);
 # elif defined(__linux__)
-    if ((nice(prio) == -1) && (errno != 0))
+    if (prio == 0)
+    {
+        return;
+    }
+
+    if (setpriority(PRIO_PROCESS, 0, prio) != 0)
     {
         succ = false;
     }
