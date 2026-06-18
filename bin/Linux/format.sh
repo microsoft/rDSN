@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # This script is to check format of the project, including:
 #   - not use 'TAB' in codes, instead using spaces.
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PREFIX=$(readlink -m $(dirname ${BASH_SOURCE}))
 export LD_LIBRARY_PATH=${PREFIX}

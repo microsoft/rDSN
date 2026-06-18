@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 local_path=`readlink -f $0`
 local_dir=`dirname $local_path`
 echo "run $0 in $local_dir"

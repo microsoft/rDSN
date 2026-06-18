@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 b_dir=$1
 t_dir=$2

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # !!! This script should be run in dsn project root directory (../../).
 #
 # Shell Options:
@@ -13,8 +13,8 @@
 #    BOOST_DIR      <dir>|""
 #
 # CMake options:
-#    -DCMAKE_C_COMPILER=gcc
-#    -DCMAKE_CXX_COMPILER=g++
+#    -DCMAKE_C_COMPILER=<c compiler>
+#    -DCMAKE_CXX_COMPILER=<c++ compiler>
 #    [-DCMAKE_BUILD_TYPE=Debug]
 #    [-DDSN_GIT_SOURCE=github]
 #    [-DWARNING_ALL=TRUE]
@@ -34,7 +34,9 @@ GCOV_DIR="$ROOT/gcov_report"
 GCOV_TMP="$ROOT/.gcov_tmp"
 GCOV_PATTERN=`find $ROOT/include $ROOT/src -name '*.h' -o -name '*.cpp'`
 TIME=`date '+%Y-%m-%d %H:%M:%S%z'`
-CMAKE_OPTIONS="$CMAKE_OPTIONS -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
+CMAKE_C_COMPILER="${CC:-cc}"
+CMAKE_CXX_COMPILER="${CXX:-c++}"
+CMAKE_OPTIONS="$CMAKE_OPTIONS -DCMAKE_C_COMPILER=$CMAKE_C_COMPILER -DCMAKE_CXX_COMPILER=$CMAKE_CXX_COMPILER"
 MAKE_OPTIONS="$MAKE_OPTIONS -j$JOB_NUM"
 
 scripts_path=`readlink -f $0`

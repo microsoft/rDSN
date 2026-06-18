@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PROGRAM=/home/rdsn/{{ placeholder['deploy_name'] }}
 CONFIG=/home/rdsn/config.ini

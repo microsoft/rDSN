@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 os=linux
 scripts_path=`readlink -f "$0"`
 export scripts_dir=`dirname "$scripts_path"`

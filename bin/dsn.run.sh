@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 scripts_path=`readlink -f $0`
 scripts_dir=`dirname $scripts_path`/Linux

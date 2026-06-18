@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # !!! This script should be run in dsn project root directory (../../).
 #
 # Options:
