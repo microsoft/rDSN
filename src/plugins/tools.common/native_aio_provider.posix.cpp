@@ -119,7 +119,11 @@ namespace dsn {
 
         void native_posix_aio_provider::aio(aio_task* aio_tsk)
         {
-            aio_internal(aio_tsk, true);
+            auto err = aio_internal(aio_tsk, true);
+            if (err == ERR_IO_PENDING)
+            {
+                err.end_tracking();
+            }
         }
 
         void aio_completed(sigval sigval)
