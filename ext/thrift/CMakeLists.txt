@@ -33,7 +33,7 @@ endif()
 set(THRIFT_CXX_FLAGS "")
 
 if (NOT WIN32)
-    set(THRIFT_CXX_FLAGS "${THRIFT_CXX_FLAGS} -Wno-unused-variable -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-deprecated-declarations")
+    set(THRIFT_CXX_FLAGS "${THRIFT_CXX_FLAGS} -Wno-unused-variable -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-unused-const-variable -Wno-unused-private-field -Wno-deprecated-declarations")
 endif()
 
 if(DEFINED DSN_BOOST_HEADER_ONLY AND DSN_BOOST_HEADER_ONLY)

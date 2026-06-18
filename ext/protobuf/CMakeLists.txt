@@ -23,7 +23,7 @@ endif ()
 set(PROTOBUF_CXX_FLAGS "")
 
 if (NOT WIN32)
-    set(PROTOBUF_CXX_FLAGS "${PROTOBUF_CXX_FLAGS} -Wno-unused-variable -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-deprecated-declarations")
+    set(PROTOBUF_CXX_FLAGS "${PROTOBUF_CXX_FLAGS} -Wno-unused-variable -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-unused-const-variable -Wno-unused-private-field -Wno-deprecated-declarations")
 endif ()
 
 if(PROTOBUF_CXX_FLAGS)
