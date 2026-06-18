@@ -22,9 +22,8 @@ endif ()
 
 set(PROTOBUF_CXX_FLAGS "")
 
-# Suppress macOS SDK warnings for deprecated functions such as OSAtomicAdd32Barrier.
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    set(PROTOBUF_CXX_FLAGS "${PROTOBUF_CXX_FLAGS} -Wno-deprecated-declarations")
+if (NOT WIN32)
+    set(PROTOBUF_CXX_FLAGS "${PROTOBUF_CXX_FLAGS} -Wno-unused-variable -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-deprecated-declarations")
 endif ()
 
 if(PROTOBUF_CXX_FLAGS)

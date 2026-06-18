@@ -32,13 +32,12 @@ endif()
 
 set(THRIFT_CXX_FLAGS "")
 
-if(DEFINED DSN_BOOST_HEADER_ONLY AND DSN_BOOST_HEADER_ONLY)
-    set(THRIFT_CXX_FLAGS "${THRIFT_CXX_FLAGS} -DBOOST_ERROR_CODE_HEADER_ONLY")
+if (NOT WIN32)
+    set(THRIFT_CXX_FLAGS "${THRIFT_CXX_FLAGS} -Wno-unused-variable -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-deprecated-declarations")
 endif()
 
-# Suppress macOS SDK warnings for deprecated functions such as sprintf.
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    set(THRIFT_CXX_FLAGS "${THRIFT_CXX_FLAGS} -Wno-deprecated-declarations")
+if(DEFINED DSN_BOOST_HEADER_ONLY AND DSN_BOOST_HEADER_ONLY)
+    set(THRIFT_CXX_FLAGS "${THRIFT_CXX_FLAGS} -DBOOST_ERROR_CODE_HEADER_ONLY")
 endif()
 
 if(WIN32)
