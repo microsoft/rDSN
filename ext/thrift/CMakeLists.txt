@@ -29,8 +29,16 @@ set(THRIFT_CMAKE_ARGS
 if(DEFINED BOOST_ROOT)
     list(APPEND THRIFT_CMAKE_ARGS "-DBOOST_ROOT=${BOOST_ROOT};")
 endif()
+
+set(THRIFT_CXX_FLAGS "")
+
 if(DEFINED DSN_BOOST_HEADER_ONLY AND DSN_BOOST_HEADER_ONLY)
-    list(APPEND THRIFT_CMAKE_ARGS "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -DBOOST_ERROR_CODE_HEADER_ONLY;")
+    list(APPEND THRIFT_CMAKE_ARGS "-DBOOST_ERROR_CODE_HEADER_ONLY;")
+endif()
+
+# Suppress macOS SDK warnings for deprecated functions such as sprintf.
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(THRIFT_CXX_FLAGS "${THRIFT_CXX_FLAGS} -Wno-deprecated-declarations")
 endif()
 
 if(WIN32)
@@ -47,6 +55,10 @@ else()
         "-DBUILD_COMPILER=ON;"
         "-DWITH_STATIC_LIB=OFF;"
     )
+endif()
+
+if(THRIFT_CXX_FLAGS)
+    list(APPEND THRIFT_CMAKE_ARGS "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} ${THRIFT_CXX_FLAGS};")
 endif()
 
 ExternalProject_Add(thrift

@@ -20,9 +20,15 @@ if (WIN32)
     list (APPEND PROTOBUF_CMAKE_ARGS "-DWITH_CSHARP=ON;")
 endif ()
 
-# Suppress macOS SDK deprecation warnings from protobuf's legacy OSAtomic usage.
+set(PROTOBUF_CXX_FLAGS "")
+
+# Suppress macOS SDK warnings for deprecated functions such as OSAtomicAdd32Barrier.
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    list (APPEND PROTOBUF_CMAKE_ARGS "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations;")
+    set(PROTOBUF_CXX_FLAGS "${PROTOBUF_CXX_FLAGS} -Wno-deprecated-declarations")
+endif ()
+
+if(PROTOBUF_CXX_FLAGS)
+    list (APPEND PROTOBUF_CMAKE_ARGS "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} ${PROTOBUF_CXX_FLAGS};")
 endif ()
 
 ExternalProject_Add(protobuf
