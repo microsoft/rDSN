@@ -248,6 +248,8 @@ namespace dsn {
                 if (async)
                 {
 # if defined(__APPLE__)
+                    // TODO: Replace the per-request wait thread with a bounded/shared
+                    // macOS AIO completion mechanism such as dispatch_io.
                     std::thread(wait_aio_completed, aio).detach();
 # endif
                     return ERR_IO_PENDING;
