@@ -377,6 +377,8 @@ void disk_engine::process_write(aio_task* aio, uint32_t sz)
 
 void disk_engine::complete_io(aio_task* aio, error_code err, uint32_t bytes, int delay_milliseconds)
 {
+    // TODO: ERR_TRY_AGAIN from an AIO provider means the request was not queued
+    // and could be retried here before completing the user's aio task.
     if (err != ERR_OK)
     {
         dinfo(
