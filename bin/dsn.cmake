@@ -373,6 +373,11 @@ function(dsn_add_project)
     
     dsn_setup_serialization()
 
+    list(FIND MY_PROJ_LIBS gtest DSN_GTEST_LIB_INDEX)
+    if((NOT DSN_GTEST_LIB_INDEX EQUAL -1) AND DEFINED GTEST_LIB_DIR AND NOT "${GTEST_LIB_DIR}" STREQUAL "")
+        list(APPEND MY_PROJ_LIB_PATH ${GTEST_LIB_DIR})
+    endif()
+
     if(MY_PROJ_LANG STREQUAL "CXX")
         set(MY_BOOST_LIBS "")
         if(NOT (MY_BOOST_PACKAGES STREQUAL ""))
