@@ -70,8 +70,7 @@
 
 # if defined(__FreeBSD__)
 # include <sys/types.h>
-# include <sys/user.h>
-# include <libutil.h>
+# include <sys/sysctl.h>
 # endif
 
 # if defined(__APPLE__)
@@ -1073,25 +1072,24 @@ out_error:
                 tls_path_buffer[err] = 0;
                 path = tls_path_buffer;
 # elif defined(__FreeBSD__)
-                struct kinfo_proc* proc;
-
                 if (pid == -1)
                 {
                     pid = (int)getpid();
                 }
 
-                proc = kinfo_getproc(pid);
-                if (proc == nullptr)
+                int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, pid };
+                size_t path_len = TLS_PATH_BUFFER_SIZE;
+                if (::sysctl(mib, 4, tls_path_buffer, &path_len, nullptr, 0) != 0 || (path_len == 0))
                 {
                     return ERR_PATH_NOT_FOUND;
                 }
 
-                // proc->ki_comm is the command name instead of the full name.
-                if (!dsn::utils::filesystem::get_absolute_path(proc->ki_comm, path))
+                if (path_len >= TLS_PATH_BUFFER_SIZE)
                 {
-                    return ERR_PATH_NOT_FOUND;
+                    path_len = TLS_PATH_BUFFER_SIZE - 1;
                 }
-                free(proc);
+                tls_path_buffer[path_len] = '\0';
+                path = tls_path_buffer;
 # elif defined(__APPLE__)
                 if (pid == -1)
                 {
