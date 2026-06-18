@@ -106,7 +106,14 @@ namespace dsn {
             {
                 if (!!ec)
                 {
-                    derror("asio read from %s failed: %s", _remote_addr.to_string(), ec.message().c_str());
+                    if (ec == boost::asio::error::eof)
+                    {
+                        ddebug("asio read from %s ended: %s", _remote_addr.to_string(), ec.message().c_str());
+                    }
+                    else
+                    {
+                        derror("asio read from %s failed: %s", _remote_addr.to_string(), ec.message().c_str());
+                    }
                     on_failure();
                 }
                 else

@@ -235,7 +235,7 @@ static void load_all_modules(::dsn::configuration_ptr config)
         }
         else
         {
-            dwarn("load shared library '%s' successfully", m.first.c_str());
+            dinfo("load shared library '%s' successfully", m.first.c_str());
         }
 
 // attribute(contructor) is not reliable on *nix

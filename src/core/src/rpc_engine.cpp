@@ -721,7 +721,7 @@ namespace dsn {
 
             if (ctx.queue)
             {
-                dwarn("[%s.%s] network server started at port %u, channel = %s, ...",
+                dinfo("[%s.%s] network server started at port %u, channel = %s, ...",
                     node()->name(),
                     ctx.queue->get_name().c_str(),
                     (uint32_t)(port + ctx.port_shift_value),
@@ -730,7 +730,7 @@ namespace dsn {
             }
             else
             {
-                dwarn("[%s] network server started at port %u, channel = %s, ...",
+                dinfo("[%s] network server started at port %u, channel = %s, ...",
                     node()->name(),
                     (uint32_t)(port + ctx.port_shift_value),
                     sp.second.channel.to_string()
