@@ -36,18 +36,12 @@ endif()
 
 set(THRIFT_CXX_FLAGS "")
 
-if (NOT WIN32)
-    set(THRIFT_CXX_FLAGS "${THRIFT_CXX_FLAGS} -Wno-unused-variable -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-unused-const-variable -Wno-deprecated-declarations")
-    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        set(THRIFT_CXX_FLAGS "${THRIFT_CXX_FLAGS} -Wno-unused-private-field")
-    endif()
-endif()
-
 if(DEFINED DSN_BOOST_HEADER_ONLY AND DSN_BOOST_HEADER_ONLY)
     set(THRIFT_CXX_FLAGS "${THRIFT_CXX_FLAGS} -DBOOST_ERROR_CODE_HEADER_ONLY")
 endif()
 
 if(WIN32)
+    set(THRIFT_CXX_FLAGS "${THRIFT_CXX_FLAGS} -DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE")
     list(APPEND THRIFT_CMAKE_ARGS
         "-DBUILD_COMPILER=OFF;"
         "-DBUILD_CSHARP=${BUILD_THRIFT_CSHARP};"
@@ -57,6 +51,10 @@ if(WIN32)
         "-DBOOST_LIBRARYDIR=${BOOST_LIBRARYDIR};"
     )
 else()
+    set(THRIFT_CXX_FLAGS "${THRIFT_CXX_FLAGS} -Wno-unused-variable -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-unused-const-variable -Wno-deprecated-declarations")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        set(THRIFT_CXX_FLAGS "${THRIFT_CXX_FLAGS} -Wno-unused-private-field")
+    endif()
     list(APPEND THRIFT_CMAKE_ARGS
         "-DBUILD_COMPILER=ON;"
         "-DWITH_STATIC_LIB=OFF;"
