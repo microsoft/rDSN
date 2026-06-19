@@ -25,7 +25,7 @@ install [GitHub Windows](https://windows.github.com/)
 
 ```
 c:\projects> git clone https://github.com/Microsoft/rDSN.git
-c:\Projects\rDSN> run.cmd build Debug
+c:\Projects\rDSN> run.cmd build --type Debug
 c:\Projects\rDSN> run.cmd test
 c:\Projects\rDSN> run.cmd install Debug
 ```

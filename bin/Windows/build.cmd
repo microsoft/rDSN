@@ -5,46 +5,118 @@ SET TOP_DIR=%bin_dir%\..\..\
 PUSHD "%TOP_DIR%"
 SET TOP_DIR=%CD%
 POPD
-SET build_type=%1
-SET build_dir=%~f2
+SET build_type=Debug
+SET build_dir=
 SET buildall=-DBUILD_PLUGINS=FALSE
-SET buildcsharp=-DBUILD_CSHARP=FALSE
-SET buildprotobufcsharp=-DBUILD_PROTOBUF_CSHARP=FALSE
+SET DSN_TMP_BUILD_CSHARP=-DBUILD_CSHARP=FALSE
+SET DSN_TMP_BUILD_PROTOBUF_CSHARP=-DBUILD_PROTOBUF_CSHARP=FALSE
 SET cdir=%CD%
 
-IF /I "%3" EQU "build_plugins" (
-    SET buildall=-DBUILD_PLUGINS=TRUE
-    pushd "%TOP_DIR%\src\plugins_ext"
-    git submodule init
-    git submodule update
-    popd 
+:parse_args
+IF "%~1" EQU "" GOTO args_done
+IF /I "%~1" EQU "-h" GOTO usage_exit
+IF /I "%~1" EQU "--help" GOTO usage_exit
+IF /I "%~1" EQU "-t" (
+    IF "%~2" EQU "" GOTO error_usage
+    SET build_type=%~2
+    SHIFT
+    SHIFT
+    GOTO parse_args
 )
-IF /I "%4" EQU "build_plugins" (
-    SET buildall=-DBUILD_PLUGINS=TRUE
-    pushd "%TOP_DIR%\src\plugins_ext"
-    git submodule init
-    git submodule update
-    popd
+IF /I "%~1" EQU "--type" (
+    IF "%~2" EQU "" GOTO error_usage
+    SET build_type=%~2
+    SHIFT
+    SHIFT
+    GOTO parse_args
 )
-IF /I "%5" EQU "build_plugins" (
-    SET buildall=-DBUILD_PLUGINS=TRUE
-    pushd "%TOP_DIR%\src\plugins_ext"
-    git submodule init
-    git submodule update
-    popd
+IF /I "%~1" EQU "-d" (
+    IF "%~2" EQU "" GOTO error_usage
+    FOR %%I IN ("%~2") DO SET build_dir=%%~fI
+    SHIFT
+    SHIFT
+    GOTO parse_args
 )
-IF /I "%3" EQU "build_csharp" SET buildcsharp=-DBUILD_CSHARP=TRUE
-IF /I "%4" EQU "build_csharp" SET buildcsharp=-DBUILD_CSHARP=TRUE
-IF /I "%5" EQU "build_csharp" SET buildcsharp=-DBUILD_CSHARP=TRUE
-IF /I "%3" EQU "build_protobuf_csharp" SET buildprotobufcsharp=-DBUILD_PROTOBUF_CSHARP=TRUE
-IF /I "%4" EQU "build_protobuf_csharp" SET buildprotobufcsharp=-DBUILD_PROTOBUF_CSHARP=TRUE
-IF /I "%5" EQU "build_protobuf_csharp" SET buildprotobufcsharp=-DBUILD_PROTOBUF_CSHARP=TRUE
+IF /I "%~1" EQU "--build_dir" (
+    IF "%~2" EQU "" GOTO error_usage
+    FOR %%I IN ("%~2") DO SET build_dir=%%~fI
+    SHIFT
+    SHIFT
+    GOTO parse_args
+)
+IF /I "%~1" EQU "--build-dir" (
+    IF "%~2" EQU "" GOTO error_usage
+    FOR %%I IN ("%~2") DO SET build_dir=%%~fI
+    SHIFT
+    SHIFT
+    GOTO parse_args
+)
+IF /I "%~1" EQU "--build_plugins" (
+    SET buildall=-DBUILD_PLUGINS=TRUE
+    SET DSN_TMP_BUILD_PLUGINS=TRUE
+    SHIFT
+    GOTO parse_args
+)
+IF /I "%~1" EQU "build_plugins" (
+    SET buildall=-DBUILD_PLUGINS=TRUE
+    SET DSN_TMP_BUILD_PLUGINS=TRUE
+    SHIFT
+    GOTO parse_args
+)
+IF /I "%~1" EQU "--build_csharp" (
+    SET DSN_TMP_BUILD_CSHARP=-DBUILD_CSHARP=TRUE
+    SHIFT
+    GOTO parse_args
+)
+IF /I "%~1" EQU "build_csharp" (
+    SET DSN_TMP_BUILD_CSHARP=-DBUILD_CSHARP=TRUE
+    SHIFT
+    GOTO parse_args
+)
+IF /I "%~1" EQU "--build_protobuf_csharp" (
+    SET DSN_TMP_BUILD_PROTOBUF_CSHARP=-DBUILD_PROTOBUF_CSHARP=TRUE
+    SHIFT
+    GOTO parse_args
+)
+IF /I "%~1" EQU "build_protobuf_csharp" (
+    SET DSN_TMP_BUILD_PROTOBUF_CSHARP=-DBUILD_PROTOBUF_CSHARP=TRUE
+    SHIFT
+    GOTO parse_args
+)
+IF NOT DEFINED DSN_TMP_BUILD_TYPE_ARG (
+    SET build_type=%~1
+    SET DSN_TMP_BUILD_TYPE_ARG=TRUE
+    SHIFT
+    GOTO parse_args
+)
+IF NOT DEFINED DSN_TMP_BUILD_DIR_ARG (
+    FOR %%I IN ("%~1") DO SET build_dir=%%~fI
+    SET DSN_TMP_BUILD_DIR_ARG=TRUE
+    SHIFT
+    GOTO parse_args
+)
+GOTO error_usage
 
-IF "%build_type%" EQU "" SET build_type=Debug
+:args_done
+IF /I "%build_type%" EQU "debug" SET build_type=Debug
+IF /I "%build_type%" EQU "release" SET build_type=Release
+IF /I "%build_type%" EQU "relwithdebinfo" SET build_type=RelWithDebInfo
+IF /I "%build_type%" EQU "minsizerel" SET build_type=MinSizeRel
+IF NOT "%build_type%" EQU "Debug" IF NOT "%build_type%" EQU "Release" IF NOT "%build_type%" EQU "RelWithDebInfo" IF NOT "%build_type%" EQU "MinSizeRel" GOTO error_usage
 
 IF "%build_dir%" EQU "" (
     SET build_dir=%TOP_DIR%\builder
 )
+
+IF "%DSN_TMP_BUILD_PLUGINS%" EQU "TRUE" (
+    pushd "%TOP_DIR%\src\plugins_ext"
+    git submodule init
+    git submodule update
+    popd
+)
+SET DSN_TMP_BUILD_PLUGINS=
+SET DSN_TMP_BUILD_TYPE_ARG=
+SET DSN_TMP_BUILD_DIR_ARG=
 
 SET DSN_TMP_BUILD_ARCH=%DSN_BUILD_ARCH%
 IF "%DSN_TMP_BUILD_ARCH%"=="" IF NOT "%VSCMD_ARG_TGT_ARCH%"=="" SET DSN_TMP_BUILD_ARCH=%VSCMD_ARG_TGT_ARCH%
@@ -160,15 +232,15 @@ IF NOT EXIST "%build_dir%" mkdir "%build_dir%"
 PUSHD "%build_dir%"
 
 :: call cmake
-echo CALL "%DSN_TMP_CMAKE_EXE%" "%cdir%" %buildall% %buildcsharp% %buildprotobufcsharp% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DDSN_BUILD_DIR="%build_dir%" -DCMAKE_BUILD_TYPE="%build_type%" -DBOOST_INCLUDEDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%" -DBOOST_LIBRARYDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%\%DSN_TMP_BOOST_LIB%" -DDSN_GIT_SOURCE="github" %DSN_TMP_CMAKE_ARCH% -G "%DSN_TMP_CMAKE_TARGET%"
-CALL "%DSN_TMP_CMAKE_EXE%" "%cdir%" %buildall% %buildcsharp% %buildprotobufcsharp% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DDSN_BUILD_DIR="%build_dir%" -DCMAKE_BUILD_TYPE="%build_type%" -DBOOST_INCLUDEDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%" -DBOOST_LIBRARYDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%\%DSN_TMP_BOOST_LIB%" -DDSN_GIT_SOURCE="github" %DSN_TMP_CMAKE_ARCH% -G "%DSN_TMP_CMAKE_TARGET%"
+echo CALL "%DSN_TMP_CMAKE_EXE%" "%cdir%" %buildall% %DSN_TMP_BUILD_CSHARP% %DSN_TMP_BUILD_PROTOBUF_CSHARP% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DDSN_BUILD_DIR="%build_dir%" -DCMAKE_BUILD_TYPE="%build_type%" -DBOOST_INCLUDEDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%" -DBOOST_LIBRARYDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%\%DSN_TMP_BOOST_LIB%" -DDSN_GIT_SOURCE="github" %DSN_TMP_CMAKE_ARCH% -G "%DSN_TMP_CMAKE_TARGET%"
+CALL "%DSN_TMP_CMAKE_EXE%" "%cdir%" %buildall% %DSN_TMP_BUILD_CSHARP% %DSN_TMP_BUILD_PROTOBUF_CSHARP% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DDSN_BUILD_DIR="%build_dir%" -DCMAKE_BUILD_TYPE="%build_type%" -DBOOST_INCLUDEDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%" -DBOOST_LIBRARYDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%\%DSN_TMP_BOOST_LIB%" -DDSN_GIT_SOURCE="github" %DSN_TMP_CMAKE_ARCH% -G "%DSN_TMP_CMAKE_TARGET%"
 IF ERRORLEVEL 1 (
     SET DSN_TMP_CMAKE_TARGET=
     SET DSN_TMP_CMAKE_ARCH=
     SET DSN_TMP_BOOST_LIB=
     SET DSN_TMP_USE_CMAKE_BUILD=
-    SET buildcsharp=
-    SET buildprotobufcsharp=
+    SET DSN_TMP_BUILD_CSHARP=
+    SET DSN_TMP_BUILD_PROTOBUF_CSHARP=
     SET DSN_TMP_BUILD_ARCH=
     SET DSN_TMP_VCVARS_ARCH=
     CALL "%bin_dir%\echoc.exe" 4 "cmake error!"
@@ -182,8 +254,8 @@ SET DSN_TMP_CMAKE_ARCH=
 SET DSN_TMP_BOOST_LIB=
 SET DSN_TMP_BUILD_ARCH=
 SET DSN_TMP_VCVARS_ARCH=
-SET buildcsharp=
-SET buildprotobufcsharp=
+SET DSN_TMP_BUILD_CSHARP=
+SET DSN_TMP_BUILD_PROTOBUF_CSHARP=
 
 IF "%DSN_TMP_USE_CMAKE_BUILD%"=="TRUE" (
     SET DSN_TMP_USE_CMAKE_BUILD=
@@ -217,6 +289,10 @@ POPD
 EXIT /B 0
 
 :error_usage
-    CALL "%bin_dir%\echoc.exe" 4 "Usage: run.cmd build build_type(Debug|Release|RelWithDebInfo|MinSizeRel) [build_dir=builder] [build_plugins] [build_csharp] [build_protobuf_csharp], optionally set DSN_BUILD_ARCH=x64|ARM64"
+    CALL "%bin_dir%\echoc.exe" 4 "Usage: run.cmd build [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder] [--build_plugins] [--build_csharp] [--build_protobuf_csharp], optionally set DSN_BUILD_ARCH=x64|ARM64"
 :error
     EXIT /B 1
+
+:usage_exit
+    CALL "%bin_dir%\echoc.exe" 2 "Usage: run.cmd build [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder] [--build_plugins] [--build_csharp] [--build_protobuf_csharp], optionally set DSN_BUILD_ARCH=x64|ARM64"
+    EXIT /B 0

@@ -23,6 +23,8 @@ exit /B 1
 
 :usage
     CALL "%bin_dir%\echoc.exe" 4  "Usage: run.cmd setup-env|pre-require|build|install|test|publish|republish|deploy|start|stop|cleanup|scds(stop-cleanup-deploy-start)|start_zk|stop_zk|onecluster"
+    CALL "%bin_dir%\echoc.exe" 4  "       run.cmd build [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder] [--build_plugins] [--build_csharp] [--build_protobuf_csharp]"
+    CALL "%bin_dir%\echoc.exe" 4  "       run.cmd test [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder]"
     GOTO:EOF
 
 :install_env
