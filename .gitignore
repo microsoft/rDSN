@@ -30,7 +30,6 @@ ext/cmake-3.14.1.7z
 ext/cmake-3.14.1/
 ext/cmake-3.22.6-windows-x86_64.zip
 ext/cmake-3.22.6/
-ext/thrift/install_boost.cmd
 
 rdsn.github.config
 rdsn.github.creator

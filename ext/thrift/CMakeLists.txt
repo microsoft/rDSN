@@ -101,9 +101,9 @@ if (WIN32)
     STRING(REGEX REPLACE "/" "\\\\" WIN_BOOST_INCLUDE_DIR ${BOOST_INCLUDEDIR})
     STRING(REGEX REPLACE "/" "\\\\" WIN_INSTALL_BOOST_DIR ${CMAKE_INSTALL_PREFIX}/include/ext/boost)
 
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/install_boost.cmd.template" "${CMAKE_CURRENT_SOURCE_DIR}/install_boost.cmd")
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/install_boost.cmd.template" "${CMAKE_CURRENT_BINARY_DIR}/install_boost.cmd")
 
-    install(CODE "execute_process(COMMAND \"${CMAKE_CURRENT_SOURCE_DIR}/install_boost.cmd\")")
+    install(CODE "execute_process(COMMAND \"${CMAKE_CURRENT_BINARY_DIR}/install_boost.cmd\")")
 endif ()
 
 # Specify source dir
