@@ -24,7 +24,7 @@ exit /B 1
 :usage
     IF "%DSN_TMP_USAGE_LEVEL%" EQU "" SET DSN_TMP_USAGE_LEVEL=4
     CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "Usage: run.cmd setup-env|pre-require|build|install|test|publish|republish|deploy|start|stop|cleanup|scds(stop-cleanup-deploy-start)|start_zk|stop_zk|onecluster"
-    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "       run.cmd build [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder] [--build_plugins] [--build_csharp] [--build_protobuf_csharp]"
+    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "       run.cmd build [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder] [--build_plugins] [--build_csharp] [--build_protobuf_csharp] [--build_thrift_csharp]"
     CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "       run.cmd test [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder]"
     CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "       run.cmd install [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-b|--build-dir builder] [-d|--install_dir install_dir]"
     CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "       run.cmd publish|republish -d|--deploy-name app_name [-b|--build-dir builder] [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel]"

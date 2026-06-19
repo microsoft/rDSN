@@ -9,11 +9,13 @@ project(dsn C CXX)
 set(DSN_BUILD_RUNTIME TRUE)
 option(BUILD_CSHARP "Build rDSN C# projects" OFF)
 option(BUILD_PROTOBUF_CSHARP "Build protobuf C# library" OFF)
+option(BUILD_THRIFT_CSHARP "Build thrift C# library" OFF)
 
 message(STATUS "use git source ${DSN_GIT_SOURCE}")
 message(STATUS "use BUILD_PLUGINS = ${BUILD_PLUGINS}")
 message(STATUS "use BUILD_CSHARP = ${BUILD_CSHARP}")
 message(STATUS "use BUILD_PROTOBUF_CSHARP = ${BUILD_PROTOBUF_CSHARP}")
+message(STATUS "use BUILD_THRIFT_CSHARP = ${BUILD_THRIFT_CSHARP}")
 message(STATUS "use BOOST_INCLUDEDIR = ${BOOST_INCLUDEDIR}")
 
 

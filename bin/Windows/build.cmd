@@ -10,6 +10,7 @@ SET build_dir=
 SET buildall=-DBUILD_PLUGINS=FALSE
 SET DSN_TMP_BUILD_CSHARP=-DBUILD_CSHARP=FALSE
 SET DSN_TMP_BUILD_PROTOBUF_CSHARP=-DBUILD_PROTOBUF_CSHARP=FALSE
+SET DSN_TMP_BUILD_THRIFT_CSHARP=-DBUILD_THRIFT_CSHARP=FALSE
 SET cdir=%CD%
 
 :parse_args
@@ -80,6 +81,16 @@ IF /I "%~1" EQU "--build_protobuf_csharp" (
 )
 IF /I "%~1" EQU "build_protobuf_csharp" (
     SET DSN_TMP_BUILD_PROTOBUF_CSHARP=-DBUILD_PROTOBUF_CSHARP=TRUE
+    SHIFT
+    GOTO parse_args
+)
+IF /I "%~1" EQU "--build_thrift_csharp" (
+    SET DSN_TMP_BUILD_THRIFT_CSHARP=-DBUILD_THRIFT_CSHARP=TRUE
+    SHIFT
+    GOTO parse_args
+)
+IF /I "%~1" EQU "build_thrift_csharp" (
+    SET DSN_TMP_BUILD_THRIFT_CSHARP=-DBUILD_THRIFT_CSHARP=TRUE
     SHIFT
     GOTO parse_args
 )
@@ -232,8 +243,8 @@ IF NOT EXIST "%build_dir%" mkdir "%build_dir%"
 PUSHD "%build_dir%"
 
 :: call cmake
-echo CALL "%DSN_TMP_CMAKE_EXE%" "%cdir%" %buildall% %DSN_TMP_BUILD_CSHARP% %DSN_TMP_BUILD_PROTOBUF_CSHARP% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DDSN_BUILD_DIR="%build_dir%" -DCMAKE_BUILD_TYPE="%build_type%" -DBOOST_INCLUDEDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%" -DBOOST_LIBRARYDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%\%DSN_TMP_BOOST_LIB%" -DDSN_GIT_SOURCE="github" %DSN_TMP_CMAKE_ARCH% -G "%DSN_TMP_CMAKE_TARGET%"
-CALL "%DSN_TMP_CMAKE_EXE%" "%cdir%" %buildall% %DSN_TMP_BUILD_CSHARP% %DSN_TMP_BUILD_PROTOBUF_CSHARP% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DDSN_BUILD_DIR="%build_dir%" -DCMAKE_BUILD_TYPE="%build_type%" -DBOOST_INCLUDEDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%" -DBOOST_LIBRARYDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%\%DSN_TMP_BOOST_LIB%" -DDSN_GIT_SOURCE="github" %DSN_TMP_CMAKE_ARCH% -G "%DSN_TMP_CMAKE_TARGET%"
+echo CALL "%DSN_TMP_CMAKE_EXE%" "%cdir%" %buildall% %DSN_TMP_BUILD_CSHARP% %DSN_TMP_BUILD_PROTOBUF_CSHARP% %DSN_TMP_BUILD_THRIFT_CSHARP% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DDSN_BUILD_DIR="%build_dir%" -DCMAKE_BUILD_TYPE="%build_type%" -DBOOST_INCLUDEDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%" -DBOOST_LIBRARYDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%\%DSN_TMP_BOOST_LIB%" -DDSN_GIT_SOURCE="github" %DSN_TMP_CMAKE_ARCH% -G "%DSN_TMP_CMAKE_TARGET%"
+CALL "%DSN_TMP_CMAKE_EXE%" "%cdir%" %buildall% %DSN_TMP_BUILD_CSHARP% %DSN_TMP_BUILD_PROTOBUF_CSHARP% %DSN_TMP_BUILD_THRIFT_CSHARP% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DDSN_BUILD_DIR="%build_dir%" -DCMAKE_BUILD_TYPE="%build_type%" -DBOOST_INCLUDEDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%" -DBOOST_LIBRARYDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%\%DSN_TMP_BOOST_LIB%" -DDSN_GIT_SOURCE="github" %DSN_TMP_CMAKE_ARCH% -G "%DSN_TMP_CMAKE_TARGET%"
 IF ERRORLEVEL 1 (
     SET DSN_TMP_CMAKE_TARGET=
     SET DSN_TMP_CMAKE_ARCH=
@@ -241,6 +252,7 @@ IF ERRORLEVEL 1 (
     SET DSN_TMP_USE_CMAKE_BUILD=
     SET DSN_TMP_BUILD_CSHARP=
     SET DSN_TMP_BUILD_PROTOBUF_CSHARP=
+    SET DSN_TMP_BUILD_THRIFT_CSHARP=
     SET DSN_TMP_BUILD_ARCH=
     SET DSN_TMP_VCVARS_ARCH=
     CALL "%bin_dir%\echoc.exe" 4 "cmake error!"
@@ -256,6 +268,7 @@ SET DSN_TMP_BUILD_ARCH=
 SET DSN_TMP_VCVARS_ARCH=
 SET DSN_TMP_BUILD_CSHARP=
 SET DSN_TMP_BUILD_PROTOBUF_CSHARP=
+SET DSN_TMP_BUILD_THRIFT_CSHARP=
 
 IF "%DSN_TMP_USE_CMAKE_BUILD%"=="TRUE" (
     SET DSN_TMP_USE_CMAKE_BUILD=
@@ -301,5 +314,5 @@ EXIT /B 0
     GOTO usage
 
 :usage
-    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "Usage: run.cmd build [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder] [--build_plugins] [--build_csharp] [--build_protobuf_csharp], optionally set DSN_BUILD_ARCH=x64|ARM64"
+    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "Usage: run.cmd build [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder] [--build_plugins] [--build_csharp] [--build_protobuf_csharp] [--build_thrift_csharp], optionally set DSN_BUILD_ARCH=x64|ARM64"
     EXIT /B %DSN_TMP_EXIT_CODE%

@@ -56,6 +56,8 @@ function usage_build()
     echo "   --build_csharp    build rDSN C# projects, default no"
     echo "   --build_protobuf_csharp"
     echo "                     build protobuf C# project, default no"
+    echo "   --build_thrift_csharp"
+    echo "                     build thrift C# project, default no"
     echo "   -v|--verbose      build in verbose mode, default no"
 }
 function run_build()
@@ -71,6 +73,7 @@ function run_build()
     BUILD_PLUGINS=NO
     BUILD_CSHARP=NO
     BUILD_PROTOBUF_CSHARP=NO
+    BUILD_THRIFT_CSHARP=NO
     while [[ $# > 0 ]]; do
         key="$1"
         case $key in
@@ -112,6 +115,9 @@ function run_build()
             --build_protobuf_csharp)
                 BUILD_PROTOBUF_CSHARP=YES
                 ;;
+            --build_thrift_csharp)
+                BUILD_THRIFT_CSHARP=YES
+                ;;
             -v|--verbose)
                 RUN_VERBOSE=YES
                 ;;            
@@ -139,7 +145,8 @@ function run_build()
     BUILD_TYPE="$BUILD_TYPE" GIT_SOURCE="$GIT_SOURCE" CLEAR="$CLEAR" JOB_NUM="$JOB_NUM" \
         BOOST_DIR="$BOOST_DIR" WARNING_ALL="$WARNING_ALL" ENABLE_GCOV="$ENABLE_GCOV" \
         RUN_VERBOSE="$RUN_VERBOSE" BUILD_PLUGINS="$BUILD_PLUGINS" BUILD_CSHARP="$BUILD_CSHARP" \
-        BUILD_PROTOBUF_CSHARP="$BUILD_PROTOBUF_CSHARP" $scripts_dir/build.sh
+        BUILD_PROTOBUF_CSHARP="$BUILD_PROTOBUF_CSHARP" BUILD_THRIFT_CSHARP="$BUILD_THRIFT_CSHARP" \
+        $scripts_dir/build.sh
 }
 
 #####################
