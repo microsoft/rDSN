@@ -204,6 +204,10 @@ macro(ms_link_static_runtime FLAG_VAR)
 endmacro(ms_link_static_runtime)
 
 macro(ms_replace_compiler_flags REPLACE_OPTION)
+    if(MSVC AND (${REPLACE_OPTION} STREQUAL "STATIC_LINK"))
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" PARENT_SCOPE)
+    endif()
+
     set(SUFFIXES "")
     if((NOT DEFINED CMAKE_CONFIGURATION_TYPES) OR (CMAKE_CONFIGURATION_TYPES STREQUAL ""))
         #set(SUFFIXES "_DEBUG" "_RELEASE" "_MINSIZEREL" "_RELWITHDEBINFO")
