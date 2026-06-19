@@ -120,16 +120,23 @@ FOR /D %%A IN ("%build_dir%\bin\*") DO (
 GOTO exit
 
 :error_usage
-    CALL "%bin_dir%\echoc.exe" 4  "Usage: run.cmd test [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder]"
-    exit /B 1
+    SET DSN_TMP_EXIT_CODE=1
+    SET DSN_TMP_USAGE_LEVEL=4
+    GOTO usage
 
 :error
-    CALL "%bin_dir%\echoc.exe" 4  "Usage: run.cmd test [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder]"
-    exit /B 1
+    SET DSN_TMP_EXIT_CODE=1
+    SET DSN_TMP_USAGE_LEVEL=4
+    GOTO usage
 
 :usage_exit
-    CALL "%bin_dir%\echoc.exe" 2  "Usage: run.cmd test [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder]"
-    exit /B 0
+    SET DSN_TMP_EXIT_CODE=0
+    SET DSN_TMP_USAGE_LEVEL=2
+    GOTO usage
+
+:usage
+    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL%  "Usage: run.cmd test [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder]"
+    exit /B %DSN_TMP_EXIT_CODE%
 
 :exit
     exit /B 0

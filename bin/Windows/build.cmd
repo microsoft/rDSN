@@ -289,10 +289,17 @@ POPD
 EXIT /B 0
 
 :error_usage
-    CALL "%bin_dir%\echoc.exe" 4 "Usage: run.cmd build [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder] [--build_plugins] [--build_csharp] [--build_protobuf_csharp], optionally set DSN_BUILD_ARCH=x64|ARM64"
+    SET DSN_TMP_EXIT_CODE=1
+    SET DSN_TMP_USAGE_LEVEL=4
+    GOTO usage
 :error
     EXIT /B 1
 
 :usage_exit
-    CALL "%bin_dir%\echoc.exe" 2 "Usage: run.cmd build [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder] [--build_plugins] [--build_csharp] [--build_protobuf_csharp], optionally set DSN_BUILD_ARCH=x64|ARM64"
-    EXIT /B 0
+    SET DSN_TMP_EXIT_CODE=0
+    SET DSN_TMP_USAGE_LEVEL=2
+    GOTO usage
+
+:usage
+    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "Usage: run.cmd build [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder] [--build_plugins] [--build_csharp] [--build_protobuf_csharp], optionally set DSN_BUILD_ARCH=x64|ARM64"
+    EXIT /B %DSN_TMP_EXIT_CODE%

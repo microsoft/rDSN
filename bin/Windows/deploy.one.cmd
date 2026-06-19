@@ -11,16 +11,17 @@ ECHO %cmd% %machine% %1 %2 %3 %4 %5 ... && CALL :%cmd% %machine%
 
 IF ERRORLEVEL 1 (
     CALL "%bin_dir%\echoc.exe" 4 unknow command '%cmd%'
-    CALL :usage
-    GOTO exit
+    SET DSN_TMP_USAGE_LEVEL=4
+    SET DSN_TMP_EXIT_CODE=1
+    GOTO usage
 )
 
 GOTO exit
 
 :usage
-    ECHO run.cmd deploy^|start^|stop^|cleanup^|quick-cleanup^|scds(stop-cleanup-deploy-start) source-dir target-dir
-    ECHO  source-dir is a directory which contains a start.cmd, machines.txt, and other resource files/dirs
-    GOTO:EOF
+    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "run.cmd deploy|start|stop|cleanup|quick-cleanup|scds(stop-cleanup-deploy-start) -s|--source-dir source-dir -t|--target-dir target-dir"
+    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% " source-dir is a directory which contains a start.cmd, machines.txt, and other resource files/dirs"
+    exit /B %DSN_TMP_EXIT_CODE%
 
 REM  
 REM |-source-dir|target-dir
@@ -84,5 +85,4 @@ REM
 IF ERRORLEVEL 0 exit
 
 CALL "%bin_dir%\echoc.exe" 4 error happens...
-
 

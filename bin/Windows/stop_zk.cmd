@@ -26,7 +26,8 @@ FOR /L %%i IN (0, 1, 1) DO (
 GOTO exit
 
 :usage
-    ECHO run.cmd stop_zk [INSTALL_DIR = .\zk [PORT = 12181]]
-    GOTO:EOF
+    IF "%DSN_TMP_USAGE_LEVEL%" EQU "" SET DSN_TMP_USAGE_LEVEL=4
+    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "run.cmd stop_zk [INSTALL_DIR = .\zk [PORT = 12181]]"
+    exit /B 0
     
 :exit

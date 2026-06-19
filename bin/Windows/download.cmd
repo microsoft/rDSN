@@ -1,6 +1,7 @@
 @ECHO OFF
 SETLOCAL
 
+SET "bin_dir=%~dp0"
 SET "url=%~1"
 SET "output_dir=%~2"
 SET "output_name=%~3"
@@ -31,5 +32,6 @@ IF ERRORLEVEL 1 (
 EXIT /B 0
 
 :usage
-    ECHO Usage: download.cmd URL OUTPUT_DIR [OUTPUT_NAME]
+    SET DSN_TMP_USAGE_LEVEL=4
+    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "Usage: download.cmd URL OUTPUT_DIR [OUTPUT_NAME]"
     EXIT /B 1

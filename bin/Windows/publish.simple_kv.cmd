@@ -75,6 +75,7 @@ GOTO exit
     GOTO:EOF
 
 :error
-    CALL "%bin_dir%\echoc.exe" 4  Usage: run publish^|republish build_dir build_type(Debug^|Release^|RelWithDebInfo^|MinSizeRel) [webstudio_package_url]
+    SET DSN_TMP_USAGE_LEVEL=4
+    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "Usage: run publish|republish build_dir build_type(Debug|Release|RelWithDebInfo|MinSizeRel) [webstudio_package_url]"
 
 :exit

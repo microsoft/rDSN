@@ -22,9 +22,13 @@ CALL "%bin_dir%\echoc.exe" 4 "%DSN_ROOT%" does not exist
 exit /B 1
 
 :usage
-    CALL "%bin_dir%\echoc.exe" 4  "Usage: run.cmd setup-env|pre-require|build|install|test|publish|republish|deploy|start|stop|cleanup|scds(stop-cleanup-deploy-start)|start_zk|stop_zk|onecluster"
-    CALL "%bin_dir%\echoc.exe" 4  "       run.cmd build [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder] [--build_plugins] [--build_csharp] [--build_protobuf_csharp]"
-    CALL "%bin_dir%\echoc.exe" 4  "       run.cmd test [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder]"
+    IF "%DSN_TMP_USAGE_LEVEL%" EQU "" SET DSN_TMP_USAGE_LEVEL=4
+    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "Usage: run.cmd setup-env|pre-require|build|install|test|publish|republish|deploy|start|stop|cleanup|scds(stop-cleanup-deploy-start)|start_zk|stop_zk|onecluster"
+    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "       run.cmd build [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder] [--build_plugins] [--build_csharp] [--build_protobuf_csharp]"
+    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "       run.cmd test [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder]"
+    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "       run.cmd install [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-b|--build-dir builder] [-d|--install_dir install_dir]"
+    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "       run.cmd publish|republish -d|--deploy-name app_name [-b|--build-dir builder] [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel]"
+    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "       run.cmd deploy|start|stop|cleanup|quick-cleanup|scds -s|--source-dir source-dir -t|--target-dir target-dir"
     GOTO:EOF
 
 :install_env

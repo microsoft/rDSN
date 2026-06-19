@@ -80,8 +80,9 @@ EXIT /B 0
 
 
 :usage
-    ECHO run.cmd start_zk [INSTALL_DIR = .\zk [PORT = 12181]]
-    GOTO:EOF
+    IF "%DSN_TMP_USAGE_LEVEL%" EQU "" SET DSN_TMP_USAGE_LEVEL=4
+    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "run.cmd start_zk [INSTALL_DIR = .\zk [PORT = 12181]]"
+    exit /B 0
     
 :error
     exit /B 1
