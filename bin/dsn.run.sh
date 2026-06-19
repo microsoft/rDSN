@@ -53,6 +53,9 @@ function usage_build()
     echo "   -w|--warning_all  open all warnings when build, default no"
     echo "   --enable_gcov     generate gcov code coverage report, default no"
     echo "   --build_plugins   build all plugins as well, default no"
+    echo "   --build_csharp    build rDSN C# projects, default no"
+    echo "   --build_protobuf_csharp"
+    echo "                     build protobuf C# project, default no"
     echo "   -v|--verbose      build in verbose mode, default no"
 }
 function run_build()
@@ -66,6 +69,8 @@ function run_build()
     ENABLE_GCOV=NO
     RUN_VERBOSE=NO
     BUILD_PLUGINS=NO
+    BUILD_CSHARP=NO
+    BUILD_PROTOBUF_CSHARP=NO
     while [[ $# > 0 ]]; do
         key="$1"
         case $key in
@@ -101,6 +106,12 @@ function run_build()
             --build_plugins)
                 BUILD_PLUGINS=YES
                 ;;
+            --build_csharp)
+                BUILD_CSHARP=YES
+                ;;
+            --build_protobuf_csharp)
+                BUILD_PROTOBUF_CSHARP=YES
+                ;;
             -v|--verbose)
                 RUN_VERBOSE=YES
                 ;;            
@@ -127,7 +138,8 @@ function run_build()
     fi    
     BUILD_TYPE="$BUILD_TYPE" GIT_SOURCE="$GIT_SOURCE" CLEAR="$CLEAR" JOB_NUM="$JOB_NUM" \
         BOOST_DIR="$BOOST_DIR" WARNING_ALL="$WARNING_ALL" ENABLE_GCOV="$ENABLE_GCOV" \
-        RUN_VERBOSE="$RUN_VERBOSE" BUILD_PLUGINS="$BUILD_PLUGINS" $scripts_dir/build.sh
+        RUN_VERBOSE="$RUN_VERBOSE" BUILD_PLUGINS="$BUILD_PLUGINS" BUILD_CSHARP="$BUILD_CSHARP" \
+        BUILD_PROTOBUF_CSHARP="$BUILD_PROTOBUF_CSHARP" $scripts_dir/build.sh
 }
 
 #####################
