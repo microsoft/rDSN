@@ -160,6 +160,12 @@ DSN_API void* dsn_transient_malloc(uint32_t size)
 
 DSN_API void dsn_transient_free(void* ptr)
 {
+    if (ptr == nullptr)
+    {
+        derror("dsn_transient_free got null ptr");
+        return;
+    }
+
     return ::dsn::tls_trans_free(ptr);
 }
 
@@ -170,5 +176,11 @@ DSN_API void* dsn_malloc(uint32_t size)
 
 DSN_API void dsn_free(void* ptr)
 {
+    if (ptr == nullptr)
+    {
+        derror("dsn_free got null ptr");
+        return;
+    }
+
     return free(ptr);
 }
