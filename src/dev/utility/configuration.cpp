@@ -404,6 +404,12 @@ void configuration::get_all_keys(const char* section, std::vector<const char*>& 
 {
     std::multimap<int, const char*> ordered_keys;
     keys.clear();
+    if (section == nullptr || section[0] == '\0')
+    {
+        fprintf(stderr, "ERROR: configuration section cannot be null or empty\n");
+        return;
+    }
+
     auto it = _configs.find(section);
     if (it != _configs.end())
     {
@@ -421,6 +427,37 @@ void configuration::get_all_keys(const char* section, std::vector<const char*>& 
 
 bool configuration::get_string_value_internal(const char* section, const char* key, const char* default_value, const char** ov, const char* dsptr)
 {
+    if (ov == nullptr)
+    {
+        fprintf(stderr, "ERROR: configuration output value cannot be null\n");
+        return false;
+    }
+
+    if (section == nullptr || section[0] == '\0')
+    {
+        fprintf(stderr, "ERROR: configuration section cannot be null or empty\n");
+        return false;
+    }
+
+    if (key == nullptr || key[0] == '\0')
+    {
+        fprintf(stderr, "ERROR: configuration key cannot be null or empty\n");
+        return false;
+    }
+
+    if (default_value == nullptr)
+    {
+        fprintf(stderr, "ERROR: configuration default value cannot be null\n");
+        *ov = nullptr;
+        return false;
+    }
+
+    if (dsptr == nullptr)
+    {
+        dsptr = "";
+    }
+
+    *ov = default_value;
     _lock.lock();
 
     std::map<std::string, conf*> *ps = nullptr;
