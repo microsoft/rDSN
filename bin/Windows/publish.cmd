@@ -156,7 +156,7 @@ IF "%bt_valid%" EQU "0" (
     CALL "%bin_dir%\echoc.exe" 4 invalid build_type '%build_type%'
     GOTO error
 )
-::COPY /Y "%build_dir%\bin\%build_type%\dsn.core.pdb" .\skv\%app%
+REM COPY /Y "%build_dir%\bin\%build_type%\dsn.core.pdb" .\skv\%app%
 IF NOT EXIST ".\skv" mkdir ".\skv"
 COPY /Y "%build_dir%\bin\%build_type%\dsn.core.pdb" ".\skv"
 CALL "%bin_dir%\publish.%app_name%.cmd" %cmd% "%build_dir%" %build_type% %webstudio_url%

@@ -51,12 +51,12 @@ REM
     GOTO:EOF
     
 :stop
-    ::taskkill /S %1 /f /im dsn.svchost.exe
+    REM taskkill /S %1 /f /im dsn.svchost.exe
     @SCHTASKS /END /S %1 /TN rDSN.%deploy_name%
     GOTO:EOF
 
 :quick-cleanup
-    ::SCHTASKS /Delete /S %1 /TN rDSN.%deploy_name% /F
+    REM SCHTASKS /Delete /S %1 /TN rDSN.%deploy_name% /F
     set rdst=\\%1\%rdst_dir%
     @rmdir /Q /S %rdst%\data
     GOTO:EO

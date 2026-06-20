@@ -7,7 +7,7 @@ PUSHD "%TOP_DIR%"
 SET TOP_DIR=%CD%
 POPD
 
-:: detect VS
+REM detect VS
 IF NOT "%VisualStudioVersion%"=="" GOTO find_vs
 SET DSN_TMP_VS_INSTALL_DIR=
 FOR /F "usebackq tokens=1* delims=: " %%i in (`"%bin_dir%\vswhere.exe" -latest`) DO (

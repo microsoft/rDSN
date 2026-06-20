@@ -110,12 +110,12 @@ IF NOT EXIST "%src_dir%\start.cmd" (
     GOTO exit
 )
 
-::SET cmd=%1
-::SET src_dir=%2
-::SET ldst_dir=%3
-::SET deploy_name=%4
-::SET rdst_dir=%ldst_dir::=$%
-::SET machine=%5
+REM SET cmd=%1
+REM SET src_dir=%2
+REM SET ldst_dir=%3
+REM SET deploy_name=%4
+REM SET rdst_dir=%ldst_dir::=$%
+REM SET machine=%5
 FOR /F %%i IN (%machine_list%) DO ECHO %cmd% %%i %src_dir% %ldst_dir% %deploy_name% ... && start "%cmd% %deploy_name% @ %%i" "%bin_dir%\deploy.one.cmd" %cmd% "%src_dir%" "%ldst_dir%" %deploy_name% %%i
 
 IF ERRORLEVEL 1 (

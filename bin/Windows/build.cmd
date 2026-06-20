@@ -166,7 +166,7 @@ IF ERRORLEVEL 1 (
 )
 SET DSN_TMP_CUSTOM_BOOST_DIR=
 
-:: detect VS
+REM detect VS
 IF DEFINED DSN_TRAVIS GOTO find_vs2017
 IF NOT "%VisualStudioVersion%"=="" GOTO find_vs_by_version
 SET DSN_TMP_VS_INSTALL_DIR=
@@ -290,7 +290,7 @@ SET DSN_TMP_BOOST_CMAKE_ARGS=-DBOOST_INCLUDEDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BO
 IF NOT EXIST "%build_dir%" mkdir "%build_dir%"
 PUSHD "%build_dir%"
 
-:: call cmake
+REM call cmake
 echo CALL "%DSN_TMP_CMAKE_EXE%" "%cdir%" %buildall% %DSN_TMP_BUILD_CSHARP% %DSN_TMP_BUILD_PROTOBUF_CSHARP% %DSN_TMP_BUILD_THRIFT_CSHARP% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DDSN_BUILD_DIR="%build_dir%" -DCMAKE_BUILD_TYPE="%build_type%" %DSN_TMP_BOOST_CMAKE_ARGS% -DDSN_GIT_SOURCE="github" %DSN_TMP_CMAKE_ARCH% -G "%DSN_TMP_CMAKE_TARGET%"
 CALL "%DSN_TMP_CMAKE_EXE%" "%cdir%" %buildall% %DSN_TMP_BUILD_CSHARP% %DSN_TMP_BUILD_PROTOBUF_CSHARP% %DSN_TMP_BUILD_THRIFT_CSHARP% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DDSN_BUILD_DIR="%build_dir%" -DCMAKE_BUILD_TYPE="%build_type%" %DSN_TMP_BOOST_CMAKE_ARGS% -DDSN_GIT_SOURCE="github" %DSN_TMP_CMAKE_ARCH% -G "%DSN_TMP_CMAKE_TARGET%"
 IF ERRORLEVEL 1 (
@@ -312,7 +312,7 @@ IF ERRORLEVEL 1 (
     GOTO error
 )
 
-:: clean temp environment variables
+REM clean temp environment variables
 SET DSN_TMP_CMAKE_TARGET=
 SET DSN_TMP_CMAKE_ARCH=
 SET DSN_TMP_BOOST_LIB=

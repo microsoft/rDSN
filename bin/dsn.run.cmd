@@ -39,12 +39,12 @@ SET lpath=%PATH%
 SET lpath=%lpath:!old_path_appendix!=%
 endlocal & SET PATH=%lpath%%new_path_appendix%
 
-:: FIXME: It will mix user and system Path
-::SETX PATH "%PATH%"
-::CALL reg add HKCU\Environment /f /v PATH /d "%PATH%" 1>nul
-::CALL "%bin_dir%\flushenv.exe"
+REM FIXME: It will mix user and system Path
+REM SETX PATH "%PATH%"
+REM CALL reg add HKCU\Environment /f /v PATH /d "%PATH%" 1>nul
+REM CALL "%bin_dir%\flushenv.exe"
 
-::SET DSN_ROOT=%DSN_ROOT:\=/%
+REM SET DSN_ROOT=%DSN_ROOT:\=/%
 SET DSN_ROOT=%DSN_ROOT:/=\%
 CALL reg add HKCU\Environment /f /v DSN_ROOT /d "%DSN_ROOT%" 1>nul
 FOR /F "skip=2 tokens=3*" %%a IN ('reg query HKCU\Environment /v PATH') DO IF [%%b]==[] ( SETX Path "%%~a;%%DSN_ROOT%%\bin;%%DSN_ROOT%%\lib;" ) ELSE ( SETX Path "%%~a %%~b;%%DSN_ROOT%%\bin;%%DSN_ROOT%%\lib;" )
@@ -56,7 +56,7 @@ CALL "%bin_dir%\echoc.exe" 2 DSN_ROOT\lib and DSN_ROOT\bin are added to PATH env
 :main
 
 SET DSN_TMP_CMAKE_VERSION=3.22.6
-::SET DSN_TMP_BOOST_VERSION=1_64_0
+REM SET DSN_TMP_BOOST_VERSION=1_64_0
 SET DSN_TMP_BOOST_VERSION=1_84_0
 
 CALL :%1 %1 %2 %3 %4 %5 %6 %7 %8 %9
