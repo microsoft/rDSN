@@ -252,6 +252,12 @@ DSN_API void dsn_coredump()
 
 DSN_API uint32_t dsn_crc32_compute(const void* ptr, size_t size, uint32_t init_crc)
 {
+    if (ptr == nullptr)
+    {
+        derror("dsn_crc32_compute got null ptr");
+        return CRC_INVALID;
+    }
+
     return ::dsn::utils::crc32::compute(ptr, size, init_crc);
 }
 
@@ -267,6 +273,12 @@ DSN_API uint32_t dsn_crc32_concatenate(uint32_t xy_init, uint32_t x_init, uint32
 
 DSN_API uint64_t dsn_crc64_compute(const void* ptr, size_t size, uint64_t init_crc)
 {
+    if (ptr == nullptr)
+    {
+        derror("dsn_crc64_compute got null ptr");
+        return CRC_INVALID;
+    }
+
     return ::dsn::utils::crc64::compute(ptr, size, init_crc);
 }
 
