@@ -7,6 +7,7 @@ SET TOP_DIR=%CD%
 POPD
 SET build_type=Debug
 SET build_dir=
+SET boost_dir=
 SET buildall=-DBUILD_PLUGINS=FALSE
 SET DSN_TMP_BUILD_CSHARP=-DBUILD_CSHARP=FALSE
 SET DSN_TMP_BUILD_PROTOBUF_CSHARP=-DBUILD_PROTOBUF_CSHARP=FALSE
@@ -48,6 +49,20 @@ IF /I "%~1" EQU "--build_dir" (
 IF /I "%~1" EQU "--build-dir" (
     IF "%~2" EQU "" GOTO error_usage
     FOR %%I IN ("%~2") DO SET build_dir=%%~fI
+    SHIFT
+    SHIFT
+    GOTO parse_args
+)
+IF /I "%~1" EQU "-b" (
+    IF "%~2" EQU "" GOTO error_usage
+    FOR %%I IN ("%~2") DO SET boost_dir=%%~fI
+    SHIFT
+    SHIFT
+    GOTO parse_args
+)
+IF /I "%~1" EQU "--boost_dir" (
+    IF "%~2" EQU "" GOTO error_usage
+    FOR %%I IN ("%~2") DO SET boost_dir=%%~fI
     SHIFT
     SHIFT
     GOTO parse_args
@@ -144,10 +159,12 @@ IF "%DSN_TMP_BUILD_ARCH%"=="x64" SET DSN_TMP_VCVARS_ARCH=amd64
 IF "%DSN_TMP_BUILD_ARCH%"=="ARM64" SET DSN_TMP_VCVARS_ARCH=amd64_arm64
 IF "%DSN_TMP_BUILD_ARCH%"=="ARM64" IF /I "%PROCESSOR_ARCHITECTURE%"=="ARM64" SET DSN_TMP_VCVARS_ARCH=arm64
 
+IF NOT "%boost_dir%" EQU "" SET DSN_TMP_CUSTOM_BOOST_DIR=%boost_dir%
 CALL "%bin_dir%\pre-require.cmd"
 IF ERRORLEVEL 1 (
     GOTO error
 )
+SET DSN_TMP_CUSTOM_BOOST_DIR=
 
 :: detect VS
 IF DEFINED DSN_TRAVIS GOTO find_vs2017
@@ -239,16 +256,51 @@ CALL "%bin_dir%\echoc.exe" 4 "ARM64 builds require Visual Studio 2022 or 2026."
 GOTO error
 
 :start_build
+IF "%boost_dir%" EQU "" GOTO use_bundled_boost
+IF EXIST "%boost_dir%\boost" (
+    SET DSN_TMP_BOOST_INCLUDEDIR=%boost_dir%
+    GOTO find_custom_boost_lib
+)
+IF EXIST "%boost_dir%\include\boost" (
+    SET DSN_TMP_BOOST_INCLUDEDIR=%boost_dir%\include
+    GOTO find_custom_boost_lib
+)
+CALL "%bin_dir%\echoc.exe" 4 "Custom Boost directory does not contain boost headers: %boost_dir%"
+GOTO error
+
+:find_custom_boost_lib
+SET DSN_TMP_BOOST_LIBRARYDIR=
+IF EXIST "%boost_dir%\%DSN_TMP_BOOST_LIB%" SET DSN_TMP_BOOST_LIBRARYDIR=%boost_dir%\%DSN_TMP_BOOST_LIB%
+IF NOT DEFINED DSN_TMP_BOOST_LIBRARYDIR GOTO use_custom_header_only_boost
+
+:use_custom_binary_boost
+CALL "%bin_dir%\echoc.exe" 2 "Use custom Boost: %boost_dir%"
+SET DSN_TMP_BOOST_CMAKE_ARGS=-DBoost_NO_BOOST_CMAKE=ON -DBOOST_ROOT="%boost_dir%" -DBOOST_INCLUDEDIR="%DSN_TMP_BOOST_INCLUDEDIR%" -DBoost_INCLUDE_DIR="%DSN_TMP_BOOST_INCLUDEDIR%" -DBOOST_LIBRARYDIR="%DSN_TMP_BOOST_LIBRARYDIR%" -DBoost_LIBRARY_DIR="%DSN_TMP_BOOST_LIBRARYDIR%" -DBoost_LIBRARY_DIRS="%DSN_TMP_BOOST_LIBRARYDIR%" -DBoost_NO_SYSTEM_PATHS=ON
+GOTO boost_args_done
+
+:use_custom_header_only_boost
+CALL "%bin_dir%\echoc.exe" 2 "Use custom header-only Boost: %boost_dir%"
+SET DSN_TMP_BOOST_CMAKE_ARGS=-DDSN_BOOST_HEADER_ONLY=ON -DBoost_NO_BOOST_CMAKE=ON -DBOOST_ROOT="%boost_dir%" -DBOOST_INCLUDEDIR="%DSN_TMP_BOOST_INCLUDEDIR%" -DBoost_INCLUDE_DIR="%DSN_TMP_BOOST_INCLUDEDIR%" -DBoost_NO_SYSTEM_PATHS=ON
+GOTO boost_args_done
+
+:use_bundled_boost
+SET DSN_TMP_BOOST_CMAKE_ARGS=-DBOOST_INCLUDEDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%" -DBOOST_LIBRARYDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%\%DSN_TMP_BOOST_LIB%"
+
+:boost_args_done
 IF NOT EXIST "%build_dir%" mkdir "%build_dir%"
 PUSHD "%build_dir%"
 
 :: call cmake
-echo CALL "%DSN_TMP_CMAKE_EXE%" "%cdir%" %buildall% %DSN_TMP_BUILD_CSHARP% %DSN_TMP_BUILD_PROTOBUF_CSHARP% %DSN_TMP_BUILD_THRIFT_CSHARP% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DDSN_BUILD_DIR="%build_dir%" -DCMAKE_BUILD_TYPE="%build_type%" -DBOOST_INCLUDEDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%" -DBOOST_LIBRARYDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%\%DSN_TMP_BOOST_LIB%" -DDSN_GIT_SOURCE="github" %DSN_TMP_CMAKE_ARCH% -G "%DSN_TMP_CMAKE_TARGET%"
-CALL "%DSN_TMP_CMAKE_EXE%" "%cdir%" %buildall% %DSN_TMP_BUILD_CSHARP% %DSN_TMP_BUILD_PROTOBUF_CSHARP% %DSN_TMP_BUILD_THRIFT_CSHARP% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DDSN_BUILD_DIR="%build_dir%" -DCMAKE_BUILD_TYPE="%build_type%" -DBOOST_INCLUDEDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%" -DBOOST_LIBRARYDIR="%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%\%DSN_TMP_BOOST_LIB%" -DDSN_GIT_SOURCE="github" %DSN_TMP_CMAKE_ARCH% -G "%DSN_TMP_CMAKE_TARGET%"
+echo CALL "%DSN_TMP_CMAKE_EXE%" "%cdir%" %buildall% %DSN_TMP_BUILD_CSHARP% %DSN_TMP_BUILD_PROTOBUF_CSHARP% %DSN_TMP_BUILD_THRIFT_CSHARP% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DDSN_BUILD_DIR="%build_dir%" -DCMAKE_BUILD_TYPE="%build_type%" %DSN_TMP_BOOST_CMAKE_ARGS% -DDSN_GIT_SOURCE="github" %DSN_TMP_CMAKE_ARCH% -G "%DSN_TMP_CMAKE_TARGET%"
+CALL "%DSN_TMP_CMAKE_EXE%" "%cdir%" %buildall% %DSN_TMP_BUILD_CSHARP% %DSN_TMP_BUILD_PROTOBUF_CSHARP% %DSN_TMP_BUILD_THRIFT_CSHARP% -DCMAKE_INSTALL_PREFIX="%build_dir%\output" -DDSN_BUILD_DIR="%build_dir%" -DCMAKE_BUILD_TYPE="%build_type%" %DSN_TMP_BOOST_CMAKE_ARGS% -DDSN_GIT_SOURCE="github" %DSN_TMP_CMAKE_ARCH% -G "%DSN_TMP_CMAKE_TARGET%"
 IF ERRORLEVEL 1 (
     SET DSN_TMP_CMAKE_TARGET=
     SET DSN_TMP_CMAKE_ARCH=
     SET DSN_TMP_BOOST_LIB=
+    SET DSN_TMP_BOOST_INCLUDEDIR=
+    SET DSN_TMP_BOOST_LIBRARYDIR=
+    SET DSN_TMP_BOOST_CMAKE_ARGS=
+    SET DSN_TMP_CUSTOM_BOOST_DIR=
     SET DSN_TMP_USE_CMAKE_BUILD=
     SET DSN_TMP_BUILD_CSHARP=
     SET DSN_TMP_BUILD_PROTOBUF_CSHARP=
@@ -264,6 +316,10 @@ IF ERRORLEVEL 1 (
 SET DSN_TMP_CMAKE_TARGET=
 SET DSN_TMP_CMAKE_ARCH=
 SET DSN_TMP_BOOST_LIB=
+SET DSN_TMP_BOOST_INCLUDEDIR=
+SET DSN_TMP_BOOST_LIBRARYDIR=
+SET DSN_TMP_BOOST_CMAKE_ARGS=
+SET DSN_TMP_CUSTOM_BOOST_DIR=
 SET DSN_TMP_BUILD_ARCH=
 SET DSN_TMP_VCVARS_ARCH=
 SET DSN_TMP_BUILD_CSHARP=
@@ -306,6 +362,10 @@ EXIT /B 0
     SET DSN_TMP_USAGE_LEVEL=4
     GOTO usage
 :error
+    SET DSN_TMP_CUSTOM_BOOST_DIR=
+    SET DSN_TMP_BOOST_INCLUDEDIR=
+    SET DSN_TMP_BOOST_LIBRARYDIR=
+    SET DSN_TMP_BOOST_CMAKE_ARGS=
     EXIT /B 1
 
 :usage_exit
@@ -314,5 +374,5 @@ EXIT /B 0
     GOTO usage
 
 :usage
-    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "Usage: run.cmd build [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder] [--build_plugins] [--build_csharp] [--build_protobuf_csharp] [--build_thrift_csharp], optionally set DSN_BUILD_ARCH=x64|ARM64"
+    CALL "%bin_dir%\echoc.exe" %DSN_TMP_USAGE_LEVEL% "Usage: run.cmd build [-t|--type Debug|Release|RelWithDebInfo|MinSizeRel] [-d|--build_dir builder] [-b|--boost_dir boost_dir] [--build_plugins] [--build_csharp] [--build_protobuf_csharp] [--build_thrift_csharp], optionally set DSN_BUILD_ARCH=x64|ARM64"
     EXIT /B %DSN_TMP_EXIT_CODE%

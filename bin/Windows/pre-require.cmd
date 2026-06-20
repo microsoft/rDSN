@@ -56,6 +56,13 @@ IF NOT EXIST "%bin_dir%\php.exe" (
     IF ERRORLEVEL 1 GOTO error
 )
 
+IF DEFINED DSN_TMP_CUSTOM_BOOST_DIR (
+    IF EXIST "%DSN_TMP_CUSTOM_BOOST_DIR%\boost" GOTO boost_done
+    IF EXIST "%DSN_TMP_CUSTOM_BOOST_DIR%\include\boost" GOTO boost_done
+    CALL "%bin_dir%\echoc.exe" 4 "Custom Boost directory does not contain boost headers: %DSN_TMP_CUSTOM_BOOST_DIR%"
+    GOTO error
+)
+
 SET DSN_TMP_BOOST_PACKAGE_NAME=boost_%DSN_TMP_BOOST_VERSION%.7z
 IF NOT EXIST "%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%" (
     IF NOT EXIST "%TOP_DIR%\ext\%DSN_TMP_BOOST_PACKAGE_NAME%" (
@@ -70,6 +77,7 @@ IF NOT EXIST "%TOP_DIR%\ext\boost_%DSN_TMP_BOOST_VERSION%" (
     CALL "%bin_dir%\echoc.exe" 4 "Boost does not exist!"
     GOTO error
 )
+:boost_done
 
 IF 0 EQU 1 (
     REM Keep the old bundled cmake download for easy rollback. It is too old
