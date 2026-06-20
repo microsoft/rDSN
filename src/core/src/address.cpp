@@ -313,9 +313,9 @@ DSN_API dsn_address_t dsn_address_build(
     uint16_t port
     )
 {
-    if (host == nullptr)
+    if (host == nullptr || host[0] == '\0')
     {
-        derror("dsn_address_build got null host");
+        derror("dsn_address_build got null or empty host");
         return dsn::rpc_address().c_addr();
     }
 
