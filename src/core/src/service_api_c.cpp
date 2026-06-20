@@ -89,21 +89,42 @@ public:
 
 DSN_API dsn_error_t dsn_error_register(const char* name)
 {
-    dassert(strlen(name) < DSN_MAX_ERROR_CODE_NAME_LENGTH,
-        "error code '%s' is too long - length must be smaller than %d",
-        name,
-        DSN_MAX_ERROR_CODE_NAME_LENGTH
-        );
+    if (name == nullptr || name[0] == '\0')
+    {
+        derror("dsn_error_register got null or empty name");
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
+    }
+
+    if (strlen(name) >= DSN_MAX_ERROR_CODE_NAME_LENGTH)
+    {
+        derror("dsn_error_register got too long name '%s' - length must be smaller than %d",
+               name,
+               DSN_MAX_ERROR_CODE_NAME_LENGTH);
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
+    }
+
     return static_cast<dsn_error_t>(error_code_mgr::instance().register_id(name));
 }
 
 DSN_API const char* dsn_error_to_string(dsn_error_t err)
 {
+    if (err < 0)
+    {
+        derror("dsn_error_to_string got invalid error code = %d", err);
+        return "unknown";
+    }
+
     return error_code_mgr::instance().get_name(static_cast<int>(err));
 }
 
 DSN_API dsn_error_t dsn_error_from_string(const char* s, dsn_error_t default_err)
 {
+    if (s == nullptr || s[0] == '\0')
+    {
+        derror("dsn_error_from_string got null or empty string");
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
+    }
+
     auto r = error_code_mgr::instance().get_id(s);
     return r == -1 ? default_err : r;
 }
