@@ -43,6 +43,30 @@
 
 DSN_API dsn_handle_t dsn_perf_counter_create(const char* section, const char* name, dsn_perf_counter_type_t type, const char* description)
 {
+    if (section == nullptr || section[0] == '\0')
+    {
+        derror("dsn_perf_counter_create got null or empty section");
+        return nullptr;
+    }
+
+    if (name == nullptr || name[0] == '\0')
+    {
+        derror("dsn_perf_counter_create got null or empty name");
+        return nullptr;
+    }
+
+    if (type < COUNTER_TYPE_NUMBER || type >= COUNTER_TYPE_INVALID)
+    {
+        derror("dsn_perf_counter_create got invalid type = %d", type);
+        return nullptr;
+    }
+
+    if (description == nullptr)
+    {
+        derror("dsn_perf_counter_create got null description");
+        return nullptr;
+    }
+
     auto cnode = dsn::task::get_current_node2();
     dassert(cnode != nullptr, "cannot get current service node!");
     auto c = dsn::perf_counters::instance().get_counter(cnode->name(), section, name, type, description, true);
@@ -52,6 +76,12 @@ DSN_API dsn_handle_t dsn_perf_counter_create(const char* section, const char* na
 
 DSN_API void dsn_perf_counter_remove(dsn_handle_t handle)
 {
+    if (handle == nullptr)
+    {
+        derror("dsn_perf_counter_remove got null handle");
+        return;
+    }
+
     auto sptr = reinterpret_cast<dsn::perf_counter*>(handle);
     if (dsn::perf_counters::instance().remove_counter(sptr->full_name()))
         sptr->release_ref();
@@ -63,31 +93,79 @@ DSN_API void dsn_perf_counter_remove(dsn_handle_t handle)
 
 DSN_API void dsn_perf_counter_increment(dsn_handle_t handle)
 {
+    if (handle == nullptr)
+    {
+        derror("dsn_perf_counter_increment got null handle");
+        return;
+    }
+
     reinterpret_cast<dsn::perf_counter*>(handle)->increment();
 }
 
 DSN_API void dsn_perf_counter_decrement(dsn_handle_t handle)
 {
+    if (handle == nullptr)
+    {
+        derror("dsn_perf_counter_decrement got null handle");
+        return;
+    }
+
     reinterpret_cast<dsn::perf_counter*>(handle)->decrement();
 }
 DSN_API void dsn_perf_counter_add(dsn_handle_t handle, uint64_t val)
 {
+    if (handle == nullptr)
+    {
+        derror("dsn_perf_counter_add got null handle");
+        return;
+    }
+
     reinterpret_cast<dsn::perf_counter*>(handle)->add(val);
 }
 DSN_API void dsn_perf_counter_set(dsn_handle_t handle, uint64_t val)
 {
+    if (handle == nullptr)
+    {
+        derror("dsn_perf_counter_set got null handle");
+        return;
+    }
+
     reinterpret_cast<dsn::perf_counter*>(handle)->set(val);
 }
 DSN_API double dsn_perf_counter_get_value(dsn_handle_t handle)
 {
+    if (handle == nullptr)
+    {
+        derror("dsn_perf_counter_get_value got null handle");
+        return -1.0;
+    }
+
     return reinterpret_cast<dsn::perf_counter*>(handle)->get_value();
 }
 DSN_API uint64_t dsn_perf_counter_get_integer_value(dsn_handle_t handle)
 {
+    if (handle == nullptr)
+    {
+        derror("dsn_perf_counter_get_integer_value got null handle");
+        return static_cast<uint64_t>(-1);
+    }
+
     return reinterpret_cast<dsn::perf_counter*>(handle)->get_integer_value();
 }
 DSN_API double dsn_perf_counter_get_percentile(dsn_handle_t handle, dsn_perf_counter_percentile_type_t type)
 {
+    if (handle == nullptr)
+    {
+        derror("dsn_perf_counter_get_percentile got null handle");
+        return -1.0;
+    }
+
+    if (type < COUNTER_PERCENTILE_50 || type >= COUNTER_PERCENTILE_COUNT)
+    {
+        derror("dsn_perf_counter_get_percentile got invalid type = %d", type);
+        return -1.0;
+    }
+
     return reinterpret_cast<dsn::perf_counter*>(handle)->get_percentile(type);
 }
 
