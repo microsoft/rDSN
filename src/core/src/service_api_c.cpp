@@ -507,17 +507,35 @@ DSN_API dsn_handle_t dsn_exlock_create(bool recursive)
 
 DSN_API void dsn_exlock_destroy(dsn_handle_t l)
 {
+    if (l == nullptr)
+    {
+        derror("dsn_exlock_destroy got null lock");
+        return;
+    }
+
     delete (::dsn::ilock*)(l);
 }
 
 DSN_API void dsn_exlock_lock(dsn_handle_t l)
 {
+    if (l == nullptr)
+    {
+        derror("dsn_exlock_lock got null lock");
+        return;
+    }
+
     ((::dsn::ilock*)(l))->lock();
     ::dsn::lock_checker::zlock_exclusive_count++;
 }
 
 DSN_API bool dsn_exlock_try_lock(dsn_handle_t l)
 {
+    if (l == nullptr)
+    {
+        derror("dsn_exlock_try_lock got null lock");
+        return false;
+    }
+
     auto r = ((::dsn::ilock*)(l))->try_lock();
     if (r)
     {
@@ -528,6 +546,12 @@ DSN_API bool dsn_exlock_try_lock(dsn_handle_t l)
 
 DSN_API void dsn_exlock_unlock(dsn_handle_t l)
 {
+    if (l == nullptr)
+    {
+        derror("dsn_exlock_unlock got null lock");
+        return;
+    }
+
     ::dsn::lock_checker::zlock_exclusive_count--;
     ((::dsn::ilock*)(l))->unlock();
 }
@@ -548,23 +572,47 @@ DSN_API dsn_handle_t dsn_rwlock_nr_create()
 
 DSN_API void dsn_rwlock_nr_destroy(dsn_handle_t l)
 {
+    if (l == nullptr)
+    {
+        derror("dsn_rwlock_nr_destroy got null lock");
+        return;
+    }
+
     delete (::dsn::rwlock_nr_provider*)(l);
 }
 
 DSN_API void dsn_rwlock_nr_lock_read(dsn_handle_t l)
 {
+    if (l == nullptr)
+    {
+        derror("dsn_rwlock_nr_lock_read got null lock");
+        return;
+    }
+
     ((::dsn::rwlock_nr_provider*)(l))->lock_read();
     ::dsn::lock_checker::zlock_shared_count++;
 }
 
 DSN_API void dsn_rwlock_nr_unlock_read(dsn_handle_t l)
 {
+    if (l == nullptr)
+    {
+        derror("dsn_rwlock_nr_unlock_read got null lock");
+        return;
+    }
+
     ::dsn::lock_checker::zlock_shared_count--;
     ((::dsn::rwlock_nr_provider*)(l))->unlock_read();
 }
 
 DSN_API bool dsn_rwlock_nr_try_lock_read(dsn_handle_t l)
 {
+    if (l == nullptr)
+    {
+        derror("dsn_rwlock_nr_try_lock_read got null lock");
+        return false;
+    }
+
     auto r = ((::dsn::rwlock_nr_provider*)(l))->try_lock_read();
     if (r) ::dsn::lock_checker::zlock_shared_count++;
     return r;
@@ -572,18 +620,36 @@ DSN_API bool dsn_rwlock_nr_try_lock_read(dsn_handle_t l)
 
 DSN_API void dsn_rwlock_nr_lock_write(dsn_handle_t l)
 {
+    if (l == nullptr)
+    {
+        derror("dsn_rwlock_nr_lock_write got null lock");
+        return;
+    }
+
     ((::dsn::rwlock_nr_provider*)(l))->lock_write();
     ::dsn::lock_checker::zlock_exclusive_count++;
 }
 
 DSN_API void dsn_rwlock_nr_unlock_write(dsn_handle_t l)
 {
+    if (l == nullptr)
+    {
+        derror("dsn_rwlock_nr_unlock_write got null lock");
+        return;
+    }
+
     ::dsn::lock_checker::zlock_exclusive_count--;
     ((::dsn::rwlock_nr_provider*)(l))->unlock_write();
 }
 
 DSN_API bool dsn_rwlock_nr_try_lock_write(dsn_handle_t l)
 {
+    if (l == nullptr)
+    {
+        derror("dsn_rwlock_nr_try_lock_write got null lock");
+        return false;
+    }
+
     auto r = ((::dsn::rwlock_nr_provider*)(l))->try_lock_write();
     if (r) ::dsn::lock_checker::zlock_exclusive_count++;
     return r;
@@ -591,6 +657,12 @@ DSN_API bool dsn_rwlock_nr_try_lock_write(dsn_handle_t l)
 
 DSN_API dsn_handle_t dsn_semaphore_create(int initial_count)
 {
+    if (initial_count < 0)
+    {
+        derror("dsn_semaphore_create got invalid initial_count = %d", initial_count);
+        return nullptr;
+    }
+
     ::dsn::semaphore_provider* last = ::dsn::utils::factory_store< ::dsn::semaphore_provider>::create(
         ::dsn::service_engine::fast_instance().spec().semaphore_factory_name.c_str(), ::dsn::PROVIDER_TYPE_MAIN, initial_count, nullptr);
 
@@ -605,22 +677,52 @@ DSN_API dsn_handle_t dsn_semaphore_create(int initial_count)
 
 DSN_API void dsn_semaphore_destroy(dsn_handle_t s)
 {
+    if (s == nullptr)
+    {
+        derror("dsn_semaphore_destroy got null semaphore");
+        return;
+    }
+
     delete (::dsn::semaphore_provider*)(s);
 }
 
 DSN_API void dsn_semaphore_signal(dsn_handle_t s, int count)
 {
+    if (s == nullptr)
+    {
+        derror("dsn_semaphore_signal got null semaphore");
+        return;
+    }
+
+    if (count <= 0)
+    {
+        derror("dsn_semaphore_signal got invalid count = %d", count);
+        return;
+    }
+
     ((::dsn::semaphore_provider*)(s))->signal(count);
 }
 
 DSN_API void dsn_semaphore_wait(dsn_handle_t s)
 {
+    if (s == nullptr)
+    {
+        derror("dsn_semaphore_wait got null semaphore");
+        return;
+    }
+
     ::dsn::lock_checker::check_wait_safety();
     ((::dsn::semaphore_provider*)(s))->wait();
 }
 
 DSN_API bool dsn_semaphore_wait_timeout(dsn_handle_t s, int timeout_milliseconds)
 {
+    if (s == nullptr)
+    {
+        derror("dsn_semaphore_wait_timeout got null semaphore");
+        return false;
+    }
+
     return ((::dsn::semaphore_provider*)(s))->wait(timeout_milliseconds);
 }
 
