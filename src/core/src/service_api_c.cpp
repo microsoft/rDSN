@@ -214,7 +214,13 @@ DSN_API const char* dsn_task_priority_to_string(dsn_task_priority_t tt)
 
 DSN_API bool dsn_task_is_running_inside(dsn_task_t t)
 {
-    return ::dsn::task::get_current_task() == (::dsn::task*)(t);
+    if (t == nullptr)
+    {
+        derror("dsn_task_is_running_inside got null task");
+        return false;
+    }
+
+    return ::dsn::task::get_current_task() == (::dsn::task*)t;
 }
 
 DSN_API void dsn_coredump()
@@ -290,27 +296,57 @@ DSN_API dsn_task_t dsn_task_create_timer_ex(dsn_task_code_t code, dsn_task_handl
 
 DSN_API dsn_task_tracker_t dsn_task_tracker_create(int task_bucket_count)
 {
+    if (task_bucket_count <= 0)
+    {
+        derror("dsn_task_tracker_create got invalid task_bucket_count = %d", task_bucket_count);
+        return nullptr;
+    }
+
     return (dsn_task_tracker_t)(new ::dsn::task_tracker(task_bucket_count));
 }
 
 DSN_API void dsn_task_tracker_destroy(dsn_task_tracker_t tracker)
 {
+    if (tracker == nullptr)
+    {
+        derror("dsn_task_tracker_destroy got null tracker");
+        return;
+    }
+
     delete ((::dsn::task_tracker*)tracker);
 }
 
 DSN_API void dsn_task_tracker_cancel_all(dsn_task_tracker_t tracker)
 {
+    if (tracker == nullptr)
+    {
+        derror("dsn_task_tracker_cancel_all got null tracker");
+        return;
+    }
+
     ((::dsn::task_tracker*)tracker)->cancel_outstanding_tasks();
 }
 
 DSN_API void dsn_task_tracker_wait_all(dsn_task_tracker_t tracker)
 {
+    if (tracker == nullptr)
+    {
+        derror("dsn_task_tracker_wait_all got null tracker");
+        return;
+    }
+
     ((::dsn::task_tracker*)tracker)->wait_outstanding_tasks();
 }
 
 DSN_API void dsn_task_call(dsn_task_t task, int delay_milliseconds)
 {
-    auto t = ((::dsn::task*)(task));
+    if (task == nullptr)
+    {
+        derror("dsn_task_call got null task");
+        return;
+    }
+
+    auto t = (::dsn::task*)task;
     dassert(t->spec().type == TASK_TYPE_COMPUTE, "must be common or timer task");
 
     t->set_delay(delay_milliseconds);
@@ -319,31 +355,71 @@ DSN_API void dsn_task_call(dsn_task_t task, int delay_milliseconds)
 
 DSN_API void dsn_task_add_ref(dsn_task_t task)
 {
+    if (task == nullptr)
+    {
+        derror("dsn_task_add_ref got null task");
+        return;
+    }
+
     ((::dsn::task*)(task))->add_ref();
 }
 
 DSN_API void dsn_task_release_ref(dsn_task_t task)
 {
+    if (task == nullptr)
+    {
+        derror("dsn_task_release_ref got null task");
+        return;
+    }
+
     ((::dsn::task*)(task))->release_ref();
 }
 
 DSN_API int dsn_task_get_ref(dsn_task_t task)
 {
+    if (task == nullptr)
+    {
+        derror("dsn_task_get_ref got null task");
+        return 0;
+    }
+
     return ((::dsn::task*)(task))->get_count();
 }
 
 DSN_API bool dsn_task_cancel(dsn_task_t task, bool wait_until_finished)
 {
+    if (task == nullptr)
+    {
+        derror("dsn_task_cancel got null task");
+        return false;
+    }
+
     return ((::dsn::task*)(task))->cancel(wait_until_finished);
 }
 
 DSN_API void dsn_task_set_delay(dsn_task_t task, int delay_ms)
 {
+    if (task == nullptr)
+    {
+        derror("dsn_task_set_delay got null task");
+        return;
+    }
+
     ((::dsn::task*)(task))->set_delay(delay_ms);
 }
 
 DSN_API bool dsn_task_cancel2(dsn_task_t task, bool wait_until_finished, bool* finished)
 {
+    if (task == nullptr)
+    {
+        derror("dsn_task_cancel2 got null task");
+        if (finished != nullptr)
+        {
+            *finished = false;
+        }
+        return false;
+    }
+
     return ((::dsn::task*)(task))->cancel(wait_until_finished, finished);
 }
 
@@ -358,20 +434,39 @@ DSN_API void dsn_task_cancel_current_timer()
 
 DSN_API void dsn_task_wait(dsn_task_t task)
 {
-    auto r = ((::dsn::task*)(task))->wait();
+    if (task == nullptr)
+    {
+        derror("dsn_task_wait got null task");
+        return;
+    }
+
+    auto t = (::dsn::task*)task;
+    auto r = t->wait();
     dassert(r, 
         "task wait without timeout must succeeds (task_id = %016" PRIx64 ")",
-        ((::dsn::task*)(task))->id()
+        t->id()
         );
 }
 
 DSN_API bool dsn_task_wait_timeout(dsn_task_t task, int timeout_milliseconds)
 {
+    if (task == nullptr)
+    {
+        derror("dsn_task_wait_timeout got null task");
+        return false;
+    }
+
     return ((::dsn::task*)(task))->wait(timeout_milliseconds);
 }
 
 DSN_API dsn_error_t dsn_task_error(dsn_task_t task)
 {
+    if (task == nullptr)
+    {
+        derror("dsn_task_error got null task");
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
+    }
+
     return ((::dsn::task*)(task))->error().get();
 }
 
