@@ -205,7 +205,9 @@ endmacro(ms_link_static_runtime)
 
 macro(ms_replace_compiler_flags REPLACE_OPTION)
     if(MSVC AND (${REPLACE_OPTION} STREQUAL "STATIC_LINK"))
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" PARENT_SCOPE)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY
+            "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+            CACHE STRING "" FORCE)
     endif()
 
     set(SUFFIXES "")
