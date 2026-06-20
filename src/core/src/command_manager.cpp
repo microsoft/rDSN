@@ -52,9 +52,11 @@
 
 DSN_API const char* dsn_cli_run(const char* command_line) // return command output
 {
-    ::dsn::safe_string cmd = command_line;
     ::dsn::safe_string output;
-    dsn::command_manager::instance().run_command(cmd, output);
+    if (!dsn::run_command(command_line, output))
+    {
+        return nullptr;
+    }
 
     char* c_output = (char*)malloc(output.length() + 1);
     if (c_output == nullptr)
@@ -70,6 +72,12 @@ DSN_API const char* dsn_cli_run(const char* command_line) // return command outp
 
 DSN_API void dsn_cli_free(const char* command_output)
 {
+    if (command_output == nullptr)
+    {
+        derror("dsn_cli_free got null command output");
+        return;
+    }
+
     ::free((void*)command_output);
 }
 
@@ -82,6 +90,18 @@ DSN_API dsn_handle_t dsn_cli_register(
     dsn_cli_free_handler output_freer
     )
 {
+    if (cmd_handler == nullptr)
+    {
+        derror("dsn_cli_register got null command handler");
+        return nullptr;
+    }
+
+    if (output_freer == nullptr)
+    {
+        derror("dsn_cli_register got null output freer");
+        return nullptr;
+    }
+
     return dsn::register_command(
         command,
         help_one_line,
@@ -111,6 +131,18 @@ DSN_API dsn_handle_t dsn_cli_app_register(
     dsn_cli_free_handler output_freer
     )
 { 
+    if (command == nullptr || command[0] == '\0')
+    {
+        derror("dsn_cli_app_register got null or empty command");
+        return nullptr;
+    }
+
+    if (help_one_line == nullptr)
+    {
+        derror("dsn_cli_app_register got null help_one_line");
+        return nullptr;
+    }
+
     auto cnode = ::dsn::task::get_current_node2();
     dassert(cnode != nullptr, "tls_dsn not inited properly");
     auto handle = dsn_cli_register(
@@ -121,6 +153,11 @@ DSN_API dsn_handle_t dsn_cli_app_register(
         cmd_handler,
         output_freer
         );
+    if (handle == nullptr)
+    {
+        return nullptr;
+    }
+
     dsn::command_manager::instance().set_cli_target_address(handle, dsn::task::get_current_rpc()->primary_address());
     return handle;
 }
@@ -134,6 +171,12 @@ namespace dsn {
 
     void deregister_command(dsn_handle_t command_handle)
     {
+        if (command_handle == nullptr)
+        {
+            derror("deregister_command got null command handle");
+            return;
+        }
+
         return command_manager::instance().deregister_command(command_handle);
     }
 
@@ -144,6 +187,39 @@ namespace dsn {
         command_handler handler
         )
     {
+        if (commands.empty())
+        {
+            derror("register_command got empty commands");
+            return nullptr;
+        }
+
+        if (help_one_line == nullptr)
+        {
+            derror("register_command got null help_one_line");
+            return nullptr;
+        }
+
+        if (help_long == nullptr)
+        {
+            derror("register_command got null help_long");
+            return nullptr;
+        }
+
+        if (!handler)
+        {
+            derror("register_command got empty handler");
+            return nullptr;
+        }
+
+        for (auto cmd : commands)
+        {
+            if (cmd == nullptr || cmd[0] == '\0')
+            {
+                derror("register_command got null or empty command");
+                return nullptr;
+            }
+        }
+
         return command_manager::instance().register_command(commands, help_one_line, help_long, handler);
     }
 
@@ -154,6 +230,12 @@ namespace dsn {
         command_handler handler
         )
     {
+        if (command == nullptr || command[0] == '\0')
+        {
+            derror("register_command got null or empty command");
+            return nullptr;
+        }
+
         safe_vector<const char*> cmds;
         cmds.push_back(command);
         return register_command(cmds, help_one_line, help_long, handler);
@@ -161,6 +243,12 @@ namespace dsn {
 
     bool run_command(const char* cmd, /* out */ ::dsn::safe_string& output)
     {
+        if (cmd == nullptr || cmd[0] == '\0')
+        {
+            derror("run_command got null or empty command");
+            return false;
+        }
+
         return command_manager::instance().run_command(cmd, output);
     }
 
