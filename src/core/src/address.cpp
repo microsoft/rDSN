@@ -90,6 +90,12 @@ static void net_init()
 // name to ip etc.
 DSN_API uint32_t dsn_ipv4_from_host(const char* name)
 {
+    if (name == nullptr || name[0] == '\0')
+    {
+        derror("dsn_ipv4_from_host got null or empty name");
+        return 0;
+    }
+
     sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
 
@@ -275,10 +281,24 @@ DSN_API const char*   dsn_address_to_string(dsn_address_t addr)
 # endif
         break;
     case HOST_TYPE_URI:
-        p = (char*)(uintptr_t)addr.u.uri.uri;
+        if (addr.u.uri.uri == 0)
+        {
+            p = (char*)"invalid address";
+        }
+        else
+        {
+            p = (char*)(uintptr_t)addr.u.uri.uri;
+        }
         break;
     case HOST_TYPE_GROUP:
-        p = (char*)(((dsn::rpc_group_address*)(uintptr_t)(addr.u.group.group))->name());
+        if (addr.u.group.group == 0)
+        {
+            p = (char*)"invalid address";
+        }
+        else
+        {
+            p = (char*)(((dsn::rpc_group_address*)(uintptr_t)(addr.u.group.group))->name());
+        }
         break;
     default:
         p = (char*)"invalid address";
@@ -293,6 +313,12 @@ DSN_API dsn_address_t dsn_address_build(
     uint16_t port
     )
 {
+    if (host == nullptr)
+    {
+        derror("dsn_address_build got null host");
+        return dsn::rpc_address().c_addr();
+    }
+
     dsn::rpc_address addr(host, port);
     return addr.c_addr();
 }
@@ -310,6 +336,12 @@ DSN_API dsn_address_t dsn_address_build_group(
     dsn_group_t g
     )
 {
+    if (g == nullptr)
+    {
+        derror("dsn_address_build_group got null group");
+        return dsn::rpc_address().c_addr();
+    }
+
     dsn::rpc_address addr;
     addr.assign_group(g);
     return addr.c_addr();
@@ -319,6 +351,12 @@ DSN_API dsn_address_t dsn_address_build_uri(
     dsn_uri_t uri
     )
 {
+    if (uri == nullptr)
+    {
+        derror("dsn_address_build_uri got null uri");
+        return dsn::rpc_address().c_addr();
+    }
+
     dsn::rpc_address addr;
     addr.assign_uri(uri);
     return addr.c_addr();
@@ -326,18 +364,36 @@ DSN_API dsn_address_t dsn_address_build_uri(
 
 DSN_API dsn_group_t dsn_group_build(const char* name) // must be paired with release later
 {
+    if (name == nullptr)
+    {
+        derror("dsn_group_build got null name");
+        return nullptr;
+    }
+
     auto g = new ::dsn::rpc_group_address(name);
     return g;
 }
 
 DSN_API int dsn_group_count(dsn_group_t g)
 {
+    if (g == nullptr)
+    {
+        derror("dsn_group_count got null group");
+        return 0;
+    }
+
     auto grp = (::dsn::rpc_group_address*)(g);
     return grp->count();
 }
 
 DSN_API bool dsn_group_add(dsn_group_t g, dsn_address_t ep)
 {
+    if (g == nullptr)
+    {
+        derror("dsn_group_add got null group");
+        return false;
+    }
+
     auto grp = (::dsn::rpc_group_address*)(g);
     ::dsn::rpc_address addr(ep);
     return grp->add(addr);
@@ -345,6 +401,12 @@ DSN_API bool dsn_group_add(dsn_group_t g, dsn_address_t ep)
 
 DSN_API void dsn_group_set_leader(dsn_group_t g, dsn_address_t ep)
 {
+    if (g == nullptr)
+    {
+        derror("dsn_group_set_leader got null group");
+        return;
+    }
+
     auto grp = (::dsn::rpc_group_address*)(g);
     ::dsn::rpc_address addr(ep);
     grp->set_leader(addr);
@@ -352,30 +414,60 @@ DSN_API void dsn_group_set_leader(dsn_group_t g, dsn_address_t ep)
 
 DSN_API dsn_address_t dsn_group_get_leader(dsn_group_t g)
 {
+    if (g == nullptr)
+    {
+        derror("dsn_group_get_leader got null group");
+        return dsn::rpc_address().c_addr();
+    }
+
     auto grp = (::dsn::rpc_group_address*)(g);
     return grp->leader().c_addr();
 }
 
 DSN_API bool dsn_group_is_leader(dsn_group_t g, dsn_address_t ep)
 {
+    if (g == nullptr)
+    {
+        derror("dsn_group_is_leader got null group");
+        return false;
+    }
+
     auto grp = (::dsn::rpc_group_address*)(g);
     return grp->leader() == ep;
 }
 
 DSN_API bool dsn_group_is_update_leader_automatically(dsn_group_t g)
 {
+    if (g == nullptr)
+    {
+        derror("dsn_group_is_update_leader_automatically got null group");
+        return false;
+    }
+
     auto grp = (::dsn::rpc_group_address*)(g);
     return grp->is_update_leader_automatically();
 }
 
 DSN_API void dsn_group_set_update_leader_automatically(dsn_group_t g, bool v)
 {
+    if (g == nullptr)
+    {
+        derror("dsn_group_set_update_leader_automatically got null group");
+        return;
+    }
+
     auto grp = (::dsn::rpc_group_address*)(g);
     grp->set_update_leader_automatically(v);
 }
 
 DSN_API dsn_address_t dsn_group_next(dsn_group_t g, dsn_address_t ep)
 {
+    if (g == nullptr)
+    {
+        derror("dsn_group_next got null group");
+        return dsn::rpc_address().c_addr();
+    }
+
     auto grp = (::dsn::rpc_group_address*)(g);
     ::dsn::rpc_address addr(ep);
     return grp->next(addr).c_addr();
@@ -383,6 +475,12 @@ DSN_API dsn_address_t dsn_group_next(dsn_group_t g, dsn_address_t ep)
 
 DSN_API dsn_address_t dsn_group_forward_leader(dsn_group_t g)
 {
+    if (g == nullptr)
+    {
+        derror("dsn_group_forward_leader got null group");
+        return dsn::rpc_address().c_addr();
+    }
+
     auto grp = (::dsn::rpc_group_address*)(g);
     grp->leader_forward();
     return grp->leader().c_addr();
@@ -390,6 +488,12 @@ DSN_API dsn_address_t dsn_group_forward_leader(dsn_group_t g)
 
 DSN_API bool dsn_group_remove(dsn_group_t g, dsn_address_t ep)
 {
+    if (g == nullptr)
+    {
+        derror("dsn_group_remove got null group");
+        return false;
+    }
+
     auto grp = (::dsn::rpc_group_address*)(g);
     ::dsn::rpc_address addr(ep);
     return grp->remove(addr);
@@ -397,16 +501,34 @@ DSN_API bool dsn_group_remove(dsn_group_t g, dsn_address_t ep)
 
 DSN_API void dsn_group_destroy(dsn_group_t g)
 {
+    if (g == nullptr)
+    {
+        derror("dsn_group_destroy got null group");
+        return;
+    }
+
     auto grp = (::dsn::rpc_group_address*)(g);
     delete grp;
 }
 
 DSN_API dsn_uri_t dsn_uri_build(const char* url) // must be paired with destroy later
 {
+    if (url == nullptr)
+    {
+        derror("dsn_uri_build got null url");
+        return nullptr;
+    }
+
     return (dsn_uri_t)new ::dsn::rpc_uri_address(url);
 }
 
 DSN_API void dsn_uri_destroy(dsn_uri_t uri)
 {
+    if (uri == nullptr)
+    {
+        derror("dsn_uri_destroy got null uri");
+        return;
+    }
+
     delete (::dsn::rpc_uri_address*)(uri);
 }
