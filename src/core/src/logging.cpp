@@ -40,6 +40,7 @@
 # include <dsn/tool_api.h>
 # include "service_engine.h"
 # include <dsn/cpp/auto_codes.h>
+# include <cstdio>
 
 DSN_API dsn_log_level_t dsn_log_start_level = dsn_log_level_t::LOG_LEVEL_INFORMATION;
 
@@ -93,6 +94,36 @@ DSN_API dsn_log_level_t dsn_log_get_start_level()
 
 DSN_API void dsn_logv(const char *file, const char *function, const int line, dsn_log_level_t log_level, const char* title, const char* fmt, va_list args)
 {
+    if (file == nullptr)
+    {
+        fprintf(stderr, "ERROR: dsn_logv got null file\n");
+        return;
+    }
+
+    if (function == nullptr)
+    {
+        fprintf(stderr, "ERROR: dsn_logv got null function\n");
+        return;
+    }
+
+    if (log_level < LOG_LEVEL_INFORMATION || log_level >= LOG_LEVEL_COUNT)
+    {
+        fprintf(stderr, "ERROR: dsn_logv got invalid log_level = %d\n", log_level);
+        return;
+    }
+
+    if (title == nullptr)
+    {
+        fprintf(stderr, "ERROR: dsn_logv got null title\n");
+        return;
+    }
+
+    if (fmt == nullptr)
+    {
+        fprintf(stderr, "ERROR: dsn_logv got null fmt\n");
+        return;
+    }
+
     ::dsn::logging_provider* logger = ::dsn::service_engine::instance().logging();
     if (logger != nullptr)
     {
