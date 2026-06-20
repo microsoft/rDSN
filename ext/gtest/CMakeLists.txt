@@ -5,13 +5,16 @@ set(git_tag ${GTEST_GIT_TAG})
 set(target_bin_subdir src)
 set(gtest_lib_dir "${PROJECT_BINARY_DIR}/${project_name}/${target_bin_subdir}")
 
-set(my_cmake_args "-Wno-dev;-DCMAKE_SUPPRESS_DEVELOPER_WARNINGS=ON;-Dgtest_force_shared_crt=OFF;-DBUILD_SHARED_LIBS=ON;-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=${gtest_lib_dir};-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=${gtest_lib_dir};")
+set(my_cmake_args "-Wno-dev;-DCMAKE_SUPPRESS_DEVELOPER_WARNINGS=ON;-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=${gtest_lib_dir};-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY=${gtest_lib_dir};")
 
 if(WIN32)
-    set(target_binaries gtest.lib gtest_main.lib gtest.dll gtest_main.dll)
+    set(my_cmake_args "${my_cmake_args};-Dgtest_force_shared_crt=OFF;-DBUILD_SHARED_LIBS=OFF;-DCMAKE_POLICY_DEFAULT_CMP0091=NEW;-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>;")
+    set(target_binaries gtest.lib gtest_main.lib)
 elseif(APPLE)
+    set(my_cmake_args "${my_cmake_args};-DBUILD_SHARED_LIBS=ON;")
     set(target_binaries libgtest.dylib libgtest_main.dylib)
 else()
+    set(my_cmake_args "${my_cmake_args};-DBUILD_SHARED_LIBS=ON;")
     set(target_binaries libgtest.so libgtest_main.so)
 endif()
 

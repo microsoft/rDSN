@@ -6,6 +6,7 @@ set(git_tag ${ZOOKEEPER_GIT_TAG})
 set(my_cmake_args "")
 
 if(WIN32)
+    set(my_cmake_args "-DCMAKE_POLICY_DEFAULT_CMP0091=NEW;-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>;")
     set(target_binaries zookeeper_mt.dll zookeeper_mt.lib)
 else()
     set(target_binaries libzookeeper_mt.a)
@@ -15,4 +16,3 @@ include(${PROJECT_SOURCE_DIR}/bin/dsn.ext.cmake)
 
 set(ZOOKEEPER_INCLUDE_DIR ${my_source_dir}/include PARENT_SCOPE)
 set(ZOOKEEPER_LIB_DIR ${my_binary_dir} PARENT_SCOPE)
-

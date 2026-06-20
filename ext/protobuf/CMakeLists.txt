@@ -23,7 +23,12 @@ set (PROTOBUF_CMAKE_ARGS
 
 set(PROTOBUF_CXX_FLAGS "")
 
-if (NOT WIN32)
+if(WIN32)
+    list(APPEND PROTOBUF_CMAKE_ARGS
+        "-DCMAKE_POLICY_DEFAULT_CMP0091=NEW;"
+        "-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>;"
+    )
+else()
     set(PROTOBUF_CXX_FLAGS "${PROTOBUF_CXX_FLAGS} -Wno-unused-variable -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-unused-const-variable -Wno-deprecated-declarations")
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         set(PROTOBUF_CXX_FLAGS "${PROTOBUF_CXX_FLAGS} -Wno-unused-private-field")
