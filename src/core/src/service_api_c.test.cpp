@@ -48,6 +48,18 @@ TEST(core, dsn_error)
     ASSERT_STREQ("ERR_OK", dsn_error_to_string(ERR_OK));
 }
 
+TEST(core, dsn_error_invalid_parameters)
+{
+    const auto too_long_error_name = std::string(DSN_MAX_ERROR_CODE_NAME_LENGTH, 'e');
+
+    ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_error_register(nullptr));
+    ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_error_register(""));
+    ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_error_register(too_long_error_name.c_str()));
+    ASSERT_STREQ("unknown", dsn_error_to_string(-1));
+    ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_error_from_string(nullptr, ERR_OK));
+    ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_error_from_string("", ERR_OK));
+}
+
 DEFINE_THREAD_POOL_CODE(THREAD_POOL_FOR_TEST)
 TEST(core, dsn_threadpool_code)
 {
@@ -62,6 +74,16 @@ TEST(core, dsn_threadpool_code)
     ASSERT_LE(THREAD_POOL_FOR_TEST, dsn_threadpool_code_max());
 
     ASSERT_LT(0, dsn_threadpool_get_current_tid());
+}
+
+TEST(core, dsn_threadpool_code_invalid_parameters)
+{
+    ASSERT_EQ(THREAD_POOL_INVALID, dsn_threadpool_code_register(nullptr));
+    ASSERT_EQ(THREAD_POOL_INVALID, dsn_threadpool_code_register(""));
+    ASSERT_EQ(THREAD_POOL_INVALID,
+              dsn_threadpool_code_from_string(nullptr, THREAD_POOL_DEFAULT));
+    ASSERT_EQ(THREAD_POOL_INVALID,
+              dsn_threadpool_code_from_string("", THREAD_POOL_DEFAULT));
 }
 
 DEFINE_TASK_CODE(TASK_CODE_COMPUTE_FOR_TEST, TASK_PRIORITY_HIGH, THREAD_POOL_DEFAULT)
@@ -134,6 +156,58 @@ TEST(core, dsn_task_code)
     dsn_task_code_set_priority(TASK_CODE_COMPUTE_FOR_TEST, TASK_PRIORITY_HIGH);
 }
 
+TEST(core, dsn_task_code_invalid_parameters)
+{
+    const auto too_long_task_name = std::string(DSN_MAX_TASK_CODE_NAME_LENGTH, 't');
+    dsn_task_type_t type = TASK_TYPE_COUNT;
+    dsn_task_priority_t priority = TASK_PRIORITY_COUNT;
+    dsn_threadpool_code_t pool = THREAD_POOL_INVALID;
+
+    ASSERT_EQ(TASK_CODE_INVALID, dsn_task_code_register(nullptr,
+                                                        TASK_TYPE_COMPUTE,
+                                                        TASK_PRIORITY_COMMON,
+                                                        THREAD_POOL_DEFAULT));
+    ASSERT_EQ(TASK_CODE_INVALID, dsn_task_code_register("",
+                                                        TASK_TYPE_COMPUTE,
+                                                        TASK_PRIORITY_COMMON,
+                                                        THREAD_POOL_DEFAULT));
+    ASSERT_EQ(TASK_CODE_INVALID, dsn_task_code_register(too_long_task_name.c_str(),
+                                                        TASK_TYPE_COMPUTE,
+                                                        TASK_PRIORITY_COMMON,
+                                                        THREAD_POOL_DEFAULT));
+    ASSERT_EQ(TASK_CODE_INVALID,
+              dsn_task_code_register("invalid_task_type",
+                                     TASK_TYPE_COUNT,
+                                     TASK_PRIORITY_COMMON,
+                                     THREAD_POOL_DEFAULT));
+    ASSERT_EQ(TASK_CODE_INVALID,
+              dsn_task_code_register("invalid_task_priority",
+                                     TASK_TYPE_COMPUTE,
+                                     TASK_PRIORITY_COUNT,
+                                     THREAD_POOL_DEFAULT));
+    ASSERT_EQ(TASK_CODE_INVALID,
+              dsn_task_code_register("invalid_task_pool",
+                                     TASK_TYPE_COMPUTE,
+                                     TASK_PRIORITY_COMMON,
+                                     THREAD_POOL_INVALID));
+
+    dsn_task_code_query(TASK_CODE_INVALID, &type, &priority, &pool);
+    ASSERT_EQ(TASK_TYPE_COUNT, type);
+    ASSERT_EQ(TASK_PRIORITY_COUNT, priority);
+    ASSERT_EQ(THREAD_POOL_INVALID, pool);
+    dsn_task_code_set_threadpool(TASK_CODE_INVALID, THREAD_POOL_DEFAULT);
+    dsn_task_code_set_threadpool(TASK_CODE_COMPUTE_FOR_TEST, THREAD_POOL_INVALID);
+    dsn_task_code_set_priority(TASK_CODE_INVALID, TASK_PRIORITY_COMMON);
+    dsn_task_code_set_priority(TASK_CODE_COMPUTE_FOR_TEST, TASK_PRIORITY_COUNT);
+
+    ASSERT_STREQ("unknown", dsn_task_code_to_string(TASK_CODE_INVALID));
+    ASSERT_EQ(TASK_CODE_INVALID, dsn_task_code_from_string(nullptr, TASK_CODE_COMPUTE_FOR_TEST));
+    ASSERT_EQ(TASK_CODE_INVALID, dsn_task_code_from_string("", TASK_CODE_COMPUTE_FOR_TEST));
+    ASSERT_STREQ("Unknown", dsn_task_type_to_string(TASK_TYPE_COUNT));
+    ASSERT_STREQ("Unknown", dsn_task_priority_to_string(TASK_PRIORITY_COUNT));
+    ASSERT_EQ(nullptr, dsn_task_queue_virtual_length_ptr(TASK_CODE_INVALID, 0));
+}
+
 TEST(core, dsn_config)
 {
     ASSERT_TRUE(dsn_config_get_value_bool("apps.client", "run", false, "client run"));
@@ -160,6 +234,12 @@ TEST(core, dsn_crc32)
 {
 }
 
+TEST(core, dsn_crc_invalid_parameters)
+{
+    ASSERT_EQ(CRC_INVALID, dsn_crc32_compute(nullptr, 1, 0));
+    ASSERT_EQ(static_cast<uint64_t>(CRC_INVALID), dsn_crc64_compute(nullptr, 1, 0));
+}
+
 TEST(core, dsn_task)
 {
 }
@@ -167,6 +247,8 @@ TEST(core, dsn_task)
 TEST(core, dsn_task_invalid_parameters)
 {
     ASSERT_FALSE(dsn_task_is_running_inside(nullptr));
+    ASSERT_EQ(0, dsn_task_get_ref(nullptr));
+    ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_task_error(nullptr));
     ASSERT_FALSE(dsn_task_call(nullptr, 0));
     ASSERT_FALSE(dsn_task_set_delay(nullptr, 0));
     ASSERT_FALSE(dsn_task_cancel(nullptr, false));
@@ -188,6 +270,37 @@ TEST(core, dsn_task_invalid_parameters)
     dsn_task_add_ref(aio_task);
     ASSERT_FALSE(dsn_task_call(aio_task, 0));
     dsn_task_release_ref(aio_task);
+}
+
+TEST(core, dsn_task_create_invalid_parameters)
+{
+    ASSERT_EQ(nullptr, dsn_task_create(TASK_CODE_INVALID, noop_task_handler, nullptr, 0));
+    ASSERT_EQ(nullptr, dsn_task_create(TASK_CODE_COMPUTE_FOR_TEST, nullptr, nullptr, 0));
+    ASSERT_EQ(nullptr, dsn_task_create_ex(TASK_CODE_INVALID, noop_task_handler, nullptr, nullptr, 0));
+    ASSERT_EQ(nullptr, dsn_task_create_ex(TASK_CODE_COMPUTE_FOR_TEST, nullptr, nullptr, nullptr, 0));
+    ASSERT_EQ(nullptr, dsn_task_create_timer(TASK_CODE_INVALID, noop_task_handler, nullptr, 0, 1));
+    ASSERT_EQ(nullptr, dsn_task_create_timer(TASK_CODE_COMPUTE_FOR_TEST, nullptr, nullptr, 0, 1));
+    ASSERT_EQ(nullptr, dsn_task_create_timer(TASK_CODE_COMPUTE_FOR_TEST, noop_task_handler, nullptr, 0, -1));
+    ASSERT_EQ(nullptr, dsn_task_create_timer_ex(TASK_CODE_INVALID,
+                                                noop_task_handler,
+                                                nullptr,
+                                                nullptr,
+                                                0,
+                                                1));
+    ASSERT_EQ(nullptr, dsn_task_create_timer_ex(TASK_CODE_COMPUTE_FOR_TEST,
+                                                nullptr,
+                                                nullptr,
+                                                nullptr,
+                                                0,
+                                                1));
+    ASSERT_EQ(nullptr, dsn_task_create_timer_ex(TASK_CODE_COMPUTE_FOR_TEST,
+                                                noop_task_handler,
+                                                nullptr,
+                                                nullptr,
+                                                0,
+                                                -1));
+    ASSERT_EQ(nullptr, dsn_task_tracker_create(0));
+    ASSERT_EQ(nullptr, dsn_task_tracker_create(-1));
 }
 
 TEST(core, dsn_exlock)

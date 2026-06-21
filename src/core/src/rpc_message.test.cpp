@@ -251,6 +251,54 @@ TEST(core, dsn_msg_invalid_parameters)
     dsn_msg_options_t opts;
     opts.timeout_ms = 1;
 
+    char buffer[] = "message";
+    ASSERT_EQ(nullptr,
+              dsn_msg_create_received_request(TASK_CODE_INVALID,
+                                              DSF_THRIFT_BINARY,
+                                              buffer,
+                                              static_cast<int>(sizeof(buffer)),
+                                              0,
+                                              0));
+    ASSERT_EQ(nullptr,
+              dsn_msg_create_received_request(RPC_CODE_FOR_TEST,
+                                              DSF_THRIFT_BINARY,
+                                              buffer,
+                                              -1,
+                                              0,
+                                              0));
+    ASSERT_EQ(nullptr,
+              dsn_msg_create_received_request(RPC_CODE_FOR_TEST,
+                                              DSF_THRIFT_BINARY,
+                                              nullptr,
+                                              1,
+                                              0,
+                                              0));
+    ASSERT_EQ(nullptr,
+              dsn_msg_create_received_request(RPC_CODE_FOR_TEST,
+                                              DSF_INVALID,
+                                              nullptr,
+                                              0,
+                                              0,
+                                              0));
+    ASSERT_EQ(nullptr,
+              dsn_msg_create_received_request(
+                  RPC_CODE_FOR_TEST,
+                  static_cast<dsn_msg_serialize_format>(DSF_JSON + 1),
+                  nullptr,
+                  0,
+                  0,
+                  0));
+
+    ASSERT_EQ(nullptr, dsn_msg_copy(nullptr, true, false));
+    ASSERT_EQ(nullptr, dsn_msg_create_response(nullptr));
+    ASSERT_EQ(0u, dsn_msg_body_size(nullptr));
+    ASSERT_EQ(nullptr, dsn_msg_rw_ptr(nullptr, 0));
+    ASSERT_EQ(0u, dsn_msg_from_address(nullptr).u.value);
+    ASSERT_EQ(0u, dsn_msg_to_address(nullptr).u.value);
+    ASSERT_EQ(0u, dsn_msg_trace_id(nullptr));
+    ASSERT_EQ(TASK_CODE_INVALID, dsn_msg_task_code(nullptr));
+    ASSERT_EQ(DSF_INVALID, dsn_msg_get_serialize_format(nullptr));
+
     ASSERT_FALSE(dsn_msg_set_options(nullptr, &opts, DSN_MSGM_TIMEOUT));
     ASSERT_FALSE(dsn_msg_set_options(nullptr, nullptr, DSN_MSGM_TIMEOUT));
     ASSERT_FALSE(dsn_msg_get_options(nullptr, &opts));
