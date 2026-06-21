@@ -196,32 +196,32 @@ DSN_API dsn_error_t dsn_hosted_app_destroy(void* app_context, bool cleanup)
     return node->get_l2_handler().destroy_app(app_context, cleanup);
 }
 
-DSN_API void dsn_hosted_app_commit_rpc_request(void* app_context, dsn_message_t msg, bool exec_inline)
+DSN_API dsn_error_t dsn_hosted_app_commit_rpc_request(void* app_context, dsn_message_t msg, bool exec_inline)
 {
     if (app_context == nullptr)
     {
         derror("dsn_hosted_app_commit_rpc_request got null app_context");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     if (msg == nullptr)
     {
         derror("dsn_hosted_app_commit_rpc_request got null message");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     auto node = ::dsn::task::get_current_node2();
     if (node == nullptr)
     {
         derror("dsn_hosted_app_commit_rpc_request got null current node");
-        return;
+        return ::dsn::ERR_INVALID_STATE.get();
     }
 
     auto app = (::dsn::app_manager::app_internal*)(app_context);
     if (app == nullptr)
     {
         derror("dsn_hosted_app_commit_rpc_request got null app");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     if (exec_inline)
@@ -231,13 +231,15 @@ DSN_API void dsn_hosted_app_commit_rpc_request(void* app_context, dsn_message_t 
     else
     {
         auto tsk = app->server_dispatcher.on_request((::dsn::message_ex*)(msg), node);
-        if (tsk)
-            tsk->enqueue();
-        else
+        if (tsk == nullptr)
         {
-            dassert(false, "dsn_hosted_app_commit_rpc_request failed to create request task");
+            derror("dsn_hosted_app_commit_rpc_request failed to create request task");
+            return ::dsn::ERR_INVALID_STATE.get();
         }
+        tsk->enqueue();
     }
+
+    return ::dsn::ERR_OK.get();
 }
 
 

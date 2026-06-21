@@ -1074,43 +1074,44 @@ DSN_API dsn_task_t dsn_rpc_create_response_task_ex(dsn_message_t request, dsn_rp
     return t;
 }
 
-DSN_API void dsn_rpc_call(dsn_address_t server, dsn_task_t rpc_call)
+DSN_API dsn_error_t dsn_rpc_call(dsn_address_t server, dsn_task_t rpc_call)
 {
     ::dsn::rpc_response_task* task = (::dsn::rpc_response_task*)rpc_call;
     if (task == nullptr)
     {
         derror("dsn_rpc_call got null rpc_call");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     if (task->spec().type != TASK_TYPE_RPC_RESPONSE)
     {
         derror("dsn_rpc_call got non-rpc-response task");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     if (::dsn::rpc_address(server).is_invalid())
     {
         derror("dsn_rpc_call got invalid server address");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     auto rpc = ::dsn::task::get_current_rpc();
     if (rpc == nullptr)
     {
         derror("dsn_rpc_call got null current rpc engine");
-        return;
+        return ::dsn::ERR_INVALID_STATE.get();
     }
     
     auto msg = task->get_request();
     if (msg == nullptr)
     {
         derror("dsn_rpc_call got null request message");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     msg->server_address = server;
     rpc->call(msg, task);
+    return ::dsn::ERR_OK.get();
 }
 
 DSN_API dsn_message_t dsn_rpc_call_wait(dsn_address_t server, dsn_message_t request)
@@ -1155,76 +1156,79 @@ DSN_API dsn_message_t dsn_rpc_call_wait(dsn_address_t server, dsn_message_t requ
     }
 }
 
-DSN_API void dsn_rpc_call_one_way(dsn_address_t server, dsn_message_t request)
+DSN_API dsn_error_t dsn_rpc_call_one_way(dsn_address_t server, dsn_message_t request)
 {
     auto msg = ((::dsn::message_ex*)request);
     if (msg == nullptr)
     {
         derror("dsn_rpc_call_one_way got null request");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     if (::dsn::rpc_address(server).is_invalid())
     {
         derror("dsn_rpc_call_one_way got invalid server address");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     auto rpc = ::dsn::task::get_current_rpc();
     if (rpc == nullptr)
     {
         derror("dsn_rpc_call_one_way got null current rpc engine");
-        return;
+        return ::dsn::ERR_INVALID_STATE.get();
     }
 
     msg->server_address = server;
 
     rpc->call(msg, nullptr);
+    return ::dsn::ERR_OK.get();
 }
 
-DSN_API void dsn_rpc_reply(dsn_message_t response, dsn_error_t err)
+DSN_API dsn_error_t dsn_rpc_reply(dsn_message_t response, dsn_error_t err)
 {
     auto msg = ((::dsn::message_ex*)response);
     if (msg == nullptr)
     {
         derror("dsn_rpc_reply got null response");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     auto rpc = ::dsn::task::get_current_rpc();
     if (rpc == nullptr)
     {
         derror("dsn_rpc_reply got null current rpc engine");
-        return;
+        return ::dsn::ERR_INVALID_STATE.get();
     }
 
     rpc->reply(msg, err);
+    return ::dsn::ERR_OK.get();
 }
 
-DSN_API void dsn_rpc_forward(dsn_message_t request, dsn_address_t addr)
+DSN_API dsn_error_t dsn_rpc_forward(dsn_message_t request, dsn_address_t addr)
 {
     auto msg = (::dsn::message_ex*)(request);
     if (msg == nullptr)
     {
         derror("dsn_rpc_forward got null request");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     auto target = ::dsn::rpc_address(addr);
     if (target.is_invalid())
     {
         derror("dsn_rpc_forward got invalid target address");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     auto rpc = ::dsn::task::get_current_rpc();
     if (rpc == nullptr)
     {
         derror("dsn_rpc_forward got null current rpc engine");
-        return;
+        return ::dsn::ERR_INVALID_STATE.get();
     }
 
     rpc->forward(msg, target);
+    return ::dsn::ERR_OK.get();
 }
 
 DSN_API dsn_message_t dsn_rpc_get_response(dsn_task_t rpc_call)
@@ -1252,23 +1256,24 @@ DSN_API dsn_message_t dsn_rpc_get_response(dsn_task_t rpc_call)
         return nullptr;
 }
 
-DSN_API void dsn_rpc_enqueue_response(dsn_task_t rpc_call, dsn_error_t err, dsn_message_t response)
+DSN_API dsn_error_t dsn_rpc_enqueue_response(dsn_task_t rpc_call, dsn_error_t err, dsn_message_t response)
 {
     ::dsn::rpc_response_task* task = (::dsn::rpc_response_task*)rpc_call;
     if (task == nullptr)
     {
         derror("dsn_rpc_enqueue_response got null rpc_call");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     if (task->spec().type != TASK_TYPE_RPC_RESPONSE)
     {
         derror("dsn_rpc_enqueue_response got non-rpc-response task");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     auto resp = ((::dsn::message_ex*)response);
     task->enqueue(err, resp);
+    return ::dsn::ERR_OK.get();
 }
 
 //------------------------------------------------------------------------------
@@ -1388,38 +1393,38 @@ DSN_API dsn_task_t dsn_file_create_aio_task_ex(dsn_task_code_t code, dsn_aio_han
     return t;
 }
 
-DSN_API void dsn_file_read(dsn_handle_t file, char* buffer, int count, uint64_t offset, dsn_task_t cb)
+DSN_API dsn_error_t dsn_file_read(dsn_handle_t file, char* buffer, int count, uint64_t offset, dsn_task_t cb)
 {
     if (file == nullptr)
     {
         derror("dsn_file_read got null file handle");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     if (buffer == nullptr)
     {
         derror("dsn_file_read got null buffer");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     if (count < 0)
     {
         derror("dsn_file_read got invalid count = %d", count);
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     ::dsn::aio_task* callback((::dsn::aio_task*)cb);
     if (callback == nullptr)
     {
         derror("dsn_file_read got null callback task");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     auto disk = ::dsn::task::get_current_disk();
     if (disk == nullptr)
     {
         derror("dsn_file_read got null current disk engine");
-        return;
+        return ::dsn::ERR_INVALID_STATE.get();
     }
 
     callback->aio()->buffer = buffer;
@@ -1430,40 +1435,41 @@ DSN_API void dsn_file_read(dsn_handle_t file, char* buffer, int count, uint64_t 
     callback->aio()->type = ::dsn::AIO_Read;
 
     disk->read(callback);
+    return ::dsn::ERR_OK.get();
 }
 
-DSN_API void dsn_file_write(dsn_handle_t file, const char* buffer, int count, uint64_t offset, dsn_task_t cb)
+DSN_API dsn_error_t dsn_file_write(dsn_handle_t file, const char* buffer, int count, uint64_t offset, dsn_task_t cb)
 {
     if (file == nullptr)
     {
         derror("dsn_file_write got null file handle");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     if (buffer == nullptr)
     {
         derror("dsn_file_write got null buffer");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     if (count < 0)
     {
         derror("dsn_file_write got invalid count = %d", count);
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     ::dsn::aio_task* callback((::dsn::aio_task*)cb);
     if (callback == nullptr)
     {
         derror("dsn_file_write got null callback task");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     auto disk = ::dsn::task::get_current_disk();
     if (disk == nullptr)
     {
         derror("dsn_file_write got null current disk engine");
-        return;
+        return ::dsn::ERR_INVALID_STATE.get();
     }
 
     callback->aio()->buffer = (char*)buffer;
@@ -1474,40 +1480,41 @@ DSN_API void dsn_file_write(dsn_handle_t file, const char* buffer, int count, ui
     callback->aio()->type = ::dsn::AIO_Write;
 
     disk->write(callback);
+    return ::dsn::ERR_OK.get();
 }
 
-DSN_API void dsn_file_write_vector(dsn_handle_t file, const dsn_file_buffer_t* buffers, int buffer_count, uint64_t offset, dsn_task_t cb)
+DSN_API dsn_error_t dsn_file_write_vector(dsn_handle_t file, const dsn_file_buffer_t* buffers, int buffer_count, uint64_t offset, dsn_task_t cb)
 {
     if (file == nullptr)
     {
         derror("dsn_file_write_vector got null file handle");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     if (buffers == nullptr)
     {
         derror("dsn_file_write_vector got null buffers");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     if (buffer_count <= 0)
     {
         derror("dsn_file_write_vector got invalid buffer_count = %d", buffer_count);
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     ::dsn::aio_task* callback((::dsn::aio_task*)cb);
     if (callback == nullptr)
     {
         derror("dsn_file_write_vector got null callback task");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     auto disk = ::dsn::task::get_current_disk();
     if (disk == nullptr)
     {
         derror("dsn_file_write_vector got null current disk engine");
-        return;
+        return ::dsn::ERR_INVALID_STATE.get();
     }
 
     for (int i = 0; i < buffer_count; i++)
@@ -1517,13 +1524,13 @@ DSN_API void dsn_file_write_vector(dsn_handle_t file, const dsn_file_buffer_t* b
             derror("dsn_file_write_vector got invalid buffer size = %d at index = %d",
                    buffers[i].size,
                    i);
-            return;
+            return ::dsn::ERR_INVALID_PARAMETERS.get();
         }
 
         if (buffers[i].buffer == nullptr)
         {
             derror("dsn_file_write_vector got null buffer at index = %d", i);
-            return;
+            return ::dsn::ERR_INVALID_PARAMETERS.get();
         }
     }
 
@@ -1540,41 +1547,42 @@ DSN_API void dsn_file_write_vector(dsn_handle_t file, const dsn_file_buffer_t* b
     }
 
     disk->write(callback);
+    return ::dsn::ERR_OK.get();
 }
 
-DSN_API void dsn_file_copy_remote_directory(dsn_address_t remote, const char* source_dir, 
+DSN_API dsn_error_t dsn_file_copy_remote_directory(dsn_address_t remote, const char* source_dir,
     const char* dest_dir, bool overwrite, dsn_task_t cb)
 {
     if (::dsn::rpc_address(remote).is_invalid())
     {
         derror("dsn_file_copy_remote_directory got invalid remote address");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     if (source_dir == nullptr || source_dir[0] == '\0')
     {
         derror("dsn_file_copy_remote_directory got null or empty source_dir");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     if (dest_dir == nullptr || dest_dir[0] == '\0')
     {
         derror("dsn_file_copy_remote_directory got null or empty dest_dir");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     ::dsn::aio_task* callback((::dsn::aio_task*)cb);
     if (callback == nullptr)
     {
         derror("dsn_file_copy_remote_directory got null callback task");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     auto nfs = ::dsn::task::get_current_nfs();
     if (nfs == nullptr)
     {
         derror("dsn_file_copy_remote_directory got null current nfs node");
-        return;
+        return ::dsn::ERR_INVALID_STATE.get();
     }
 
     std::shared_ptr< ::dsn::remote_copy_request> rci(new ::dsn::remote_copy_request());
@@ -1585,46 +1593,47 @@ DSN_API void dsn_file_copy_remote_directory(dsn_address_t remote, const char* so
     rci->overwrite = overwrite;
 
     nfs->call(rci, callback);
+    return ::dsn::ERR_OK.get();
 }
 
-DSN_API void dsn_file_copy_remote_files(dsn_address_t remote, const char* source_dir, const char** source_files, const char* dest_dir, bool overwrite, dsn_task_t cb)
+DSN_API dsn_error_t dsn_file_copy_remote_files(dsn_address_t remote, const char* source_dir, const char** source_files, const char* dest_dir, bool overwrite, dsn_task_t cb)
 {
     if (::dsn::rpc_address(remote).is_invalid())
     {
         derror("dsn_file_copy_remote_files got invalid remote address");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     if (source_dir == nullptr || source_dir[0] == '\0')
     {
         derror("dsn_file_copy_remote_files got null or empty source_dir");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     if (source_files == nullptr)
     {
         derror("dsn_file_copy_remote_files got null source_files");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     if (dest_dir == nullptr || dest_dir[0] == '\0')
     {
         derror("dsn_file_copy_remote_files got null or empty dest_dir");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     ::dsn::aio_task* callback((::dsn::aio_task*)cb);
     if (callback == nullptr)
     {
         derror("dsn_file_copy_remote_files got null callback task");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     auto nfs = ::dsn::task::get_current_nfs();
     if (nfs == nullptr)
     {
         derror("dsn_file_copy_remote_files got null current nfs node");
-        return;
+        return ::dsn::ERR_INVALID_STATE.get();
     }
 
     std::shared_ptr< ::dsn::remote_copy_request> rci(new ::dsn::remote_copy_request());
@@ -1648,6 +1657,7 @@ DSN_API void dsn_file_copy_remote_files(dsn_address_t remote, const char* source
     rci->overwrite = overwrite;
 
     nfs->call(rci, callback);
+    return ::dsn::ERR_OK.get();
 }
 
 DSN_API size_t dsn_file_get_io_size(dsn_task_t cb_task)
@@ -1668,22 +1678,23 @@ DSN_API size_t dsn_file_get_io_size(dsn_task_t cb_task)
     return ((::dsn::aio_task*)task)->get_transferred_size();
 }
 
-DSN_API void dsn_file_task_enqueue(dsn_task_t cb_task, dsn_error_t err, size_t size)
+DSN_API dsn_error_t dsn_file_task_enqueue(dsn_task_t cb_task, dsn_error_t err, size_t size)
 {
     ::dsn::task* task = (::dsn::task*)cb_task;
     if (task == nullptr)
     {
         derror("dsn_file_task_enqueue got null callback task");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     if (task->spec().type != TASK_TYPE_AIO)
     {
         derror("dsn_file_task_enqueue got non-aio callback task");
-        return;
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
     }
 
     ((::dsn::aio_task*)task)->enqueue(err, size);
+    return ::dsn::ERR_OK.get();
 }
 
 //------------------------------------------------------------------------------

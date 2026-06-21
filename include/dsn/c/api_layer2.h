@@ -92,8 +92,9 @@ send an RPC request to a local application and execute
 \param app_context_for_downcalls see \ref dsn_hosted_app_create
 \param msg the RPC request
 \param exec_inline whether to execute the RPC handler within this call or not
+\return ERR_OK if the request is dispatched, otherwise the submission error code.
 */
-extern DSN_API void        dsn_hosted_app_commit_rpc_request(void* app_context_for_downcalls, dsn_message_t msg, bool exec_inline);
+extern DSN_API dsn_error_t dsn_hosted_app_commit_rpc_request(void* app_context_for_downcalls, dsn_message_t msg, bool exec_inline);
 
 /*@}*/
 
