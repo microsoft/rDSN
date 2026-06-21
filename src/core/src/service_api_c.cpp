@@ -288,7 +288,7 @@ DSN_API void dsn_task_code_set_priority(dsn_task_code_t code, dsn_task_priority_
 
 DSN_API const char* dsn_task_code_to_string(dsn_task_code_t code)
 {
-    if (code < 0 || code == ::dsn::TASK_CODE_INVALID)
+    if (code < 0)
     {
         derror("dsn_task_code_to_string got invalid code = %d", code);
         return "unknown";

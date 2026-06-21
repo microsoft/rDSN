@@ -213,7 +213,8 @@ TEST(core, dsn_task_code_invalid_parameters)
     dsn_task_code_set_priority(TASK_CODE_INVALID, TASK_PRIORITY_COMMON);
     dsn_task_code_set_priority(TASK_CODE_COMPUTE_FOR_TEST, TASK_PRIORITY_COUNT);
 
-    ASSERT_STREQ("unknown", dsn_task_code_to_string(TASK_CODE_INVALID));
+    ASSERT_STREQ("TASK_CODE_INVALID", dsn_task_code_to_string(TASK_CODE_INVALID));
+    ASSERT_STREQ("unknown", dsn_task_code_to_string(static_cast<dsn_task_code_t>(-1)));
     ASSERT_EQ(TASK_CODE_INVALID, dsn_task_code_from_string(nullptr, TASK_CODE_COMPUTE_FOR_TEST));
     ASSERT_EQ(TASK_CODE_INVALID, dsn_task_code_from_string("", TASK_CODE_COMPUTE_FOR_TEST));
     ASSERT_STREQ("Unknown", dsn_task_type_to_string(TASK_TYPE_COUNT));
