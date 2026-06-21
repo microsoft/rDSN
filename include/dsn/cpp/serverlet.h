@@ -74,7 +74,8 @@ namespace dsn
             if (_response != nullptr)
             {
                 ::dsn::marshall(_response, resp);
-                dsn_rpc_reply(_response);
+                auto err = dsn_rpc_reply(_response);
+                dassert(err == ERR_OK, "dsn_rpc_reply failed: %s", error_code(err).to_string());
             }
         }
 
@@ -234,7 +235,8 @@ namespace dsn
     {
         auto msg = dsn_msg_create_response(request);
         ::dsn::marshall(msg, resp);
-        dsn_rpc_reply(msg);
+        auto err = dsn_rpc_reply(msg);
+        dassert(err == ERR_OK, "dsn_rpc_reply failed: %s", error_code(err).to_string());
     }
     /*@}*/
 } // end namespace

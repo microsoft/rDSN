@@ -443,7 +443,8 @@ namespace dsn {
 
         std::string r2 = result.c_str();
         ::dsn::marshall(resp, r2);
-        dsn_rpc_reply(resp);
+        auto err = dsn_rpc_reply(resp);
+        dassert(err == ERR_OK, "dsn_rpc_reply failed: %s", error_code(err).to_string());
     }
 
     void command_manager::set_cli_target_address(dsn_handle_t handle, dsn::rpc_address address)

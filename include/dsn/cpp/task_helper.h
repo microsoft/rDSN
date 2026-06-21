@@ -95,7 +95,7 @@ namespace dsn
 
         void set_delay(int delay_ms)
         {
-            dsn_task_set_delay(_task, delay_ms);
+            dassert(dsn_task_set_delay(_task, delay_ms), "dsn_task_set_delay failed");
         }
 
         void wait() const
@@ -120,12 +120,13 @@ namespace dsn
 
         void enqueue(std::chrono::milliseconds delay = std::chrono::milliseconds(0)) const
         {
-            dsn_task_call(_task, static_cast<int>(delay.count()));
+            dassert(dsn_task_call(_task, static_cast<int>(delay.count())), "dsn_task_call failed");
         }
             
         void enqueue_aio(error_code err, size_t size) const
         {
-            dsn_file_task_enqueue(_task, err.get(), size);
+            auto submit_error = dsn_file_task_enqueue(_task, err.get(), size);
+            dassert(submit_error == ERR_OK, "dsn_file_task_enqueue failed: %s", error_code(submit_error).to_string());
         }
 
         dsn_message_t response()
@@ -137,7 +138,8 @@ namespace dsn
 
         void enqueue_rpc_response(error_code err, dsn_message_t resp) const
         {
-            dsn_rpc_enqueue_response(_task, err.get(), resp);
+            auto submit_error = dsn_rpc_enqueue_response(_task, err.get(), resp);
+            dassert(submit_error == ERR_OK, "dsn_rpc_enqueue_response failed: %s", error_code(submit_error).to_string());
         }
 
     private:
@@ -279,7 +281,7 @@ namespace dsn
         {
             _bound_handler = binder(_handler);
             _handler = nullptr;
-            dsn_task_call(native_handle(), delay_milliseconds);
+            dassert(dsn_task_call(native_handle(), delay_milliseconds), "dsn_task_call failed");
         }
 
         static void on_cancel(void* task)

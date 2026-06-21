@@ -910,7 +910,11 @@ namespace dsn {
                                         nullptr,
                                         [server = req2->server_address.c_addr(), ctask]()
                                         {
-                                            dsn_rpc_call(server, ctask);
+                                            auto err = dsn_rpc_call(server, ctask);
+                                            if (err != ERR_OK)
+                                            {
+                                                ctask->enqueue(error_code(err), nullptr);
+                                            }
                                             ctask->release_ref(); // added when set-retry
                                         },
                                         0,

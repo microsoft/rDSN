@@ -185,7 +185,7 @@ TEST(core, message_ex)
         opts.context.context = 444;
         opts.gpid.value = 333;
 
-        dsn_msg_set_options(request, &opts, DSN_MSGM_CONTEXT | DSN_MSGM_VNID);
+        ASSERT_TRUE(dsn_msg_set_options(request, &opts, DSN_MSGM_CONTEXT | DSN_MSGM_VNID));
         message_ex* m = (message_ex*)request;
         m->header->from_address = rpc_address("127.0.0.1", 8080);
         m->to_address = rpc_address("127.0.0.1", 9090);
@@ -206,9 +206,9 @@ TEST(core, message_ex)
         void* ptr;
         size_t sz;
 
-        dsn_msg_write_next(request, &ptr, &sz, data_size);
+        ASSERT_TRUE(dsn_msg_write_next(request, &ptr, &sz, data_size));
         memcpy(ptr, data, data_size);
-        dsn_msg_write_commit(request, data_size);
+        ASSERT_TRUE(dsn_msg_write_commit(request, data_size));
 
         ASSERT_EQ(data_size, dsn_msg_body_size(request));
 
@@ -228,7 +228,7 @@ TEST(core, message_ex)
 
         ASSERT_EQ(data_size, dsn_msg_body_size(receive));
 
-        dsn_msg_read_next(receive, &ptr, &sz);
+        ASSERT_TRUE(dsn_msg_read_next(receive, &ptr, &sz));
         ASSERT_EQ(data_size, sz);
         ASSERT_EQ(std::string(data), std::string((const char*)ptr, sz));
         dsn_msg_read_commit(receive, sz);
@@ -243,4 +243,3 @@ TEST(core, message_ex)
         dsn_msg_release_ref(request);
     }
 }
-

@@ -162,8 +162,9 @@ namespace dsn.dev.csharp
 
         private void PrepareWriteBuffer(int minSize)
         {
-            Native.dsn_msg_write_next(_msg.DangerousGetHandle(),
-                out _currentBuffer, out _currentBufferLength, (IntPtr)minSize);
+            Logging.dassert(Native.dsn_msg_write_next(_msg.DangerousGetHandle(),
+                out _currentBuffer, out _currentBufferLength, (IntPtr)minSize),
+                "dsn_msg_write_next failed");
 
             _currentWriteOffset = 0;
         }
@@ -172,7 +173,8 @@ namespace dsn.dev.csharp
         {
             if (_currentWriteOffset > 0)
             {
-                Native.dsn_msg_write_commit(_msg.DangerousGetHandle(), (IntPtr)_currentWriteOffset);
+                Logging.dassert(Native.dsn_msg_write_commit(_msg.DangerousGetHandle(), (IntPtr)_currentWriteOffset),
+                    "dsn_msg_write_commit failed");
             }
             _currentWriteOffset = 0;
             _currentBufferLength = IntPtr.Zero;
@@ -220,7 +222,8 @@ namespace dsn.dev.csharp
         public RpcReadStream(IntPtr msg, bool owner)
             : base(msg, owner, true)
         {
-            Native.dsn_msg_read_next(msg, out _buffer, out _length);
+            Logging.dassert(Native.dsn_msg_read_next(msg, out _buffer, out _length),
+                "dsn_msg_read_next failed");
             Native.dsn_msg_read_commit(msg, _length);
 
             _pos = 0;

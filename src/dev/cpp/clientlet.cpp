@@ -126,7 +126,7 @@ namespace dsn
         }
 
 
-        void copy_remote_files_impl(
+        error_code copy_remote_files_impl(
             ::dsn::rpc_address remote,
             const std::string& source_dir,
             const std::vector<std::string>& files,  // empty for all
@@ -137,7 +137,7 @@ namespace dsn
         {
             if (files.empty())
             {
-                dsn_file_copy_remote_directory(remote.c_addr(), source_dir.c_str(), dest_dir.c_str(),
+                return dsn_file_copy_remote_directory(remote.c_addr(), source_dir.c_str(), dest_dir.c_str(),
                     overwrite, native_task);
             }
             else
@@ -150,7 +150,7 @@ namespace dsn
                 }
                 *ptr = nullptr;
 
-                dsn_file_copy_remote_files(
+                return dsn_file_copy_remote_files(
                     remote.c_addr(), source_dir.c_str(), ptr_base,
                     dest_dir.c_str(), overwrite, native_task
                     );

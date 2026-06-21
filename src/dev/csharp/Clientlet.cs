@@ -140,7 +140,7 @@ namespace dsn.dev.csharp
         {
             var idx = GlobalInterOpLookupTable.Put(callback);
             var task = Native.dsn_task_create(evt, _c_task_handler_holder, (IntPtr)idx, hash, callbackOwner?.tracker() ?? IntPtr.Zero);
-            Native.dsn_task_call(task, delay_milliseconds);
+            Logging.dassert(Native.dsn_task_call(task, delay_milliseconds), "dsn_task_call failed");
         }
 
         //
@@ -161,7 +161,7 @@ namespace dsn.dev.csharp
             var task = timer_interval_milliseconds == 0 ? Native.dsn_task_create(evt, _c_task_handler_holder, (IntPtr)idx, hash, callbackOwner?.tracker() ?? IntPtr.Zero) : Native.dsn_task_create_timer(evt, _c_timer_task_handler_holder, (IntPtr)idx, hash, timer_interval_milliseconds, callbackOwner?.tracker() ?? IntPtr.Zero);
 
             var ret = new SafeTaskHandle(task, idx);
-            Native.dsn_task_call(task, delay_milliseconds);
+            Logging.dassert(Native.dsn_task_call(task, delay_milliseconds), "dsn_task_call failed");
             return ret;
         }
 
@@ -174,7 +174,8 @@ namespace dsn.dev.csharp
             Logging.dassert(requestStream.IsFlushed(),
                 "RpcWriteStream must be flushed after write in the same thread");
 
-            Native.dsn_rpc_call_one_way(server.addr, requestStream.DangerousGetHandle());
+            var err = Native.dsn_rpc_call_one_way(server.addr, requestStream.DangerousGetHandle());
+            Logging.dassert(err == ErrorCode.ERR_OK, "dsn_rpc_call_one_way failed: " + new ErrorCode(err).ToString());
         }
 
         public static RpcReadStream RpcCallSync(
@@ -228,7 +229,13 @@ namespace dsn.dev.csharp
                 replyHash,
                 callbackOwner?.tracker() ?? IntPtr.Zero
                 );
-            Native.dsn_rpc_call(server.addr, task);
+            var err = Native.dsn_rpc_call(server.addr, task);
+            if (err != ErrorCode.ERR_OK)
+            {
+                var enqueueErr = Native.dsn_rpc_enqueue_response(task, err, IntPtr.Zero);
+                Logging.dassert(enqueueErr == ErrorCode.ERR_OK,
+                    "dsn_rpc_enqueue_response failed: " + new ErrorCode(enqueueErr).ToString());
+            }
         }
 
         //
@@ -256,7 +263,13 @@ namespace dsn.dev.csharp
                 );
 
             var ret = new SafeTaskHandle(task, idx);
-            Native.dsn_rpc_call(server.addr, task);
+            var err = Native.dsn_rpc_call(server.addr, task);
+            if (err != ErrorCode.ERR_OK)
+            {
+                var enqueueErr = Native.dsn_rpc_enqueue_response(task, err, IntPtr.Zero);
+                Logging.dassert(enqueueErr == ErrorCode.ERR_OK,
+                    "dsn_rpc_enqueue_response failed: " + new ErrorCode(enqueueErr).ToString());
+            }
             return ret;
         }
 
@@ -296,7 +309,13 @@ namespace dsn.dev.csharp
         {
             var idx = GlobalInterOpLookupTable.Put(callback);
             var task = Native.dsn_file_create_aio_task(callbackCode, _c_aio_handler_holder, (IntPtr)idx, hash, callbackOwner?.tracker() ?? IntPtr.Zero);
-            Native.dsn_file_read(hFile, buffer, count, offset, task);
+            var err = Native.dsn_file_read(hFile, buffer, count, offset, task);
+            if (err != ErrorCode.ERR_OK)
+            {
+                var enqueueErr = Native.dsn_file_task_enqueue(task, err, IntPtr.Zero);
+                Logging.dassert(enqueueErr == ErrorCode.ERR_OK,
+                    "dsn_file_task_enqueue failed: " + new ErrorCode(enqueueErr).ToString());
+            }
             return new SafeTaskHandle(task, idx);
         }
 
@@ -313,7 +332,13 @@ namespace dsn.dev.csharp
         {
             var idx = GlobalInterOpLookupTable.Put(callback);
             var task = Native.dsn_file_create_aio_task(callbackCode, _c_aio_handler_holder, (IntPtr)idx, hash, callbackOwner?.tracker() ?? IntPtr.Zero);
-            Native.dsn_file_write(hFile, buffer, count, offset, task);
+            var err = Native.dsn_file_write(hFile, buffer, count, offset, task);
+            if (err != ErrorCode.ERR_OK)
+            {
+                var enqueueErr = Native.dsn_file_task_enqueue(task, err, IntPtr.Zero);
+                Logging.dassert(enqueueErr == ErrorCode.ERR_OK,
+                    "dsn_file_task_enqueue failed: " + new ErrorCode(enqueueErr).ToString());
+            }
             return new SafeTaskHandle(task, idx);
         }
 
@@ -331,7 +356,13 @@ namespace dsn.dev.csharp
         {
             var idx = GlobalInterOpLookupTable.Put(callback);
             var task = Native.dsn_file_create_aio_task(callbackCode, _c_aio_handler_holder, (IntPtr)idx, hash, callbackOwner?.tracker() ?? IntPtr.Zero);
-            Native.dsn_file_copy_remote_files(remote, source_dir, files, dest_dir, overwrite, task);
+            var err = Native.dsn_file_copy_remote_files(remote, source_dir, files, dest_dir, overwrite, task);
+            if (err != ErrorCode.ERR_OK)
+            {
+                var enqueueErr = Native.dsn_file_task_enqueue(task, err, IntPtr.Zero);
+                Logging.dassert(enqueueErr == ErrorCode.ERR_OK,
+                    "dsn_file_task_enqueue failed: " + new ErrorCode(enqueueErr).ToString());
+            }
             return new SafeTaskHandle(task, idx);
         }
 
@@ -348,7 +379,13 @@ namespace dsn.dev.csharp
         {
             var idx = GlobalInterOpLookupTable.Put(callback);
             var task = Native.dsn_file_create_aio_task(callbackCode, _c_aio_handler_holder, (IntPtr)idx, hash, callbackOwner?.tracker() ?? IntPtr.Zero);
-            Native.dsn_file_copy_remote_directory(remote, source_dir, dest_dir, overwrite, task);
+            var err = Native.dsn_file_copy_remote_directory(remote, source_dir, dest_dir, overwrite, task);
+            if (err != ErrorCode.ERR_OK)
+            {
+                var enqueueErr = Native.dsn_file_task_enqueue(task, err, IntPtr.Zero);
+                Logging.dassert(enqueueErr == ErrorCode.ERR_OK,
+                    "dsn_file_task_enqueue failed: " + new ErrorCode(enqueueErr).ToString());
+            }
             return new SafeTaskHandle(task, idx);
         }            
     }

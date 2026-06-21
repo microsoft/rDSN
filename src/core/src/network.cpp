@@ -247,7 +247,7 @@ namespace dsn
                     this
                     );
                 this->add_ref(); // released in __delayed_rpc_session_read_next__
-                dsn_task_call(delay_task, delay_ms);
+                dassert(dsn_task_call(delay_task, delay_ms), "dsn_task_call failed");
             }
             else
             {

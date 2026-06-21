@@ -289,7 +289,11 @@ namespace dsn
             )
         {
             task_ptr t = create_rpc_response_task(request, svc, std::forward<TCallback>(callback), reply_thread_hash);
-            dsn_rpc_call(server.c_addr(), t->native_handle());
+            auto err = dsn_rpc_call(server.c_addr(), t->native_handle());
+            if (err != ERR_OK)
+            {
+                t->enqueue_rpc_response(error_code(err), nullptr);
+            }
             return t;
         }
 
@@ -364,7 +368,8 @@ namespace dsn
         {
             dsn_message_t msg = dsn_msg_create_request(code, 0, thread_hash, partition_hash);
             ::dsn::marshall(msg, req);
-            dsn_rpc_call_one_way(server.c_addr(), msg);
+            auto err = dsn_rpc_call_one_way(server.c_addr(), msg);
+            dassert(err == ERR_OK, "dsn_rpc_call_one_way failed: %s", error_code(err).to_string());
         }
         
         template<typename TResponse>
@@ -442,7 +447,11 @@ namespace dsn
             )
         {
             auto tsk = create_aio_task(callback_code, svc, std::forward<TCallback>(callback), hash);
-            dsn_file_read(fh, buffer, count, offset, tsk->native_handle());
+            auto err = dsn_file_read(fh, buffer, count, offset, tsk->native_handle());
+            if (err != ERR_OK)
+            {
+                tsk->enqueue_aio(error_code(err), 0);
+            }
             return tsk;
         }
 
@@ -459,7 +468,11 @@ namespace dsn
             )
         {
             auto tsk = create_aio_task(callback_code, svc, std::forward<TCallback>(callback), hash);
-            dsn_file_write(fh, buffer, count, offset, tsk->native_handle());
+            auto err = dsn_file_write(fh, buffer, count, offset, tsk->native_handle());
+            if (err != ERR_OK)
+            {
+                tsk->enqueue_aio(error_code(err), 0);
+            }
             return tsk;
         }
 
@@ -476,11 +489,15 @@ namespace dsn
             )
         {
             auto tsk = create_aio_task(callback_code, svc, std::forward<TCallback>(callback), hash);
-            dsn_file_write_vector(fh, buffers, buffer_count, offset, tsk->native_handle());
+            auto err = dsn_file_write_vector(fh, buffers, buffer_count, offset, tsk->native_handle());
+            if (err != ERR_OK)
+            {
+                tsk->enqueue_aio(error_code(err), 0);
+            }
             return tsk;
         }
 
-        void copy_remote_files_impl(
+        error_code copy_remote_files_impl(
             ::dsn::rpc_address remote,
             const std::string& source_dir,
             const std::vector<std::string>& files,  // empty for all
@@ -503,7 +520,11 @@ namespace dsn
             )
         {
             auto tsk = create_aio_task(callback_code, svc, std::forward<TCallback>(callback), hash);
-            copy_remote_files_impl(remote, source_dir, files, dest_dir, overwrite, tsk->native_handle());
+            auto err = copy_remote_files_impl(remote, source_dir, files, dest_dir, overwrite, tsk->native_handle());
+            if (err != ERR_OK)
+            {
+                tsk->enqueue_aio(err, 0);
+            }
             return tsk;
         }
 
