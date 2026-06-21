@@ -1039,12 +1039,6 @@ DSN_API dsn_task_t dsn_rpc_create_response_task(dsn_message_t request, dsn_rpc_r
         return nullptr;
     }
 
-    if (cb == nullptr)
-    {
-        derror("dsn_rpc_create_response_task got null callback");
-        return nullptr;
-    }
-
     auto t = new ::dsn::rpc_response_task(msg, cb, context, nullptr, reply_thread_hash);
     t->set_tracker((dsn::task_tracker*)tracker);
     t->spec().on_task_create.execute(::dsn::task::get_current_task(), t);
@@ -1059,12 +1053,6 @@ DSN_API dsn_task_t dsn_rpc_create_response_task_ex(dsn_message_t request, dsn_rp
     if (msg == nullptr)
     {
         derror("dsn_rpc_create_response_task_ex got null request");
-        return nullptr;
-    }
-
-    if (cb == nullptr)
-    {
-        derror("dsn_rpc_create_response_task_ex got null callback");
         return nullptr;
     }
 

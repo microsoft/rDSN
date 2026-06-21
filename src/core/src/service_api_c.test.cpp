@@ -499,12 +499,6 @@ TEST(core, dsn_rpc_dispatch_invalid_parameters)
                                                        nullptr,
                                                        0,
                                                        nullptr));
-    ASSERT_EQ(nullptr, dsn_rpc_create_response_task_ex(request,
-                                                       nullptr,
-                                                       nullptr,
-                                                       nullptr,
-                                                       0,
-                                                       nullptr));
     ASSERT_EQ(nullptr, dsn_rpc_call_wait(invalid_address, nullptr));
     ASSERT_EQ(nullptr, dsn_rpc_call_wait(invalid_address, request));
 
