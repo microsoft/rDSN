@@ -65,6 +65,13 @@ DSN_API dsn_message_t dsn_msg_create_request(
     uint64_t partition_hash
     )
 {
+    const auto spec = ::dsn::task_spec::get(rpc_code);
+    if (rpc_code == ::dsn::TASK_CODE_INVALID || spec == nullptr || spec->type != TASK_TYPE_RPC_REQUEST)
+    {
+        derror("dsn_msg_create_request got invalid rpc_code = %d", rpc_code);
+        return nullptr;
+    }
+
     return ::dsn::message_ex::create_request(rpc_code, timeout_milliseconds, thread_hash, partition_hash);
 }
 

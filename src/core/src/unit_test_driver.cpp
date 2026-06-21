@@ -56,7 +56,7 @@ void run_all_unit_tests_prepare_when_necessary()
     command_manager_module_init();
 
     // register all possible services
-    dsn::register_app<test_client>("test");
+    dassert(dsn::register_app<test_client>("test"), "register test app failed");
 }
 
 void run_all_unit_tests_when_necessary()
@@ -99,4 +99,3 @@ void run_all_unit_tests_when_necessary()
 
     dassert(false, "impossible execution here");
 }
-

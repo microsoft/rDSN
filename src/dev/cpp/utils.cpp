@@ -92,6 +92,12 @@ namespace dsn {
 
         std::string get_last_component(const std::string& input, const char splitters[])
         {
+            if (splitters == nullptr)
+            {
+                derror("get_last_component got null splitters");
+                return input;
+            }
+
             int index = -1;
             const char* s = splitters;
 
@@ -112,6 +118,11 @@ namespace dsn {
         void split_args(const char* args, /*out*/ std::vector<std::string>& sargs, char splitter)
         {
             sargs.clear();
+            if (args == nullptr)
+            {
+                derror("split_args got null args");
+                return;
+            }
 
             std::string v(args);
 
@@ -147,6 +158,11 @@ namespace dsn {
         void split_args(const char* args, /*out*/ safe_vector<safe_string>& sargs, char splitter)
         {
             sargs.clear();
+            if (args == nullptr)
+            {
+                derror("split_args got null args");
+                return;
+            }
 
             safe_string v(args);
 
@@ -182,6 +198,11 @@ namespace dsn {
         void split_args(const char* args, /*out*/ std::list<std::string>& sargs, char splitter)
         {
             sargs.clear();
+            if (args == nullptr)
+            {
+                derror("split_args got null args");
+                return;
+            }
 
             std::string v(args);
 
@@ -217,6 +238,11 @@ namespace dsn {
         void split_args(const char* args, /*out*/ safe_list<safe_string>& sargs, char splitter)
         {
             sargs.clear();
+            if (args == nullptr)
+            {
+                derror("split_args got null args");
+                return;
+            }
 
             safe_string v(args);
 
@@ -261,6 +287,12 @@ namespace dsn {
 
         char* trim_string(char* s)
         {
+            if (s == nullptr)
+            {
+                derror("trim_string got null string");
+                return nullptr;
+            }
+
             while (*s != '\0' && (*s == ' ' || *s == '\t')) { s++; }
             char* r = s;
             s += strlen(s);
@@ -275,8 +307,25 @@ namespace dsn {
             return nanos;
         }
 
-        void time_ms_to_string(uint64_t ts_ms, char* str)
+        void time_ms_to_string(uint64_t ts_ms, char* str, size_t str_size)
         {
+            static const size_t kTimeStringBufferSize = sizeof("00:00:00.000");
+
+            if (str == nullptr)
+            {
+                derror("time_ms_to_string got null output string");
+                return;
+            }
+            if (str_size < kTimeStringBufferSize)
+            {
+                derror("time_ms_to_string got insufficient output string size = %zu", str_size);
+                if (str_size > 0)
+                {
+                    str[0] = '\0';
+                }
+                return;
+            }
+
             auto t = (time_t)(ts_ms / 1000);
 # if defined(_WIN32)
             auto ret = localtime(&t);
@@ -286,7 +335,7 @@ namespace dsn {
 # endif
             auto ms = static_cast<uint32_t>(ts_ms % 1000);
 
-            snprintf(str, 13, "%02d:%02d:%02d.%03u", ret->tm_hour, ret->tm_min, ret->tm_sec, ms);
+            snprintf(str, str_size, "%02d:%02d:%02d.%03u", ret->tm_hour, ret->tm_min, ret->tm_sec, ms);
         }
     }
 }
@@ -420,6 +469,8 @@ namespace dsn
         }
         else if (sz <= get_remaining_size())
         {
+            dassert(buffer != nullptr, "binary_reader::read got null buffer");
+
             memcpy((void*)buffer, _ptr, sz);
             _ptr += sz;
             _remaining_size -= sz;
@@ -434,6 +485,8 @@ namespace dsn
 
     bool binary_reader::next(const void** data, int* size)
     {
+        dassert(data != nullptr && size != nullptr, "binary_reader::next got null output parameter");
+
         if (get_remaining_size() > 0)
         {
             *data = (const void*)_ptr;
@@ -485,9 +538,11 @@ namespace dsn
 
     binary_writer::binary_writer(int reserveBufferSize)
     {
+        dassert(reserveBufferSize >= 0, "binary_writer got negative reserve buffer size");
         _total_size = 0;
         _buffers.reserve(1);
-        _reserved_size_per_buffer = (reserveBufferSize == 0) ? _reserved_size_per_buffer_static : reserveBufferSize;
+        _reserved_size_per_buffer =
+            (reserveBufferSize == 0) ? _reserved_size_per_buffer_static : reserveBufferSize;
         _current_buffer = nullptr;
         _current_offset = 0;
         _current_buffer_length = 0;
@@ -598,6 +653,12 @@ namespace dsn
 
     void binary_writer::write_empty(int sz)
     {
+        dassert(sz >= 0, "binary_writer::write_empty got negative size");
+        if (sz == 0)
+        {
+            return;
+        }
+
         int sz0 = sz;
         int rem_size = _current_buffer_length - _current_offset;
         if (rem_size >= sz)
@@ -614,6 +675,8 @@ namespace dsn
                 allocSize = sz;
 
             create_buffer(allocSize);
+            dassert(_current_buffer != nullptr && _current_buffer_length > 0,
+                    "binary_writer::write_empty failed to create buffer");
             _current_offset += sz;
         }
 
@@ -622,6 +685,13 @@ namespace dsn
 
     void binary_writer::write(const char* buffer, int sz)
     {
+        dassert(sz >= 0, "binary_writer::write got negative size");
+        if (sz == 0)
+        {
+            return;
+        }
+        dassert(buffer != nullptr, "binary_writer::write got null buffer");
+
         int rem_size = _current_buffer_length - _current_offset;
         if (rem_size >= sz)
         {
@@ -644,6 +714,8 @@ namespace dsn
                 allocSize = sz;
 
             create_buffer(allocSize);
+            dassert(_current_buffer != nullptr && _current_buffer_length > 0,
+                    "binary_writer::write failed to create buffer");
             memcpy((void*)(_current_buffer + _current_offset), buffer + rem_size, (size_t)sz);
             _current_offset += sz;
             _total_size += sz;
@@ -652,11 +724,15 @@ namespace dsn
 
     bool binary_writer::next(void** data, int* size)
     {
+        dassert(data != nullptr && size != nullptr, "binary_writer::next got null output parameter");
+
         int rem_size = _current_buffer_length - _current_offset;
         if (rem_size == 0)
         {
             create_buffer(_reserved_size_per_buffer);
             rem_size = _current_buffer_length;
+            dassert(_current_buffer != nullptr && rem_size > 0,
+                    "binary_writer::next failed to create buffer");
         }
 
         *size = rem_size;
@@ -668,7 +744,8 @@ namespace dsn
 
     bool binary_writer::backup(int count)
     {
-        dassert(count <= _current_offset, "currently we don't support backup before the last buffer's header");
+        dassert(count >= 0 && count <= _current_offset,
+                "currently we don't support backup before the last buffer's header");
         _current_offset -= count;
         _total_size -= count;
         return true;

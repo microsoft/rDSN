@@ -59,8 +59,8 @@ extern "C" {
   int main(int argc, char** argv)
   {
     // register all app types
-    dsn::register_app<test_client>("test");
-    dsn::register_app<test_server>("server");
+    dassert(dsn::register_app<test_client>("test"), "register test app failed");
+    dassert(dsn::register_app<test_server>("server"), "register server app failed");
 
     // run rDSN
     dsn_run(argc, argv, true);

@@ -145,6 +145,11 @@ namespace dsn
                 tsk,
                 hash,
                 svc ? svc->tracker() : nullptr);
+            if (native_tsk == nullptr)
+            {
+                tsk->release_ref();
+                return nullptr;
+            }
             tsk->set_task_info(native_tsk);
             return tsk;
         }
@@ -168,6 +173,11 @@ namespace dsn
                 hash,
                 static_cast<int>(timer_interval.count()),
                 svc ? svc->tracker() : nullptr);
+            if (native_tsk == nullptr)
+            {
+                tsk->release_ref();
+                return nullptr;
+            }
             tsk->set_task_info(native_tsk);
             return tsk;
         }
@@ -181,6 +191,10 @@ namespace dsn
             std::chrono::milliseconds delay = std::chrono::milliseconds(0))
         {
             auto tsk = create_task(evt, svc, std::forward<TCallback>(callback), hash);
+            if (tsk == nullptr)
+            {
+                return nullptr;
+            }
             tsk->enqueue(delay);
             return tsk;
         }
@@ -195,6 +209,10 @@ namespace dsn
             std::chrono::milliseconds delay = std::chrono::milliseconds(0))
         {
             auto tsk = create_timer_task(evt, svc, std::forward<TCallback>(callback), timer_interval, hash);
+            if (tsk == nullptr)
+            {
+                return nullptr;
+            }
             tsk->enqueue(delay);
             return tsk;
         }
@@ -213,6 +231,11 @@ namespace dsn
                 safe_late_task<THandler>::exec,
                 safe_late_task<THandler>::on_cancel,
                 tsk, hash, svc ? svc->tracker() : nullptr);
+            if (t == nullptr)
+            {
+                tsk->release_ref();
+                return nullptr;
+            }
 
             tsk->set_task_info(t);
             return tsk;
@@ -252,6 +275,11 @@ namespace dsn
                 reply_thread_hash,
                 svc ? svc->tracker() : nullptr
                 );
+            if (t == nullptr)
+            {
+                tsk->release_ref();
+                return nullptr;
+            }
             tsk->set_task_info(t);
             return tsk;
         }
@@ -289,6 +317,10 @@ namespace dsn
             )
         {
             task_ptr t = create_rpc_response_task(request, svc, std::forward<TCallback>(callback), reply_thread_hash);
+            if (t == nullptr)
+            {
+                return nullptr;
+            }
             auto err = dsn_rpc_call(server.c_addr(), t->native_handle());
             if (err != ERR_OK)
             {
@@ -311,6 +343,10 @@ namespace dsn
             )
         {
             dsn_message_t msg = dsn_msg_create_request(code, static_cast<int>(timeout.count()), thread_hash, partition_hash);
+            if (msg == nullptr)
+            {
+                return nullptr;
+            }
             ::dsn::marshall(msg, std::forward<TRequest>(req));
             return call(server, msg, owner, std::forward<TCallback>(callback), reply_thread_hash);
         }
@@ -342,6 +378,10 @@ namespace dsn
             )
         {
             dsn_message_t msg = dsn_msg_create_request(code, static_cast<int>(timeout.count()), thread_hash, partition_hash);
+            if (msg == nullptr)
+            {
+                return rpc_message_helper(nullptr);
+            }
             ::dsn::marshall(msg, std::forward<TRequest>(req));
             return rpc_message_helper(msg);
         }
@@ -367,14 +407,25 @@ namespace dsn
             )
         {
             dsn_message_t msg = dsn_msg_create_request(code, 0, thread_hash, partition_hash);
+            if (msg == nullptr)
+            {
+                return;
+            }
             ::dsn::marshall(msg, req);
             auto err = dsn_rpc_call_one_way(server.c_addr(), msg);
-            dassert(err == ERR_OK, "dsn_rpc_call_one_way failed: %s", error_code(err).to_string());
+            if (err != ERR_OK)
+            {
+                derror("dsn_rpc_call_one_way failed: %s", error_code(err).to_string());
+            }
         }
         
         template<typename TResponse>
         std::pair< ::dsn::error_code, TResponse> wait_and_unwrap(safe_task_handle* task)
         {
+            if (task == nullptr)
+            {
+                return std::make_pair(::dsn::ERR_INVALID_PARAMETERS, TResponse{});
+            }
             task->wait();
             std::pair< ::dsn::error_code, TResponse> result;
             result.first = task->error();
@@ -429,6 +480,11 @@ namespace dsn
                 transient_safe_task<callback_storage_t>::on_cancel,
                 tsk, hash, svc ? svc->tracker() : nullptr
                 );
+            if (t == nullptr)
+            {
+                tsk->release_ref();
+                return nullptr;
+            }
 
             tsk->set_task_info(t);
             return tsk;
@@ -447,6 +503,10 @@ namespace dsn
             )
         {
             auto tsk = create_aio_task(callback_code, svc, std::forward<TCallback>(callback), hash);
+            if (tsk == nullptr)
+            {
+                return nullptr;
+            }
             auto err = dsn_file_read(fh, buffer, count, offset, tsk->native_handle());
             if (err != ERR_OK)
             {
@@ -468,6 +528,10 @@ namespace dsn
             )
         {
             auto tsk = create_aio_task(callback_code, svc, std::forward<TCallback>(callback), hash);
+            if (tsk == nullptr)
+            {
+                return nullptr;
+            }
             auto err = dsn_file_write(fh, buffer, count, offset, tsk->native_handle());
             if (err != ERR_OK)
             {
@@ -489,6 +553,10 @@ namespace dsn
             )
         {
             auto tsk = create_aio_task(callback_code, svc, std::forward<TCallback>(callback), hash);
+            if (tsk == nullptr)
+            {
+                return nullptr;
+            }
             auto err = dsn_file_write_vector(fh, buffers, buffer_count, offset, tsk->native_handle());
             if (err != ERR_OK)
             {
@@ -520,6 +588,10 @@ namespace dsn
             )
         {
             auto tsk = create_aio_task(callback_code, svc, std::forward<TCallback>(callback), hash);
+            if (tsk == nullptr)
+            {
+                return nullptr;
+            }
             auto err = copy_remote_files_impl(remote, source_dir, files, dest_dir, overwrite, tsk->native_handle());
             if (err != ERR_OK)
             {

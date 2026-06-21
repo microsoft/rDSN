@@ -179,6 +179,36 @@ TEST(core, dsn_address_invalid_parameters)
     ASSERT_EQ(invalid_address, dsn_address_build_uri(nullptr));
 }
 
+TEST(core, rpc_address_cpp_invalid_parameters)
+{
+    rpc_address addr(nullptr, 8080);
+    ASSERT_TRUE(addr.is_invalid());
+
+    addr.assign_ipv4("", 8080);
+    ASSERT_TRUE(addr.is_invalid());
+
+    addr.assign_ipv4_local_address(nullptr, 8080);
+    ASSERT_TRUE(addr.is_invalid());
+
+    addr.assign_ipv4_local_address("", 8080);
+    ASSERT_TRUE(addr.is_invalid());
+
+    addr.assign_uri(nullptr);
+    ASSERT_TRUE(addr.is_invalid());
+
+    addr.assign_group(nullptr);
+    ASSERT_TRUE(addr.is_invalid());
+
+    ASSERT_FALSE(addr.from_string_ipv4(nullptr));
+    ASSERT_FALSE(addr.from_string_ipv4(""));
+
+    url_host_address url(nullptr);
+    ASSERT_TRUE(url.is_invalid());
+
+    url_host_address empty_url("");
+    ASSERT_TRUE(empty_url.is_invalid());
+}
+
 TEST(core, rpc_group_address)
 {
     rpc_group_address g("test_group");

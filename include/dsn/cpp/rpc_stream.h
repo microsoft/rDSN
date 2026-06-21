@@ -66,6 +66,8 @@ namespace dsn
 
         void set_read_msg(dsn_message_t msg)
         {
+            dassert(msg != nullptr, "rpc_read_stream::set_read_msg got null message");
+
             assign(msg, false);
 
             void* ptr;
@@ -95,6 +97,7 @@ namespace dsn
         rpc_write_stream(dsn_message_t msg)
             : safe_handle<dsn_msg_release_ref>(msg, false)
         {
+            dassert(msg != nullptr, "rpc_write_stream got null response message");
             _last_write_next_committed = true;
             _last_write_next_total_size = 0;
         }
@@ -103,6 +106,7 @@ namespace dsn
         rpc_write_stream(task_code code, int timeout_ms = 0, int thread_hash = 0, uint64_t partition_hash = 0)
             : safe_handle<dsn_msg_release_ref>(dsn_msg_create_request(code, timeout_ms, thread_hash, partition_hash), false)
         {
+            dassert(native_handle() != nullptr, "rpc_write_stream failed to create request message");
             _last_write_next_committed = true;
             _last_write_next_total_size = 0;
         }

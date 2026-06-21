@@ -141,7 +141,7 @@ namespace dsn {
 # endif
         }
 
-        extern void time_ms_to_string(uint64_t ts_ms, char* str);
+        extern void time_ms_to_string(uint64_t ts_ms, char* str, size_t str_size);
 
         extern int get_current_tid_internal();
 

@@ -58,6 +58,7 @@ TEST(core, get_last_component)
     ASSERT_EQ("b", get_last_component("a//b", "/"));
     ASSERT_EQ("", get_last_component("a/", "/"));
     ASSERT_EQ("c", get_last_component("a/b_c", "/_"));
+    ASSERT_EQ("a/b", get_last_component("a/b", nullptr));
 }
 
 TEST(core, crc)
@@ -163,6 +164,20 @@ TEST(core, binary_io_blob)
     }
 }
 
+TEST(core, binary_io_invalid_parameters)
+{
+    blob valid_blob("abc", 0, 3);
+
+    binary_reader default_reader;
+    EXPECT_EQ(0, default_reader.get_remaining_size());
+    EXPECT_EQ(0u, default_reader.get_remaining_buffer().length());
+    EXPECT_FALSE(default_reader.backup(-1));
+
+    binary_writer writer;
+    EXPECT_EQ(0, writer.total_size());
+    EXPECT_EQ(0u, writer.get_first_buffer().length());
+}
+
 
 TEST(core, split_args)
 {
@@ -182,6 +197,20 @@ TEST(core, split_args)
     EXPECT_EQ(*it++, "a");
     EXPECT_EQ(*it++, "b");
     EXPECT_EQ(*it++, "c");
+
+    ::dsn::utils::split_args(nullptr, sargs, ',');
+    EXPECT_TRUE(sargs.empty());
+
+    ::dsn::utils::split_args(nullptr, sargs2, ',');
+    EXPECT_TRUE(sargs2.empty());
+
+    safe_vector<safe_string> safe_args;
+    ::dsn::utils::split_args(nullptr, safe_args, ',');
+    EXPECT_TRUE(safe_args.empty());
+
+    safe_list<safe_string> safe_args2;
+    ::dsn::utils::split_args(nullptr, safe_args2, ',');
+    EXPECT_TRUE(safe_args2.empty());
 }
 
 TEST(core, trim_string)
@@ -189,6 +218,23 @@ TEST(core, trim_string)
     std::string value = " x x x x ";
     auto r = trim_string((char*)value.c_str());
     EXPECT_EQ(std::string(r), "x x x x");
+    EXPECT_EQ(nullptr, trim_string(nullptr));
+
+    char empty[] = "";
+    EXPECT_STREQ("", trim_string(empty));
+}
+
+TEST(core, time_ms_to_string_invalid_parameters)
+{
+    time_ms_to_string(0, nullptr, 0);
+
+    char small[sizeof("00:00:00.000") - 1] = "unchanged";
+    time_ms_to_string(0, small, sizeof(small));
+    EXPECT_STREQ("", small);
+
+    char output[sizeof("00:00:00.000")];
+    time_ms_to_string(0, output, sizeof(output));
+    EXPECT_EQ(12u, strlen(output));
 }
 
 TEST(core, host_name)

@@ -143,6 +143,13 @@ namespace dsn
     inline void rpc_address::assign_ipv4(const char* host, uint16_t port)
     {
         clear();
+        if (host == nullptr || host[0] == '\0')
+        {
+            dlog(LOG_LEVEL_ERROR, "cpp.address", "rpc_address::assign_ipv4 got invalid host");
+            _addr.u.v4.type = HOST_TYPE_INVALID;
+            return;
+        }
+
         _addr.u.v4.type = HOST_TYPE_IPV4;
         _addr.u.v4.ip = dsn_ipv4_from_host(host);
         _addr.u.v4.port = port;
@@ -151,6 +158,13 @@ namespace dsn
     inline void rpc_address::assign_ipv4_local_address(const char* network_interface, uint16_t port)
     {
         clear();
+        if (network_interface == nullptr || network_interface[0] == '\0')
+        {
+            dlog(LOG_LEVEL_ERROR, "cpp.address", "rpc_address::assign_ipv4_local_address got invalid network_interface");
+            _addr.u.v4.type = HOST_TYPE_INVALID;
+            return;
+        }
+
         _addr.u.v4.type = HOST_TYPE_IPV4;
         _addr.u.v4.ip = dsn_ipv4_local(network_interface);
         _addr.u.v4.port = port;
@@ -159,6 +173,13 @@ namespace dsn
     inline void rpc_address::assign_uri(dsn_uri_t uri)
     {
         clear();
+        if (uri == nullptr)
+        {
+            dlog(LOG_LEVEL_ERROR, "cpp.address", "rpc_address::assign_uri got null uri");
+            _addr.u.v4.type = HOST_TYPE_INVALID;
+            return;
+        }
+
         _addr.u.v4.type = HOST_TYPE_URI;
         _addr.u.uri.uri = (uint64_t)uri;
     }
@@ -166,6 +187,13 @@ namespace dsn
     inline void rpc_address::assign_group(dsn_group_t g)
     {
         clear();
+        if (g == nullptr)
+        {
+            dlog(LOG_LEVEL_ERROR, "cpp.address", "rpc_address::assign_group got null group");
+            _addr.u.v4.type = HOST_TYPE_INVALID;
+            return;
+        }
+
         _addr.u.v4.type = HOST_TYPE_GROUP;
         _addr.u.group.group = (uint64_t)g;
     }
@@ -250,10 +278,18 @@ namespace dsn
 
     inline bool rpc_address::from_string_ipv4(const char* s)
     {
+        if (s == nullptr || s[0] == '\0')
+        {
+            dlog(LOG_LEVEL_ERROR, "cpp.address", "rpc_address::from_string_ipv4 got invalid string");
+            return false;
+        }
+
         std::string str = std::string(s);
         auto pos = str.find_last_of(':');
         if (pos == std::string::npos)
+        {
             return false;
+        }
         else
         {
             auto host = str.substr(0, pos);
@@ -265,6 +301,13 @@ namespace dsn
 
     inline url_host_address::url_host_address(const char* url_or_host_port)
     {
+        if (url_or_host_port == nullptr || url_or_host_port[0] == '\0')
+        {
+            dlog(LOG_LEVEL_ERROR, "cpp.address", "url_host_address got invalid url_or_host_port");
+            set_invalid();
+            return;
+        }
+
         std::string s(url_or_host_port);
         auto sp = s.find(':');
         if (sp != std::string::npos)

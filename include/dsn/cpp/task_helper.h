@@ -81,6 +81,8 @@ namespace dsn
 
         void set_task_info(dsn_task_t t)
         {
+            dassert(t != nullptr, "safe_task_handle got null task");
+
             _task = t;
             dsn_task_add_ref(t);
         }

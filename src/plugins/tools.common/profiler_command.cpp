@@ -580,7 +580,7 @@ namespace dsn {
                 }
 
                 char str[24];
-                ::dsn::utils::time_ms_to_string(dsn_now_ns() / 1000000, str);
+                ::dsn::utils::time_ms_to_string(dsn_now_ns() / 1000000, str, sizeof(str));
 
                 std::vector<nv_pair> data;
 
@@ -733,7 +733,7 @@ namespace dsn {
             else if (args[0] == "time")
             {
                 char str[24];
-                ::dsn::utils::time_ms_to_string(dsn_now_ns() / 1000000, str);
+                ::dsn::utils::time_ms_to_string(dsn_now_ns() / 1000000, str, sizeof(str));
                 ss << str;
                 return ss.str().c_str();
             }

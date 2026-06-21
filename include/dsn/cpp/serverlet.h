@@ -129,7 +129,7 @@ namespace dsn
     // ------------- inline implementation ----------------
     template<typename T>
     inline serverlet<T>::serverlet(const char* nm, int task_bucket_count)
-        : clientlet(task_bucket_count), _name(nm)
+        : clientlet(task_bucket_count), _name(nm == nullptr ? "" : nm)
     {
     }
 
@@ -141,6 +141,12 @@ namespace dsn
     template<typename T> template<typename TRequest>
     inline bool serverlet<T>::register_rpc_handler(dsn_task_code_t rpc_code, const char* rpc_name_, void (T::*handler)(const TRequest&), dsn_gpid gpid)
     {
+        if (handler == nullptr)
+        {
+            dlog(LOG_LEVEL_ERROR, "cpp.serverlet", "register_rpc_handler got null handler");
+            return false;
+        }
+
         typedef handler_context<void (T::*)(const TRequest&)> hc_type1;
         auto hc = (hc_type1*)malloc(sizeof(hc_type1));
         hc->this_ = (T*)this;
@@ -155,12 +161,23 @@ namespace dsn
             ((hc2->this_)->*(hc2->cb))(req);
         };
 
-        return dsn_rpc_register_handler(rpc_code, rpc_name_, cb, hc, gpid);
+        if (!dsn_rpc_register_handler(rpc_code, rpc_name_, cb, hc, gpid))
+        {
+            free(hc);
+            return false;
+        }
+        return true;
     }
 
     template<typename T> template<typename TRequest, typename TResponse>
     inline bool serverlet<T>::register_rpc_handler(dsn_task_code_t rpc_code, const char* rpc_name_, void (T::*handler)(const TRequest&, TResponse&), dsn_gpid gpid)
     {
+        if (handler == nullptr)
+        {
+            dlog(LOG_LEVEL_ERROR, "cpp.serverlet", "register_rpc_handler got null handler");
+            return false;
+        }
+
         typedef handler_context<void (T::*)(const TRequest&, TResponse&)> hc_type2;
         auto hc = (hc_type2*)malloc(sizeof(hc_type2));
         hc->this_ = (T*)this;
@@ -180,12 +197,23 @@ namespace dsn
             replier(resp);
         };
 
-        return dsn_rpc_register_handler(rpc_code, rpc_name_, cb, hc, gpid);
+        if (!dsn_rpc_register_handler(rpc_code, rpc_name_, cb, hc, gpid))
+        {
+            free(hc);
+            return false;
+        }
+        return true;
     }
 
     template<typename T> template<typename TRequest, typename TResponse>
     inline bool serverlet<T>::register_async_rpc_handler(dsn_task_code_t rpc_code, const char* rpc_name_, void (T::*handler)(const TRequest&, rpc_replier<TResponse>&), dsn_gpid gpid)
     {
+        if (handler == nullptr)
+        {
+            dlog(LOG_LEVEL_ERROR, "cpp.serverlet", "register_async_rpc_handler got null handler");
+            return false;
+        }
+
         typedef handler_context<void (T::*)(const TRequest&, rpc_replier<TResponse>&)> hc_type3;
         auto hc = (hc_type3*)malloc(sizeof(hc_type3));
         hc->this_ = (T*)this;
@@ -202,12 +230,23 @@ namespace dsn
             ((hc2->this_)->*(hc2->cb))(req, replier);
         };
 
-        return dsn_rpc_register_handler(rpc_code, rpc_name_, cb, hc, gpid);
+        if (!dsn_rpc_register_handler(rpc_code, rpc_name_, cb, hc, gpid))
+        {
+            free(hc);
+            return false;
+        }
+        return true;
     }
 
     template<typename T>
     inline bool serverlet<T>::register_rpc_handler(dsn_task_code_t rpc_code, const char* rpc_name_, void (T::*handler)(dsn_message_t), dsn_gpid gpid)
     {
+        if (handler == nullptr)
+        {
+            dlog(LOG_LEVEL_ERROR, "cpp.serverlet", "register_rpc_handler got null handler");
+            return false;
+        }
+
         typedef handler_context<void (T::*)(dsn_message_t)> hc_type4;
         auto hc = (hc_type4*)malloc(sizeof(hc_type4));
         hc->this_ = (T*)this;
@@ -219,7 +258,12 @@ namespace dsn
             ((hc2->this_)->*(hc2->cb))(request);
         };
 
-        return dsn_rpc_register_handler(rpc_code, rpc_name_, cb, hc, gpid);
+        if (!dsn_rpc_register_handler(rpc_code, rpc_name_, cb, hc, gpid))
+        {
+            free(hc);
+            return false;
+        }
+        return true;
     }
 
     template<typename T>
@@ -234,6 +278,7 @@ namespace dsn
     inline void serverlet<T>::reply(dsn_message_t request, const TResponse& resp)
     {
         auto msg = dsn_msg_create_response(request);
+        dassert(msg != nullptr, "dsn_msg_create_response failed");
         ::dsn::marshall(msg, resp);
         auto err = dsn_rpc_reply(msg);
         dassert(err == ERR_OK, "dsn_rpc_reply failed: %s", error_code(err).to_string());

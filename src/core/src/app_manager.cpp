@@ -44,19 +44,33 @@ DSN_API bool dsn_register_app(dsn_app* app_type)
         derror("dsn_register_app got null app_type");
         return false;
     }
+    if (app_type->type_name[0] == '\0')
+    {
+        derror("dsn_register_app got empty app type name");
+        return false;
+    }
+    if (strnlen(app_type->type_name, sizeof(app_type->type_name)) >= sizeof(app_type->type_name))
+    {
+        derror("dsn_register_app got non-null-terminated app type name");
+        return false;
+    }
 
     dsn_app* app;
     auto& store = ::dsn::utils::singleton_store<std::string, dsn_app*>::instance();
     if (store.get(app_type->type_name, app))
     {
-        dassert(false, "app type %s is already registered", app_type->type_name);
+        derror("app type %s is already registered", app_type->type_name);
         return false;
     }
 
     app = new dsn_app();
     *app = *app_type;
     auto r = store.put(app_type->type_name, app);
-    dassert(r, "app type %s is already registered", app_type->type_name);
+    if (!r)
+    {
+        derror("app type %s is already registered", app_type->type_name);
+        delete app;
+    }
     return r;
 }
 

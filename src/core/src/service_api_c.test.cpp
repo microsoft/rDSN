@@ -606,6 +606,15 @@ TEST(core, dsn_app_registration_invalid_parameters)
     dsn_app_callbacks callbacks = {};
 
     ASSERT_FALSE(dsn_register_app(nullptr));
+    dsn_app app = {};
+    ASSERT_FALSE(dsn_register_app(&app));
+    memset(app.type_name, 'a', sizeof(app.type_name));
+    ASSERT_FALSE(dsn_register_app(&app));
+    memset(app.type_name, 0, sizeof(app.type_name));
+    snprintf(app.type_name, sizeof(app.type_name), "%s", "dsn_app_registration_invalid_test");
+    ASSERT_TRUE(dsn_register_app(&app));
+    ASSERT_FALSE(dsn_register_app(&app));
+
     ASSERT_FALSE(dsn_get_app_callbacks(nullptr, &callbacks));
     ASSERT_FALSE(dsn_get_app_callbacks("", &callbacks));
     ASSERT_FALSE(dsn_get_app_callbacks("test", nullptr));

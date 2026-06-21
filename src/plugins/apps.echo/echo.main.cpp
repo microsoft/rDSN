@@ -38,9 +38,12 @@
 static void dsn_app_registration_echo()
 {
     // register all possible service apps
-    dsn::register_app< ::dsn::example::echo_server_app>("server");
-    dsn::register_app< ::dsn::example::echo_client_app>("client");
-    dsn::register_app< ::dsn::example::echo_perf_test_client_app>("client.perf.echo");
+    dassert(dsn::register_app< ::dsn::example::echo_server_app>("server"),
+            "register server app failed");
+    dassert(dsn::register_app< ::dsn::example::echo_client_app>("client"),
+            "register client app failed");
+    dassert(dsn::register_app< ::dsn::example::echo_perf_test_client_app>("client.perf.echo"),
+            "register client.perf.echo app failed");
 }
 
 int main(int argc, char** argv)

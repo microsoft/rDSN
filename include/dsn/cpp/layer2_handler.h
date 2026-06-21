@@ -64,14 +64,25 @@ namespace dsn
         static void on_layer2_rpc_request(void* app, dsn_gpid gpid, bool is_write, dsn_message_t msg)
         {
             auto sapp = (layer2_handler*)app;
-            return sapp->on_request(gpid, is_write, msg);
+            if (sapp == nullptr)
+            {
+                dlog(LOG_LEVEL_ERROR, "cpp.layer2_handler", "on_layer2_rpc_request got null app");
+                return;
+            }
+            sapp->on_request(gpid, is_write, msg);
         }
     };
 
     /*! C++ wrapper of the \ref dsn_register_app function for layer 2 frameworks */
     template<typename TServiceApp>
-    void register_layer2_framework(const char* type_name, uint64_t framework_mask)
+    bool register_layer2_framework(const char* type_name, uint64_t framework_mask)
     {
+        if (type_name == nullptr || type_name[0] == '\0')
+        {
+            dlog(LOG_LEVEL_ERROR, "cpp.layer2_handler", "register_layer2_framework got invalid type_name");
+            return false;
+        }
+
         dsn_app app;
         memset(&app, 0, sizeof(app));
         app.mask = framework_mask;
@@ -82,6 +93,6 @@ namespace dsn
 
         app.layer2.frameworks.on_rpc_request = layer2_handler::on_layer2_rpc_request;
 
-        dsn_register_app(&app);
+        return dsn_register_app(&app);
     }
 }

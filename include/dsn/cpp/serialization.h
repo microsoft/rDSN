@@ -135,6 +135,8 @@ namespace dsn
     template<typename T>
     inline void marshall(dsn_message_t msg, const T& val)
     {
+        dassert(msg != nullptr, "marshall got null message");
+
         ::dsn::rpc_write_stream writer(msg);
         marshall(writer, val, dsn_msg_get_serialize_format(msg));
     }
@@ -142,6 +144,8 @@ namespace dsn
     template<typename T>
     inline void marshall(dsn_message_t msg, const T& val, dsn_msg_serialize_format fmt)
     {
+        dassert(msg != nullptr, "marshall got null message");
+
         ::dsn::rpc_write_stream writer(msg);
         marshall(writer, val, fmt);
     }
@@ -149,6 +153,8 @@ namespace dsn
     template<typename T>
     inline void unmarshall(dsn_message_t msg, /*out*/ T& val)
     {
+        dassert(msg != nullptr, "unmarshall got null message");
+
         ::dsn::rpc_read_stream reader(msg);
         unmarshall(reader, val, dsn_msg_get_serialize_format(msg));
     }

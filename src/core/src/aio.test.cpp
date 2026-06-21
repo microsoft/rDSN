@@ -161,6 +161,44 @@ TEST(core, aio_share)
     utils::filesystem::remove_path("tmp");
 }
 
+TEST(core, aio_cpp_invalid_parameters)
+{
+    auto task = ::dsn::file::create_aio_task(TASK_CODE_INVALID, nullptr, dsn::empty_callback, 0);
+    EXPECT_EQ(nullptr, task.get());
+
+    task = ::dsn::file::create_aio_task(
+        TASK_CODE_INVALID, nullptr, [](::dsn::error_code, size_t) {}, 0);
+    EXPECT_EQ(nullptr, task.get());
+
+    char buffer[1] = {};
+    task = ::dsn::file::read(
+        nullptr, buffer, sizeof(buffer), 0, TASK_CODE_INVALID, nullptr, dsn::empty_callback);
+    EXPECT_EQ(nullptr, task.get());
+
+    task = ::dsn::file::write(
+        nullptr, buffer, sizeof(buffer), 0, TASK_CODE_INVALID, nullptr, dsn::empty_callback);
+    EXPECT_EQ(nullptr, task.get());
+
+    dsn_file_buffer_t file_buffer{buffer, sizeof(buffer)};
+    task = ::dsn::file::write_vector(
+        nullptr, &file_buffer, 1, 0, TASK_CODE_INVALID, nullptr, dsn::empty_callback);
+    EXPECT_EQ(nullptr, task.get());
+
+    task = ::dsn::file::copy_remote_files(rpc_address(),
+                                          "",
+                                          {},
+                                          "",
+                                          false,
+                                          TASK_CODE_INVALID,
+                                          nullptr,
+                                          dsn::empty_callback);
+    EXPECT_EQ(nullptr, task.get());
+
+    task = ::dsn::file::copy_remote_directory(
+        rpc_address(), "", "", false, TASK_CODE_INVALID, nullptr, dsn::empty_callback);
+    EXPECT_EQ(nullptr, task.get());
+}
+
 TEST(core, operation_failed)
 {
     // if in dsn_mimic_app() and disk_io_mode == IOE_PER_QUEUE

@@ -305,9 +305,8 @@ namespace dsn
     public:
         error_code(const char* name)
         {
+            dassert(name != nullptr && name[0] != '\0', "name for an error code cannot be null or empty");
             _internal_code = dsn_error_register(name);
-
-            dassert (name, "name for an error code cannot be empty");
     # ifdef TRACK_ERROR_CODE
             _used = true;
     # endif
@@ -482,4 +481,3 @@ namespace dsn
     DEFINE_ERR_CODE(ERR_NETWORK_FAILURE)
 /*@}*/
 } // end namespace
-

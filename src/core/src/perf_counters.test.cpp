@@ -33,6 +33,7 @@
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
+# include <dsn/cpp/perf_counter_.h>
 # include <dsn/tool-api/perf_counter.h>
 # include <gtest/gtest.h>
 
@@ -94,4 +95,24 @@ TEST(core, dsn_perf_counter_invalid_parameters)
     ASSERT_DOUBLE_EQ(-1.0,
                      dsn_perf_counter_get_percentile(reinterpret_cast<dsn_handle_t>(1),
                                                      COUNTER_PERCENTILE_INVALID));
+}
+
+TEST(core, perf_counter_cpp_invalid_parameters)
+{
+    perf_counter_ counter;
+    counter.increment();
+    counter.decrement();
+    counter.add(1);
+    counter.set(1);
+    ASSERT_DOUBLE_EQ(-1.0, counter.get_value());
+    ASSERT_EQ(static_cast<uint64_t>(-1), counter.get_integer_value());
+    ASSERT_DOUBLE_EQ(-1.0, counter.get_percentile(COUNTER_PERCENTILE_50));
+
+    counter.init(nullptr, "name", COUNTER_TYPE_NUMBER, "");
+    ASSERT_DOUBLE_EQ(-1.0, counter.get_value());
+
+    counter.init("section", nullptr, COUNTER_TYPE_NUMBER, "");
+    ASSERT_DOUBLE_EQ(-1.0, counter.get_value());
+
+    counter.destroy();
 }

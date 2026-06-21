@@ -88,6 +88,30 @@ namespace dsn
         static dsn_error_t app_start(void* app, int argc, char** argv)
         {
             service_app* sapp = (service_app*)app;
+            if (sapp == nullptr)
+            {
+                dlog(LOG_LEVEL_ERROR, "cpp.service_app", "app_start got null app");
+                return ERR_INVALID_PARAMETERS;
+            }
+            if (argc <= 0)
+            {
+                dlog(LOG_LEVEL_ERROR, "cpp.service_app", "app_start got invalid argc = %d", argc);
+                return ERR_INVALID_PARAMETERS;
+            }
+            if (argv == nullptr)
+            {
+                dlog(LOG_LEVEL_ERROR, "cpp.service_app", "app_start got null argv");
+                return ERR_INVALID_PARAMETERS;
+            }
+            for (int i = 0; i < argc; ++i)
+            {
+                if (argv[i] == nullptr)
+                {
+                    dlog(LOG_LEVEL_ERROR, "cpp.service_app", "app_start got null argv at index = %d", i);
+                    return ERR_INVALID_PARAMETERS;
+                }
+            }
+
             sapp->_address = dsn_primary_address();
             sapp->_name = std::string(argv[0]);
 
@@ -102,6 +126,12 @@ namespace dsn
         static dsn_error_t app_destroy(void* app, bool cleanup)
         {
             service_app* sapp = (service_app*)(app);
+            if (sapp == nullptr)
+            {
+                dlog(LOG_LEVEL_ERROR, "cpp.service_app", "app_destroy got null app");
+                return ERR_INVALID_PARAMETERS;
+            }
+
             auto err = sapp->stop(cleanup);
             if (ERR_OK == err) sapp->_started = false;
             return err;
@@ -110,8 +140,14 @@ namespace dsn
 
     /*! C++ wrapper of the \ref dsn_register_app function*/
     template<typename TServiceApp>
-    void register_app(const char* type_name)
+    bool register_app(const char* type_name)
     {
+        if (type_name == nullptr || type_name[0] == '\0')
+        {
+            dlog(LOG_LEVEL_ERROR, "cpp.service_app", "register_app got invalid type_name");
+            return false;
+        }
+
         dsn_app app;
         memset(&app, 0, sizeof(app));
         app.mask = DSN_APP_MASK_APP;
@@ -120,7 +156,7 @@ namespace dsn
         app.layer1.start = service_app::app_start;
         app.layer1.destroy = service_app::app_destroy;
 
-        dsn_register_app(&app);
+        return dsn_register_app(&app);
     }
 
     /*@}*/

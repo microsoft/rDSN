@@ -33,6 +33,8 @@
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 
+# include <dsn/cpp/rpc_stream.h>
+# include <dsn/cpp/serialization.h>
 # include <dsn/tool-api/rpc_message.h>
 # include <gtest/gtest.h>
 # include "transient_memory.h"
@@ -252,6 +254,8 @@ TEST(core, dsn_msg_invalid_parameters)
     opts.timeout_ms = 1;
 
     char buffer[] = "message";
+    ASSERT_EQ(nullptr, dsn_msg_create_request(TASK_CODE_INVALID, 0, 0, 0));
+    ASSERT_EQ(nullptr, dsn_msg_create_request(RPC_CODE_FOR_TEST, -1, 0, 0));
     ASSERT_EQ(nullptr,
               dsn_msg_create_received_request(TASK_CODE_INVALID,
                                               DSF_THRIFT_BINARY,

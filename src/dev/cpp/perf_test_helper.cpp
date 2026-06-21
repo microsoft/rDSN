@@ -271,7 +271,7 @@ namespace dsn {
                 {
                     uint64_t ts = dsn_now_ns();
                     char str[24];
-                    ::dsn::utils::time_ms_to_string(ts / 1000000, str);
+                    ::dsn::utils::time_ms_to_string(ts / 1000000, str, sizeof(str));
                     std::stringstream ss;
 
                     ss << "TEST end at " << str << std::endl;
@@ -353,6 +353,5 @@ namespace dsn {
         }
     }
 }
-
 
 

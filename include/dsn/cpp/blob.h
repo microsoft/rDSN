@@ -67,15 +67,27 @@ namespace dsn
 
         blob(const std::shared_ptr<char>& buffer, int offset, unsigned int length)
             : _holder(buffer), _buffer(_holder.get()), _data(_holder.get() + offset), _length(length)
-        {}
+        {
+            dassert(buffer != nullptr || (offset == 0 && length == 0),
+                    "blob got null buffer with non-empty range");
+            dassert(offset >= 0, "blob got invalid offset = %d", offset);
+        }
 
         blob(std::shared_ptr<char>&& buffer, int offset, unsigned int length)
             : _holder(std::move(buffer)), _buffer(_holder.get()), _data(_holder.get() + offset), _length(length)
-        {}
+        {
+            dassert(_holder != nullptr || (offset == 0 && length == 0),
+                    "blob got null buffer with non-empty range");
+            dassert(offset >= 0, "blob got invalid offset = %d", offset);
+        }
 
         blob(const char* buffer, int offset, unsigned int length)
             : _buffer(buffer), _data(buffer + offset), _length(length)
-        {}
+        {
+            dassert(buffer != nullptr || (offset == 0 && length == 0),
+                    "blob got null buffer with non-empty range");
+            dassert(offset >= 0, "blob got invalid offset = %d", offset);
+        }
 
         blob(const blob& source)
             : _holder(source._holder), _buffer(source._buffer), _data(source._data), _length(source._length)
@@ -112,6 +124,9 @@ namespace dsn
 
         void assign(const std::shared_ptr<char>& buffer, int offset, unsigned int length)
         {
+            dassert(buffer != nullptr || (offset == 0 && length == 0),
+                    "blob::assign got null buffer with non-empty range");
+            dassert(offset >= 0, "blob::assign got invalid offset = %d", offset);
             _holder = buffer;
             _buffer = _holder.get();
             _data = _holder.get() + offset;
@@ -120,6 +135,9 @@ namespace dsn
 
         void assign(std::shared_ptr<char>&& buffer, int offset, unsigned int length)
         {
+            dassert(buffer != nullptr || (offset == 0 && length == 0),
+                    "blob::assign got null buffer with non-empty range");
+            dassert(offset >= 0, "blob::assign got invalid offset = %d", offset);
             _holder = std::move(buffer);
             _buffer = (_holder.get());
             _data = (_holder.get() + offset);
@@ -128,6 +146,9 @@ namespace dsn
 
         void assign(const char* buffer, int offset, unsigned int length)
         {
+            dassert(buffer != nullptr || (offset == 0 && length == 0),
+                    "blob::assign got null buffer with non-empty range");
+            dassert(offset >= 0, "blob::assign got invalid offset = %d", offset);
             _holder = nullptr;
             _buffer = buffer;
             _data = buffer + offset;
@@ -192,7 +213,7 @@ namespace dsn
         binary_reader(const blob& blob);
 
         // or delayed init
-        binary_reader() {}
+        binary_reader() : _blob(), _size(0), _ptr(nullptr), _remaining_size(0) {}
 
         virtual ~binary_reader() {}
 
@@ -219,7 +240,14 @@ namespace dsn
         bool backup(int count);
 
         blob get_buffer() const { return _blob; }
-        blob get_remaining_buffer() const { return _blob.range(static_cast<int>(_ptr - _blob.data())); }
+        blob get_remaining_buffer() const
+        {
+            if (_ptr == nullptr || _blob.data() == nullptr)
+            {
+                return blob();
+            }
+            return _blob.range(static_cast<int>(_ptr - _blob.data()));
+        }
         bool is_eof() const { return _ptr >= _blob.data() + _size; }
         int  total_size() const { return _size; }
         int  get_remaining_size() const { return _remaining_size; }
@@ -318,6 +346,11 @@ namespace dsn
 
     inline blob binary_writer::get_first_buffer() const
     {
+        if (_buffers.empty())
+        {
+            return blob();
+        }
+
         return _buffers[0];
     }
 

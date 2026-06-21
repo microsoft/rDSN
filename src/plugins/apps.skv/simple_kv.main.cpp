@@ -40,10 +40,15 @@
 static void dsn_app_registration_simple_kv()
 {
     // register all possible services
-    dsn::register_app_with_type_1_replication_support< ::dsn::replication::application::simple_kv_service_impl>("simple_kv");
+    dassert(dsn::register_app_with_type_1_replication_support<
+                ::dsn::replication::application::simple_kv_service_impl>("simple_kv"),
+            "register simple_kv type-1 replication app failed");
     
-    dsn::register_app< ::dsn::replication::application::simple_kv_client_app>("simple_kv.client");
-    dsn::register_app< ::dsn::replication::application::simple_kv_perf_test_client_app>("simple_kv.client.perf");
+    dassert(dsn::register_app< ::dsn::replication::application::simple_kv_client_app>("simple_kv.client"),
+            "register simple_kv.client app failed");
+    dassert(dsn::register_app< ::dsn::replication::application::simple_kv_perf_test_client_app>(
+                "simple_kv.client.perf"),
+            "register simple_kv.client.perf app failed");
 }
 
 # if 1

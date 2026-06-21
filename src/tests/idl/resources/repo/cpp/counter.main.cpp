@@ -20,9 +20,12 @@ void mysleep()
 void dsn_app_registration_counter()
 {
     // register all possible service apps
-    dsn::register_app< ::dsn::example::counter_server_app>("counter");
-    dsn::register_app< ::dsn::example::counter_client_app>("counter.client");
-    dsn::register_app< ::dsn::example::counter_perf_test_client_app>("counter.client.perf");
+    dassert(dsn::register_app< ::dsn::example::counter_server_app>("counter"),
+            "register counter app failed");
+    dassert(dsn::register_app< ::dsn::example::counter_client_app>("counter.client"),
+            "register counter.client app failed");
+    dassert(dsn::register_app< ::dsn::example::counter_perf_test_client_app>("counter.client.perf"),
+            "register counter.client.perf app failed");
 }
 
 # ifndef DSN_RUN_USE_SVCHOST
