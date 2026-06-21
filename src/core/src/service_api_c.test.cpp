@@ -101,6 +101,10 @@ void noop_rpc_request_handler(dsn_message_t, void*) {}
 
 void noop_aio_handler(dsn_error_t, size_t, void*) {}
 
+void* noop_checker_create(const char*, dsn_app_info*, int) { return nullptr; }
+
+void noop_checker_apply(void*) {}
+
 } // anonymous namespace
 
 TEST(core, dsn_task_code)
@@ -228,6 +232,61 @@ TEST(core, dsn_config)
     ASSERT_STREQ("count", buffers[0]);
 }
 
+TEST(core, dsn_config_invalid_parameters)
+{
+    const char* buffers[1];
+    int buffer_count = 1;
+    int invalid_buffer_count = -1;
+
+    ASSERT_STREQ("default", dsn_config_get_value_string(nullptr, "key", "default", ""));
+    ASSERT_STREQ("default", dsn_config_get_value_string("", "key", "default", ""));
+    ASSERT_STREQ("default", dsn_config_get_value_string("section", nullptr, "default", ""));
+    ASSERT_STREQ("default", dsn_config_get_value_string("section", "", "default", ""));
+    ASSERT_EQ(nullptr, dsn_config_get_value_string("section", "key", nullptr, ""));
+
+    ASSERT_TRUE(dsn_config_get_value_bool(nullptr, "key", true, ""));
+    ASSERT_TRUE(dsn_config_get_value_bool("", "key", true, ""));
+    ASSERT_TRUE(dsn_config_get_value_bool("section", nullptr, true, ""));
+    ASSERT_TRUE(dsn_config_get_value_bool("section", "", true, ""));
+
+    ASSERT_EQ(123u, dsn_config_get_value_uint64(nullptr, "key", 123, ""));
+    ASSERT_EQ(123u, dsn_config_get_value_uint64("", "key", 123, ""));
+    ASSERT_EQ(123u, dsn_config_get_value_uint64("section", nullptr, 123, ""));
+    ASSERT_EQ(123u, dsn_config_get_value_uint64("section", "", 123, ""));
+
+    ASSERT_EQ(1.5, dsn_config_get_value_double(nullptr, "key", 1.5, ""));
+    ASSERT_EQ(1.5, dsn_config_get_value_double("", "key", 1.5, ""));
+    ASSERT_EQ(1.5, dsn_config_get_value_double("section", nullptr, 1.5, ""));
+    ASSERT_EQ(1.5, dsn_config_get_value_double("section", "", 1.5, ""));
+
+    ASSERT_EQ(-1, dsn_config_get_all_sections(buffers, nullptr));
+    ASSERT_EQ(-1, dsn_config_get_all_sections(buffers, &invalid_buffer_count));
+    ASSERT_EQ(-1, dsn_config_get_all_sections(nullptr, &buffer_count));
+
+    ASSERT_EQ(-1, dsn_config_get_all_keys(nullptr, buffers, &buffer_count));
+    ASSERT_EQ(-1, dsn_config_get_all_keys("", buffers, &buffer_count));
+    ASSERT_EQ(-1, dsn_config_get_all_keys("section", buffers, nullptr));
+    invalid_buffer_count = -1;
+    ASSERT_EQ(-1, dsn_config_get_all_keys("section", buffers, &invalid_buffer_count));
+    buffer_count = 1;
+    ASSERT_EQ(-1, dsn_config_get_all_keys("section", nullptr, &buffer_count));
+
+    dsn_config_dump(nullptr);
+    dsn_config_dump("");
+}
+
+TEST(core, dsn_run_invalid_parameters)
+{
+    char arg0[] = "dsn";
+    char* null_argv[] = {arg0, nullptr};
+
+    dsn_run(-1, nullptr, false);
+    dsn_run(1, nullptr, false);
+    dsn_run(2, null_argv, false);
+    ASSERT_FALSE(dsn_run_config(nullptr, false));
+    ASSERT_FALSE(dsn_run_config("", false));
+}
+
 TEST(core, dsn_coredump)
 {
 }
@@ -303,6 +362,9 @@ TEST(core, dsn_task_create_invalid_parameters)
                                                 -1));
     ASSERT_EQ(nullptr, dsn_task_tracker_create(0));
     ASSERT_EQ(nullptr, dsn_task_tracker_create(-1));
+    dsn_task_tracker_cancel_all(nullptr);
+    dsn_task_tracker_destroy(nullptr);
+    dsn_task_tracker_wait_all(nullptr);
 }
 
 TEST(core, dsn_exlock)
@@ -431,6 +493,21 @@ TEST(core, dsn_rpc_dispatch_invalid_parameters)
     ASSERT_NE(nullptr, request);
     dsn_msg_add_ref(request);
 
+    ASSERT_EQ(nullptr, dsn_rpc_create_response_task_ex(nullptr,
+                                                       noop_rpc_response_handler,
+                                                       nullptr,
+                                                       nullptr,
+                                                       0,
+                                                       nullptr));
+    ASSERT_EQ(nullptr, dsn_rpc_create_response_task_ex(request,
+                                                       nullptr,
+                                                       nullptr,
+                                                       nullptr,
+                                                       0,
+                                                       nullptr));
+    ASSERT_EQ(nullptr, dsn_rpc_call_wait(invalid_address, nullptr));
+    ASSERT_EQ(nullptr, dsn_rpc_call_wait(invalid_address, request));
+
     ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_rpc_call_one_way(invalid_address, request));
     ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_rpc_forward(request, invalid_address));
 
@@ -446,19 +523,94 @@ TEST(core, dsn_rpc_dispatch_invalid_parameters)
     dsn_task_add_ref(compute_task);
     ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_rpc_call(invalid_address, compute_task));
     ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_rpc_enqueue_response(compute_task, ERR_OK, nullptr));
+    ASSERT_EQ(nullptr, dsn_rpc_get_response(compute_task));
     dsn_task_release_ref(compute_task);
 
+    ASSERT_EQ(nullptr, dsn_rpc_get_response(nullptr));
     dsn_msg_release_ref(request);
 }
 
 TEST(core, dsn_hosted_app_invalid_parameters)
 {
     auto fake_app_context = reinterpret_cast<void*>(1);
+    void* downcall_context = nullptr;
+    void* callback_context = nullptr;
+    dsn_gpid invalid_app_id = {};
+    invalid_app_id.u.app_id = 0;
+    invalid_app_id.u.partition_index = 1;
+    dsn_gpid invalid_partition_index = {};
+    invalid_partition_index.u.app_id = 1;
+    invalid_partition_index.u.partition_index = -1;
+    dsn_gpid valid_gpid = {};
+    valid_gpid.u.app_id = 1;
+    valid_gpid.u.partition_index = 0;
+    char* null_argv[] = {nullptr};
+
+    ASSERT_EQ(ERR_INVALID_PARAMETERS,
+              dsn_hosted_app_create(nullptr,
+                                    valid_gpid,
+                                    "data",
+                                    &downcall_context,
+                                    &callback_context));
+    ASSERT_EQ(ERR_INVALID_PARAMETERS,
+              dsn_hosted_app_create("",
+                                    valid_gpid,
+                                    "data",
+                                    &downcall_context,
+                                    &callback_context));
+    ASSERT_EQ(ERR_INVALID_PARAMETERS,
+              dsn_hosted_app_create("test",
+                                    invalid_app_id,
+                                    "data",
+                                    &downcall_context,
+                                    &callback_context));
+    ASSERT_EQ(ERR_INVALID_PARAMETERS,
+              dsn_hosted_app_create("test",
+                                    invalid_partition_index,
+                                    "data",
+                                    &downcall_context,
+                                    &callback_context));
+    ASSERT_EQ(ERR_INVALID_PARAMETERS,
+              dsn_hosted_app_create("test",
+                                    valid_gpid,
+                                    nullptr,
+                                    &downcall_context,
+                                    &callback_context));
+    ASSERT_EQ(ERR_INVALID_PARAMETERS,
+              dsn_hosted_app_create("test",
+                                    valid_gpid,
+                                    "",
+                                    &downcall_context,
+                                    &callback_context));
+    ASSERT_EQ(ERR_INVALID_PARAMETERS,
+              dsn_hosted_app_create("test", valid_gpid, "data", nullptr, &callback_context));
+    ASSERT_EQ(ERR_INVALID_PARAMETERS,
+              dsn_hosted_app_create("test", valid_gpid, "data", &downcall_context, nullptr));
+
+    ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_hosted_app_start(nullptr, 0, nullptr));
+    ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_hosted_app_start(fake_app_context, -1, nullptr));
+    ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_hosted_app_start(fake_app_context, 1, nullptr));
+    ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_hosted_app_start(fake_app_context, 1, null_argv));
+    ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_hosted_app_destroy(nullptr, false));
 
     ASSERT_EQ(ERR_INVALID_PARAMETERS,
               dsn_hosted_app_commit_rpc_request(nullptr, nullptr, false));
     ASSERT_EQ(ERR_INVALID_PARAMETERS,
               dsn_hosted_app_commit_rpc_request(fake_app_context, nullptr, false));
+}
+
+TEST(core, dsn_app_registration_invalid_parameters)
+{
+    dsn_app_callbacks callbacks = {};
+
+    ASSERT_FALSE(dsn_register_app(nullptr));
+    ASSERT_FALSE(dsn_get_app_callbacks(nullptr, &callbacks));
+    ASSERT_FALSE(dsn_get_app_callbacks("", &callbacks));
+    ASSERT_FALSE(dsn_get_app_callbacks("test", nullptr));
+    ASSERT_FALSE(dsn_register_app_checker(nullptr, noop_checker_create, noop_checker_apply));
+    ASSERT_FALSE(dsn_register_app_checker("", noop_checker_create, noop_checker_apply));
+    ASSERT_FALSE(dsn_register_app_checker("invalid_checker", nullptr, noop_checker_apply));
+    ASSERT_FALSE(dsn_register_app_checker("invalid_checker", noop_checker_create, nullptr));
 }
 
 struct aio_result
@@ -592,6 +744,9 @@ TEST(core, dsn_app_info_invalid_parameters)
     ASSERT_FALSE(dsn_mimic_app("", 1));
     ASSERT_FALSE(dsn_mimic_app("client", 0));
     ASSERT_FALSE(dsn_get_current_app_info(nullptr));
+    ASSERT_EQ(-1, dsn_get_all_apps(nullptr, 1));
+    dsn_app_info apps[1];
+    ASSERT_EQ(-1, dsn_get_all_apps(apps, -1));
     ASSERT_EQ(nullptr, dsn_get_app_data_dir(invalid_app_id));
     ASSERT_EQ(nullptr, dsn_get_app_data_dir(invalid_partition_index));
     ASSERT_EQ(nullptr, dsn_get_app_info_ptr(invalid_app_id));

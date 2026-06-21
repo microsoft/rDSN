@@ -39,6 +39,15 @@
 
 using namespace ::dsn;
 
+namespace
+{
+
+void noop_cli_handler(void*, int, const char**, dsn_cli_reply*) {}
+
+void noop_cli_free(dsn_cli_reply) {}
+
+} // anonymous namespace
+
 void command_manager_module_init()
 {
     register_command("test-cmd",
@@ -58,6 +67,69 @@ void command_manager_module_init()
             return ss.str();
         }
     );
+}
+
+TEST(core, dsn_cli_invalid_parameters)
+{
+    ASSERT_EQ(nullptr, dsn_cli_run(nullptr));
+    ASSERT_EQ(nullptr, dsn_cli_run(""));
+    dsn_cli_free(nullptr);
+
+    ASSERT_EQ(nullptr, dsn_cli_register("invalid-cli",
+                                        "help",
+                                        "help",
+                                        nullptr,
+                                        nullptr,
+                                        noop_cli_free));
+    ASSERT_EQ(nullptr, dsn_cli_register("invalid-cli",
+                                        "help",
+                                        "help",
+                                        nullptr,
+                                        noop_cli_handler,
+                                        nullptr));
+    ASSERT_EQ(nullptr, dsn_cli_register(nullptr,
+                                        "help",
+                                        "help",
+                                        nullptr,
+                                        noop_cli_handler,
+                                        noop_cli_free));
+    ASSERT_EQ(nullptr, dsn_cli_register("",
+                                        "help",
+                                        "help",
+                                        nullptr,
+                                        noop_cli_handler,
+                                        noop_cli_free));
+    ASSERT_EQ(nullptr, dsn_cli_register("invalid-cli",
+                                        nullptr,
+                                        "help",
+                                        nullptr,
+                                        noop_cli_handler,
+                                        noop_cli_free));
+    ASSERT_EQ(nullptr, dsn_cli_register("invalid-cli",
+                                        "help",
+                                        nullptr,
+                                        nullptr,
+                                        noop_cli_handler,
+                                        noop_cli_free));
+
+    ASSERT_EQ(nullptr, dsn_cli_app_register(nullptr,
+                                            "help",
+                                            "help",
+                                            nullptr,
+                                            noop_cli_handler,
+                                            noop_cli_free));
+    ASSERT_EQ(nullptr, dsn_cli_app_register("",
+                                            "help",
+                                            "help",
+                                            nullptr,
+                                            noop_cli_handler,
+                                            noop_cli_free));
+    ASSERT_EQ(nullptr, dsn_cli_app_register("invalid-cli",
+                                            nullptr,
+                                            "help",
+                                            nullptr,
+                                            noop_cli_handler,
+                                            noop_cli_free));
 }
 
 TEST(core, command_manager)
@@ -128,4 +200,3 @@ TEST(core, command_manager)
     std::tie(err, result) = cli.call_sync(rcmd, std::chrono::seconds(10), 0, 0, addr);
     ASSERT_TRUE(err == ERR_TIMEOUT || err == ERR_NETWORK_FAILURE);
 }
-

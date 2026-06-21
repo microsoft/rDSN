@@ -71,3 +71,27 @@ TEST(core, perf_counters)
     ASSERT_EQ(nullptr, p);
     ASSERT_FALSE(perf_counter::remove_counter("app*test*unexist_counter"));
 }
+
+TEST(core, dsn_perf_counter_invalid_parameters)
+{
+    ASSERT_EQ(nullptr, dsn_perf_counter_create(nullptr, "name", COUNTER_TYPE_NUMBER, ""));
+    ASSERT_EQ(nullptr, dsn_perf_counter_create("", "name", COUNTER_TYPE_NUMBER, ""));
+    ASSERT_EQ(nullptr, dsn_perf_counter_create("section", nullptr, COUNTER_TYPE_NUMBER, ""));
+    ASSERT_EQ(nullptr, dsn_perf_counter_create("section", "", COUNTER_TYPE_NUMBER, ""));
+    ASSERT_EQ(nullptr,
+              dsn_perf_counter_create("section", "name", COUNTER_TYPE_INVALID, ""));
+    ASSERT_EQ(nullptr,
+              dsn_perf_counter_create("section", "name", COUNTER_TYPE_NUMBER, nullptr));
+
+    dsn_perf_counter_remove(nullptr);
+    dsn_perf_counter_increment(nullptr);
+    dsn_perf_counter_decrement(nullptr);
+    dsn_perf_counter_add(nullptr, 1);
+    dsn_perf_counter_set(nullptr, 1);
+    ASSERT_DOUBLE_EQ(-1.0, dsn_perf_counter_get_value(nullptr));
+    ASSERT_EQ(static_cast<uint64_t>(-1), dsn_perf_counter_get_integer_value(nullptr));
+    ASSERT_DOUBLE_EQ(-1.0, dsn_perf_counter_get_percentile(nullptr, COUNTER_PERCENTILE_50));
+    ASSERT_DOUBLE_EQ(-1.0,
+                     dsn_perf_counter_get_percentile(reinterpret_cast<dsn_handle_t>(1),
+                                                     COUNTER_PERCENTILE_INVALID));
+}

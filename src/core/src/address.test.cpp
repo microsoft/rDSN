@@ -76,6 +76,12 @@ TEST(core, dsn_ipv4_from_host)
     ASSERT_EQ(host_ipv4(127, 0, 0, 1), dsn_ipv4_from_host("127.0.0.1"));
 }
 
+TEST(core, dsn_ipv4_from_host_invalid_parameters)
+{
+    ASSERT_EQ(0u, dsn_ipv4_from_host(nullptr));
+    ASSERT_EQ(0u, dsn_ipv4_from_host(""));
+}
+
 TEST(core, dsn_ipv4_local)
 {
 #ifndef _WIN32
@@ -161,6 +167,16 @@ TEST(core, dsn_address_build)
         ASSERT_EQ(addr, dsn_address_build_group(g));
         dsn_group_destroy(g);
     }
+}
+
+TEST(core, dsn_address_invalid_parameters)
+{
+    const dsn_address_t invalid_address = {};
+
+    ASSERT_EQ(invalid_address, dsn_address_build(nullptr, 8080));
+    ASSERT_EQ(invalid_address, dsn_address_build("", 8080));
+    ASSERT_EQ(invalid_address, dsn_address_build_group(nullptr));
+    ASSERT_EQ(invalid_address, dsn_address_build_uri(nullptr));
 }
 
 TEST(core, rpc_group_address)
@@ -285,4 +301,30 @@ TEST(core, dsn_group)
     ASSERT_EQ(uri_addr.c_addr(), dsn_group_next(g, addr.c_addr()));
 
     dsn_group_destroy(g);
+}
+
+TEST(core, dsn_group_invalid_parameters)
+{
+    const dsn_address_t invalid_address = {};
+
+    ASSERT_EQ(nullptr, dsn_group_build(nullptr));
+    ASSERT_EQ(nullptr, dsn_group_build(""));
+    ASSERT_EQ(0, dsn_group_count(nullptr));
+    ASSERT_FALSE(dsn_group_add(nullptr, invalid_address));
+    dsn_group_set_leader(nullptr, invalid_address);
+    ASSERT_EQ(invalid_address, dsn_group_get_leader(nullptr));
+    ASSERT_FALSE(dsn_group_is_leader(nullptr, invalid_address));
+    ASSERT_FALSE(dsn_group_is_update_leader_automatically(nullptr));
+    dsn_group_set_update_leader_automatically(nullptr, true);
+    ASSERT_EQ(invalid_address, dsn_group_next(nullptr, invalid_address));
+    ASSERT_EQ(invalid_address, dsn_group_forward_leader(nullptr));
+    ASSERT_FALSE(dsn_group_remove(nullptr, invalid_address));
+    dsn_group_destroy(nullptr);
+}
+
+TEST(core, dsn_uri_invalid_parameters)
+{
+    ASSERT_EQ(nullptr, dsn_uri_build(nullptr));
+    ASSERT_EQ(nullptr, dsn_uri_build(""));
+    dsn_uri_destroy(nullptr);
 }

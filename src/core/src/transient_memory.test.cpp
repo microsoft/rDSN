@@ -107,3 +107,8 @@ TEST(core, transient_memory)
     tls_trans_mem_init(1024 * 1024); // restore
 }
 
+TEST(core, dsn_transient_memory_invalid_parameters)
+{
+    dsn_transient_free(nullptr);
+    dsn_free(nullptr);
+}
