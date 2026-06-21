@@ -110,7 +110,10 @@ public:
     //
     // task management routines
     //
-    task_worker_pool* get_pool(int code) const { return _pools[code]; }
+    task_worker_pool* get_pool(int code) const
+    {
+        return ((code >= 0) && (code < static_cast<int>(_pools.size()))) ? _pools[code] : nullptr;
+    }
     std::vector<task_worker_pool*>& pools() { return _pools; }
 
     bool is_started() const { return _is_running.load(std::memory_order_acquire); }

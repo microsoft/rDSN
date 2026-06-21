@@ -660,6 +660,27 @@ bool run(
 //
 DSN_API void dsn_run(int argc, char** argv, bool sleep_after_init)
 {
+    if (argc < 0)
+    {
+        derror("dsn_run got invalid argc = %d", argc);
+        return;
+    }
+
+    if (argc > 0 && argv == nullptr)
+    {
+        derror("dsn_run got null argv");
+        return;
+    }
+
+    for (int i = 0; i < argc; ++i)
+    {
+        if (argv[i] == nullptr)
+        {
+            derror("dsn_run got null argv at index = %d", i);
+            return;
+        }
+    }
+
     if (argc < 2)
     {
         fprintf(stderr, "invalid options for dsn_run\n"
@@ -728,12 +749,30 @@ DSN_API void dsn_run(int argc, char** argv, bool sleep_after_init)
 
 DSN_API bool dsn_run_config(const char* config, bool sleep_after_init)
 {
+    if (config == nullptr || config[0] == '\0')
+    {
+        derror("dsn_run_config got null or empty config");
+        return false;
+    }
+
     std::string name;
     return run(config, nullptr, nullptr, sleep_after_init, name);
 }
 
 DSN_API int dsn_get_all_apps(dsn_app_info* info_buffer, int count)
 {
+    if (info_buffer == nullptr)
+    {
+        derror("dsn_get_all_apps got null info_buffer");
+        return -1;
+    }
+
+    if (count < 0)
+    {
+        derror("dsn_get_all_apps got invalid count = %d", count);
+        return -1;
+    }
+
     auto& as = ::dsn::service_engine::fast_instance().get_all_nodes();
     int i = 0;
     for (auto& kv : as)

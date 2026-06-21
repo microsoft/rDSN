@@ -49,7 +49,7 @@ public:
 
     bool contains(int index) const
     {
-        if (index >= static_cast<int>(_contains.size()))
+        if (index < 0 || index >= static_cast<int>(_contains.size()))
             return false;
         else
             return _contains[index];
@@ -57,7 +57,7 @@ public:
 
     T get(int index) const
     {
-        if (index >= static_cast<int>(_contains.size()))
+        if (index < 0 || index >= static_cast<int>(_contains.size()))
             return default_value;
         else
             return _values[index];
@@ -65,6 +65,9 @@ public:
 
     bool put(int index, T value)
     {
+        if (index < 0)
+            return false;
+
         if (index >= static_cast<int>(_contains.size()))
         {
             for (int i = static_cast<int>(_contains.size()); i < index; i++)

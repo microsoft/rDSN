@@ -54,6 +54,24 @@ namespace dsn
 
 DSN_API void dsn_register_app_checker(const char* name, dsn_checker_create create, dsn_checker_apply apply)
 {
+    if (name == nullptr || name[0] == '\0')
+    {
+        derror("dsn_register_app_checker got null or empty name");
+        return;
+    }
+
+    if (create == nullptr)
+    {
+        derror("dsn_register_app_checker got null create callback");
+        return;
+    }
+
+    if (apply == nullptr)
+    {
+        derror("dsn_register_app_checker got null apply callback");
+        return;
+    }
+
     ::dsn::global_checker ck;
     ck.name = name;
     ck.create = create;
@@ -61,4 +79,3 @@ DSN_API void dsn_register_app_checker(const char* name, dsn_checker_create creat
 
     ::dsn::global_checker_store::instance().checkers.push_back(ck);
 }
-

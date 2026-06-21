@@ -39,6 +39,12 @@
 
 DSN_API bool dsn_register_app(dsn_app* app_type)
 {
+    if (app_type == nullptr)
+    {
+        derror("dsn_register_app got null app_type");
+        return false;
+    }
+
     dsn_app* app;
     auto& store = ::dsn::utils::singleton_store<std::string, dsn_app*>::instance();
     if (store.get(app_type->type_name, app))
@@ -56,6 +62,18 @@ DSN_API bool dsn_register_app(dsn_app* app_type)
 
 DSN_API bool dsn_get_app_callbacks(const char* name, /* out */ dsn_app_callbacks* callbacks)
 {
+    if (name == nullptr || name[0] == '\0')
+    {
+        derror("dsn_get_app_callbacks got null or empty name");
+        return false;
+    }
+
+    if (callbacks == nullptr)
+    {
+        derror("dsn_get_app_callbacks got null callbacks");
+        return false;
+    }
+
     dsn_app* lapp;
     auto& store = ::dsn::utils::singleton_store<std::string, dsn_app*>::instance();
     if (store.get(name, lapp))
@@ -78,36 +96,146 @@ DSN_API dsn_error_t dsn_hosted_app_create(
     /*out*/void** app_context_for_callbacks
     )
 {
-    return ::dsn::task::get_current_node2()->get_l2_handler().create_app(type, gpid, data_dir,
-        app_context_for_downcalls, app_context_for_callbacks);
+    if (type == nullptr || type[0] == '\0')
+    {
+        derror("dsn_hosted_app_create got null or empty type");
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
+    }
+
+    if (gpid.u.app_id <= 0 || gpid.u.partition_index < 0)
+    {
+        derror("dsn_hosted_app_create got invalid gpid = %d.%d",
+               gpid.u.app_id,
+               gpid.u.partition_index);
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
+    }
+
+    if (data_dir == nullptr || data_dir[0] == '\0')
+    {
+        derror("dsn_hosted_app_create got null or empty data_dir");
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
+    }
+
+    if (app_context_for_downcalls == nullptr)
+    {
+        derror("dsn_hosted_app_create got null app_context_for_downcalls");
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
+    }
+
+    if (app_context_for_callbacks == nullptr)
+    {
+        derror("dsn_hosted_app_create got null app_context_for_callbacks");
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
+    }
+
+    auto node = ::dsn::task::get_current_node2();
+    if (node == nullptr)
+    {
+        derror("dsn_hosted_app_create got null current node");
+        return ::dsn::ERR_INVALID_STATE.get();
+    }
+
+    return node->get_l2_handler().create_app(
+        type, gpid, data_dir, app_context_for_downcalls, app_context_for_callbacks);
 }
 
 DSN_API dsn_error_t dsn_hosted_app_start(void* app_context, int argc, char** argv)
 {
-    return ::dsn::task::get_current_node2()->get_l2_handler().start_app(app_context, argc, argv);
+    if (app_context == nullptr)
+    {
+        derror("dsn_hosted_app_start got null app_context");
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
+    }
+
+    if (argc < 0)
+    {
+        derror("dsn_hosted_app_start got invalid argc = %d", argc);
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
+    }
+
+    if (argc > 0 && argv == nullptr)
+    {
+        derror("dsn_hosted_app_start got null argv");
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
+    }
+
+    for (int i = 0; i < argc; ++i)
+    {
+        if (argv[i] == nullptr)
+        {
+            derror("dsn_hosted_app_start got null argv at index = %d", i);
+            return ::dsn::ERR_INVALID_PARAMETERS.get();
+        }
+    }
+
+    auto node = ::dsn::task::get_current_node2();
+    if (node == nullptr)
+    {
+        derror("dsn_hosted_app_start got null current node");
+        return ::dsn::ERR_INVALID_STATE.get();
+    }
+
+    return node->get_l2_handler().start_app(app_context, argc, argv);
 }
 
 DSN_API dsn_error_t dsn_hosted_app_destroy(void* app_context, bool cleanup)
 {
-    return ::dsn::task::get_current_node2()->get_l2_handler().destroy_app(app_context, cleanup);
+    if (app_context == nullptr)
+    {
+        derror("dsn_hosted_app_destroy got null app_context");
+        return ::dsn::ERR_INVALID_PARAMETERS.get();
+    }
+
+    auto node = ::dsn::task::get_current_node2();
+    if (node == nullptr)
+    {
+        derror("dsn_hosted_app_destroy got null current node");
+        return ::dsn::ERR_INVALID_STATE.get();
+    }
+
+    return node->get_l2_handler().destroy_app(app_context, cleanup);
 }
 
 DSN_API void dsn_hosted_app_commit_rpc_request(void* app_context, dsn_message_t msg, bool exec_inline)
 {
+    if (app_context == nullptr)
+    {
+        derror("dsn_hosted_app_commit_rpc_request got null app_context");
+        return;
+    }
+
+    if (msg == nullptr)
+    {
+        derror("dsn_hosted_app_commit_rpc_request got null message");
+        return;
+    }
+
+    auto node = ::dsn::task::get_current_node2();
+    if (node == nullptr)
+    {
+        derror("dsn_hosted_app_commit_rpc_request got null current node");
+        return;
+    }
+
     auto app = (::dsn::app_manager::app_internal*)(app_context);
+    if (app == nullptr)
+    {
+        derror("dsn_hosted_app_commit_rpc_request got null app");
+        return;
+    }
 
     if (exec_inline)
     {
-        app->server_dispatcher.on_request_with_inline_execution((::dsn::message_ex*)(msg), ::dsn::task::get_current_node2());
+        app->server_dispatcher.on_request_with_inline_execution((::dsn::message_ex*)(msg), node);
     }
     else
     {
-        auto tsk = app->server_dispatcher.on_request((::dsn::message_ex*)(msg), ::dsn::task::get_current_node2());
+        auto tsk = app->server_dispatcher.on_request((::dsn::message_ex*)(msg), node);
         if (tsk)
             tsk->enqueue();
         else
         {
-            dassert(false, "to be handled");
+            dassert(false, "dsn_hosted_app_commit_rpc_request failed to create request task");
         }
     }
 }

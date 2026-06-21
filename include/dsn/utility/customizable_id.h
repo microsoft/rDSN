@@ -144,8 +144,14 @@ template<typename T>
 customized_id<T> customized_id<T>::from_string(const char* name, customized_id invalid_value)
 {
     int id = customized_id_mgr<T>::instance().get_id(name);
-    if (id == -1) return invalid_value;
-    else return customized_id<T>(id);
+    if (id == -1)
+    {
+        return invalid_value;
+    }
+    else
+    {
+        return customized_id<T>(id);
+    }
 }
 
 template<typename T>
@@ -163,25 +169,43 @@ customized_id<T>::customized_id(int code)
 template<typename T>
 int customized_id_mgr<T>::get_id(const char* name) const
 {
+    if (name == nullptr || name[0] == '\0')
+    {
+        return -1;
+    }
+
     auto it = _names.find(std::string(name));
     if (it == _names.end())
+    {
         return -1;
+    }
     else
+    {
         return it->second;
+    }
 }
 
 template<typename T>
 const char* customized_id_mgr<T>::get_name(int id) const
 {
-    if (id < static_cast<int>(_names2.size()))
+    if (id >= 0 && id < static_cast<int>(_names2.size()))
+    {
         return _names2[id].c_str();
+    }
     else
+    {
         return "unknown";
+    }
 }
 
 template<typename T>
 int customized_id_mgr<T>::register_id(const char* name)
 {
+    if (name == nullptr || name[0] == '\0')
+    {
+        return -1;
+    }
+
     int id = get_id(name);
     if (-1 != id)
     {
