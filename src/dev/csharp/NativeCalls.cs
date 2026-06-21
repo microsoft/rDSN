@@ -510,7 +510,7 @@ namespace dsn.dev.csharp
         // common task 
         //
         [DllImport(DSN_CORE_DLL, CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Ansi), SuppressUnmanagedCodeSecurity]
-        public static extern void        dsn_task_call(dsn_task_t task, int delay_milliseconds);
+        public static extern bool        dsn_task_call(dsn_task_t task, int delay_milliseconds);
         [DllImport(DSN_CORE_DLL, CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Ansi), SuppressUnmanagedCodeSecurity]
         public static extern bool        dsn_task_cancel(dsn_task_t task, bool wait_until_finished);
         [DllImport(DSN_CORE_DLL, CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Ansi), SuppressUnmanagedCodeSecurity]
@@ -637,13 +637,13 @@ namespace dsn.dev.csharp
         [DllImport(DSN_CORE_DLL, CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Ansi), SuppressUnmanagedCodeSecurity]
         public static extern void          dsn_msg_query_request(dsn_message_t msg, out int ptimeout_milliseconds, out int phash);
         [DllImport(DSN_CORE_DLL, CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Ansi), SuppressUnmanagedCodeSecurity]
-        public static extern void          dsn_msg_write_next(dsn_message_t msg, out IntPtr ptr, out size_t size, size_t min_size);
+        public static extern bool          dsn_msg_write_next(dsn_message_t msg, out IntPtr ptr, out size_t size, size_t min_size);
         [DllImport(DSN_CORE_DLL, CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Ansi), SuppressUnmanagedCodeSecurity]
-        public static extern void          dsn_msg_write_commit(dsn_message_t msg, size_t size);
+        public static extern bool          dsn_msg_write_commit(dsn_message_t msg, size_t size);
         [DllImport(DSN_CORE_DLL, CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Ansi), SuppressUnmanagedCodeSecurity]
         public static extern bool          dsn_msg_read_next(dsn_message_t msg, out IntPtr ptr, out size_t size);
         [DllImport(DSN_CORE_DLL, CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Ansi), SuppressUnmanagedCodeSecurity]
-        public static extern void          dsn_msg_read_commit(dsn_message_t msg, size_t size);
+        public static extern bool          dsn_msg_read_commit(dsn_message_t msg, size_t size);
         [DllImport(DSN_CORE_DLL, CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Ansi), SuppressUnmanagedCodeSecurity]
         public static extern size_t        dsn_msg_body_size(dsn_message_t msg);
         [DllImport(DSN_CORE_DLL, CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Ansi), SuppressUnmanagedCodeSecurity]

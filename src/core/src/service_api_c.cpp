@@ -540,25 +540,30 @@ DSN_API void dsn_task_tracker_wait_all(dsn_task_tracker_t tracker)
     ((::dsn::task_tracker*)tracker)->wait_outstanding_tasks();
 }
 
-DSN_API void dsn_task_call(dsn_task_t task, int delay_milliseconds)
+DSN_API bool dsn_task_call(dsn_task_t task, int delay_milliseconds)
 {
     if (task == nullptr)
     {
         derror("dsn_task_call got null task");
-        return;
+        return false;
     }
 
     if (delay_milliseconds < 0)
     {
         derror("dsn_task_call got invalid delay_milliseconds = %d", delay_milliseconds);
-        return;
+        return false;
     }
 
     auto t = (::dsn::task*)task;
-    dassert(t->spec().type == TASK_TYPE_COMPUTE, "must be common or timer task");
+    if (t->spec().type != TASK_TYPE_COMPUTE)
+    {
+        derror("dsn_task_call got non-compute task");
+        return false;
+    }
 
     t->set_delay(delay_milliseconds);
     t->enqueue();
+    return true;
 }
 
 DSN_API void dsn_task_add_ref(dsn_task_t task)
@@ -605,21 +610,22 @@ DSN_API bool dsn_task_cancel(dsn_task_t task, bool wait_until_finished)
     return ((::dsn::task*)(task))->cancel(wait_until_finished);
 }
 
-DSN_API void dsn_task_set_delay(dsn_task_t task, int delay_ms)
+DSN_API bool dsn_task_set_delay(dsn_task_t task, int delay_ms)
 {
     if (task == nullptr)
     {
         derror("dsn_task_set_delay got null task");
-        return;
+        return false;
     }
 
     if (delay_ms < 0)
     {
         derror("dsn_task_set_delay got invalid delay_ms = %d", delay_ms);
-        return;
+        return false;
     }
 
     ((::dsn::task*)(task))->set_delay(delay_ms);
+    return true;
 }
 
 DSN_API bool dsn_task_cancel2(dsn_task_t task, bool wait_until_finished, bool* finished)

@@ -141,7 +141,7 @@ DSN_API dsn_message_t dsn_msg_create_response(dsn_message_t request)
     return msg;
 }
 
-DSN_API void dsn_msg_write_next(dsn_message_t msg, void** ptr, size_t* size, size_t min_size)
+DSN_API bool dsn_msg_write_next(dsn_message_t msg, void** ptr, size_t* size, size_t min_size)
 {
     if (msg == nullptr)
     {
@@ -154,33 +154,35 @@ DSN_API void dsn_msg_write_next(dsn_message_t msg, void** ptr, size_t* size, siz
         {
             *size = 0;
         }
-        return;
+        return false;
     }
 
     if (ptr == nullptr)
     {
         derror("dsn_msg_write_next got null ptr");
-        return;
+        return false;
     }
 
     if (size == nullptr)
     {
         derror("dsn_msg_write_next got null size");
-        return;
+        return false;
     }
 
     ((::dsn::message_ex*)msg)->write_next(ptr, size, min_size);
+    return true;
 }
 
-DSN_API void dsn_msg_write_commit(dsn_message_t msg, size_t size)
+DSN_API bool dsn_msg_write_commit(dsn_message_t msg, size_t size)
 {
     if (msg == nullptr)
     {
         derror("dsn_msg_write_commit got null message");
-        return;
+        return false;
     }
 
     ((::dsn::message_ex*)msg)->write_commit(size);
+    return true;
 }
 
 DSN_API bool dsn_msg_read_next(dsn_message_t msg, void** ptr, size_t* size)
@@ -214,15 +216,16 @@ DSN_API bool dsn_msg_read_next(dsn_message_t msg, void** ptr, size_t* size)
     return ((::dsn::message_ex*)msg)->read_next(ptr, size);
 }
 
-DSN_API void dsn_msg_read_commit(dsn_message_t msg, size_t size)
+DSN_API bool dsn_msg_read_commit(dsn_message_t msg, size_t size)
 {
     if (msg == nullptr)
     {
         derror("dsn_msg_read_commit got null message");
-        return;
+        return false;
     }
 
     ((::dsn::message_ex*)msg)->read_commit(size);
+    return true;
 }
 
 DSN_API size_t dsn_msg_body_size(dsn_message_t msg)
@@ -337,7 +340,7 @@ DSN_API dsn_task_code_t dsn_msg_task_code(dsn_message_t msg)
     return ((::dsn::message_ex*)msg)->rpc_code();
 }
 
-DSN_API void dsn_msg_set_options(
+DSN_API bool dsn_msg_set_options(
     dsn_message_t msg,
     dsn_msg_options_t *opts,
     uint32_t mask // set opt bits using DSN_MSGM_XXX
@@ -346,20 +349,20 @@ DSN_API void dsn_msg_set_options(
     if (msg == nullptr)
     {
         derror("dsn_msg_set_options got null message");
-        return;
+        return false;
     }
 
     if (opts == nullptr)
     {
         derror("dsn_msg_set_options got null opts");
-        return;
+        return false;
     }
 
     auto hdr = ((::dsn::message_ex*)msg)->header;
     if (hdr == nullptr)
     {
         derror("dsn_msg_set_options got message with null header");
-        return;
+        return false;
     }
 
     if (mask & DSN_MSGM_TIMEOUT)
@@ -367,7 +370,7 @@ DSN_API void dsn_msg_set_options(
         if (opts->timeout_ms < 0)
         {
             derror("dsn_msg_set_options got invalid timeout_ms = %d", opts->timeout_ms);
-            return;
+            return false;
         }
 
         hdr->client.timeout_ms = opts->timeout_ms;
@@ -392,6 +395,7 @@ DSN_API void dsn_msg_set_options(
     {
         hdr->context = opts->context;
     }
+    return true;
 }
 
 DSN_API dsn_msg_serialize_format dsn_msg_get_serialize_format(dsn_message_t msg)
@@ -412,31 +416,32 @@ DSN_API dsn_msg_serialize_format dsn_msg_get_serialize_format(dsn_message_t msg)
     return static_cast<dsn_msg_serialize_format>(hdr->context.u.serialize_format);
 }
 
-DSN_API void dsn_msg_set_serailize_format(dsn_message_t msg, dsn_msg_serialize_format fmt)
+DSN_API bool dsn_msg_set_serailize_format(dsn_message_t msg, dsn_msg_serialize_format fmt)
 {
     if (msg == nullptr)
     {
         derror("dsn_msg_set_serailize_format got null message");
-        return;
+        return false;
     }
 
     auto hdr = ((::dsn::message_ex*)msg)->header;
     if (hdr == nullptr)
     {
         derror("dsn_msg_set_serailize_format got message with null header");
-        return;
+        return false;
     }
 
     if (!is_valid_serialize_format(fmt))
     {
         derror("dsn_msg_set_serailize_format got invalid fmt = %d", fmt);
-        return;
+        return false;
     }
 
     hdr->context.u.serialize_format = fmt;
+    return true;
 }
 
-DSN_API void dsn_msg_get_options(
+DSN_API bool dsn_msg_get_options(
     dsn_message_t msg,
     /*out*/ dsn_msg_options_t* opts
     )
@@ -444,20 +449,20 @@ DSN_API void dsn_msg_get_options(
     if (msg == nullptr)
     {
         derror("dsn_msg_get_options got null message");
-        return;
+        return false;
     }
 
     if (opts == nullptr)
     {
         derror("dsn_msg_get_options got null opts");
-        return;
+        return false;
     }
 
     auto hdr = ((::dsn::message_ex*)msg)->header;
     if (hdr == nullptr)
     {
         derror("dsn_msg_get_options got message with null header");
-        return;
+        return false;
     }
 
     opts->timeout_ms = hdr->client.timeout_ms;
@@ -465,6 +470,7 @@ DSN_API void dsn_msg_get_options(
     opts->partition_hash = hdr->client.partition_hash;
     opts->gpid = hdr->gpid;
     opts->context = hdr->context;
+    return true;
 }
 
 namespace dsn {

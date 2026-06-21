@@ -234,8 +234,9 @@ extern DSN_API bool        dsn_task_cancel(dsn_task_t task, bool wait_until_fini
 
  \param task                the task handle
  \param delay_ms            the delay milliseconds for a task
+ \return true if the delay is set, false if the parameters are invalid.
  */
-extern DSN_API void        dsn_task_set_delay(dsn_task_t task, int delay_ms);
+extern DSN_API bool        dsn_task_set_delay(dsn_task_t task, int delay_ms);
 
 /*!
  cancel a task
@@ -432,8 +433,9 @@ extern DSN_API dsn_task_t  dsn_task_create_timer_ex(
 
  \param task                the task handle
  \param delay_milliseconds  delay time before its execution
+ \return true if the task is enqueued, false if the parameters are invalid.
  */
-extern DSN_API void        dsn_task_call(
+extern DSN_API bool        dsn_task_call(
                             dsn_task_t task,                                 
                             int delay_milliseconds DEFAULT(0)
                             );
@@ -733,8 +735,9 @@ inline void dsn_address_size_checker()
  \param msg  the message handle
  \param opts options to be set in the message
  \param mask the mask composed using e.g., DSN_MSGM_TIMEOUT above to specify what to set
+ \return true if the options are set, false if the parameters are invalid.
  */
-extern DSN_API void          dsn_msg_set_options(
+extern DSN_API bool          dsn_msg_set_options(
                                 dsn_message_t msg,
                                 dsn_msg_options_t *opts,
                                 uint32_t mask
@@ -745,13 +748,17 @@ extern DSN_API void          dsn_msg_set_options(
 
  \param msg  the message handle
  \param opts options to be get
+ \return true if the options are returned, false if the parameters are invalid.
  */
-extern DSN_API void         dsn_msg_get_options(
+extern DSN_API bool         dsn_msg_get_options(
                                 dsn_message_t msg,
                                 /*out*/ dsn_msg_options_t* opts
                                 );
 
-DSN_API void dsn_msg_set_serailize_format(dsn_message_t msg, dsn_msg_serialize_format fmt);
+/*! set the message serialization format.
+    \return true if the format is set, false if the parameters are invalid.
+ */
+DSN_API bool dsn_msg_set_serailize_format(dsn_message_t msg, dsn_msg_serialize_format fmt);
 
 DSN_API dsn_msg_serialize_format dsn_msg_get_serialize_format(dsn_message_t msg);
 
@@ -780,16 +787,19 @@ extern DSN_API dsn_task_code_t dsn_msg_task_code(dsn_message_t msg);
  \param ptr      *ptr returns the writable memory pointer
  \param size     *size returns the writable memory buffer size
  \param min_size *size must >= min_size
+ \return true if a write buffer is returned, false if the parameters are invalid.
  */
-extern DSN_API void          dsn_msg_write_next(
+extern DSN_API bool          dsn_msg_write_next(
                                 dsn_message_t msg, 
                                 /*out*/ void** ptr, 
                                 /*out*/ size_t* size, 
                                 size_t min_size
                                 );
 
-/*! commit the write buffer after the message content is written with the real written size */
-extern DSN_API void          dsn_msg_write_commit(dsn_message_t msg, size_t size);
+/*! commit the write buffer after the message content is written with the real written size.
+    \return true if the buffer is committed, false if the parameters are invalid.
+ */
+extern DSN_API bool          dsn_msg_write_commit(dsn_message_t msg, size_t size);
 
 /*!
  get message read buffer
@@ -808,8 +818,9 @@ extern DSN_API bool          dsn_msg_read_next(
 
 /*! commit the read buffer after the message content is read with the real read size,
     it is possible to use a different size to allow duplicated or skipped read in the message.
+    \return true if the buffer is committed, false if the parameters are invalid.
  */
-extern DSN_API void          dsn_msg_read_commit(dsn_message_t msg, size_t size);
+extern DSN_API bool          dsn_msg_read_commit(dsn_message_t msg, size_t size);
 
 /*@}*/
 
