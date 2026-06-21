@@ -548,6 +548,12 @@ DSN_API void dsn_task_call(dsn_task_t task, int delay_milliseconds)
         return;
     }
 
+    if (delay_milliseconds < 0)
+    {
+        derror("dsn_task_call got invalid delay_milliseconds = %d", delay_milliseconds);
+        return;
+    }
+
     auto t = (::dsn::task*)task;
     dassert(t->spec().type == TASK_TYPE_COMPUTE, "must be common or timer task");
 
@@ -604,6 +610,12 @@ DSN_API void dsn_task_set_delay(dsn_task_t task, int delay_ms)
     if (task == nullptr)
     {
         derror("dsn_task_set_delay got null task");
+        return;
+    }
+
+    if (delay_ms < 0)
+    {
+        derror("dsn_task_set_delay got invalid delay_ms = %d", delay_ms);
         return;
     }
 

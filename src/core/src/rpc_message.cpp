@@ -348,6 +348,12 @@ DSN_API void dsn_msg_set_options(
 
     if (mask & DSN_MSGM_TIMEOUT)
     {
+        if (opts->timeout_ms < 0)
+        {
+            derror("dsn_msg_set_options got invalid timeout_ms = %d", opts->timeout_ms);
+            return;
+        }
+
         hdr->client.timeout_ms = opts->timeout_ms;
     }
     
@@ -625,6 +631,13 @@ message_ex* message_ex::create_request(dsn_task_code_t rpc_code, int timeout_mil
     if (sp == nullptr)
     {
         derror("message_ex::create_request got invalid rpc_code = %d", rpc_code);
+        return nullptr;
+    }
+
+    if (timeout_milliseconds < 0)
+    {
+        derror("message_ex::create_request got invalid timeout_milliseconds = %d",
+               timeout_milliseconds);
         return nullptr;
     }
 

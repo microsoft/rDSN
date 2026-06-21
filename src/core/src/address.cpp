@@ -364,9 +364,9 @@ DSN_API dsn_address_t dsn_address_build_uri(
 
 DSN_API dsn_group_t dsn_group_build(const char* name) // must be paired with release later
 {
-    if (name == nullptr)
+    if (name == nullptr || name[0] == '\0')
     {
-        derror("dsn_group_build got null name");
+        derror("dsn_group_build got null or empty name");
         return nullptr;
     }
 
@@ -513,9 +513,9 @@ DSN_API void dsn_group_destroy(dsn_group_t g)
 
 DSN_API dsn_uri_t dsn_uri_build(const char* url) // must be paired with destroy later
 {
-    if (url == nullptr)
+    if (url == nullptr || url[0] == '\0')
     {
-        derror("dsn_uri_build got null url");
+        derror("dsn_uri_build got null or empty url");
         return nullptr;
     }
 
