@@ -149,8 +149,9 @@ DSN_API dsn_error_t dsn_hosted_app_create(
         return ::dsn::ERR_INVALID_STATE.get();
     }
 
-    return node->get_l2_handler().create_app(
-        type, gpid, data_dir, app_context_for_downcalls, app_context_for_callbacks);
+    return node->get_l2_handler()
+        .create_app(type, gpid, data_dir, app_context_for_downcalls, app_context_for_callbacks)
+        .get();
 }
 
 DSN_API dsn_error_t dsn_hosted_app_start(void* app_context, int argc, char** argv)
@@ -189,7 +190,7 @@ DSN_API dsn_error_t dsn_hosted_app_start(void* app_context, int argc, char** arg
         return ::dsn::ERR_INVALID_STATE.get();
     }
 
-    return node->get_l2_handler().start_app(app_context, argc, argv);
+    return node->get_l2_handler().start_app(app_context, argc, argv).get();
 }
 
 DSN_API dsn_error_t dsn_hosted_app_destroy(void* app_context, bool cleanup)
@@ -207,7 +208,7 @@ DSN_API dsn_error_t dsn_hosted_app_destroy(void* app_context, bool cleanup)
         return ::dsn::ERR_INVALID_STATE.get();
     }
 
-    return node->get_l2_handler().destroy_app(app_context, cleanup);
+    return node->get_l2_handler().destroy_app(app_context, cleanup).get();
 }
 
 DSN_API dsn_error_t dsn_hosted_app_commit_rpc_request(void* app_context, dsn_message_t msg, bool exec_inline)

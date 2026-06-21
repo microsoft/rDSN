@@ -1303,7 +1303,7 @@ DSN_API dsn_error_t dsn_file_close(dsn_handle_t file)
         return ::dsn::ERR_INVALID_STATE.get();
     }
 
-    return disk->close(file);
+    return disk->close(file).get();
 }
 
 DSN_API dsn_error_t dsn_file_flush(dsn_handle_t file)
@@ -1321,7 +1321,7 @@ DSN_API dsn_error_t dsn_file_flush(dsn_handle_t file)
         return ::dsn::ERR_INVALID_STATE.get();
     }
 
-    return disk->flush(file);
+    return disk->flush(file).get();
 }
 
 // native HANDLE: HANDLE for windows, int for non-windows

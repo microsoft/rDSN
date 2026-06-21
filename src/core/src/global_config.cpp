@@ -374,12 +374,12 @@ static void* mimic_app_create(const char*, dsn_gpid)
 
 static dsn_error_t mimic_app_start(void* ctx, int argc, char** argv)
 {
-    return ::dsn::ERR_OK;
+    return ::dsn::ERR_OK.get();
 }
 
 static dsn_error_t mimic_app_destroy(void* ctx, bool clean_up)
 {
-    return ::dsn::ERR_OK;
+    return ::dsn::ERR_OK.get();
 }
 
 bool service_spec::init_app_specs()

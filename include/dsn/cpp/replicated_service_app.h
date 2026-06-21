@@ -237,7 +237,7 @@ namespace dsn
             if (app == nullptr)
             {
                 dlog(LOG_LEVEL_ERROR, "cpp.replicated_service_app", "app_get_physical_error got null app");
-                return ERR_INVALID_PARAMETERS;
+                return ERR_INVALID_PARAMETERS.get();
             }
 
             return reinterpret_cast<replicated_service_app_type_1*>(app)->get_physical_error();
@@ -248,10 +248,10 @@ namespace dsn
             if (app == nullptr)
             {
                 dlog(LOG_LEVEL_ERROR, "cpp.replicated_service_app", "app_sync_checkpoint got null app");
-                return ERR_INVALID_PARAMETERS;
+                return ERR_INVALID_PARAMETERS.get();
             }
 
-            return reinterpret_cast<replicated_service_app_type_1*>(app)->sync_checkpoint(last_commit);
+            return reinterpret_cast<replicated_service_app_type_1*>(app)->sync_checkpoint(last_commit).get();
         }
 
         static dsn_error_t app_async_checkpoint(void* app, int64_t last_commit)
@@ -259,10 +259,10 @@ namespace dsn
             if (app == nullptr)
             {
                 dlog(LOG_LEVEL_ERROR, "cpp.replicated_service_app", "app_async_checkpoint got null app");
-                return ERR_INVALID_PARAMETERS;
+                return ERR_INVALID_PARAMETERS.get();
             }
 
-            return reinterpret_cast<replicated_service_app_type_1*>(app)->async_checkpoint(last_commit);
+            return reinterpret_cast<replicated_service_app_type_1*>(app)->async_checkpoint(last_commit).get();
         }
 
         static int64_t app_get_last_checkpoint_decree(void* app)
@@ -285,17 +285,19 @@ namespace dsn
                 dlog(LOG_LEVEL_ERROR,
                      "cpp.replicated_service_app",
                      "app_prepare_get_checkpoint got null app");
-                return ERR_INVALID_PARAMETERS;
+                return ERR_INVALID_PARAMETERS.get();
             }
             if (occupied == nullptr)
             {
                 dlog(LOG_LEVEL_ERROR,
                      "cpp.replicated_service_app",
                      "app_prepare_get_checkpoint got null occupied");
-                return ERR_INVALID_PARAMETERS;
+                return ERR_INVALID_PARAMETERS.get();
             }
 
-            return reinterpret_cast<replicated_service_app_type_1*>(app)->prepare_get_checkpoint(buffer, capacity, occupied);
+            return reinterpret_cast<replicated_service_app_type_1*>(app)
+                ->prepare_get_checkpoint(buffer, capacity, occupied)
+                .get();
         }
         
         static dsn_error_t app_get_checkpoint(
@@ -311,12 +313,12 @@ namespace dsn
             if (app == nullptr)
             {
                 dlog(LOG_LEVEL_ERROR, "cpp.replicated_service_app", "app_get_checkpoint got null app");
-                return ERR_INVALID_PARAMETERS;
+                return ERR_INVALID_PARAMETERS.get();
             }
             if (state == nullptr)
             {
                 dlog(LOG_LEVEL_ERROR, "cpp.replicated_service_app", "app_get_checkpoint got null state");
-                return ERR_INVALID_PARAMETERS;
+                return ERR_INVALID_PARAMETERS.get();
             }
             if (state_capacity < 0)
             {
@@ -324,7 +326,7 @@ namespace dsn
                      "cpp.replicated_service_app",
                      "app_get_checkpoint got invalid state_capacity = %d",
                      state_capacity);
-                return ERR_INVALID_PARAMETERS;
+                return ERR_INVALID_PARAMETERS.get();
             }
             if (state_capacity < static_cast<int>(sizeof(dsn_app_learn_state)))
             {
@@ -332,13 +334,13 @@ namespace dsn
                      "cpp.replicated_service_app",
                      "app_get_checkpoint got invalid state_capacity = %d",
                      state_capacity);
-                return ERR_INVALID_PARAMETERS;
+                return ERR_INVALID_PARAMETERS.get();
             }
 
             app_learn_state cpp_state;
             auto err = reinterpret_cast<replicated_service_app_type_1*>(app)->get_checkpoint(
                     learn_start, local_commit, learn_request, learn_request_size, cpp_state);
-            return err == ERR_OK ? cpp_state.to_c_state(*state, state_capacity) : err;
+            return err == ERR_OK ? cpp_state.to_c_state(*state, state_capacity).get() : err.get();
         }
         
         static dsn_error_t app_apply_checkpoint(
@@ -351,15 +353,17 @@ namespace dsn
             if (app == nullptr)
             {
                 dlog(LOG_LEVEL_ERROR, "cpp.replicated_service_app", "app_apply_checkpoint got null app");
-                return ERR_INVALID_PARAMETERS;
+                return ERR_INVALID_PARAMETERS.get();
             }
             if (state == nullptr)
             {
                 dlog(LOG_LEVEL_ERROR, "cpp.replicated_service_app", "app_apply_checkpoint got null state");
-                return ERR_INVALID_PARAMETERS;
+                return ERR_INVALID_PARAMETERS.get();
             }
 
-            return reinterpret_cast<replicated_service_app_type_1*>(app)->apply_checkpoint(mode, local_commit, *state);
+            return reinterpret_cast<replicated_service_app_type_1*>(app)
+                ->apply_checkpoint(mode, local_commit, *state)
+                .get();
         }
     };
 

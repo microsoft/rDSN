@@ -91,24 +91,24 @@ namespace dsn
             if (sapp == nullptr)
             {
                 dlog(LOG_LEVEL_ERROR, "cpp.service_app", "app_start got null app");
-                return ERR_INVALID_PARAMETERS;
+                return ERR_INVALID_PARAMETERS.get();
             }
             if (argc <= 0)
             {
                 dlog(LOG_LEVEL_ERROR, "cpp.service_app", "app_start got invalid argc = %d", argc);
-                return ERR_INVALID_PARAMETERS;
+                return ERR_INVALID_PARAMETERS.get();
             }
             if (argv == nullptr)
             {
                 dlog(LOG_LEVEL_ERROR, "cpp.service_app", "app_start got null argv");
-                return ERR_INVALID_PARAMETERS;
+                return ERR_INVALID_PARAMETERS.get();
             }
             for (int i = 0; i < argc; ++i)
             {
                 if (argv[i] == nullptr)
                 {
                     dlog(LOG_LEVEL_ERROR, "cpp.service_app", "app_start got null argv at index = %d", i);
-                    return ERR_INVALID_PARAMETERS;
+                    return ERR_INVALID_PARAMETERS.get();
                 }
             }
 
@@ -120,7 +120,7 @@ namespace dsn
             {
                 sapp->_started = true;
             }
-            return r;
+            return r.get();
         }
 
         static dsn_error_t app_destroy(void* app, bool cleanup)
@@ -129,12 +129,12 @@ namespace dsn
             if (sapp == nullptr)
             {
                 dlog(LOG_LEVEL_ERROR, "cpp.service_app", "app_destroy got null app");
-                return ERR_INVALID_PARAMETERS;
+                return ERR_INVALID_PARAMETERS.get();
             }
 
             auto err = sapp->stop(cleanup);
             if (ERR_OK == err) sapp->_started = false;
-            return err;
+            return err.get();
         }
     };
 
