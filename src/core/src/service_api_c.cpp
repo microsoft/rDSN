@@ -239,7 +239,7 @@ DSN_API dsn_task_code_t dsn_task_code_register(
 DSN_API void dsn_task_code_query(dsn_task_code_t code, dsn_task_type_t *ptype, dsn_task_priority_t *ppri, dsn_threadpool_code_t *ppool)
 {
     auto sp = ::dsn::task_spec::get(code);
-    if (sp == nullptr)
+    if (code == ::dsn::TASK_CODE_INVALID || sp == nullptr)
     {
         derror("dsn_task_code_query got invalid code = %d", code);
         return;
@@ -253,7 +253,7 @@ DSN_API void dsn_task_code_query(dsn_task_code_t code, dsn_task_type_t *ptype, d
 DSN_API void dsn_task_code_set_threadpool(dsn_task_code_t code, dsn_threadpool_code_t pool)
 {
     auto sp = ::dsn::task_spec::get(code);
-    if (sp == nullptr)
+    if (code == ::dsn::TASK_CODE_INVALID || sp == nullptr)
     {
         derror("dsn_task_code_set_threadpool got invalid code = %d", code);
         return;
@@ -271,7 +271,7 @@ DSN_API void dsn_task_code_set_threadpool(dsn_task_code_t code, dsn_threadpool_c
 DSN_API void dsn_task_code_set_priority(dsn_task_code_t code, dsn_task_priority_t pri)
 {
     auto sp = ::dsn::task_spec::get(code);
-    if (sp == nullptr)
+    if (code == ::dsn::TASK_CODE_INVALID || sp == nullptr)
     {
         derror("dsn_task_code_set_priority got invalid code = %d", code);
         return;
@@ -397,7 +397,7 @@ DSN_API uint64_t dsn_crc64_concatenate(uint32_t xy_init, uint64_t x_init, uint64
 DSN_API dsn_task_t dsn_task_create(dsn_task_code_t code, dsn_task_handler_t cb, void* context, int hash, dsn_task_tracker_t tracker)
 {
     auto sp = ::dsn::task_spec::get(code);
-    if (sp == nullptr)
+    if (code == ::dsn::TASK_CODE_INVALID || sp == nullptr || sp->type != TASK_TYPE_COMPUTE)
     {
         derror("dsn_task_create got invalid code = %d", code);
         return nullptr;
@@ -420,7 +420,7 @@ DSN_API dsn_task_t dsn_task_create_timer(dsn_task_code_t code, dsn_task_handler_
     void* context, int hash, int interval_milliseconds, dsn_task_tracker_t tracker)
 {
     auto sp = ::dsn::task_spec::get(code);
-    if (sp == nullptr)
+    if (code == ::dsn::TASK_CODE_INVALID || sp == nullptr || sp->type != TASK_TYPE_COMPUTE)
     {
         derror("dsn_task_create_timer got invalid code = %d", code);
         return nullptr;
@@ -448,7 +448,7 @@ DSN_API dsn_task_t dsn_task_create_ex(dsn_task_code_t code, dsn_task_handler_t c
     dsn_task_cancelled_handler_t on_cancel, void* context, int hash, dsn_task_tracker_t tracker)
 {
     auto sp = ::dsn::task_spec::get(code);
-    if (sp == nullptr)
+    if (code == ::dsn::TASK_CODE_INVALID || sp == nullptr || sp->type != TASK_TYPE_COMPUTE)
     {
         derror("dsn_task_create_ex got invalid code = %d", code);
         return nullptr;
@@ -471,7 +471,7 @@ DSN_API dsn_task_t dsn_task_create_timer_ex(dsn_task_code_t code, dsn_task_handl
     void* context, int hash, int interval_milliseconds, dsn_task_tracker_t tracker)
 {
     auto sp = ::dsn::task_spec::get(code);
-    if (sp == nullptr)
+    if (code == ::dsn::TASK_CODE_INVALID || sp == nullptr || sp->type != TASK_TYPE_COMPUTE)
     {
         derror("dsn_task_create_timer_ex got invalid code = %d", code);
         return nullptr;
@@ -974,7 +974,7 @@ DSN_API bool dsn_rpc_register_handler(
     )
 {
     auto sp = ::dsn::task_spec::get(code);
-    if (sp == nullptr)
+    if (code == ::dsn::TASK_CODE_INVALID || sp == nullptr || sp->type != TASK_TYPE_RPC_REQUEST)
     {
         derror("dsn_rpc_register_handler got invalid code = %d", code);
         return false;
@@ -1010,7 +1010,7 @@ DSN_API bool dsn_rpc_register_handler(
 DSN_API void* dsn_rpc_unregiser_handler(dsn_task_code_t code, dsn_gpid gpid)
 {
     auto sp = ::dsn::task_spec::get(code);
-    if (sp == nullptr)
+    if (code == ::dsn::TASK_CODE_INVALID || sp == nullptr || sp->type != TASK_TYPE_RPC_REQUEST)
     {
         derror("dsn_rpc_unregiser_handler got invalid code = %d", code);
         return nullptr;
@@ -1340,7 +1340,7 @@ DSN_API void* dsn_file_native_handle(dsn_handle_t file)
 DSN_API dsn_task_t dsn_file_create_aio_task(dsn_task_code_t code, dsn_aio_handler_t cb, void* context, int hash, dsn_task_tracker_t tracker)
 {
     auto sp = ::dsn::task_spec::get(code);
-    if (sp == nullptr)
+    if (code == ::dsn::TASK_CODE_INVALID || sp == nullptr || sp->type != TASK_TYPE_AIO)
     {
         derror("dsn_file_create_aio_task got invalid code = %d", code);
         return nullptr;
@@ -1357,7 +1357,7 @@ DSN_API dsn_task_t dsn_file_create_aio_task_ex(dsn_task_code_t code, dsn_aio_han
     void* context, int hash, dsn_task_tracker_t tracker)
 {
     auto sp = ::dsn::task_spec::get(code);
-    if (sp == nullptr)
+    if (code == ::dsn::TASK_CODE_INVALID || sp == nullptr || sp->type != TASK_TYPE_AIO)
     {
         derror("dsn_file_create_aio_task_ex got invalid code = %d", code);
         return nullptr;
