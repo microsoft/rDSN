@@ -164,6 +164,32 @@ TEST(core, dsn_task)
 {
 }
 
+TEST(core, dsn_task_invalid_parameters)
+{
+    ASSERT_FALSE(dsn_task_is_running_inside(nullptr));
+    ASSERT_FALSE(dsn_task_call(nullptr, 0));
+    ASSERT_FALSE(dsn_task_set_delay(nullptr, 0));
+    ASSERT_FALSE(dsn_task_cancel(nullptr, false));
+    ASSERT_FALSE(dsn_task_wait_timeout(nullptr, 0));
+
+    bool finished = true;
+    ASSERT_FALSE(dsn_task_cancel2(nullptr, false, &finished));
+    ASSERT_FALSE(finished);
+
+    auto compute_task = dsn_task_create(TASK_CODE_COMPUTE_FOR_TEST, noop_task_handler, nullptr, 0);
+    ASSERT_NE(nullptr, compute_task);
+    dsn_task_add_ref(compute_task);
+    ASSERT_FALSE(dsn_task_call(compute_task, -1));
+    ASSERT_FALSE(dsn_task_set_delay(compute_task, -1));
+    dsn_task_release_ref(compute_task);
+
+    auto aio_task = dsn_file_create_aio_task(TASK_CODE_AIO_FOR_TEST, noop_aio_handler, nullptr, 0);
+    ASSERT_NE(nullptr, aio_task);
+    dsn_task_add_ref(aio_task);
+    ASSERT_FALSE(dsn_task_call(aio_task, 0));
+    dsn_task_release_ref(aio_task);
+}
+
 TEST(core, dsn_exlock)
 {
     if(dsn::service_engine::fast_instance().spec().semaphore_factory_name == "dsn::tools::sim_semaphore_provider")

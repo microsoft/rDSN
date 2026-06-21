@@ -243,3 +243,51 @@ TEST(core, message_ex)
         dsn_msg_release_ref(request);
     }
 }
+
+TEST(core, dsn_msg_invalid_parameters)
+{
+    void* ptr = reinterpret_cast<void*>(1);
+    size_t size = 1;
+    dsn_msg_options_t opts;
+    opts.timeout_ms = 1;
+
+    ASSERT_FALSE(dsn_msg_set_options(nullptr, &opts, DSN_MSGM_TIMEOUT));
+    ASSERT_FALSE(dsn_msg_set_options(nullptr, nullptr, DSN_MSGM_TIMEOUT));
+    ASSERT_FALSE(dsn_msg_get_options(nullptr, &opts));
+    ASSERT_FALSE(dsn_msg_get_options(nullptr, nullptr));
+    ASSERT_FALSE(dsn_msg_set_serailize_format(nullptr, DSF_THRIFT_BINARY));
+
+    ASSERT_FALSE(dsn_msg_write_next(nullptr, &ptr, &size, 1));
+    ASSERT_EQ(nullptr, ptr);
+    ASSERT_EQ(0u, size);
+    ASSERT_FALSE(dsn_msg_write_next(nullptr, nullptr, &size, 1));
+    ASSERT_FALSE(dsn_msg_write_next(nullptr, &ptr, nullptr, 1));
+    ASSERT_FALSE(dsn_msg_write_commit(nullptr, 0));
+
+    ptr = reinterpret_cast<void*>(1);
+    size = 1;
+    ASSERT_FALSE(dsn_msg_read_next(nullptr, &ptr, &size));
+    ASSERT_EQ(nullptr, ptr);
+    ASSERT_EQ(0u, size);
+    ASSERT_FALSE(dsn_msg_read_next(nullptr, nullptr, &size));
+    ASSERT_FALSE(dsn_msg_read_next(nullptr, &ptr, nullptr));
+    ASSERT_FALSE(dsn_msg_read_commit(nullptr, 0));
+
+    dsn_message_t request = dsn_msg_create_request(RPC_CODE_FOR_TEST, 100, 1, 2);
+    ASSERT_NE(nullptr, request);
+    dsn_msg_add_ref(request);
+
+    ASSERT_FALSE(dsn_msg_set_options(request, nullptr, DSN_MSGM_TIMEOUT));
+    opts.timeout_ms = -1;
+    ASSERT_FALSE(dsn_msg_set_options(request, &opts, DSN_MSGM_TIMEOUT));
+    ASSERT_FALSE(dsn_msg_get_options(request, nullptr));
+    ASSERT_FALSE(dsn_msg_set_serailize_format(request, DSF_INVALID));
+    ASSERT_FALSE(dsn_msg_set_serailize_format(
+        request, static_cast<dsn_msg_serialize_format>(DSF_JSON + 1)));
+    ASSERT_FALSE(dsn_msg_write_next(request, nullptr, &size, 1));
+    ASSERT_FALSE(dsn_msg_write_next(request, &ptr, nullptr, 1));
+    ASSERT_FALSE(dsn_msg_read_next(request, nullptr, &size));
+    ASSERT_FALSE(dsn_msg_read_next(request, &ptr, nullptr));
+
+    dsn_msg_release_ref(request);
+}
