@@ -57,10 +57,14 @@ namespace dsn
                 task::set_tls_dsn_context(node(), nullptr, ctx.queue);
 
                 char buffer[128];
-                snprintf(buffer, sizeof(buffer), "%s.%s.timer",
-                    get_service_node_name(node()), 
+                int name_len = snprintf(buffer, sizeof(buffer), "%s.%s.timer",
+                    get_service_node_name(node()),
                     ctx.queue ? ctx.queue->get_name().c_str():""
                     );
+                if (name_len < 0 || static_cast<size_t>(name_len) >= sizeof(buffer))
+                {
+                    derror("timer worker name is too long");
+                }
 
                 task_worker::set_name(buffer);
                 task_worker::set_priority(worker_priority_t::THREAD_xPRIORITY_ABOVE_NORMAL);

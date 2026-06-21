@@ -73,10 +73,14 @@ service_node::service_node(service_app_spec& app_spec)
     _app_info.app.app_context_ptr = nullptr;
     _app_info.app_id = id();
     _app_info.index = spec().index;
-    snprintf(_app_info.role, sizeof(_app_info.role), "%s", spec().role_name.c_str());
-    snprintf(_app_info.type, sizeof(_app_info.type), "%s", spec().type.c_str());
-    snprintf(_app_info.name, sizeof(_app_info.name), "%s", spec().name.c_str());
-    snprintf(_app_info.data_dir, sizeof(_app_info.data_dir), "%s", spec().data_dir.c_str());
+    int len = snprintf(_app_info.role, sizeof(_app_info.role), "%s", spec().role_name.c_str());
+    dassert(len >= 0 && static_cast<size_t>(len) < sizeof(_app_info.role), "app role name is too long: %s", spec().role_name.c_str());
+    len = snprintf(_app_info.type, sizeof(_app_info.type), "%s", spec().type.c_str());
+    dassert(len >= 0 && static_cast<size_t>(len) < sizeof(_app_info.type), "app type name is too long: %s", spec().type.c_str());
+    len = snprintf(_app_info.name, sizeof(_app_info.name), "%s", spec().name.c_str());
+    dassert(len >= 0 && static_cast<size_t>(len) < sizeof(_app_info.name), "app name is too long: %s", spec().name.c_str());
+    len = snprintf(_app_info.data_dir, sizeof(_app_info.data_dir), "%s", spec().data_dir.c_str());
+    dassert(len >= 0 && static_cast<size_t>(len) < sizeof(_app_info.data_dir), "app data dir is too long: %s", spec().data_dir.c_str());
     
     _layer2_rpc_read_handler.name = "RPC_L2_CLIENT_READ";
     _layer2_rpc_read_handler.c_handler = [](dsn_message_t req, void* this_) 

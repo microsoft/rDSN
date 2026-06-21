@@ -130,9 +130,15 @@ namespace dsn {
         void unload_dynamic_library(dsn_handle_t hmodule)
         {
 # if defined(_WIN32)
-            ::CloseHandle((HMODULE)hmodule);
+            if (!::CloseHandle((HMODULE)hmodule))
+            {
+                derror("CloseHandle failed: err = %d", ::GetLastError());
+            }
 # else
-            dlclose((void*)hmodule);
+            if (dlclose((void*)hmodule) != 0)
+            {
+                derror("dlclose failed: %s", dlerror());
+            }
 # endif
         }
     }

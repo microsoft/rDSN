@@ -78,12 +78,19 @@ void native_win_aio_provider::start(io_modifer& ctx)
 
         const char* name = ::dsn::tools::get_service_node_name(node());
         char buffer[128];
-        snprintf(buffer, sizeof(buffer), "%s.aio", name);
+        int name_len = snprintf(buffer, sizeof(buffer), "%s.aio", name);
+        if (name_len < 0 || static_cast<size_t>(name_len) >= sizeof(buffer))
+        {
+            derror("aio worker name is too long: %s", name);
+        }
         task_worker::set_name(buffer);
 
-        worker(); 
+        worker();
     });
-    ::SetThreadPriority(_worker_thr->native_handle(), THREAD_PRIORITY_HIGHEST);
+    if (!::SetThreadPriority(_worker_thr->native_handle(), THREAD_PRIORITY_HIGHEST))
+    {
+        derror("failed to set native win aio thread priority, err = %d", GetLastError());
+    }
 }
 
 dsn_handle_t native_win_aio_provider::open(const char* file_name, int oflag, int pmode)

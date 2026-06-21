@@ -65,7 +65,11 @@ namespace dsn {
 
                     const char* name = ::dsn::tools::get_service_node_name(node());
                     char buffer[128];
-                    snprintf(buffer, sizeof(buffer), "%s.asio.%d", name, i);
+                    int name_len = snprintf(buffer, sizeof(buffer), "%s.asio.%d", name, i);
+                    if (name_len < 0 || static_cast<size_t>(name_len) >= sizeof(buffer))
+                    {
+                        dwarn("asio worker name is too long: %s", name);
+                    }
                     task_worker::set_name(buffer);
 
                     boost::asio::io_service::work work(_io_service);
@@ -320,7 +324,11 @@ namespace dsn {
 
                     const char* name = ::dsn::tools::get_service_node_name(node());
                     char buffer[128];
-                    snprintf(buffer, sizeof(buffer), "%s.asio.udp.%d.%d", name, (int)(this->address().port()), i);
+                    int name_len = snprintf(buffer, sizeof(buffer), "%s.asio.udp.%d.%d", name, (int)(this->address().port()), i);
+                    if (name_len < 0 || static_cast<size_t>(name_len) >= sizeof(buffer))
+                    {
+                        dwarn("asio udp worker name is too long: %s", name);
+                    }
                     task_worker::set_name(buffer);
 
                     boost::asio::io_service::work work(_io_service);

@@ -382,7 +382,15 @@ namespace dsn
         dsn_app app;
         memset(&app, 0, sizeof(app));
         app.mask = DSN_APP_MASK_FRAMEWORK;
-        snprintf(app.type_name, sizeof(app.type_name), "%s", type_name);
+        int len = snprintf(app.type_name, sizeof(app.type_name), "%s", type_name);
+        if (len < 0 || static_cast<size_t>(len) >= sizeof(app.type_name))
+        {
+            dlog(LOG_LEVEL_ERROR,
+                 "cpp.replicated_service_app",
+                 "register_app_with_type_1_replication_support got too long type_name: %s",
+                 type_name);
+            return false;
+        }
         app.layer1.create = service_app::app_create<TServiceApp>;
         app.layer1.start = service_app::app_start;
         app.layer1.destroy = service_app::app_destroy;

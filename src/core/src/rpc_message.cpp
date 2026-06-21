@@ -703,7 +703,10 @@ message_ex* message_ex::create_request(dsn_task_code_t rpc_code, int timeout_mil
     }
 
     msg->local_rpc_code = rpc_code;
-    snprintf(hdr.rpc_name, sizeof(hdr.rpc_name), "%s", sp->name.c_str());
+    int rpc_name_len = snprintf(hdr.rpc_name, sizeof(hdr.rpc_name), "%s", sp->name.c_str());
+    dassert(rpc_name_len >= 0 && static_cast<size_t>(rpc_name_len) < sizeof(hdr.rpc_name),
+            "rpc name is too long: %s",
+            sp->name.c_str());
     hdr.rpc_code.local_code = (uint32_t)rpc_code;
     hdr.rpc_code.local_hash = s_local_hash;
 

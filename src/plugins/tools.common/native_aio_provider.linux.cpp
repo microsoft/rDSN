@@ -129,7 +129,11 @@ namespace dsn {
 
             const char* name = ::dsn::tools::get_service_node_name(node());
             char buffer[128];
-            snprintf(buffer, sizeof(buffer), "%s.aio", name);
+            int name_len = snprintf(buffer, sizeof(buffer), "%s.aio", name);
+            if (name_len < 0 || static_cast<size_t>(name_len) >= sizeof(buffer))
+            {
+                derror("aio worker name is too long: %s", name);
+            }
             task_worker::set_name(buffer);
 
             while (true)

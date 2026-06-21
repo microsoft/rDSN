@@ -88,19 +88,42 @@ bool configuration::load(const char* file_name, const char* arguments, const cha
         fprintf(stderr, "ERROR: cannot open file %s in %s, err = %s\n", file_name, cdir.c_str(), strerror(errno));
         return false;
     }
-    ::fseek(fd, 0, SEEK_END);
-    int len = ftell(fd);
+    if (::fseek(fd, 0, SEEK_END) != 0)
+    {
+        fprintf(stderr, "ERROR: cannot seek to end of %s, err = %s\n", file_name, strerror(errno));
+        if (::fclose(fd) != 0)
+        {
+            fprintf(stderr, "ERROR: cannot close file %s, err = %s\n", file_name, strerror(errno));
+        }
+        return false;
+    }
+    long len = ftell(fd);
     if (len == -1 || len == 0)
     {
         fprintf(stderr, "ERROR: cannot get length of %s, err = %s\n", file_name, strerror(errno));
-        ::fclose(fd);
+        if (::fclose(fd) != 0)
+        {
+            fprintf(stderr, "ERROR: cannot close file %s, err = %s\n", file_name, strerror(errno));
+        }
         return false;
     }
 
     _file_data.resize(len + 1);
-    ::fseek(fd, 0, SEEK_SET);
-    auto sz = ::fread((char*)_file_data.c_str(), len, 1, fd);
-    ::fclose(fd);
+    if (::fseek(fd, 0, SEEK_SET) != 0)
+    {
+        fprintf(stderr, "ERROR: cannot seek to beginning of %s, err = %s\n", file_name, strerror(errno));
+        if (::fclose(fd) != 0)
+        {
+            fprintf(stderr, "ERROR: cannot close file %s, err = %s\n", file_name, strerror(errno));
+        }
+        return false;
+    }
+    auto sz = ::fread((char*)_file_data.c_str(), static_cast<size_t>(len), 1, fd);
+    if (::fclose(fd) != 0)
+    {
+        fprintf(stderr, "ERROR: cannot close file %s, err = %s\n", file_name, strerror(errno));
+        return false;
+    }
     if (sz != 1)
     {
         fprintf(stderr, "ERROR: cannot read correct data of %s, err = %s\n", file_name, strerror(errno));

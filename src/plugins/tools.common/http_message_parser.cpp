@@ -113,7 +113,12 @@ http_message_parser::http_message_parser()
             derror("too long rpc code in url %s", url.c_str());
             return 1;
         }
-        snprintf(hdr->rpc_name, sizeof(hdr->rpc_name), "%s", args[2].c_str());
+        int name_len = snprintf(hdr->rpc_name, sizeof(hdr->rpc_name), "%s", args[2].c_str());
+        if (name_len < 0 || static_cast<size_t>(name_len) >= sizeof(hdr->rpc_name))
+        {
+            derror("too long rpc code in url %s", url.c_str());
+            return 1;
+        }
         
         return 0;
     };
@@ -205,7 +210,12 @@ http_message_parser::http_message_parser()
                 derror("too long header.rpc_name '%.*s'", length, at);
                 return 1;
             }
-            snprintf(header->rpc_name, sizeof(header->rpc_name), "%.*s", static_cast<int>(length), at);
+            int name_len = snprintf(header->rpc_name, sizeof(header->rpc_name), "%.*s", static_cast<int>(length), at);
+            if (name_len < 0 || static_cast<size_t>(name_len) >= sizeof(header->rpc_name))
+            {
+                derror("too long header.rpc_name '%.*s'", length, at);
+                return 1;
+            }
             break;
         }
         case parsing_app_id:
@@ -313,7 +323,12 @@ http_message_parser::http_message_parser()
                 derror("too long header.server_error '%.*s'", length, at);
                 return 1;
             }
-            snprintf(header->server.error_name, sizeof(header->server.error_name), "%.*s", static_cast<int>(length), at);
+            int name_len = snprintf(header->server.error_name, sizeof(header->server.error_name), "%.*s", static_cast<int>(length), at);
+            if (name_len < 0 || static_cast<size_t>(name_len) >= sizeof(header->server.error_name))
+            {
+                derror("too long header.server_error '%.*s'", length, at);
+                return 1;
+            }
             break;
         }
         case parsing_nothing:

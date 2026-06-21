@@ -214,7 +214,12 @@ namespace dsn {
             ::dsn::error_code simple_kv_service_impl::sync_checkpoint(int64_t last_commit)
             {
                 char name[256];
-                snprintf(name, sizeof(name), "%s/checkpoint.%" PRId64, data_dir(), last_commit);
+                int len = snprintf(name, sizeof(name), "%s/checkpoint.%" PRId64, data_dir(), last_commit);
+                if (len < 0 || static_cast<size_t>(len) >= sizeof(name))
+                {
+                    derror("checkpoint path is too long for data dir %s", data_dir());
+                    return ERR_FILE_OPERATION_FAILED;
+                }
 
                 zauto_lock l(_lock);
 
@@ -268,10 +273,15 @@ namespace dsn {
                 if (last_durable_decree() > 0)
                 {
                     char name[256];
-                    snprintf(name, sizeof(name), "%s/checkpoint.%" PRId64,
+                    int len = snprintf(name, sizeof(name), "%s/checkpoint.%" PRId64,
                         data_dir(),
                         last_durable_decree()
                         );
+                    if (len < 0 || static_cast<size_t>(len) >= sizeof(name))
+                    {
+                        derror("checkpoint path is too long for data dir %s", data_dir());
+                        return ERR_FILE_OPERATION_FAILED;
+                    }
                     
                     state.from_decree_excluded = 0;
                     state.to_decree_included = last_durable_decree();
@@ -302,10 +312,15 @@ namespace dsn {
                     dassert(state.to_decree_included > last_durable_decree(), "checkpoint's decree is smaller than current");
 
                     char name[256];
-                    snprintf(name, sizeof(name), "%s/checkpoint.%" PRId64,
+                    int len = snprintf(name, sizeof(name), "%s/checkpoint.%" PRId64,
                         data_dir(),
                         state.to_decree_included
                         );
+                    if (len < 0 || static_cast<size_t>(len) >= sizeof(name))
+                    {
+                        derror("checkpoint path is too long for data dir %s", data_dir());
+                        return ERR_FILE_OPERATION_FAILED;
+                    }
                     std::string lname(name);
 
                     if (!utils::filesystem::rename_path(state.files[0], lname))

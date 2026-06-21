@@ -295,7 +295,12 @@ namespace dsn
         dsn_hdr->hdr_crc32 = dsn_hdr->body_crc32 = CRC_INVALID;
 
         dsn_hdr->id = seqid;
-        snprintf(dsn_hdr->rpc_name, sizeof(dsn_hdr->rpc_name), "%s", fname.c_str());
+        int name_len = snprintf(dsn_hdr->rpc_name, sizeof(dsn_hdr->rpc_name), "%s", fname.c_str());
+        if (name_len < 0 || static_cast<size_t>(name_len) >= sizeof(dsn_hdr->rpc_name))
+        {
+            derror("thrift rpc name is too long: %s", fname.c_str());
+            return nullptr;
+        }
         dsn_hdr->gpid.u.app_id = thrift_header.app_id;
         dsn_hdr->gpid.u.partition_index = thrift_header.partition_index;
         dsn_hdr->client.timeout_ms = thrift_header.client_timeout;

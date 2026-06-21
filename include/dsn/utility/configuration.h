@@ -39,9 +39,11 @@
 # include <memory>
 # include <vector>
 # include <map>
+# include <cerrno>
 # include <cstdio>
 # include <cstdlib>
 # include <cstring>
+# include <limits>
 # include <string>
 # include <list>
 # include <mutex>
@@ -142,10 +144,9 @@ template<> inline std::string configuration::get_value<std::string>(const char* 
 template<> inline double configuration::get_value<double>(const char* section, const char* key, double default_value, const char* dsptr)
 {
     const char* value;
-    char defaultstr[32];
-    std::snprintf(defaultstr, 32, "%lf", default_value);
+    std::string defaultstr = std::to_string(default_value);
 
-    if (!get_string_value_internal(section, key, defaultstr, &value, dsptr))
+    if (!get_string_value_internal(section, key, defaultstr.c_str(), &value, dsptr))
     {
         if (_warning)
         {
@@ -168,10 +169,9 @@ template<> inline double configuration::get_value<double>(const char* section, c
 template<> inline long long configuration::get_value<long long>(const char* section, const char* key, long long default_value, const char* dsptr)
 {
     const char* value;
-    char defaultstr[32];
-    std::snprintf(defaultstr, 32, "%lld", default_value);
+    std::string defaultstr = std::to_string(default_value);
 
-    if (!get_string_value_internal(section, key, defaultstr, &value, dsptr))
+    if (!get_string_value_internal(section, key, defaultstr.c_str(), &value, dsptr))
     {
         if (_warning)
         {
@@ -188,22 +188,55 @@ template<> inline long long configuration::get_value<long long>(const char* sect
     {
         if (strlen(value) > 2 && (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')))
         {
-            long long unsigned int v;
-            sscanf(value, "0x%llx", &v);
-            return v;
+            unsigned long long v = 0;
+            if (sscanf(value, "0x%llx", &v) != 1)
+            {
+                fprintf(stderr, "WARNING: configuration '[%s] %s' has invalid hex value '%s', default value is '%lld'\n",
+                    section,
+                    key,
+                    value,
+                    default_value
+                    );
+                return default_value;
+            }
+            if (v > static_cast<unsigned long long>(std::numeric_limits<long long>::max()))
+            {
+                fprintf(stderr, "WARNING: configuration '[%s] %s' has out-of-range hex value '%s', default value is '%lld'\n",
+                    section,
+                    key,
+                    value,
+                    default_value
+                    );
+                return default_value;
+            }
+            return static_cast<long long>(v);
         }
         else
-            return atoll(value);
+        {
+            char* end = nullptr;
+            errno = 0;
+            long long v = std::strtoll(value, &end, 10);
+            if (errno != 0 || end == value || *end != '\0')
+            {
+                fprintf(stderr, "WARNING: configuration '[%s] %s' has invalid integer value '%s', default value is '%lld'\n",
+                    section,
+                    key,
+                    value,
+                    default_value
+                    );
+                return default_value;
+            }
+            return v;
+        }
     }
 }
 
 template<> inline long configuration::get_value<long>(const char* section, const char* key, long default_value, const char* dsptr)
 {
     const char* value;
-    char defaultstr[32];
-    std::snprintf(defaultstr, 32, "%d", (int)default_value);
+    std::string defaultstr = std::to_string(default_value);
 
-    if (!get_string_value_internal(section, key, defaultstr, &value, dsptr))
+    if (!get_string_value_internal(section, key, defaultstr.c_str(), &value, dsptr))
     {
         if (_warning)
         {
@@ -219,12 +252,46 @@ template<> inline long configuration::get_value<long>(const char* section, const
     {
         if (strlen(value) > 2 && (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')))
         {
-            long v;
-            sscanf(value, "0x%lx", &v);
-            return v;
+            unsigned long v = 0;
+            if (sscanf(value, "0x%lx", &v) != 1)
+            {
+                fprintf(stderr, "WARNING: configuration '[%s] %s' has invalid hex value '%s', default value is '%ld'\n",
+                    section,
+                    key,
+                    value,
+                    default_value
+                    );
+                return default_value;
+            }
+            if (v > static_cast<unsigned long>(std::numeric_limits<long>::max()))
+            {
+                fprintf(stderr, "WARNING: configuration '[%s] %s' has out-of-range hex value '%s', default value is '%ld'\n",
+                    section,
+                    key,
+                    value,
+                    default_value
+                    );
+                return default_value;
+            }
+            return static_cast<long>(v);
         }
         else
-            return (long)(atoi(value));
+        {
+            char* end = nullptr;
+            errno = 0;
+            long v = std::strtol(value, &end, 10);
+            if (errno != 0 || end == value || *end != '\0')
+            {
+                fprintf(stderr, "WARNING: configuration '[%s] %s' has invalid integer value '%s', default value is '%ld'\n",
+                    section,
+                    key,
+                    value,
+                    default_value
+                    );
+                return default_value;
+            }
+            return v;
+        }
     }
 }
 

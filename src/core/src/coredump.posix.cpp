@@ -38,7 +38,9 @@
 
 # include "coredump.h"
 # include <dsn/tool_api.h>
+# include <cerrno>
 # include <cstdio>
+# include <cstring>
 # include <sys/types.h>
 # include <signal.h>
 
@@ -54,12 +56,26 @@ namespace dsn {
         static void handle_core_dump(int);
         static void handle_term(int);
 
-        void coredump::init(const char* dump_dir)
+        bool coredump::init(const char* dump_dir)
         {
             s_dump_dir = dump_dir;
 
-            signal(SIGSEGV, handle_core_dump);
-            signal(SIGTERM, handle_term);
+            auto old_sigsegv_handler = signal(SIGSEGV, handle_core_dump);
+            if (old_sigsegv_handler == SIG_ERR)
+            {
+                fprintf(stderr, "failed to install SIGSEGV handler: %s\n", strerror(errno));
+                return false;
+            }
+            if (signal(SIGTERM, handle_term) == SIG_ERR)
+            {
+                fprintf(stderr, "failed to install SIGTERM handler: %s\n", strerror(errno));
+                if (signal(SIGSEGV, old_sigsegv_handler) == SIG_ERR)
+                {
+                    fprintf(stderr, "failed to restore SIGSEGV handler: %s\n", strerror(errno));
+                }
+                return false;
+            }
+            return true;
         }
 
         void coredump::write()
@@ -81,7 +97,11 @@ namespace dsn {
              */
             if (signal_id == SIGSEGV)
             {
-                signal(SIGSEGV, SIG_DFL);
+                if (signal(SIGSEGV, SIG_DFL) == SIG_ERR)
+                {
+                    fprintf(stderr, "failed to restore SIGSEGV handler: %s\n", strerror(errno));
+                    return;
+                }
             }
             coredump::write();
         }

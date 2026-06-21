@@ -149,6 +149,11 @@ namespace dsn
 
         typedef handler_context<void (T::*)(const TRequest&)> hc_type1;
         auto hc = (hc_type1*)malloc(sizeof(hc_type1));
+        if (hc == nullptr)
+        {
+            dlog(LOG_LEVEL_ERROR, "cpp.serverlet", "failed to allocate rpc handler context");
+            return false;
+        }
         hc->this_ = (T*)this;
         hc->cb = handler;
 
@@ -180,6 +185,11 @@ namespace dsn
 
         typedef handler_context<void (T::*)(const TRequest&, TResponse&)> hc_type2;
         auto hc = (hc_type2*)malloc(sizeof(hc_type2));
+        if (hc == nullptr)
+        {
+            dlog(LOG_LEVEL_ERROR, "cpp.serverlet", "failed to allocate rpc handler context");
+            return false;
+        }
         hc->this_ = (T*)this;
         hc->cb = handler;
 
@@ -216,6 +226,11 @@ namespace dsn
 
         typedef handler_context<void (T::*)(const TRequest&, rpc_replier<TResponse>&)> hc_type3;
         auto hc = (hc_type3*)malloc(sizeof(hc_type3));
+        if (hc == nullptr)
+        {
+            dlog(LOG_LEVEL_ERROR, "cpp.serverlet", "failed to allocate async rpc handler context");
+            return false;
+        }
         hc->this_ = (T*)this;
         hc->cb = handler;
 
@@ -249,6 +264,11 @@ namespace dsn
 
         typedef handler_context<void (T::*)(dsn_message_t)> hc_type4;
         auto hc = (hc_type4*)malloc(sizeof(hc_type4));
+        if (hc == nullptr)
+        {
+            dlog(LOG_LEVEL_ERROR, "cpp.serverlet", "failed to allocate rpc handler context");
+            return false;
+        }
         hc->this_ = (T*)this;
         hc->cb = handler;
 

@@ -261,7 +261,10 @@ inline void json_decode(dsn::json::string_tokenizer& in, dsn::gpid& pid)
     std::string gpid_message;
     json_decode(in, gpid_message);
     dsn_global_partition_id c_gpid;
-    sscanf(gpid_message.c_str(), "%d.%d", &c_gpid.u.app_id, &c_gpid.u.partition_index);
+    c_gpid.value = 0;
+    dassert(sscanf(gpid_message.c_str(), "%d.%d", &c_gpid.u.app_id, &c_gpid.u.partition_index) == 2,
+            "invalid gpid format: %s",
+            gpid_message.c_str());
     pid = dsn::gpid(c_gpid);
 }
 

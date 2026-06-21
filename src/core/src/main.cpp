@@ -302,7 +302,7 @@ DSN_API void dsn_config_dump(const char* file)
     os.close();
 }
 
-extern void dsn_log_init();
+extern bool dsn_log_init();
 
 // load all modules: local components, tools, frameworks, apps
 static void load_all_modules(::dsn::configuration_ptr config)
@@ -454,6 +454,57 @@ bool run(
         fprintf(stderr, "Fail to load config file %s\n", config_file);
         return false;
     }
+
+    // initialize global specification from config file
+    ::dsn::service_spec spec;
+    if (!spec.init())
+    {
+        fprintf(stderr, "error in config file %s, exit ...\n", config_file);
+        return false;
+    }
+
+    dsn_all.config_completed = true;
+
+    // setup data dir
+    auto& data_dir = spec.data_dir;
+    if (dsn::utils::filesystem::file_exists(data_dir.c_str()))
+    {
+        fprintf(stderr, "%s should not be a file.\n", data_dir.c_str());
+        return false;
+    }
+    if (!dsn::utils::filesystem::directory_exists(data_dir.c_str()))
+    {
+        if (!dsn::utils::filesystem::create_directory(data_dir.c_str()))
+        {
+            fprintf(stderr, "Fail to create %s.\n", data_dir.c_str());
+            return false;
+        }
+    }
+    std::string cdir;
+    if (!dsn::utils::filesystem::get_absolute_path(data_dir.c_str(), cdir))
+    {
+        fprintf(stderr, "Fail to get absolute path from %s.\n", data_dir.c_str());
+        return false;
+    }
+    spec.data_dir = cdir.c_str();
+
+    // setup coredump dir
+    spec.dir_coredump = ::dsn::utils::filesystem::path_combine(cdir, "coredumps").c_str();
+    if (!dsn::utils::filesystem::directory_exists(spec.dir_coredump.c_str()) &&
+        !dsn::utils::filesystem::create_directory(spec.dir_coredump.c_str()))
+    {
+        fprintf(stderr, "Fail to create %s.\n", spec.dir_coredump.c_str());
+        return false;
+    }
+    if (!::dsn::utils::coredump::init(spec.dir_coredump.c_str()))
+    {
+        return false;
+    }
+
+    if (!dsn_log_init())
+    {
+        return false;
+    }
     dwarn("load config file '%s' successfully", config_file);
 
     // pause when necessary
@@ -473,47 +524,20 @@ bool run(
 
     // prepare unit test run if necessary
     run_all_unit_tests_prepare_when_necessary();
-    
+
     for (int i = 0; i <= dsn_task_code_max(); i++)
     {
         dsn_all.task_specs.push_back(::dsn::task_spec::get(i));
     }
 
-    // initialize global specification from config file
-    ::dsn::service_spec spec;
-    if (!spec.init())
-    {
-        fprintf(stderr, "error in config file %s, exit ...\n", config_file);
-        return false;
-    }
-
-    dsn_all.config_completed = true;
-
-    // setup data dir
-    auto& data_dir = spec.data_dir;
-    dassert(!dsn::utils::filesystem::file_exists(data_dir.c_str()), "%s should not be a file.", data_dir.c_str());
-    if (!dsn::utils::filesystem::directory_exists(data_dir.c_str()))
-    {
-        if (!dsn::utils::filesystem::create_directory(data_dir.c_str()))
-        {
-            dassert(false, "Fail to create %s.", data_dir.c_str());
-        }
-    }
-    std::string cdir;
-    if (!dsn::utils::filesystem::get_absolute_path(data_dir.c_str(), cdir))
-    {
-        dassert(false, "Fail to get absolute path from %s.", data_dir.c_str());
-    }
-    spec.data_dir = cdir.c_str();
-
-    // setup coredump dir
-    spec.dir_coredump = ::dsn::utils::filesystem::path_combine(cdir, "coredumps").c_str();
-    dsn::utils::filesystem::create_directory(spec.dir_coredump.c_str());
-    ::dsn::utils::coredump::init(spec.dir_coredump.c_str());
-
     // setup log dir
     spec.dir_log = ::dsn::utils::filesystem::path_combine(cdir, "logs").c_str();
-    dsn::utils::filesystem::create_directory(spec.dir_log.c_str());
+    if (!dsn::utils::filesystem::directory_exists(spec.dir_log.c_str()) &&
+        !dsn::utils::filesystem::create_directory(spec.dir_log.c_str()))
+    {
+        fprintf(stderr, "Fail to create %s.\n", spec.dir_log.c_str());
+        return false;
+    }
     
     // init tools
     dsn_all.tool = ::dsn::utils::factory_store< ::dsn::tools::tool_app>::create(spec.tool.c_str(), ::dsn::PROVIDER_TYPE_MAIN, spec.tool.c_str());
@@ -538,9 +562,6 @@ bool run(
 
     // prepare minimum necessary
     ::dsn::service_engine::fast_instance().init_before_toollets(spec);
-
-    // init logging    
-    dsn_log_init();
 
     // init toollets
     for (auto it = spec.toollets.begin(); it != spec.toollets.end(); ++it)
@@ -786,9 +807,24 @@ DSN_API int dsn_get_all_apps(dsn_app_info* info_buffer, int count)
         info.app_id = node->id();
         info.index = node->spec().index;
         info.primary_address = node->rpc(nullptr)->primary_address().c_addr();
-        snprintf(info.role, sizeof(info.role), "%s", node->spec().role_name.c_str());
-        snprintf(info.type, sizeof(info.type), "%s", node->spec().type.c_str());
-        snprintf(info.name, sizeof(info.name), "%s", node->spec().name.c_str());
+        int len = snprintf(info.role, sizeof(info.role), "%s", node->spec().role_name.c_str());
+        if (len < 0 || static_cast<size_t>(len) >= sizeof(info.role))
+        {
+            derror("app role name is too long: %s", node->spec().role_name.c_str());
+            return -1;
+        }
+        len = snprintf(info.type, sizeof(info.type), "%s", node->spec().type.c_str());
+        if (len < 0 || static_cast<size_t>(len) >= sizeof(info.type))
+        {
+            derror("app type name is too long: %s", node->spec().type.c_str());
+            return -1;
+        }
+        len = snprintf(info.name, sizeof(info.name), "%s", node->spec().name.c_str());
+        if (len < 0 || static_cast<size_t>(len) >= sizeof(info.name))
+        {
+            derror("app name is too long: %s", node->spec().name.c_str());
+            return -1;
+        }
     }
     return i;
 }

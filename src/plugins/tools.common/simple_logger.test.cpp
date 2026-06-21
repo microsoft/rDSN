@@ -35,6 +35,8 @@
 
 #include "simple_logger.h"
 #include <gtest/gtest.h>
+#include <cerrno>
+#include <cstring>
 
 using namespace dsn;
 using namespace dsn::tools;
@@ -71,14 +73,14 @@ static void clear_files(std::vector<int> &log_index)
 static void prepare_test_dir() {
     const char* dir = "./test";
     std::string dr(dir);
-    dsn::utils::filesystem::create_directory(dr);
-    chdir(dir);
+    ASSERT_TRUE(dsn::utils::filesystem::create_directory(dr));
+    ASSERT_EQ(0, chdir(dir)) << strerror(errno);
 }
 
 static void finish_test_dir() {
     const char* dir = "./test";
-    chdir("..");
-    rmdir(dir);
+    ASSERT_EQ(0, chdir("..")) << strerror(errno);
+    ASSERT_EQ(0, rmdir(dir)) << strerror(errno);
 }
 
 void log_print(logging_provider* logger, const char* fmt, ...) {

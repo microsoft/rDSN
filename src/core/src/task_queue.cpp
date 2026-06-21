@@ -50,7 +50,8 @@ namespace dsn {
 task_queue::task_queue(task_worker_pool* pool, int index, task_queue* inner_provider) : _pool(pool), _controller(nullptr), _queue_length(0)
 {
     char num[30];
-    snprintf(num, sizeof(num), "%u", index);
+    int num_len = snprintf(num, sizeof(num), "%u", index);
+    dassert(num_len >= 0 && static_cast<size_t>(num_len) < sizeof(num), "task queue index is too long: %u", index);
     _index = index;
     _name = pool->spec().name + '.';
     _name.append(num);

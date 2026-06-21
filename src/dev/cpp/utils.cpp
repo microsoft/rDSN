@@ -316,6 +316,7 @@ namespace dsn {
                 derror("time_ms_to_string got null output string");
                 return;
             }
+
             if (str_size < kTimeStringBufferSize)
             {
                 derror("time_ms_to_string got insufficient output string size = %zu", str_size);
@@ -333,9 +334,18 @@ namespace dsn {
             struct tm tmp;
             auto ret = localtime_r(&t, &tmp);
 # endif
+            if (ret == nullptr)
+            {
+                if (str_size > 0)
+                {
+                    str[0] = '\0';
+                }
+                return;
+            }
             auto ms = static_cast<uint32_t>(ts_ms % 1000);
 
-            snprintf(str, str_size, "%02d:%02d:%02d.%03u", ret->tm_hour, ret->tm_min, ret->tm_sec, ms);
+            int len = snprintf(str, str_size, "%02d:%02d:%02d.%03u", ret->tm_hour, ret->tm_min, ret->tm_sec, ms);
+            dassert(len >= 0 && static_cast<size_t>(len) < str_size, "time string buffer is too small");
         }
     }
 }

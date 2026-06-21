@@ -43,10 +43,9 @@ namespace dsn {
         class coredump
         {
         public:
-            static void init(const char* dump_dir);
+            static bool init(const char* dump_dir);
             static void write();
         };
     }
 }
-
 

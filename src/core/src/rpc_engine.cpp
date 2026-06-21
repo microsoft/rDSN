@@ -1083,7 +1083,14 @@ namespace dsn {
 
     void rpc_engine::reply(message_ex* response, error_code err)
     {
-        snprintf(response->header->server.error_name, sizeof(response->header->server.error_name), "%s", err.to_string());
+        int error_name_len = snprintf(response->header->server.error_name,
+                                      sizeof(response->header->server.error_name),
+                                      "%s",
+                                      err.to_string());
+        dassert(error_name_len >= 0 &&
+                    static_cast<size_t>(error_name_len) < sizeof(response->header->server.error_name),
+                "error name is too long: %s",
+                err.to_string());
         response->header->server.error_code.local_code = err;
         response->header->server.error_code.local_hash = message_ex::s_local_hash;
         auto sp = task_spec::get(response->local_rpc_code);

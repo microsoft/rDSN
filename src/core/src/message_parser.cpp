@@ -106,12 +106,13 @@ namespace dsn {
         char buf[20];
         char* ptr = buf;
         for (int i = 0; i < 4; ++i) {
-            auto& c = type.stype[i];
+            unsigned char c = static_cast<unsigned char>(type.stype[i]);
             if (isprint(c)) {
-                *ptr++ = c;
+                *ptr++ = static_cast<char>(c);
             }
             else {
-                snprintf(ptr, sizeof(buf) - (ptr - buf), "\\%02X", c);
+                int len = snprintf(ptr, sizeof(buf) - (ptr - buf), "\\%02X", static_cast<unsigned int>(c));
+                dassert(len == 3, "failed to format message parser signature byte");
                 ptr += 3;
             }
         }

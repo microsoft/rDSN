@@ -203,7 +203,12 @@ namespace dsn {
         void simple_logger::create_log_file()
         {
             if (_log != nullptr)
-                ::fclose(_log);
+            {
+                if (::fclose(_log) != 0)
+                {
+                    fprintf(stderr, "failed to close log file, err = %s\n", strerror(errno));
+                }
+            }
 
             _lines = 0;
 
@@ -237,7 +242,10 @@ namespace dsn {
             utils::auto_lock< ::dsn::utils::ex_lock_nr> l(_lock);
             if (_log != nullptr)
             {
-                ::fclose(_log);
+                if (::fclose(_log) != 0)
+                {
+                    fprintf(stderr, "failed to close log file, err = %s\n", strerror(errno));
+                }
             }
         }
 
@@ -246,7 +254,10 @@ namespace dsn {
             utils::auto_lock< ::dsn::utils::ex_lock_nr> l(_lock);
             if (_log != nullptr)
             {
-                ::fflush(_log);
+                if (::fflush(_log) != 0)
+                {
+                    fprintf(stderr, "failed to flush log file, err = %s\n", strerror(errno));
+                }
             }
             ::fflush(stdout);
         }
@@ -299,7 +310,10 @@ namespace dsn {
             fprintf(_log, "\n");
             if (_fast_flush || log_level >= LOG_LEVEL_ERROR)
             {
-                ::fflush(_log);
+                if (::fflush(_log) != 0)
+                {
+                    fprintf(stderr, "failed to flush log file, err = %s\n", strerror(errno));
+                }
             }
 
             if (log_level >= _stderr_start_level)

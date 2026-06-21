@@ -86,7 +86,12 @@ namespace dsn
         dsn_app app;
         memset(&app, 0, sizeof(app));
         app.mask = framework_mask;
-        snprintf(app.type_name, sizeof(app.type_name), "%s", type_name);
+        int len = snprintf(app.type_name, sizeof(app.type_name), "%s", type_name);
+        if (len < 0 || static_cast<size_t>(len) >= sizeof(app.type_name))
+        {
+            dlog(LOG_LEVEL_ERROR, "cpp.layer2_handler", "register_layer2_framework got too long type_name: %s", type_name);
+            return false;
+        }
         app.layer1.create = service_app::app_create<TServiceApp>;
         app.layer1.start = service_app::app_start;
         app.layer1.destroy = service_app::app_destroy;

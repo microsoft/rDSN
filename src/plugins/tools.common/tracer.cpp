@@ -321,7 +321,10 @@ namespace dsn {
             }
 
             uint64_t xid = 0;
-            sscanf(args[2].c_str(), "%016" PRIx64, &xid);
+            if (sscanf(args[2].c_str(), "%016" PRIx64, &xid) != 1)
+            {
+                return tracer_log_flow_error("invalid id value - must be with 016" PRIx64 " format");
+            }
             if (xid == 0)
             {
                 return tracer_log_flow_error("invalid id value - must be with 016" PRIx64 " format");

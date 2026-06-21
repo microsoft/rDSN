@@ -224,10 +224,23 @@ DSN_API uint32_t dsn_ipv4_local(const char* network_interface)
                         struct ifreq ifr;
                         
                         ifr.ifr_addr.sa_family = AF_INET;
-                        snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "%s", i->ifa_name);
+                        int name_len = snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "%s", i->ifa_name);
+                        if (name_len < 0 || static_cast<size_t>(name_len) >= sizeof(ifr.ifr_name))
+                        {
+                            dwarn("interface name is too long: %s", i->ifa_name);
+                            if (close(fd) != 0)
+                            {
+                                dwarn("failed to close socket fd %d, err = %s", fd, strerror(errno));
+                            }
+                            i = i->ifa_next;
+                            continue;
+                        }
 
                         auto err = ioctl(fd, SIOCGIFADDR, &ifr);
-                        close(fd);
+                        if (close(fd) != 0)
+                        {
+                            dwarn("failed to close socket fd %d, err = %s", fd, strerror(errno));
+                        }
                         if (err == 0 &&
                             (!use_default_interface || strncmp((const char*)&((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr, loopback, 4) != 0))
                         {

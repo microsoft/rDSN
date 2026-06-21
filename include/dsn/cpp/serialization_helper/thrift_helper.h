@@ -45,6 +45,7 @@
 # include <thrift/protocol/TVirtualProtocol.h>
 # include <thrift/transport/TVirtualTransport.h>
 # include <thrift/TApplicationException.h>
+# include <cstdio>
 # include <type_traits>
 
 using namespace ::apache::thrift::transport;
@@ -600,7 +601,11 @@ namespace dsn {
     inline const char* to_string(const gpid& id)
     {
         static char str[64];
-        snprintf(str, 64, "%d.%d", id.get_app_id(), id.get_partition_index());
+        int len = snprintf(str, sizeof(str), "%d.%d", id.get_app_id(), id.get_partition_index());
+        if (len < 0 || static_cast<size_t>(len) >= sizeof(str))
+        {
+            return nullptr;
+        }
         return str;
     }
 

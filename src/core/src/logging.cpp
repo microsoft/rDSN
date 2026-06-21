@@ -53,7 +53,7 @@ static void log_on_sys_exit(::dsn::sys_exit_type)
     }
 }
 
-void dsn_log_init()
+bool dsn_log_init()
 {
     dsn_log_start_level = enum_from_string(
         dsn_config_get_value_string("core", "logging_start_level", enum_to_string(dsn_log_start_level),
@@ -61,7 +61,11 @@ void dsn_log_init()
         dsn_log_level_t::LOG_LEVEL_INVALID
         );
 
-    dassert(dsn_log_start_level != dsn_log_level_t::LOG_LEVEL_INVALID, "invalid [core] logging_start_level specified");
+    if (dsn_log_start_level == dsn_log_level_t::LOG_LEVEL_INVALID)
+    {
+        fprintf(stderr, "invalid [core] logging_start_level specified\n");
+        return false;
+    }
 
     // register log flush on exit
     bool logging_flush_on_exit = dsn_config_get_value_bool("core", "logging_flush_on_exit",
@@ -85,6 +89,7 @@ void dsn_log_init()
             return ::dsn::safe_string("Flush done.");
         }
     );
+    return true;
 }
 
 DSN_API dsn_log_level_t dsn_log_get_start_level()

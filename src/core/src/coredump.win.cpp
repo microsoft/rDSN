@@ -58,17 +58,22 @@ namespace dsn {
 
         static LONG WINAPI TopLevelFilter(struct _EXCEPTION_POINTERS *pExceptionInfo);
 
-        void coredump::init(const char* dump_dir)
+        bool coredump::init(const char* dump_dir)
         {
             s_dump_dir = dump_dir;
 
-            ::GetModuleBaseNameA(::GetCurrentProcess(),
+            if (::GetModuleBaseNameA(::GetCurrentProcess(),
                 ::GetModuleHandleA(NULL),
                 s_app_name,
                 256
-                );
+                ) == 0)
+            {
+                fprintf(stderr, "failed to get current process image name, err = %d\n", GetLastError());
+                return false;
+            }
 
             ::SetUnhandledExceptionFilter(TopLevelFilter);
+            return true;
         }
 
         void coredump::write()
@@ -85,80 +90,122 @@ namespace dsn {
 
         static LONG WINAPI TopLevelFilter(struct _EXCEPTION_POINTERS *pExceptionInfo)
         {
-            LONG retval = EXCEPTION_CONTINUE_SEARCH;
-            HWND hParent = NULL;                        // find a better value for your app
+            // find a better value for your app
 
             // firstly see if dbghelp.dll is around and has the function we need
             // look next to the EXE first, as the one in System32 might be old 
             // (e.g. Windows 2000)
-            HMODULE hDll = NULL;
 
-            if (hDll == NULL)
+            LONG retval = EXCEPTION_CONTINUE_SEARCH;
+            HWND hParent = nullptr;
+            LPCSTR szResult = nullptr;
+            HANDLE fh = INVALID_HANDLE_VALUE;
+
+            // load any version we can
+            HMODULE hDll = ::LoadLibraryA("DBGHELP.DLL");;
+            if (hDll == nullptr)
             {
-                // load any version we can
-                hDll = ::LoadLibraryA("DBGHELP.DLL");
+                szResult = "DBGHELP.DLL not found";
+                goto out_error;
             }
 
-            LPCSTR szResult = "core dump success";
+            szResult = "core dump success";
             char szDumpPath[512];
             char szScratch[512];
 
             dfatal("fatal exception, core dump started ...");
 
-            if (hDll)
+            MINIDUMPWRITEDUMP pDump = (MINIDUMPWRITEDUMP)::GetProcAddress(hDll, "MiniDumpWriteDump");
+            if (pDump == nullptr)
             {
-                MINIDUMPWRITEDUMP pDump = (MINIDUMPWRITEDUMP)::GetProcAddress(hDll, "MiniDumpWriteDump");
-                if (pDump)
+                szResult = "DBGHELP.DLL too old";
+                goto out_error;
+            }
+
+            int len = snprintf(szDumpPath,
+                               sizeof(szDumpPath),
+                               "%s\\%s_%d_%" PRId64 ".dmp",
+                               s_dump_dir.c_str(),
+                               s_app_name,
+                               ::GetCurrentProcessId(),
+                               (int64_t)time(NULL));
+            if (len < 0 || static_cast<size_t>(len) >= sizeof(szDumpPath))
+            {
+                szResult = "failed to format dump file path";
+                goto out_error;
+            }
+
+            // create the file
+            fh = ::CreateFileA(szDumpPath, GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS,
+                                      FILE_ATTRIBUTE_NORMAL, NULL);
+            if (fh == INVALID_HANDLE_VALUE)
+            {
+                len = snprintf(szScratch,
+                               sizeof(szScratch),
+                               "failed to create dump file '%s' (error %d)",
+                               szDumpPath,
+                               GetLastError());
+                if (len < 0)
                 {
-                    snprintf(szDumpPath, sizeof(szDumpPath), "%s\\%s_%d_%" PRId64 ".dmp", s_dump_dir.c_str(), s_app_name, ::GetCurrentProcessId(), (int64_t)time(NULL));
-
-                    // create the file
-                    HANDLE fh = ::CreateFileA(szDumpPath, GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS,
-                        FILE_ATTRIBUTE_NORMAL, NULL);
-
-                    if (fh != INVALID_HANDLE_VALUE)
-                    {
-                        _MINIDUMP_EXCEPTION_INFORMATION ExInfo;
-
-                        ExInfo.ThreadId = ::GetCurrentThreadId();
-                        ExInfo.ExceptionPointers = pExceptionInfo;
-                        ExInfo.ClientPointers = NULL;
-
-                        // write the dump
-                        BOOL bOK = pDump(GetCurrentProcess(), GetCurrentProcessId(), fh, MiniDumpWithFullMemory, &ExInfo, NULL, NULL);
-                        if (bOK)
-                        {
-                            snprintf(szScratch, sizeof(szScratch), "saved dump file to '%s'", szDumpPath);
-                            szResult = szScratch;
-                            retval = EXCEPTION_EXECUTE_HANDLER;
-                        }
-                        else
-                        {
-                            snprintf(szScratch, sizeof(szScratch), "failed to save dump file to '%s' (error %d)", szDumpPath, GetLastError());
-                            szResult = szScratch;
-                        }
-                        ::CloseHandle(fh);
-                    }
-                    else
-                    {
-                        snprintf(szScratch, sizeof(szScratch), "failed to create dump file '%s' (error %d)", szDumpPath, GetLastError());
-                        szResult = szScratch;
-                    }
+                    szResult = "failed to format dump create failure message";
                 }
                 else
                 {
-                    szResult = "DBGHELP.DLL too old";
+                    szResult = szScratch;
                 }
+                goto out_error;
+            }
+
+            _MINIDUMP_EXCEPTION_INFORMATION ExInfo;
+
+            ExInfo.ThreadId = ::GetCurrentThreadId();
+            ExInfo.ExceptionPointers = pExceptionInfo;
+            ExInfo.ClientPointers = nullptr;
+
+            // write the dump
+            BOOL bOK = pDump(GetCurrentProcess(), GetCurrentProcessId(), fh, MiniDumpWithFullMemory, &ExInfo, nullptr, nullptr);
+            if (!bOK)
+            {
+                len = snprintf(szScratch,
+                               sizeof(szScratch),
+                               "failed to save dump file to '%s' (error %d)",
+                               szDumpPath,
+                               GetLastError());
+                if (len < 0)
+                {
+                    szResult ="failed to format dump failure message";
+                }
+                else
+                {
+                    szResult = szScratch;
+                }
+                goto out_error;
+            }
+
+            len = snprintf(szScratch, sizeof(szScratch), "saved dump file to '%s'", szDumpPath);
+            if (len < 0)
+            {
+                szResult = "failed to format dump success message";
             }
             else
             {
-                szResult = "DBGHELP.DLL not found";
+                szResult = szScratch;
             }
+            retval = EXCEPTION_EXECUTE_HANDLER;
 
+out_error:
             if (szResult)
             {
                 derror("%s", szResult);
                 fprintf(stderr, "%s", szResult);
+            }
+
+            if (fh != INVALID_HANDLE_VALUE)
+            {
+                if (!::CloseHandle(fh))
+                {
+                    dwarn("failed to close dump file handle, err = %d", GetLastError());
+                }
             }
 
             ::dsn::tools::sys_exit.execute(SYS_EXIT_EXCEPTION);

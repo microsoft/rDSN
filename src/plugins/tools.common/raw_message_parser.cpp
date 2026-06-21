@@ -58,7 +58,13 @@ void raw_message_parser::notify_rpc_session_disconnected(rpc_session *sp)
         header->from_address = sp->remote_address();
         header->gpid.value = 0;
 
-        snprintf(header->rpc_name, sizeof(header->rpc_name), "%s", "RPC_CALL_RAW_SESSION_DISCONNECT");
+        int name_len = snprintf(header->rpc_name, sizeof(header->rpc_name), "%s", "RPC_CALL_RAW_SESSION_DISCONNECT");
+        if (name_len < 0 || static_cast<size_t>(name_len) >= sizeof(header->rpc_name))
+        {
+            derror("raw disconnect rpc name is too long");
+            delete special_msg;
+            return;
+        }
         special_msg->local_rpc_code = RPC_CALL_RAW_SESSION_DISCONNECT;
         special_msg->hdr_format = NET_HDR_RAW;
         sp->on_recv_message(special_msg, 0);
@@ -100,7 +106,13 @@ message_ex* raw_message_parser::get_message_on_receive(message_reader* reader, /
 
         header->hdr_length = sizeof(*header);
         header->body_length = msg_length;
-        snprintf(header->rpc_name, sizeof(header->rpc_name), "%s", "RPC_CALL_RAW_MESSAGE");
+        int name_len = snprintf(header->rpc_name, sizeof(header->rpc_name), "%s", "RPC_CALL_RAW_MESSAGE");
+        if (name_len < 0 || static_cast<size_t>(name_len) >= sizeof(header->rpc_name))
+        {
+            derror("raw message rpc name is too long");
+            delete new_message;
+            return nullptr;
+        }
         header->gpid.value = 0;
         header->context.u.is_request = 1;
         header->context.u.is_forwarded = 0;

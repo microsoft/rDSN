@@ -425,7 +425,10 @@ namespace dsn {
                                 continue;
 
                             char name[20] = { 0 };
-                            snprintf(name, sizeof(name), "%s", counter_info_ptr[counter_type]->title);
+                            int name_len = snprintf(name, sizeof(name), "%s", counter_info_ptr[counter_type]->title);
+                            dassert(name_len >= 0 && static_cast<size_t>(name_len) < sizeof(name),
+                                    "counter name is too long: %s",
+                                    counter_info_ptr[counter_type]->title);
 
                             char name_suffix[10] = { 0 };
                             switch (task_spec::get(task_id)->type)
@@ -598,7 +601,10 @@ namespace dsn {
                                 continue;
 
                             char name[20] = { 0 };
-                            snprintf(name, sizeof(name), "%s", counter_info_ptr[counter_type]->title);
+                            int name_len = snprintf(name, sizeof(name), "%s", counter_info_ptr[counter_type]->title);
+                            dassert(name_len >= 0 && static_cast<size_t>(name_len) < sizeof(name),
+                                    "counter name is too long: %s",
+                                    counter_info_ptr[counter_type]->title);
 
                             char name_suffix[10] = { 0 };
                             switch (task_spec::get(task_id)->type)

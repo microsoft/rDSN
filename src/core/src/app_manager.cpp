@@ -301,9 +301,27 @@ namespace dsn
                 memset(&app->info, 0, sizeof(app->info));
                 app->info.app_id = gpid.u.app_id;
                 app->info.index = gpid.u.partition_index;
-                snprintf(app->info.role, sizeof(app->info.role), "%s", _owner_node->spec().role_name.c_str());
-                snprintf(app->info.name, sizeof(app->info.name), "%s", _owner_node->spec().name.c_str());
-                snprintf(app->info.data_dir, sizeof(app->info.data_dir), "%s", data_dir);
+                int len = snprintf(app->info.role, sizeof(app->info.role), "%s", _owner_node->spec().role_name.c_str());
+                if (len < 0 || static_cast<size_t>(len) >= sizeof(app->info.role))
+                {
+                    derror("app role name is too long: %s", _owner_node->spec().role_name.c_str());
+                    delete app;
+                    return ERR_INVALID_PARAMETERS;
+                }
+                len = snprintf(app->info.name, sizeof(app->info.name), "%s", _owner_node->spec().name.c_str());
+                if (len < 0 || static_cast<size_t>(len) >= sizeof(app->info.name))
+                {
+                    derror("app name is too long: %s", _owner_node->spec().name.c_str());
+                    delete app;
+                    return ERR_INVALID_PARAMETERS;
+                }
+                len = snprintf(app->info.data_dir, sizeof(app->info.data_dir), "%s", data_dir);
+                if (len < 0 || static_cast<size_t>(len) >= sizeof(app->info.data_dir))
+                {
+                    derror("app data dir is too long: %s", data_dir);
+                    delete app;
+                    return ERR_INVALID_PARAMETERS;
+                }
 
                 _apps.emplace(gpid.value,
                     std::unique_ptr<app_manager::app_internal>(app));

@@ -76,7 +76,12 @@ task_worker::task_worker(task_worker_pool* pool, task_queue* q, int index, task_
     _native_tid = ::dsn::utils::get_invalid_tid();
 
     char name[256];
-    snprintf(name, sizeof(name), "%5s.%s.%u", pool->node()->name(), pool->spec().name.c_str(), index);
+    int name_len = snprintf(name, sizeof(name), "%5s.%s.%u", pool->node()->name(), pool->spec().name.c_str(), index);
+    dassert(name_len >= 0 && static_cast<size_t>(name_len) < sizeof(name),
+            "task worker name is too long: %s.%s.%u",
+            pool->node()->name(),
+            pool->spec().name.c_str(),
+            index);
     _name = name;
     _is_running = false;
 
