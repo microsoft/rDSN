@@ -709,16 +709,9 @@ TEST(core, dsn_file_handle_invalid_parameters)
     ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_file_flush(nullptr));
     ASSERT_EQ(nullptr, dsn_file_native_handle(nullptr));
     ASSERT_EQ(nullptr, dsn_file_create_aio_task(TASK_CODE_INVALID, noop_aio_handler, nullptr, 0));
-    ASSERT_EQ(nullptr, dsn_file_create_aio_task(TASK_CODE_AIO_FOR_TEST, nullptr, nullptr, 0));
     ASSERT_EQ(nullptr,
               dsn_file_create_aio_task_ex(TASK_CODE_INVALID,
                                           noop_aio_handler,
-                                          nullptr,
-                                          nullptr,
-                                          0));
-    ASSERT_EQ(nullptr,
-              dsn_file_create_aio_task_ex(TASK_CODE_AIO_FOR_TEST,
-                                          nullptr,
                                           nullptr,
                                           nullptr,
                                           0));

@@ -1358,12 +1358,6 @@ DSN_API dsn_task_t dsn_file_create_aio_task(dsn_task_code_t code, dsn_aio_handle
         return nullptr;
     }
 
-    if (cb == nullptr)
-    {
-        derror("dsn_file_create_aio_task got null callback");
-        return nullptr;
-    }
-
     auto t = new ::dsn::aio_task(code, cb, context, nullptr, hash);
     t->set_tracker((dsn::task_tracker*)tracker);
     t->spec().on_task_create.execute(::dsn::task::get_current_task(), t);
@@ -1378,12 +1372,6 @@ DSN_API dsn_task_t dsn_file_create_aio_task_ex(dsn_task_code_t code, dsn_aio_han
     if (sp == nullptr)
     {
         derror("dsn_file_create_aio_task_ex got invalid code = %d", code);
-        return nullptr;
-    }
-
-    if (cb == nullptr)
-    {
-        derror("dsn_file_create_aio_task_ex got null callback");
         return nullptr;
     }
 
