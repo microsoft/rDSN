@@ -77,7 +77,8 @@ DSN_API dsn_message_t dsn_msg_create_received_request(
     uint64_t partition_hash
     )
 {
-    if (::dsn::task_spec::get(rpc_code) == nullptr)
+    const auto spec = ::dsn::task_spec::get(rpc_code);
+    if (spec == nullptr || spec->type != TASK_TYPE_RPC_REQUEST)
     {
         derror("dsn_msg_create_received_request got invalid rpc_code = %d", rpc_code);
         return nullptr;

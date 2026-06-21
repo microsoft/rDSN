@@ -225,7 +225,7 @@ DSN_API dsn_task_code_t dsn_task_code_register(
         return static_cast<dsn_task_code_t>(::dsn::TASK_CODE_INVALID);
     }
 
-    if (pool < 0)
+    if (pool < 0 || pool == ::dsn::THREAD_POOL_INVALID)
     {
         derror("dsn_task_code_register got invalid pool = %d", pool);
         return static_cast<dsn_task_code_t>(::dsn::TASK_CODE_INVALID);
@@ -259,7 +259,7 @@ DSN_API void dsn_task_code_set_threadpool(dsn_task_code_t code, dsn_threadpool_c
         return;
     }
 
-    if (pool < 0)
+    if (pool < 0 || pool == ::dsn::THREAD_POOL_INVALID)
     {
         derror("dsn_task_code_set_threadpool got invalid pool = %d", pool);
         return;

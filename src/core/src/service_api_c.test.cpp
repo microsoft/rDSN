@@ -196,6 +196,11 @@ TEST(core, dsn_task_code_invalid_parameters)
                                      TASK_TYPE_COMPUTE,
                                      TASK_PRIORITY_COMMON,
                                      THREAD_POOL_INVALID));
+    ASSERT_EQ(TASK_CODE_INVALID,
+              dsn_task_code_register("negative_task_pool",
+                                     TASK_TYPE_COMPUTE,
+                                     TASK_PRIORITY_COMMON,
+                                     static_cast<dsn_threadpool_code_t>(-1)));
 
     dsn_task_code_query(TASK_CODE_INVALID, &type, &priority, &pool);
     ASSERT_EQ(TASK_TYPE_COUNT, type);
@@ -203,6 +208,8 @@ TEST(core, dsn_task_code_invalid_parameters)
     ASSERT_EQ(THREAD_POOL_INVALID, pool);
     dsn_task_code_set_threadpool(TASK_CODE_INVALID, THREAD_POOL_DEFAULT);
     dsn_task_code_set_threadpool(TASK_CODE_COMPUTE_FOR_TEST, THREAD_POOL_INVALID);
+    dsn_task_code_set_threadpool(TASK_CODE_COMPUTE_FOR_TEST,
+                                 static_cast<dsn_threadpool_code_t>(-1));
     dsn_task_code_set_priority(TASK_CODE_INVALID, TASK_PRIORITY_COMMON);
     dsn_task_code_set_priority(TASK_CODE_COMPUTE_FOR_TEST, TASK_PRIORITY_COUNT);
 
