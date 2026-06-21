@@ -97,6 +97,8 @@ void noop_task_handler(void*) {}
 
 void noop_rpc_response_handler(dsn_error_t, dsn_message_t, dsn_message_t, void*) {}
 
+void noop_rpc_request_handler(dsn_message_t, void*) {}
+
 void noop_aio_handler(dsn_error_t, size_t, void*) {}
 
 } // anonymous namespace
@@ -331,6 +333,35 @@ TEST(core, dsn_exlock)
     }
 }
 
+TEST(core, dsn_sync_invalid_parameters)
+{
+    dsn_exlock_destroy(nullptr);
+    dsn_exlock_lock(nullptr);
+    ASSERT_FALSE(dsn_exlock_try_lock(nullptr));
+    dsn_exlock_unlock(nullptr);
+
+    dsn_rwlock_nr_destroy(nullptr);
+    dsn_rwlock_nr_lock_read(nullptr);
+    dsn_rwlock_nr_unlock_read(nullptr);
+    ASSERT_FALSE(dsn_rwlock_nr_try_lock_read(nullptr));
+    dsn_rwlock_nr_lock_write(nullptr);
+    dsn_rwlock_nr_unlock_write(nullptr);
+    ASSERT_FALSE(dsn_rwlock_nr_try_lock_write(nullptr));
+
+    ASSERT_EQ(nullptr, dsn_semaphore_create(-1));
+    dsn_semaphore_destroy(nullptr);
+    dsn_semaphore_signal(nullptr, 1);
+    dsn_semaphore_signal(nullptr, 0);
+    dsn_semaphore_wait(nullptr);
+    ASSERT_FALSE(dsn_semaphore_wait_timeout(nullptr, 0));
+
+    auto semaphore = dsn_semaphore_create(0);
+    ASSERT_NE(nullptr, semaphore);
+    dsn_semaphore_signal(semaphore, 0);
+    dsn_semaphore_signal(semaphore, -1);
+    dsn_semaphore_destroy(semaphore);
+}
+
 TEST(core, dsn_rwlock)
 {
     if(dsn::service_engine::fast_instance().spec().semaphore_factory_name == "dsn::tools::sim_semaphore_provider")
@@ -359,6 +390,31 @@ TEST(core, dsn_semaphore)
 
 TEST(core, dsn_rpc)
 {
+}
+
+TEST(core, dsn_rpc_registration_invalid_parameters)
+{
+    ASSERT_FALSE(dsn_rpc_register_handler(TASK_CODE_INVALID,
+                                          "invalid_code",
+                                          noop_rpc_request_handler,
+                                          nullptr,
+                                          dsn_gpid()));
+    ASSERT_FALSE(dsn_rpc_register_handler(TASK_CODE_RPC_FOR_TEST,
+                                          nullptr,
+                                          noop_rpc_request_handler,
+                                          nullptr,
+                                          dsn_gpid()));
+    ASSERT_FALSE(dsn_rpc_register_handler(TASK_CODE_RPC_FOR_TEST,
+                                          "",
+                                          noop_rpc_request_handler,
+                                          nullptr,
+                                          dsn_gpid()));
+    ASSERT_FALSE(dsn_rpc_register_handler(TASK_CODE_RPC_FOR_TEST,
+                                          "null_callback",
+                                          nullptr,
+                                          nullptr,
+                                          dsn_gpid()));
+    ASSERT_EQ(nullptr, dsn_rpc_unregiser_handler(TASK_CODE_INVALID, dsn_gpid()));
 }
 
 TEST(core, dsn_rpc_dispatch_invalid_parameters)
@@ -491,6 +547,55 @@ TEST(core, dsn_file_dispatch_invalid_parameters)
     dsn_task_release_ref(compute_task);
 
     dsn_task_release_ref(aio_task);
+}
+
+TEST(core, dsn_file_handle_invalid_parameters)
+{
+    ASSERT_EQ(nullptr, dsn_file_open(nullptr, O_RDONLY, 0));
+    ASSERT_EQ(nullptr, dsn_file_open("", O_RDONLY, 0));
+    ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_file_close(nullptr));
+    ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_file_flush(nullptr));
+    ASSERT_EQ(nullptr, dsn_file_native_handle(nullptr));
+    ASSERT_EQ(nullptr, dsn_file_create_aio_task(TASK_CODE_INVALID, noop_aio_handler, nullptr, 0));
+    ASSERT_EQ(nullptr, dsn_file_create_aio_task(TASK_CODE_AIO_FOR_TEST, nullptr, nullptr, 0));
+    ASSERT_EQ(nullptr,
+              dsn_file_create_aio_task_ex(TASK_CODE_INVALID,
+                                          noop_aio_handler,
+                                          nullptr,
+                                          nullptr,
+                                          0));
+    ASSERT_EQ(nullptr,
+              dsn_file_create_aio_task_ex(TASK_CODE_AIO_FOR_TEST,
+                                          nullptr,
+                                          nullptr,
+                                          nullptr,
+                                          0));
+    ASSERT_EQ(static_cast<size_t>(-1), dsn_file_get_io_size(nullptr));
+
+    auto compute_task = dsn_task_create(TASK_CODE_COMPUTE_FOR_TEST, noop_task_handler, nullptr, 0);
+    ASSERT_NE(nullptr, compute_task);
+    dsn_task_add_ref(compute_task);
+    ASSERT_EQ(static_cast<size_t>(-1), dsn_file_get_io_size(compute_task));
+    dsn_task_release_ref(compute_task);
+}
+
+TEST(core, dsn_app_info_invalid_parameters)
+{
+    dsn_gpid invalid_app_id = {};
+    invalid_app_id.u.app_id = 0;
+    invalid_app_id.u.partition_index = 1;
+    dsn_gpid invalid_partition_index = {};
+    invalid_partition_index.u.app_id = 1;
+    invalid_partition_index.u.partition_index = -1;
+
+    ASSERT_FALSE(dsn_mimic_app(nullptr, 1));
+    ASSERT_FALSE(dsn_mimic_app("", 1));
+    ASSERT_FALSE(dsn_mimic_app("client", 0));
+    ASSERT_FALSE(dsn_get_current_app_info(nullptr));
+    ASSERT_EQ(nullptr, dsn_get_app_data_dir(invalid_app_id));
+    ASSERT_EQ(nullptr, dsn_get_app_data_dir(invalid_partition_index));
+    ASSERT_EQ(nullptr, dsn_get_app_info_ptr(invalid_app_id));
+    ASSERT_EQ(nullptr, dsn_get_app_info_ptr(invalid_partition_index));
 }
 
 TEST(core, dsn_file)
