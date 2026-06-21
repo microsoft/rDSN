@@ -71,7 +71,7 @@ typedef void(*dsn_checker_apply)(
  \param create callback to create the checker
  \param apply  callback to execute the checker
  */
-extern DSN_API void      dsn_register_app_checker(
+extern DSN_API bool      dsn_register_app_checker(
     const char* name,
     dsn_checker_create create,
     dsn_checker_apply apply

@@ -348,7 +348,7 @@ namespace dsn.dev.csharp
             return dsn_register_app(app);
         }
 
-        public static int dsn_register_app_checker_managed(string name, dsn_checker_create_managed create, dsn_checker_apply apply)
+        public static bool dsn_register_app_checker_managed(string name, dsn_checker_create_managed create, dsn_checker_apply apply)
         {
             dsn_checker_create create2 = (name2, app_info, app_info_count) => 
             {
@@ -367,7 +367,7 @@ namespace dsn.dev.csharp
         [DllImport(DSN_CORE_DLL, CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Ansi), SuppressUnmanagedCodeSecurity]
         public static extern bool dsn_register_app(dsn_app app);
         [DllImport(DSN_CORE_DLL, CallingConvention=CallingConvention.Cdecl, CharSet=CharSet.Ansi), SuppressUnmanagedCodeSecurity]
-        public static extern int  dsn_register_app_checker(string name, dsn_checker_create create, dsn_checker_apply apply);
+        public static extern bool dsn_register_app_checker(string name, dsn_checker_create create, dsn_checker_apply apply);
         [DllImport(DSN_CORE_DLL, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi), SuppressUnmanagedCodeSecurity]
         public static extern bool dsn_mimic_app(string app_name, int index); // index starts from 1
         [DllImport(DSN_CORE_DLL, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi), SuppressUnmanagedCodeSecurity]
