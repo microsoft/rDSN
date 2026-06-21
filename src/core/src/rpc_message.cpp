@@ -49,6 +49,15 @@ using namespace dsn::utils;
 # endif
 # define __TITLE__ "rpc.message"
 
+namespace {
+
+static inline bool is_valid_serialize_format(dsn_msg_serialize_format fmt)
+{
+    return fmt >= DSF_THRIFT_BINARY && fmt <= DSF_JSON;
+}
+
+} // anonymous namespace
+
 DSN_API dsn_message_t dsn_msg_create_request(
     dsn_task_code_t rpc_code, 
     int timeout_milliseconds,
@@ -83,6 +92,13 @@ DSN_API dsn_message_t dsn_msg_create_received_request(
     if (buffer == nullptr && size > 0)
     {
         derror("dsn_msg_create_received_request got null buffer with size = %d", size);
+        return nullptr;
+    }
+
+    if (!is_valid_serialize_format(serialization_type))
+    {
+        derror("dsn_msg_create_received_request got invalid serialization_type = %d",
+               serialization_type);
         return nullptr;
     }
 
@@ -408,6 +424,12 @@ DSN_API void dsn_msg_set_serailize_format(dsn_message_t msg, dsn_msg_serialize_f
     if (hdr == nullptr)
     {
         derror("dsn_msg_set_serailize_format got message with null header");
+        return;
+    }
+
+    if (!is_valid_serialize_format(fmt))
+    {
+        derror("dsn_msg_set_serailize_format got invalid fmt = %d", fmt);
         return;
     }
 
