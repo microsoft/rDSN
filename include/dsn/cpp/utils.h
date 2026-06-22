@@ -38,6 +38,7 @@
 # include <dsn/cpp/auto_codes.h>
 # include <dsn/cpp/callocator.h>
 # include <dsn/cpp/safe_string.h>
+# include <cstdlib>
 # include <cstdint>
 # include <functional>
 # include <limits>
@@ -374,5 +375,32 @@ namespace dsn {
                 return err;
             }
         }
-    }
-} // end namespace dsn::utils
+
+        namespace test {
+
+            inline std::string test_tmp_root()
+            {
+                const char* root = std::getenv("DSN_TEST_TMP_DIR");
+                return (root != nullptr && root[0] != '\0') ? std::string(root) : std::string("test_tmp");
+            }
+
+            inline std::string test_tmp_dir(const std::string& name)
+            {
+                return ::dsn::utils::filesystem::path_combine(test_tmp_root(), name);
+            }
+
+            inline std::string test_tmp_path(const std::string& name, const std::string& path)
+            {
+                return ::dsn::utils::filesystem::path_combine(test_tmp_dir(name), path);
+            }
+
+            inline bool prepare_test_tmp_dir(const std::string& name)
+            {
+                const auto dir = test_tmp_dir(name);
+                return ::dsn::utils::filesystem::remove_path(dir) &&
+                       ::dsn::utils::filesystem::create_directory(dir);
+            }
+
+        } // namespace test
+    } // namespace utils
+} // end namespace dsn

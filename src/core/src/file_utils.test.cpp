@@ -38,18 +38,28 @@
 # include <dsn/cpp/utils.h>
 # include <fstream>
 
+static const char* kFileUtilsTestTmpDir = "dsn.core.file_utils";
+
+static std::string file_utils_test_path(const char* path)
+{
+    return ::dsn::utils::test::test_tmp_path(kFileUtilsTestTmpDir, path);
+}
+
 static void file_utils_test_setup()
 {
     std::string path;
     bool ret;
 
-    path = "./file_utils_temp.txt";
+    ret = ::dsn::utils::test::prepare_test_tmp_dir(kFileUtilsTestTmpDir);
+    EXPECT_TRUE(ret);
+
+    path = file_utils_test_path("file_utils_temp.txt");
     ret = dsn::utils::filesystem::remove_path(path);
     EXPECT_TRUE(ret);
     ret = dsn::utils::filesystem::file_exists(path);
     EXPECT_FALSE(ret);
 
-    path = "./file_utils_temp";
+    path = file_utils_test_path("file_utils_temp");
     ret = dsn::utils::filesystem::remove_path(path);
     EXPECT_TRUE(ret);
     ret = dsn::utils::filesystem::directory_exists(path);
@@ -627,7 +637,7 @@ static void file_utils_test_create()
     std::string path;
     bool ret;
 
-    path = "./file_utils_temp.txt";
+    path = file_utils_test_path("file_utils_temp.txt");
     ret = dsn::utils::filesystem::create_file(path);
     EXPECT_TRUE(ret);
     ret = dsn::utils::filesystem::file_exists(path);
@@ -646,37 +656,37 @@ static void file_utils_test_create()
     EXPECT_TRUE(ret);
     EXPECT_TRUE((last_write_time != -1) && (last_write_time >= current_time));
 
-    path = "./file_utils_temp";
+    path = file_utils_test_path("file_utils_temp");
     ret = dsn::utils::filesystem::create_directory(path);
     EXPECT_TRUE(ret);
     ret = dsn::utils::filesystem::directory_exists(path);
     EXPECT_TRUE(ret);
 
-    path = "./file_utils_temp/a/b/c/d//";
+    path = file_utils_test_path("file_utils_temp/a/b/c/d//");
     ret = dsn::utils::filesystem::create_directory(path);
     EXPECT_TRUE(ret);
     ret = dsn::utils::filesystem::directory_exists(path);
     EXPECT_TRUE(ret);
 
-    path = "./file_utils_temp/a/1.txt";
+    path = file_utils_test_path("file_utils_temp/a/1.txt");
     ret = dsn::utils::filesystem::create_file(path);
     EXPECT_TRUE(ret);
     ret = dsn::utils::filesystem::file_exists(path);
     EXPECT_TRUE(ret);
 
-    path = "./file_utils_temp/a/1.txt";
+    path = file_utils_test_path("file_utils_temp/a/1.txt");
     ret = dsn::utils::filesystem::create_file(path);
     EXPECT_TRUE(ret);
     ret = dsn::utils::filesystem::file_exists(path);
     EXPECT_TRUE(ret);
 
-    path = "./file_utils_temp/a/2.txt";
+    path = file_utils_test_path("file_utils_temp/a/2.txt");
     ret = dsn::utils::filesystem::create_file(path);
     EXPECT_TRUE(ret);
     ret = dsn::utils::filesystem::file_exists(path);
     EXPECT_TRUE(ret);
 
-    path = "./file_utils_temp/b/c/d/1.txt";
+    path = file_utils_test_path("file_utils_temp/b/c/d/1.txt");
     ret = dsn::utils::filesystem::create_file(path);
     EXPECT_TRUE(ret);
     ret = dsn::utils::filesystem::file_exists(path);
@@ -691,12 +701,12 @@ static void file_utils_test_file_size()
     int64_t sz;
     bool ret;
 
-    path = "./file_utils_temp.txt";
+    path = file_utils_test_path("file_utils_temp.txt");
     ret = dsn::utils::filesystem::file_size(path, sz);
     EXPECT_TRUE(ret);
     EXPECT_TRUE(sz == 12);
 
-    path = "./file_utils_temp2.txt";
+    path = file_utils_test_path("file_utils_temp2.txt");
     ret = dsn::utils::filesystem::file_size(path, sz);
     EXPECT_FALSE(ret);
 }
@@ -815,43 +825,43 @@ static void file_utils_test_get_paths()
     EXPECT_TRUE(file_list.size() >= 3);
     file_list.clear();*/
 
-    path = "./file_utils_temp/";
+    path = file_utils_test_path("file_utils_temp/");
     ret = dsn::utils::filesystem::get_subfiles(path, file_list, true);
     EXPECT_TRUE(ret);
     EXPECT_TRUE(file_list.size() == 3);
     file_list.clear();
 
-    path = "./file_utils_temp/";
+    path = file_utils_test_path("file_utils_temp/");
     ret = dsn::utils::filesystem::get_subdirectories(path, file_list, true);
     EXPECT_TRUE(ret);
     EXPECT_TRUE(file_list.size() == 7);
     file_list.clear();
 
-    path = "./file_utils_temp/";
+    path = file_utils_test_path("file_utils_temp/");
     ret = dsn::utils::filesystem::get_subdirectories(path, file_list, false);
     EXPECT_TRUE(ret);
     EXPECT_TRUE(file_list.size() == 2);
     file_list.clear();
 
-    path = "./file_utils_temp/";
+    path = file_utils_test_path("file_utils_temp/");
     ret = dsn::utils::filesystem::get_subpaths(path, file_list, true);
     EXPECT_TRUE(ret);
     EXPECT_TRUE(file_list.size() == 10);
     file_list.clear();
 
-    path = "./file_utils_temp/";
+    path = file_utils_test_path("file_utils_temp/");
     ret = dsn::utils::filesystem::get_subpaths(path, file_list, false);
     EXPECT_TRUE(ret);
     EXPECT_TRUE(file_list.size() == 2);
     file_list.clear();
 
-    path = "./file_utils_temp/a/";
+    path = file_utils_test_path("file_utils_temp/a/");
     ret = dsn::utils::filesystem::get_subfiles(path, file_list, false);
     EXPECT_TRUE(ret);
     EXPECT_TRUE(file_list.size() == 2);
     file_list.clear();
 
-    path = "./file_utils_temp/a/";
+    path = file_utils_test_path("file_utils_temp/a/");
     ret = dsn::utils::filesystem::get_subpaths(path, file_list, false);
     EXPECT_TRUE(ret);
     EXPECT_TRUE(file_list.size() == 3);
@@ -864,8 +874,8 @@ static void file_utils_test_rename()
     std::string path2;
     bool ret;
 
-    path = "./file_utils_temp/b/c/d/1.txt";
-    path2 = "./file_utils_temp/b/c/d/2.txt";
+    path = file_utils_test_path("file_utils_temp/b/c/d/1.txt");
+    path2 = file_utils_test_path("file_utils_temp/b/c/d/2.txt");
     ret = dsn::utils::filesystem::rename_path(path, path2);
     EXPECT_TRUE(ret);
     ret = dsn::utils::filesystem::file_exists(path);
@@ -882,19 +892,19 @@ static void file_utils_test_remove()
     std::vector<std::string> file_list;
     bool ret;
 
-    path = "./file_utils_temp.txt";
+    path = file_utils_test_path("file_utils_temp.txt");
     ret = dsn::utils::filesystem::remove_path(path);
     EXPECT_TRUE(ret);
     ret = dsn::utils::filesystem::file_exists(path);
     EXPECT_FALSE(ret);
 
-    path = "./file_utils_temp/a/2.txt";
+    path = file_utils_test_path("file_utils_temp/a/2.txt");
     ret = dsn::utils::filesystem::remove_path(path);
     EXPECT_TRUE(ret);
     ret = dsn::utils::filesystem::remove_path(path);
     EXPECT_TRUE(ret);
 
-    path = "./file_utils_temp/";
+    path = file_utils_test_path("file_utils_temp/");
     ret = dsn::utils::filesystem::remove_path(path);
     EXPECT_TRUE(ret);
     ret = dsn::utils::filesystem::directory_exists(path);

@@ -34,6 +34,7 @@
  */
 
 # include <dsn/utility/configuration.h>
+# include <dsn/cpp/utils.h>
 # include <gtest/gtest.h>
 # include <algorithm>
 # include <fstream>
@@ -186,14 +187,17 @@ TEST(core, configuration)
     ASSERT_TRUE(c->get_value<bool>("apps.client", "run", false, "client run"));
     ASSERT_FALSE(c->get_value<bool>("apps.client", "unexist_bool_key", false, ""));
 
+    ASSERT_TRUE(::dsn::utils::test::prepare_test_tmp_dir("dsn.core.configuration"));
+    const std::string dump_file =
+        ::dsn::utils::test::test_tmp_path("dsn.core.configuration", "config-sample-dump.ini");
     std::fstream out;
-    out.open("config-sample-dump.ini", std::ios::out);
+    out.open(dump_file.c_str(), std::ios::out);
     c->dump(out);
     out.close();
 
     printf("load config-sample-dump.ini\n");
     c.reset(new configuration());
-    ASSERT_TRUE(c->load("config-sample-dump.ini"));
+    ASSERT_TRUE(c->load(dump_file.c_str()));
     c->get_all_sections(sections);
     ASSERT_EQ(6u, sections.size());
     std::sort(sections.begin(), sections.end());

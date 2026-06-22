@@ -35,10 +35,12 @@
 #include <cinttypes>
 #include <gtest/gtest.h>
 #include <dsn/service_api_cpp.h>
+#include <dsn/cpp/utils.h>
 #include <dsn/cpp/test_utils.h>
 
 void aio_testcase(uint64_t block_size, size_t concurrency, bool is_write, bool shared)
 {
+    const std::string test_dir = ::dsn::utils::test::test_tmp_dir("dsn.core.aio_perf");
     std::unique_ptr<char[]> buffer(new char[block_size]);
     std::vector<dsn_handle_t> files;
     files.resize(concurrency);
@@ -49,8 +51,9 @@ void aio_testcase(uint64_t block_size, size_t concurrency, bool is_write, bool s
         flag = O_CREAT | O_RDWR;
         if (shared)
         {
-            if (utils::filesystem::file_exists("temp"))
-                utils::filesystem::remove_path("temp");
+            const std::string file = ::dsn::utils::filesystem::path_combine(test_dir, "temp");
+            if (utils::filesystem::file_exists(file))
+                utils::filesystem::remove_path(file);
         }
         else
         {
@@ -58,7 +61,7 @@ void aio_testcase(uint64_t block_size, size_t concurrency, bool is_write, bool s
             {
                 std::stringstream ss;
                 ss << "temp." << i;
-                auto file = ss.str();
+                auto file = ::dsn::utils::filesystem::path_combine(test_dir, ss.str());
                 if (utils::filesystem::file_exists(file))
                     utils::filesystem::remove_path(file);
             }
@@ -71,7 +74,8 @@ void aio_testcase(uint64_t block_size, size_t concurrency, bool is_write, bool s
 
     if (shared)
     {
-        auto file_handle = dsn_file_open("temp", flag, 0666);
+        const std::string file = ::dsn::utils::filesystem::path_combine(test_dir, "temp");
+        auto file_handle = dsn_file_open(file.c_str(), flag, 0666);
         EXPECT_TRUE(file_handle != nullptr);
         for (int i = 0; i < concurrency; i++)
             files[i] = file_handle;
@@ -82,7 +86,7 @@ void aio_testcase(uint64_t block_size, size_t concurrency, bool is_write, bool s
         {
             std::stringstream ss;
             ss << "temp." << i;
-            auto file = ss.str();
+            auto file = ::dsn::utils::filesystem::path_combine(test_dir, ss.str());
             auto file_handle = dsn_file_open(file.c_str(), flag, 0666);
             EXPECT_TRUE(file_handle != nullptr);
             files[i] = file_handle;
@@ -186,6 +190,7 @@ void aio_testcase(uint64_t block_size, size_t concurrency, bool is_write, bool s
 
 TEST(perf_core, aio)
 {
+    ASSERT_TRUE(::dsn::utils::test::prepare_test_tmp_dir("dsn.core.aio_perf"));
     for (auto is_write : { true, false })
         for (auto shared : { false, true })
             for (auto blk_size_bytes : { 256, 1024, 4 * 1024 })

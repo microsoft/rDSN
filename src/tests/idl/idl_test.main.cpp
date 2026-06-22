@@ -51,7 +51,7 @@ enum Language {lang_cpp, lang_csharp};
 enum IDL{idl_protobuf, idl_thrift};
 enum Format{format_binary, format_json};
 const char* kGeneratedProjectScratchBuildDir = "generated_build";
-const char* kTestScratchDir = "test_tmp/dsn.idl.tests";
+const char* kTestScratchDir = "dsn.idl.tests";
 
 std::string file(const std::string &val)
 {
@@ -197,7 +197,12 @@ std::string get_dsn_build_dir()
 
 std::string get_test_scratch_dir()
 {
-    return combine(get_dsn_build_dir(), kTestScratchDir);
+    const char* test_tmp_root = getenv("DSN_TEST_TMP_DIR");
+    const std::string root =
+        (test_tmp_root != nullptr && test_tmp_root[0] != '\0')
+            ? file(test_tmp_root)
+            : combine(get_dsn_build_dir(), "test_tmp");
+    return combine(root, kTestScratchDir);
 }
 
 std::string scratch_file(const std::string &path)

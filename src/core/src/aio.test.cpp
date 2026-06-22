@@ -35,6 +35,7 @@
 
 
 # include <dsn/service_api_cpp.h>
+# include <dsn/cpp/utils.h>
 # include <gtest/gtest.h>
 # include <dsn/cpp/test_utils.h>
 
@@ -45,11 +46,13 @@ TEST(core, aio)
     // if in dsn_mimic_app() and disk_io_mode == IOE_PER_QUEUE
     if (task::get_current_disk() == nullptr) return;
 
+    ASSERT_TRUE(::dsn::utils::test::prepare_test_tmp_dir("dsn.core.aio"));
+    const std::string tmp_file = ::dsn::utils::test::test_tmp_path("dsn.core.aio", "tmp");
     const char* buffer = "hello, world";
     int len = (int)strlen(buffer);
 
     // write
-    auto fp = dsn_file_open("tmp", O_RDWR | O_CREAT | O_BINARY, 0666);
+    auto fp = dsn_file_open(tmp_file.c_str(), O_RDWR | O_CREAT | O_BINARY, 0666);
     
     std::list<task_ptr> tasks;
     uint64_t offset = 0;
@@ -106,7 +109,7 @@ TEST(core, aio)
 
     // read
     char* buffer2 = (char*)alloca((size_t)len);
-    fp = dsn_file_open("tmp", O_RDONLY | O_BINARY, 0);
+    fp = dsn_file_open(tmp_file.c_str(), O_RDONLY | O_BINARY, 0);
 
     // concurrent read
     offset = 0;
@@ -141,7 +144,7 @@ TEST(core, aio)
     err = dsn_file_close(fp);
     EXPECT_TRUE(err == ERR_OK);
 
-    utils::filesystem::remove_path("tmp");
+    utils::filesystem::remove_path(tmp_file);
 }
 
 TEST(core, aio_share)
@@ -149,16 +152,18 @@ TEST(core, aio_share)
     // if in dsn_mimic_app() and disk_io_mode == IOE_PER_QUEUE
     if (task::get_current_disk() == nullptr) return;
 
-    auto fp = dsn_file_open("tmp", O_WRONLY | O_CREAT | O_BINARY, 0666);
+    ASSERT_TRUE(::dsn::utils::test::prepare_test_tmp_dir("dsn.core.aio_share"));
+    const std::string tmp_file = ::dsn::utils::test::test_tmp_path("dsn.core.aio_share", "tmp");
+    auto fp = dsn_file_open(tmp_file.c_str(), O_WRONLY | O_CREAT | O_BINARY, 0666);
     EXPECT_TRUE(fp != nullptr);
 
-    auto fp2 = dsn_file_open("tmp", O_RDONLY | O_BINARY, 0);
+    auto fp2 = dsn_file_open(tmp_file.c_str(), O_RDONLY | O_BINARY, 0);
     EXPECT_TRUE(fp2 != nullptr);
 
     dsn_file_close(fp);
     dsn_file_close(fp2);
 
-    utils::filesystem::remove_path("tmp");
+    utils::filesystem::remove_path(tmp_file);
 }
 
 TEST(core, aio_cpp_invalid_parameters)
@@ -204,7 +209,10 @@ TEST(core, operation_failed)
     // if in dsn_mimic_app() and disk_io_mode == IOE_PER_QUEUE
     if (task::get_current_disk() == nullptr) return;
 
-    auto fp = dsn_file_open("tmp_test_file", O_WRONLY, 0600);
+    ASSERT_TRUE(::dsn::utils::test::prepare_test_tmp_dir("dsn.core.aio_operation_failed"));
+    const std::string tmp_file =
+        ::dsn::utils::test::test_tmp_path("dsn.core.aio_operation_failed", "tmp_test_file");
+    auto fp = dsn_file_open(tmp_file.c_str(), O_WRONLY, 0600);
     EXPECT_TRUE(fp == nullptr);
 
     ::dsn::error_code* err = new ::dsn::error_code;
@@ -214,7 +222,7 @@ TEST(core, operation_failed)
         *count = n;
     };
 
-    fp = dsn_file_open("tmp_test_file", O_WRONLY|O_CREAT|O_BINARY, 0666);
+    fp = dsn_file_open(tmp_file.c_str(), O_WRONLY|O_CREAT|O_BINARY, 0666);
     EXPECT_TRUE(fp != nullptr);
     char buffer[512];
     const char* str = "hello file";
@@ -226,7 +234,7 @@ TEST(core, operation_failed)
     t->wait();
     EXPECT_TRUE(*err == ERR_FILE_OPERATION_FAILED);
 
-    auto fp2 = dsn_file_open("tmp_test_file", O_RDONLY|O_BINARY, 0);
+    auto fp2 = dsn_file_open(tmp_file.c_str(), O_RDONLY|O_BINARY, 0);
     EXPECT_TRUE(fp2 != nullptr);
 
     t = ::dsn::file::read(fp2, buffer, 512, 0, LPC_AIO_TEST, nullptr, io_callback, 0);
@@ -243,5 +251,5 @@ TEST(core, operation_failed)
     dsn_file_close(fp);
     dsn_file_close(fp2);
 
-    EXPECT_TRUE(utils::filesystem::remove_path("tmp_test_file"));
+    EXPECT_TRUE(utils::filesystem::remove_path(tmp_file));
 }
