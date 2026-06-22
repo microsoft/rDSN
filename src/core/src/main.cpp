@@ -473,7 +473,7 @@ bool run(
 
     // prepare unit test run if necessary
     run_all_unit_tests_prepare_when_necessary();
-    
+
     for (int i = 0; i <= dsn_task_code_max(); i++)
     {
         dsn_all.task_specs.push_back(::dsn::task_spec::get(i));
