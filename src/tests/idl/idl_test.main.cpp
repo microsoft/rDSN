@@ -86,7 +86,12 @@ void execute(std::string cmd, bool &result)
 #else
     cmd = cmd + std::string(" >> ") + scratch_file("log") + " 2>&1";
 #endif
-    bool ret = !((bool)system(cmd.c_str()));
+    const int err = system(cmd.c_str());
+    bool ret = (err == 0);
+    if (!ret)
+    {
+        std::cerr << "Command failed with exit code " << err << ": " << cmd << std::endl;
+    }
     result = result && ret;
 }
 
@@ -361,11 +366,42 @@ bool test_code_generation(Language lang, IDL idl, Format format)
         + (format == format_binary ? "binary" : "json")
         + " single";
     cleanup_generated_project(result);
+    if (!result)
+    {
+        std::cerr << "Failed to clean IDL test scratch directory: " << get_test_scratch_dir()
+                  << std::endl;
+        return false;
+    }
     create_dir(get_test_scratch_dir().c_str(), result);
+    if (!result)
+    {
+        std::cerr << "Failed to create IDL test scratch directory: " << get_test_scratch_dir()
+                  << std::endl;
+        return false;
+    }
     copy_idl_files_to_scratch_dir(result);
+    if (!result)
+    {
+        std::cerr << "Failed to copy IDL test inputs to scratch directory: "
+                  << get_test_scratch_dir() << std::endl;
+        dump_log_on_failure(result);
+        return false;
+    }
     create_dir(scratch_file("src").c_str(), result);
+    if (!result)
+    {
+        std::cerr << "Failed to create generated counter project directory: "
+                  << scratch_file("src") << std::endl;
+        dump_log_on_failure(result);
+        return false;
+    }
     execute(codegen_cmd, result);
-    dump_log_on_failure(result);
+    if (!result)
+    {
+        std::cerr << "Failed to run IDL codegen command: " << codegen_cmd << std::endl;
+        dump_log_on_failure(result);
+        return false;
+    }
     require_file(scratch_file("src/CMakeLists.txt"), "counter project CMakeLists.txt", result);
     dump_log_on_failure(result);
     if (!result)
