@@ -61,11 +61,11 @@ TEST(core, dsn_log_init_invalid_start_level)
     dsn_log_level_t old_start_level = dsn_log_get_start_level();
     std::string old_start_level_config =
         dsn_config_get_value_string("core", "logging_start_level", enum_to_string(old_start_level), "");
-    dsn::get_main_config()->set("core", "logging_start_level", "LOG_LEVEL_NOT_EXIST", "");
+    ::dsn::get_main_config()->set("core", "logging_start_level", "LOG_LEVEL_NOT_EXIST", "");
 
     EXPECT_FALSE(dsn_log_init());
     EXPECT_EQ(dsn_log_level_t::LOG_LEVEL_INVALID, dsn_log_get_start_level());
 
-    dsn::get_main_config()->set("core", "logging_start_level", old_start_level_config.c_str(), "");
+    ::dsn::get_main_config()->set("core", "logging_start_level", old_start_level_config.c_str(), "");
     dsn_log_start_level = old_start_level;
 }
