@@ -454,6 +454,30 @@ bool run(
         fprintf(stderr, "Fail to load config file %s\n", config_file);
         return false;
     }
+    dwarn("load config file '%s' successfully", config_file);
+
+    // pause when necessary
+    if (dsn_all.config->get_value<bool>("core", "pause_on_start", false,
+        "whether to pause at startup time for easier debugging"))
+    {
+# if defined(_WIN32)
+        printf("\nPause for debugging (pid = %d)...\n", static_cast<int>(::GetCurrentProcessId()));
+# else
+        printf("\nPause for debugging (pid = %d)...\n", static_cast<int>(getpid()));
+# endif
+        getchar();
+    }
+
+    // load plugged modules
+    load_all_modules(dsn_all.config);
+
+    // prepare unit test run if necessary
+    run_all_unit_tests_prepare_when_necessary();
+    
+    for (int i = 0; i <= dsn_task_code_max(); i++)
+    {
+        dsn_all.task_specs.push_back(::dsn::task_spec::get(i));
+    }
 
     // initialize global specification from config file
     ::dsn::service_spec spec;
@@ -498,36 +522,8 @@ bool run(
     }
     if (!::dsn::utils::coredump::init(spec.dir_coredump.c_str()))
     {
+        fprintf(stderr, "Fail to init coredump in %s.\n", spec.dir_coredump.c_str());
         return false;
-    }
-
-    if (!dsn_log_init())
-    {
-        return false;
-    }
-    dwarn("load config file '%s' successfully", config_file);
-
-    // pause when necessary
-    if (dsn_all.config->get_value<bool>("core", "pause_on_start", false,
-        "whether to pause at startup time for easier debugging"))
-    {
-# if defined(_WIN32)
-        printf("\nPause for debugging (pid = %d)...\n", static_cast<int>(::GetCurrentProcessId()));
-# else
-        printf("\nPause for debugging (pid = %d)...\n", static_cast<int>(getpid()));
-# endif
-        getchar();
-    }
-
-    // load plugged modules
-    load_all_modules(dsn_all.config);
-
-    // prepare unit test run if necessary
-    run_all_unit_tests_prepare_when_necessary();
-
-    for (int i = 0; i <= dsn_task_code_max(); i++)
-    {
-        dsn_all.task_specs.push_back(::dsn::task_spec::get(i));
     }
 
     // setup log dir
@@ -562,6 +558,13 @@ bool run(
 
     // prepare minimum necessary
     ::dsn::service_engine::fast_instance().init_before_toollets(spec);
+
+    // init logging
+    if (!dsn_log_init())
+    {
+        fprintf(stderr, "Fail to init logging\n");
+        return false;
+    }
 
     // init toollets
     for (auto it = spec.toollets.begin(); it != spec.toollets.end(); ++it)
