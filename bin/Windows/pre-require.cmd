@@ -47,12 +47,20 @@ IF NOT EXIST "%bin_dir%\7z.exe" (
     IF ERRORLEVEL 1 GOTO error
 )
 
-IF NOT EXIST "%bin_dir%\php.exe" (
+IF NOT EXIST "%bin_dir%\php5.dll" (
     CALL "%bin_dir%\download.cmd" https://raw.githubusercontent.com/linmajia/packages/master/windows/php5.dll "%bin_dir%" php5.dll
     IF ERRORLEVEL 1 GOTO error
+)
+IF NOT EXIST "%bin_dir%\php.exe" (
     CALL "%bin_dir%\download.cmd" https://raw.githubusercontent.com/linmajia/packages/master/windows/php.exe "%bin_dir%" php.exe
     IF ERRORLEVEL 1 GOTO error
+)
+IF NOT EXIST "%bin_dir%\php.ini" (
     CALL "%bin_dir%\download.cmd" https://raw.githubusercontent.com/linmajia/packages/master/windows/php.ini "%bin_dir%" php.ini
+    IF ERRORLEVEL 1 GOTO error
+)
+IF NOT EXIST "%bin_dir%\msvcr110.dll" (
+    CALL "%bin_dir%\download.cmd" https://raw.githubusercontent.com/linmajia/packages/master/windows/msvcr110.dll "%bin_dir%" msvcr110.dll
     IF ERRORLEVEL 1 GOTO error
 )
 
