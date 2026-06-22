@@ -42,6 +42,7 @@ IF NOT EXIST "%INSTALL_DIR%\%zk%" (
 
 SET ZOOKEEPER_HOME=%INSTALL_DIR%\%zk%
 SET ZOOKEEPER_PORT=%PORT%
+SET ZOOKEEPER_WINDOW_TITLE=zk-%PORT%
 SET ZK_SRC_CONFIG=%ZOOKEEPER_HOME%\conf\zoo_sample.cfg
 SET ZK_DST_CONFIG=%ZOOKEEPER_HOME%\conf\zoo.cfg
 
@@ -67,7 +68,7 @@ FOR /F "usebackq" %%A in ("%ZK_SRC_CONFIG%") do (
 IF NOT EXIST "%ZOOKEEPER_HOME%\data" @mkdir "%ZOOKEEPER_HOME%\data"
 
 REM powershell -command "Start-Process %ZOOKEEPER_HOME%\bin\zkServer.cmd"
-powershell -command "Start-Process -FilePath cmd.exe  -ArgumentList '/C title zk-%PORT%-%ZOOKEEPER_HOME%\bin\zkServer.cmd&&\"%ZOOKEEPER_HOME%\bin\zkServer.cmd\"'"
+powershell -command "Start-Process -FilePath cmd.exe -ArgumentList '/C title %ZOOKEEPER_WINDOW_TITLE%&&\"%ZOOKEEPER_HOME%\bin\zkServer.cmd\"'"
 IF ERRORLEVEL 1 (
     POPD
     GOTO error
