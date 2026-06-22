@@ -160,7 +160,7 @@ namespace dsn {
 
             ExInfo.ThreadId = ::GetCurrentThreadId();
             ExInfo.ExceptionPointers = pExceptionInfo;
-            ExInfo.ClientPointers = nullptr;
+            ExInfo.ClientPointers = FALSE;
 
             // write the dump
             BOOL bOK = pDump(GetCurrentProcess(), GetCurrentProcessId(), fh, MiniDumpWithFullMemory, &ExInfo, nullptr, nullptr);

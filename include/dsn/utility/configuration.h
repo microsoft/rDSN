@@ -199,7 +199,7 @@ template<> inline long long configuration::get_value<long long>(const char* sect
                     );
                 return default_value;
             }
-            if (v > static_cast<unsigned long long>(std::numeric_limits<long long>::max()))
+            if (v > static_cast<unsigned long long>((std::numeric_limits<long long>::max)()))
             {
                 fprintf(stderr, "WARNING: configuration '[%s] %s' has out-of-range hex value '%s', default value is '%lld'\n",
                     section,
@@ -263,7 +263,7 @@ template<> inline long configuration::get_value<long>(const char* section, const
                     );
                 return default_value;
             }
-            if (v > static_cast<unsigned long>(std::numeric_limits<long>::max()))
+            if (v > static_cast<unsigned long>((std::numeric_limits<long>::max)()))
             {
                 fprintf(stderr, "WARNING: configuration '[%s] %s' has out-of-range hex value '%s', default value is '%ld'\n",
                     section,
