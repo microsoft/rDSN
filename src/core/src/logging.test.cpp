@@ -34,8 +34,13 @@
  */
 
 # include <dsn/service_api_c.h>
+# include <dsn/tool-api/task_spec.h>
+# include <dsn/utility/configuration.h>
 # include <gtest/gtest.h>
 # include <iostream>
+# include <string>
+
+extern bool dsn_log_init();
 
 TEST(core, logging)
 {
@@ -49,4 +54,18 @@ TEST(core, logging_big_log)
 {
     std::string big_str(128000, 'x');
     dsn_logf(__FILE__, __FUNCTION__, __LINE__, dsn_log_level_t::LOG_LEVEL_DEBUG, "write big str %s", big_str.c_str());
+}
+
+TEST(core, dsn_log_init_invalid_start_level)
+{
+    dsn_log_level_t old_start_level = dsn_log_get_start_level();
+    std::string old_start_level_config =
+        dsn_config_get_value_string("core", "logging_start_level", enum_to_string(old_start_level), "");
+    get_main_config()->set("core", "logging_start_level", "LOG_LEVEL_NOT_EXIST", "");
+
+    EXPECT_FALSE(dsn_log_init());
+    EXPECT_EQ(dsn_log_level_t::LOG_LEVEL_INVALID, dsn_log_get_start_level());
+
+    get_main_config()->set("core", "logging_start_level", old_start_level_config.c_str(), "");
+    dsn_log_start_level = old_start_level;
 }

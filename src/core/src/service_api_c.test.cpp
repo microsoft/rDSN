@@ -35,6 +35,7 @@
 
 # include <dsn/service_api_cpp.h>
 # include <dsn/tool_api.h>
+# include <dsn/utility/configuration.h>
 # include <gtest/gtest.h>
 # include <thread>
 # include "service_engine.h"
@@ -238,6 +239,19 @@ TEST(core, dsn_config)
     ASSERT_EQ(2, dsn_config_get_all_keys("core.test", buffers, &buffer_count));
     ASSERT_EQ(1, buffer_count);
     ASSERT_STREQ("count", buffers[0]);
+}
+
+TEST(core, dsn_config_invalid_numeric_values)
+{
+    get_main_config()->set("core.invalid_config", "bad_uint64", "12bad", "");
+    get_main_config()->set("core.invalid_config", "overflow_uint64",
+                           "999999999999999999999999999999999999", "");
+    get_main_config()->set("core.invalid_config", "invalid_hex_uint64", "0xzz", "");
+
+    ASSERT_EQ(321u, dsn_config_get_value_uint64("core.invalid_config", "bad_uint64", 321, ""));
+    ASSERT_EQ(322u, dsn_config_get_value_uint64("core.invalid_config", "overflow_uint64", 322, ""));
+    ASSERT_EQ(323u,
+              dsn_config_get_value_uint64("core.invalid_config", "invalid_hex_uint64", 323, ""));
 }
 
 TEST(core, dsn_config_invalid_parameters)

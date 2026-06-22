@@ -212,3 +212,26 @@ TEST(core, configuration)
     ASSERT_EQ(std::string("exsit2"), std::string(c->get_string_value("not-exsit", "not-exsit", "", "")));
 }
 
+TEST(core, configuration_invalid_numeric_values)
+{
+    configuration c;
+    const char* section = "invalid_numbers";
+
+    c.set(section, "invalid_int", "abc", "");
+    c.set(section, "partial_int", "123abc", "");
+    c.set(section, "overflow_int", "999999999999999999999999999999999999", "");
+    c.set(section, "invalid_unsigned_int", "-abc", "");
+    c.set(section, "partial_unsigned_int", "456abc", "");
+    c.set(section, "invalid_hex", "0xzz", "");
+    c.set(section, "invalid_uppercase_hex", "0Xzz", "");
+    c.set(section, "overflow_hex", "0xffffffffffffffff", "");
+
+    ASSERT_EQ(11, c.get_value<int>(section, "invalid_int", 11, ""));
+    ASSERT_EQ(12, c.get_value<long>(section, "partial_int", 12, ""));
+    ASSERT_EQ(13, c.get_value<long long>(section, "overflow_int", 13, ""));
+    ASSERT_EQ(16u, c.get_value<unsigned int>(section, "invalid_unsigned_int", 16, ""));
+    ASSERT_EQ(17u, c.get_value<unsigned int>(section, "partial_unsigned_int", 17, ""));
+    ASSERT_EQ(14, c.get_value<long>(section, "invalid_hex", 14, ""));
+    ASSERT_EQ(15, c.get_value<long long>(section, "invalid_uppercase_hex", 15, ""));
+    ASSERT_EQ(18, c.get_value<long long>(section, "overflow_hex", 18, ""));
+}
