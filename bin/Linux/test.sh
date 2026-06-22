@@ -7,12 +7,12 @@
 #    TEST_MODULE    "<module1> <module2> ..."
 
 ROOT=`pwd`
-REPORT_DIR=$ROOT/test_reports
 BUILD_DIR="${DSN_BUILD_DIR:-$ROOT/builder}"
 case "$BUILD_DIR" in
     /*) ;;
     *) BUILD_DIR="$ROOT/$BUILD_DIR" ;;
 esac
+REPORT_DIR=$BUILD_DIR/test_reports
 TEST_TMP_DIR="$BUILD_DIR/test_tmp"
 export DSN_TEST_TMP_DIR="$TEST_TMP_DIR"
 GCOV_DIR="$ROOT/gcov_report"
