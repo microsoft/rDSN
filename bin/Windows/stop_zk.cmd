@@ -17,9 +17,17 @@ IF "%PORT%" EQU "" (
     SET PORT=12181
 )
 
+SET ZOOKEEPER_HOME=%INSTALL_DIR%\%zk%
 SET ZOOKEEPER_WINDOW_TITLE=zk-%PORT%
+SET ZOOKEEPER_PID_FILE=%INSTALL_DIR%\zk-%PORT%.pid
 
-TASKKILL /F /T /FI "WINDOWTITLE eq %ZOOKEEPER_WINDOW_TITLE%"
+IF EXIST "%ZOOKEEPER_PID_FILE%" (
+    FOR /F "usebackq" %%P IN ("%ZOOKEEPER_PID_FILE%") DO TASKKILL /F /T /PID %%P
+    DEL /F /Q "%ZOOKEEPER_PID_FILE%"
+)
+
+TASKKILL /F /T /FI "WINDOWTITLE eq %ZOOKEEPER_WINDOW_TITLE%*"
+powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { ($_.Name -eq 'java.exe' -or $_.Name -eq 'javaw.exe') -and $_.CommandLine -like '*org.apache.zookeeper.server.quorum.QuorumPeerMain*' -and $_.CommandLine -like ('*' + $env:ZOOKEEPER_HOME + '*') } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"
 
 GOTO exit
 

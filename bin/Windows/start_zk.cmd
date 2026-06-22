@@ -43,6 +43,7 @@ IF NOT EXIST "%INSTALL_DIR%\%zk%" (
 SET ZOOKEEPER_HOME=%INSTALL_DIR%\%zk%
 SET ZOOKEEPER_PORT=%PORT%
 SET ZOOKEEPER_WINDOW_TITLE=zk-%PORT%
+SET ZOOKEEPER_PID_FILE=%INSTALL_DIR%\zk-%PORT%.pid
 SET ZK_SRC_CONFIG=%ZOOKEEPER_HOME%\conf\zoo_sample.cfg
 SET ZK_DST_CONFIG=%ZOOKEEPER_HOME%\conf\zoo.cfg
 
@@ -58,7 +59,7 @@ ECHO # GENERATD BY rDSN SCRIPT > "%ZK_DST_CONFIG%"
 FOR /F "usebackq" %%A in ("%ZK_SRC_CONFIG%") do (
     SET "line=%%A"
     setlocal enabledelayedexpansion    
-    SET "line=!line:2181=12181!"
+    SET "line=!line:2181=%PORT%!"
     IF defined line (
         ECHO(!line! >> "%ZK_DST_CONFIG%"
     )
@@ -68,7 +69,7 @@ FOR /F "usebackq" %%A in ("%ZK_SRC_CONFIG%") do (
 IF NOT EXIST "%ZOOKEEPER_HOME%\data" @mkdir "%ZOOKEEPER_HOME%\data"
 
 REM powershell -command "Start-Process %ZOOKEEPER_HOME%\bin\zkServer.cmd"
-powershell -command "Start-Process -FilePath cmd.exe -ArgumentList '/C title %ZOOKEEPER_WINDOW_TITLE%&&\"%ZOOKEEPER_HOME%\bin\zkServer.cmd\"'"
+powershell -NoProfile -Command "$p = Start-Process -FilePath cmd.exe -ArgumentList '/C title %ZOOKEEPER_WINDOW_TITLE%&&\"%ZOOKEEPER_HOME%\bin\zkServer.cmd\"' -PassThru; [IO.File]::WriteAllText($env:ZOOKEEPER_PID_FILE, $p.Id)"
 IF ERRORLEVEL 1 (
     POPD
     GOTO error
