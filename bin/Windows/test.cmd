@@ -125,9 +125,10 @@ FOR /D %%A IN ("%build_dir%\test\*") DO (
 
 REM run e-e tests
 FOR /D %%A IN ("%build_dir%\bin\*") DO (
+    ECHO %%A\
     IF EXIST "%%A\test.cmd" (
         PUSHD "%%A"
-        ECHO ================= %%A\test.cmd ================================
+        ECHO ============ run test.cmd in %%A\ ============
         IF EXIST data\ RMDIR /S /Q data
         IF EXIST data DEL /F /Q data
         IF EXIST core\ RMDIR /S /Q core
@@ -160,4 +161,5 @@ GOTO exit
     exit /B %DSN_TMP_EXIT_CODE%
 
 :exit
+    ECHO Test succeed
     exit /B 0

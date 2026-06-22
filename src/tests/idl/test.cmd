@@ -14,4 +14,5 @@ IF DEFINED DSN_TEST_TMP_DIR IF NOT EXIST "%DSN_TEST_TMP_DIR%" (
 )
 
 ECHO DSN_ROOT=%DSN_ROOT%
-CALL %build_type%\dsn.idl.tests.exe
+CALL "%build_type%\dsn.idl.tests.exe"
+EXIT /B %ERRORLEVEL%
