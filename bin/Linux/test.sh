@@ -13,6 +13,8 @@ case "$BUILD_DIR" in
     /*) ;;
     *) BUILD_DIR="$ROOT/$BUILD_DIR" ;;
 esac
+TEST_TMP_DIR="$BUILD_DIR/test_tmp"
+export DSN_TEST_TMP_DIR="$TEST_TMP_DIR"
 GCOV_DIR="$ROOT/gcov_report"
 GCOV_TMP="$ROOT/.gcov_tmp"
 GCOV_PATTERN=`find $ROOT/include $ROOT/src -name '*.h' -o -name '*.cpp'`
@@ -87,6 +89,8 @@ if [ ! -d "$REPORT_DIR" ]
 then
     mkdir -p $REPORT_DIR
 fi
+rm -rf "$TEST_TMP_DIR"
+mkdir -p "$TEST_TMP_DIR"
 
 ### TODO: add test module filtering 
 
@@ -106,7 +110,7 @@ do
         pushd "$dir" >/dev/null
         while read -r line || [ -n "$line" ]; do
             echo "============ run unit tests in $dir with $line ============"
-            rm -fr ./data
+            rm -fr ./data core
             $SVC_HOST $dir/$line
 
             if [ $? -ne 0 ]; then
@@ -138,6 +142,7 @@ do
     then
         pushd "$dir" >/dev/null
         echo "============ run test.sh in $dir ============"
+        rm -fr ./data core
         REPORT_DIR=$REPORT_DIR ./test.sh
 
         if [ $? -ne 0 ]; then

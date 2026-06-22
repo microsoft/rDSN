@@ -51,6 +51,7 @@ enum Language {lang_cpp, lang_csharp};
 enum IDL{idl_protobuf, idl_thrift};
 enum Format{format_binary, format_json};
 const char* kGeneratedProjectScratchBuildDir = "generated_build";
+const char* kTestScratchDir = "test_tmp/dsn.idl.tests";
 
 std::string file(const std::string &val)
 {
@@ -74,12 +75,16 @@ std::string combine(const std::string &dir,const std::string &sub)
     return dsn::utils::filesystem::path_combine(file(dir), file(sub));
 }
 
+std::string get_test_scratch_dir();
+std::string scratch_file(const std::string &path);
+std::string scratch_file(const char* path);
+
 void execute(std::string cmd, bool &result)
 {
 #ifdef DSN_IDL_TESTS_DEBUG
     std::cout << cmd << std::endl;
 #else
-    cmd = cmd + std::string(" >> log 2>&1");
+    cmd = cmd + std::string(" >> ") + scratch_file("log") + " 2>&1";
 #endif
     bool ret = !((bool)system(cmd.c_str()));
     result = result && ret;
@@ -88,12 +93,13 @@ void execute(std::string cmd, bool &result)
 void dump_log_on_failure(bool result)
 {
 #ifndef DSN_IDL_TESTS_DEBUG
-    if (result || !::dsn::utils::filesystem::file_exists(file("log")))
+    const std::string log_file = scratch_file("log");
+    if (result || !::dsn::utils::filesystem::file_exists(log_file))
     {
         return;
     }
 
-    std::ifstream input(file("log").c_str(), std::ios::in | std::ios::binary);
+    std::ifstream input(log_file.c_str(), std::ios::in | std::ios::binary);
     if (input.is_open())
     {
         std::cerr << input.rdbuf();
@@ -167,9 +173,7 @@ void rm_dir(const char* dir, bool &result)
 
 void cleanup_generated_project(bool &result)
 {
-    rm_dir("data", result);
-    rm_dir(kGeneratedProjectScratchBuildDir, result);
-    rm_dir("src", result);
+    rm_dir(get_test_scratch_dir().c_str(), result);
 }
 
 std::string get_generated_project_dsn_root()
@@ -191,6 +195,45 @@ std::string get_dsn_build_dir()
 #endif
 }
 
+std::string get_test_scratch_dir()
+{
+    return combine(get_dsn_build_dir(), kTestScratchDir);
+}
+
+std::string scratch_file(const std::string &path)
+{
+    return combine(get_test_scratch_dir(), path);
+}
+
+std::string scratch_file(const char* path)
+{
+    return scratch_file(std::string(path));
+}
+
+void cleanup_test_scratch_dir(bool &result)
+{
+    rm_dir(get_test_scratch_dir().c_str(), result);
+}
+
+void prepare_test_scratch_dir(bool &result)
+{
+    cleanup_test_scratch_dir(result);
+    create_dir(get_test_scratch_dir().c_str(), result);
+}
+
+void copy_idl_files_to_scratch_dir(bool &result)
+{
+    std::vector<std::string> idl_files;
+    idl_files.push_back("repo/counter.proto");
+    idl_files.push_back("repo/counter.proto.annotations");
+    idl_files.push_back("repo/counter.thrift");
+    idl_files.push_back("repo/counter.thrift.annotations");
+    for (auto i : idl_files)
+    {
+        copy_file(combine(DSN_ROOT_DIR "/src/tests/idl/resources", i), get_test_scratch_dir(), result);
+    }
+}
+
 std::string get_codegen_script()
 {
 #ifdef WIN32
@@ -210,9 +253,9 @@ std::string get_codegen_script()
 std::string get_codegen_command()
 {
 #ifdef _WIN32
-    return "set \"DSN_BUILD_DIR=" + get_dsn_build_dir() + "\" && " + get_codegen_script();
+    return "set \"DSN_BUILD_DIR=" + get_dsn_build_dir() + "\" && cd /d " + get_test_scratch_dir() + " && " + get_codegen_script();
 #else
-    return "DSN_BUILD_DIR=\"" + get_dsn_build_dir() + "\" " + get_codegen_script();
+    return "cd " + get_test_scratch_dir() + " && DSN_BUILD_DIR=\"" + get_dsn_build_dir() + "\" " + get_codegen_script();
 #endif
 }
 
@@ -232,21 +275,24 @@ std::string run_generated_project_command(const std::string &cmd)
 #ifdef DSN_GTEST_LIB_DIR
     library_path += ":" + file(DSN_GTEST_LIB_DIR);
 #endif
-    return "LD_LIBRARY_PATH=\"" + library_path + ":$LD_LIBRARY_PATH\" " + cmd;
+    return "cd " + get_test_scratch_dir() + " && LD_LIBRARY_PATH=\"" + library_path + ":$LD_LIBRARY_PATH\" " + cmd;
+#elif defined(_WIN32)
+    return "cd /d " + get_test_scratch_dir() + " && " + cmd;
 #else
-    return cmd;
+    return "cd " + get_test_scratch_dir() + " && " + cmd;
 #endif
 }
 
 void cmake(Language lang, bool &result)
 {
-    create_dir(kGeneratedProjectScratchBuildDir, result);
+    const std::string generated_build_dir = scratch_file(kGeneratedProjectScratchBuildDir);
+    create_dir(generated_build_dir.c_str(), result);
         
 #ifdef _WIN32
-    std::string cmake_cmd = std::string("cd ") + file(kGeneratedProjectScratchBuildDir) + " && cmake " + file("../src");
+    std::string cmake_cmd = std::string("cd ") + generated_build_dir + " && cmake " + scratch_file("src");
     cmake_cmd += std::string(" -DCMAKE_GENERATOR_PLATFORM=x64");
 #else
-    std::string cmake_cmd = std::string("cd ") + file(kGeneratedProjectScratchBuildDir) + " && cmake " + file("../src");
+    std::string cmake_cmd = std::string("cd ") + generated_build_dir + " && cmake " + scratch_file("src");
 #endif
     cmake_cmd += std::string(" -DDSN_ROOT=") + get_generated_project_dsn_root();
     const std::string boost_include_dir = get_boost_include_dir();
@@ -265,32 +311,32 @@ void cmake(Language lang, bool &result)
     if (lang == lang_cpp)
     {
 #ifdef _WIN32
-        execute(std::string("msbuild ") + file(combine(kGeneratedProjectScratchBuildDir, "counter.sln")), result);
+        execute(std::string("msbuild ") + file(combine(generated_build_dir, "counter.sln")), result);
         if (!result)
         {
             std::cerr << "Failed to build generated counter project with MSBuild." << std::endl;
             return;
         }
-        execute(file(combine(kGeneratedProjectScratchBuildDir, "bin/counter/Debug/counter.exe")) + " " +
-                    file(combine(kGeneratedProjectScratchBuildDir, "bin/counter/config.ini")),
+        execute(file(combine(generated_build_dir, "bin/counter/Debug/counter.exe")) + " " +
+                    file(combine(generated_build_dir, "bin/counter/config.ini")),
                 result);
 #else
-        execute(std::string("cd ") + file(kGeneratedProjectScratchBuildDir) + " && make ", result);
+        execute(std::string("cd ") + generated_build_dir + " && make ", result);
         if (!result)
         {
             std::cerr << "Failed to build generated counter project with make." << std::endl;
             return;
         }
         execute(run_generated_project_command(
-                    file(combine(kGeneratedProjectScratchBuildDir, "bin/counter/counter")) + " " +
-                        file(combine(kGeneratedProjectScratchBuildDir, "bin/counter/config.ini"))),
+                    file(combine(generated_build_dir, "bin/counter/counter")) + " " +
+                        file(combine(generated_build_dir, "bin/counter/config.ini"))),
                 result);
 #endif
     }
     else
     {
-        execute(file(combine(kGeneratedProjectScratchBuildDir, "bin/counter/counter.exe")) + " " +
-                    file(combine(kGeneratedProjectScratchBuildDir, "bin/counter/config.ini")),
+        execute(file(combine(generated_build_dir, "bin/counter/counter.exe")) + " " +
+                    file(combine(generated_build_dir, "bin/counter/config.ini")),
                 result);
     }
     if (!result)
@@ -302,7 +348,6 @@ void cmake(Language lang, bool &result)
 bool test_code_generation(Language lang, IDL idl, Format format)
 {
     bool result = true;
-    cleanup_generated_project(result);
     std::string codegen_cmd = get_codegen_command()
         + std::string(" counter.")
         + (idl == idl_protobuf ? "proto" : "thrift")
@@ -310,10 +355,13 @@ bool test_code_generation(Language lang, IDL idl, Format format)
         + " src "
         + (format == format_binary ? "binary" : "json")
         + " single";
-    create_dir("src", result);
+    cleanup_generated_project(result);
+    create_dir(get_test_scratch_dir().c_str(), result);
+    copy_idl_files_to_scratch_dir(result);
+    create_dir(scratch_file("src").c_str(), result);
     execute(codegen_cmd, result);
     dump_log_on_failure(result);
-    require_file(combine("src", "CMakeLists.txt"), "counter project CMakeLists.txt", result);
+    require_file(scratch_file("src/CMakeLists.txt"), "counter project CMakeLists.txt", result);
     if (!result)
     {
         return false;
@@ -324,17 +372,17 @@ bool test_code_generation(Language lang, IDL idl, Format format)
     {
         src_files.push_back("counter.main.cpp");
         replace_in_file(
-            combine("src", "CMakeLists.txt"),
+            scratch_file("src/CMakeLists.txt"),
             "dsn_add_shared_library()",
             "dsn_add_executable()",
             result);
         replace_in_file(
-            combine("src", "config.ini"),
+            scratch_file("src/config.ini"),
             "dsn.tools.nfs\ncounter\n\n[apps.server]\n",
             "dsn.tools.nfs\n\n[apps.server]\n",
             result);
         replace_in_file(
-            combine("src", "config.ini"),
+            scratch_file("src/config.ini"),
             "pause_on_start = false\n",
             "pause_on_start = false\ncli_local = false\ncli_remote = false\n",
             result);
@@ -344,7 +392,7 @@ bool test_code_generation(Language lang, IDL idl, Format format)
     }
     for (auto i : src_files)
     {
-        copy_file(combine(combine(DSN_ROOT_DIR "/src/tests/idl/resources", src_root), i), file("src"), result);
+        copy_file(combine(combine(DSN_ROOT_DIR "/src/tests/idl/resources", src_root), i), scratch_file("src"), result);
     }
     cmake(lang, result);
     bool tmp = true;
@@ -564,15 +612,7 @@ void test_protobuf_generated_type_serialization(Format fmt)
 bool prepare()
 {
     bool ret = true;
-    std::vector<std::string> idl_files;
-    idl_files.push_back("repo/counter.proto");
-    idl_files.push_back("repo/counter.proto.annotations");
-    idl_files.push_back("repo/counter.thrift");
-    idl_files.push_back("repo/counter.thrift.annotations");
-    for (auto i : idl_files)
-    {
-        copy_file(combine(DSN_ROOT_DIR "/src/tests/idl/resources", i), file("./"), ret);
-    }
+    prepare_test_scratch_dir(ret);
     return ret;
 }
 
