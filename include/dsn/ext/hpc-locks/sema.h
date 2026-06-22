@@ -33,16 +33,22 @@ public:
     {
         assert(initial_count >= 0);
         m_hSema = CreateSemaphore(NULL, initial_count, MAXLONG, NULL);
+        assert(m_hSema != NULL);
     }
 
     ~Semaphore()
     {
-        CloseHandle(m_hSema);
+        if (m_hSema != NULL)
+        {
+            BOOL close_ok = CloseHandle(m_hSema);
+            assert(close_ok);
+        }
     }
 
     void wait()
     {
-        WaitForSingleObject(m_hSema, INFINITE);
+        DWORD wait_result = WaitForSingleObject(m_hSema, INFINITE);
+        assert(wait_result == WAIT_OBJECT_0);
     }
     
     bool wait(int timeout_milliseconds)
@@ -52,7 +58,8 @@ public:
 
     void signal(int count = 1)
     {
-        ReleaseSemaphore(m_hSema, count, NULL);
+        BOOL release_ok = ReleaseSemaphore(m_hSema, count, NULL);
+        assert(release_ok);
     }
 };
 
@@ -77,17 +84,21 @@ public:
     Semaphore(int initial_count = 0)
     {
         assert(initial_count >= 0);
-        semaphore_create(mach_task_self(), &m_sema, SYNC_POLICY_FIFO, initial_count);
+        kern_return_t ret =
+            semaphore_create(mach_task_self(), &m_sema, SYNC_POLICY_FIFO, initial_count);
+        assert(ret == KERN_SUCCESS);
     }
 
     ~Semaphore()
     {
-        semaphore_destroy(mach_task_self(), m_sema);
+        kern_return_t ret = semaphore_destroy(mach_task_self(), m_sema);
+        assert(ret == KERN_SUCCESS);
     }
 
     void wait()
     {
-        semaphore_wait(m_sema);
+        kern_return_t ret = semaphore_wait(m_sema);
+        assert(ret == KERN_SUCCESS);
     }
  
     bool wait(int timeout_milliseconds)
@@ -101,14 +112,16 @@ public:
 
     void signal()
     {
-        semaphore_signal(m_sema);
+        kern_return_t ret = semaphore_signal(m_sema);
+        assert(ret == KERN_SUCCESS);
     }
 
     void signal(int count)
     {
         while (count-- > 0)
         {
-            semaphore_signal(m_sema);
+            kern_return_t ret = semaphore_signal(m_sema);
+            assert(ret == KERN_SUCCESS);
         }
     }
 };
@@ -134,12 +147,14 @@ public:
     Semaphore(int initial_count = 0)
     {
         assert(initial_count >= 0);
-        sem_init(&m_sema, 0, initial_count);
+        int ret = sem_init(&m_sema, 0, initial_count);
+        assert(ret == 0);
     }
 
     ~Semaphore()
     {
-        sem_destroy(&m_sema);
+        int ret = sem_destroy(&m_sema);
+        assert(ret == 0);
     }
 
     void wait()
@@ -151,13 +166,17 @@ public:
             rc = sem_wait(&m_sema);
         }
         while (rc == -1 && errno == EINTR);
+        assert(rc == 0);
     }
  
     bool wait(int timeout_milliseconds)
     {
         assert(timeout_milliseconds >= 0);
         struct timespec ts;
-        clock_gettime(CLOCK_REALTIME, &ts);
+        if (clock_gettime(CLOCK_REALTIME, &ts) != 0)
+        {
+            return false;
+        }
         ts.tv_sec += timeout_milliseconds / 1000;
         ts.tv_nsec += timeout_milliseconds % 1000 * 1000000;
         if (ts.tv_nsec >= 1000000000)
@@ -171,14 +190,16 @@ public:
 
     void signal()
     {
-        sem_post(&m_sema);
+        int ret = sem_post(&m_sema);
+        assert(ret == 0);
     }
 
     void signal(int count)
     {
         while (count-- > 0)
         {
-            sem_post(&m_sema);
+            int ret = sem_post(&m_sema);
+            assert(ret == 0);
         }
     }
 };
