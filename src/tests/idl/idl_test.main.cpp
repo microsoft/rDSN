@@ -79,10 +79,26 @@ void execute(std::string cmd, bool &result)
 #ifdef DSN_IDL_TESTS_DEBUG
     std::cout << cmd << std::endl;
 #else
-    cmd = cmd + std::string(" >> log");
+    cmd = cmd + std::string(" >> log 2>&1");
 #endif
     bool ret = !((bool)system(cmd.c_str()));
     result = result && ret;
+}
+
+void dump_log_on_failure(bool result)
+{
+#ifndef DSN_IDL_TESTS_DEBUG
+    if (result || !::dsn::utils::filesystem::file_exists(file("log")))
+    {
+        return;
+    }
+
+    std::ifstream input(file("log").c_str(), std::ios::in | std::ios::binary);
+    if (input.is_open())
+    {
+        std::cerr << input.rdbuf();
+    }
+#endif
 }
 
 void copy_file(const std::string& src, const std::string& dst, bool &result)
@@ -132,6 +148,15 @@ void create_dir(const char* dir, bool &result)
 {
     bool ret = dsn::utils::filesystem::create_directory(file(dir));
     result = result && ret;
+}
+
+void require_file(const std::string& path, const char* description, bool &result)
+{
+    if (!::dsn::utils::filesystem::file_exists(file(path)))
+    {
+        std::cerr << "Failed to generate " << description << ": " << file(path) << std::endl;
+        result = false;
+    }
 }
 
 void rm_dir(const char* dir, bool &result)
@@ -287,6 +312,12 @@ bool test_code_generation(Language lang, IDL idl, Format format)
         + " single";
     create_dir("src", result);
     execute(codegen_cmd, result);
+    dump_log_on_failure(result);
+    require_file(combine("src", "CMakeLists.txt"), "counter project CMakeLists.txt", result);
+    if (!result)
+    {
+        return false;
+    }
     std::vector<std::string> src_files;
     std::string src_root(lang == lang_cpp ? "repo/cpp" : "repo/csharp");
     if (lang == lang_cpp)

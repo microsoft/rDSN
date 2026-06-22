@@ -67,7 +67,7 @@ function get_codegen_tool($tool, $os_name)
     {
         echo "\t".$candidate.PHP_EOL;
     }
-    exit(0);
+    exit(1);
 }
 
 global $g_idl;
@@ -141,7 +141,7 @@ else
 if (!file_exists($g_idl))
 {
     echo "input file '". $g_idl ."' is not found.".PHP_EOL;
-    exit(0);
+    exit(1);
 }
 else
 {
@@ -160,20 +160,20 @@ else
     else
     {
         echo "unknown idl type for input file '".$g_idl."'".PHP_EOL;
-        exit(0);
+        exit(1);
     }
 }
 
 if ($g_lang != "cpp" && $g_lang != "csharp" && $g_lang != "js")
 {
     echo "unsupported language : ".$g_lang.PHP_EOL;
-    exit(0);
+    exit(1);
 }
 
 if ($g_lang == "js" && ($g_idl_type != "thrift" || $g_idl_format != "json"))
 {
     echo "currently for js we only support json format of thrift, please check your arguments.".PHP_EOL;
-    exit(0);
+    exit(1);
 }
 
 $pos = strrpos($g_idl, "\\");
@@ -219,7 +219,7 @@ case "thrift":
         if (!file_exists($g_idl_php))
         {
             echo "failed invoke thrift tool to generate '".$g_idl_php."'".PHP_EOL;
-            exit(0);
+            exit(1);
         }
         //we expect the cpp to generate the moveable types
         $lang_with_options = $g_lang;
@@ -242,7 +242,7 @@ case "proto":
         if (!file_exists($g_idl_php))
         {
             echo "failed invoke protoc tool to generate '".$g_idl_php."'".PHP_EOL;
-            exit(0);
+            exit(1);
         }
 
         $command = $protoc." --".$g_lang."_out=".$g_out_dir." ".$g_idl." -I=".$g_idl_dir;
@@ -252,7 +252,7 @@ case "proto":
     break;
 default:
     echo "idl type '". $g_idl_type ."' not supported yet!".PHP_EOL;
-    exit(0);
+    exit(1);
 }
 
 // load annotations when they are present
@@ -262,7 +262,7 @@ if (file_exists($g_idl.".annotations"))
     if (FALSE == $annotations)
     {
         echo "read annotation file $g_idl.annotations failed".PHP_EOL;
-        exit(0);
+        exit(1);
     }
     
     $as = "<?php".PHP_EOL;
@@ -333,7 +333,7 @@ function generate_files_from_dir($dr)
         if (!file_exists($output_file))
         {
             echo "failed to generate '".$output_file."'".PHP_EOL;
-            exit(0);
+            exit(1);
         }
         else
         {
@@ -346,7 +346,7 @@ function generate_files_from_dir($dr)
 if (!file_exists($g_templates."/".$g_lang))
 {
     echo "specified language '" . $g_lang. "' is not supported".PHP_EOL;
-    exit(0);
+    exit(1);
 }
 
 generate_files_from_dir($g_templates."/".$g_lang);
@@ -383,7 +383,7 @@ if ($add_idl_file_name != "")
     if (!copy($add_file, $target))
     {
         echo "failed to copy ".$add_file;
-        exit(0);
+        exit(1);
     }
 }
 ?>
