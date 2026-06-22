@@ -315,6 +315,7 @@ void cmake(Language lang, bool &result)
     if (!result)
     {
         std::cerr << "Failed to configure generated counter project with CMake." << std::endl;
+        dump_log_on_failure(result);
         return;
     }
 
@@ -370,6 +371,10 @@ bool test_code_generation(Language lang, IDL idl, Format format)
     {
         std::cerr << "Failed to clean IDL test scratch directory: " << get_test_scratch_dir()
                   << std::endl;
+#ifdef _WIN32
+        std::cerr << "Close previous tests or terminals that are using this directory, then retry."
+                  << std::endl;
+#endif
         return false;
     }
     create_dir(get_test_scratch_dir().c_str(), result);

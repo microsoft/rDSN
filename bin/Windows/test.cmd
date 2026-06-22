@@ -82,8 +82,15 @@ IF NOT EXIST "%build_dir%" (
 SET REPORT_DIR=%build_dir%\test_reports
 SET DSN_TEST_TMP_DIR=%build_dir%\test_tmp
 IF NOT EXIST "%REPORT_DIR%" MKDIR "%REPORT_DIR%"
-IF EXIST "%DSN_TEST_TMP_DIR%" RMDIR /S /Q "%DSN_TEST_TMP_DIR%"
+IF EXIST "%DSN_TEST_TMP_DIR%" (
+    RMDIR /S /Q "%DSN_TEST_TMP_DIR%"
+    IF ERRORLEVEL 1 (
+        CALL "%bin_dir%\echoc.exe" 4 "Failed to clean %DSN_TEST_TMP_DIR%. Close previous tests or terminals that are using this directory, then retry."
+        GOTO error
+    )
+)
 MKDIR "%DSN_TEST_TMP_DIR%"
+IF ERRORLEVEL 1 GOTO error
 
 CALL "%bin_dir%\echoc.exe" 2 run the tests here ...
 
