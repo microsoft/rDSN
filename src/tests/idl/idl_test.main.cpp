@@ -294,7 +294,7 @@ void cmake(Language lang, bool &result)
     create_dir(generated_build_dir.c_str(), result);
         
 #ifdef _WIN32
-    std::string cmake_cmd = std::string("cd ") + generated_build_dir + " && cmake " + scratch_file("src");
+    std::string cmake_cmd = std::string("cd /d ") + generated_build_dir + " && cmake " + scratch_file("src");
     cmake_cmd += std::string(" -DCMAKE_GENERATOR_PLATFORM=x64");
 #else
     std::string cmake_cmd = std::string("cd ") + generated_build_dir + " && cmake " + scratch_file("src");
@@ -367,6 +367,7 @@ bool test_code_generation(Language lang, IDL idl, Format format)
     execute(codegen_cmd, result);
     dump_log_on_failure(result);
     require_file(scratch_file("src/CMakeLists.txt"), "counter project CMakeLists.txt", result);
+    dump_log_on_failure(result);
     if (!result)
     {
         return false;

@@ -101,7 +101,7 @@ IF EXIST "%build_dir%\bin\dsn.svchost\%build_type%\dsn.svchost.exe"  SET DSN_TES
 FOR /D %%A IN ("%build_dir%\test\*") DO (
     IF EXIST "%%A\gtests" (
         PUSHD "%%A"
-        FOR /F "usebackq" %%I IN ("%%A\gtests") DO (
+        FOR /F "usebackq eol=# delims=" %%I IN ("%%A\gtests") DO (
             IF EXIST "%%A" (
                 ECHO =========== %DSN_TEST_HOST% %%I ======================
                 IF EXIST data\ RMDIR /S /Q data

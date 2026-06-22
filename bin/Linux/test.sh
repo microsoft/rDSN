@@ -109,6 +109,9 @@ do
     then
         pushd "$dir" >/dev/null
         while read -r line || [ -n "$line" ]; do
+            case "$line" in
+                ""|\#*) continue ;;
+            esac
             echo "============ run unit tests in $dir with $line ============"
             rm -fr ./data core
             $SVC_HOST $dir/$line
