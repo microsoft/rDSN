@@ -168,12 +168,12 @@ TEST(core, configuration)
     ASSERT_EQ(2.0, c->get_value<double>("apps.client", "unexist_double_key", 2.0, ""));
     ASSERT_EQ(1, c->get_value<long long>("apps.client", "count", 100, "client count"));
     ASSERT_EQ(100, c->get_value<long long>("apps.client", "unexist_long_long_key", 100, ""));
-    ASSERT_EQ(0xdeadbeef, c->get_value<long long>("apps.server", "hex_data", 100, ""));
+    ASSERT_EQ(0xdead, c->get_value<long long>("apps.server", "hex_data", 100, ""));
     ASSERT_EQ(1u, c->get_value<unsigned long long>("apps.client", "count", 100, "client count"));
     ASSERT_EQ(100u, c->get_value<unsigned long long>("apps.client", "unexist_unsigned_long_long_key", 100, ""));
     ASSERT_EQ(1, c->get_value<long>("apps.client", "count", 100, "client count"));
     ASSERT_EQ(100, c->get_value<long>("apps.client", "unexist_long_key", 100, ""));
-    ASSERT_EQ(0xdeadbeef, c->get_value<long>("apps.server", "hex_data", 100, ""));
+    ASSERT_EQ(0xdead, c->get_value<long>("apps.server", "hex_data", 100, ""));
     ASSERT_EQ(1u, c->get_value<unsigned long>("apps.client", "count", 100, "client count"));
     ASSERT_EQ(100u, c->get_value<unsigned long>("apps.client", "unexist_unsigned_long_key", 100, ""));
     ASSERT_EQ(1, c->get_value<int>("apps.client", "count", 100, "client count"));
