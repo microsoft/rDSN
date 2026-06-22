@@ -206,6 +206,23 @@ if (!file_exists($g_out_dir))
     }
 }
 
+function normalize_line_endings($path)
+{
+    $content = file_get_contents($path);
+    if ($content === FALSE)
+    {
+        echo "failed to read generated file '".$path."'".PHP_EOL;
+        exit(1);
+    }
+
+    $content = str_replace(array("\r\n", "\r"), "\n", $content);
+    if (file_put_contents($path, $content) === FALSE)
+    {
+        echo "failed to normalize generated file '".$path."'".PHP_EOL;
+        exit(1);
+    }
+}
+
 // generate service definition file from input idl file using the code generation tools
 $os_name = explode(" ", php_uname())[0];
 switch ($g_idl_type)
@@ -279,7 +296,12 @@ if (file_exists($g_idl.".annotations"))
     $as .= "));".PHP_EOL;
     $as .= "?>".PHP_EOL;
     
-    file_put_contents($g_idl_php, $as, FILE_APPEND);
+    if (file_put_contents($g_idl_php, $as, FILE_APPEND) === FALSE)
+    {
+        echo "failed to append annotations to '".$g_idl_php."'".PHP_EOL;
+        exit(1);
+    }
+    normalize_line_endings($g_idl_php);
 }
 
 function generate_files_from_dir($dr)
@@ -337,6 +359,7 @@ function generate_files_from_dir($dr)
         }
         else
         {
+            normalize_line_endings($output_file);
             echo "generate '".$output_file."' successfully!".PHP_EOL;
         }
     }
