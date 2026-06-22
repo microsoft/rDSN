@@ -35,7 +35,7 @@ namespace
 
 void init_header(message_header &header)
 {
-    memset(&header, 0, sizeof(header));
+    header = message_header();
     header.hdr_length = sizeof(message_header);
     header.hdr_crc32 = CRC_INVALID;
     header.body_crc32 = CRC_INVALID;
