@@ -146,6 +146,13 @@
     if (lv.size() == 0 && default_value) \
         val.fld = default_value->fld; \
     else {\
-        for (auto& s : lv) { val.fld.push_back(atoi(s.c_str())); } \
+        for (auto& s : lv) { \
+            int parsed = 0; \
+            if (!::dsn::utils::lexical_cast_integer<int>(s, parsed)) { \
+                fprintf(stderr, "invalid integer configuration '[%s] %s = %s'\n", section, #fld, s.c_str()); \
+                return false; \
+            } \
+            val.fld.push_back(parsed); \
+        } \
     }\
    }

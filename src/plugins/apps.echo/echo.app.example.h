@@ -36,6 +36,8 @@
 # include "echo.client.h"
 # include "echo.client.perf.h"
 # include "echo.server.h"
+# include <cstdint>
+# include <dsn/cpp/utils.h>
 
 namespace dsn { namespace example { 
 // server app example
@@ -77,9 +79,17 @@ public:
     virtual ::dsn::error_code start(int argc, char** argv)
     {
         if (argc < 3)
+        {
             return ::dsn::ERR_INVALID_PARAMETERS;
+        }
 
-        _server.assign_ipv4(argv[1], (uint16_t)atoi(argv[2]));
+        uint16_t port = 0;
+        if (!::dsn::utils::lexical_cast_integer<uint16_t>(argv[2], port))
+        {
+            return ::dsn::ERR_INVALID_PARAMETERS;
+        }
+
+        _server.assign_ipv4(argv[1], port);
         _echo_client.reset(new echo_client(_server));
         _timer = ::dsn::tasking::enqueue_timer(LPC_ECHO_TEST_TIMER, this, [this]{on_test_timer();}, std::chrono::seconds(1));
         return ::dsn::ERR_OK;
@@ -132,10 +142,18 @@ public:
 
     virtual ::dsn::error_code start(int argc, char** argv)
     {
-        if (argc < 2)
+        if (argc < 3)
+        {
             return ::dsn::ERR_INVALID_PARAMETERS;
+        }
 
-        _server.assign_ipv4(argv[1], (uint16_t)atoi(argv[2]));
+        uint16_t port = 0;
+        if (!::dsn::utils::lexical_cast_integer<uint16_t>(argv[2], port))
+        {
+            return ::dsn::ERR_INVALID_PARAMETERS;
+        }
+
+        _server.assign_ipv4(argv[1], port);
 
         _echo_client = new echo_perf_test_client(_server);
         _echo_client->start_test("echo.perf-test.case", 1);

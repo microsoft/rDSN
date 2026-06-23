@@ -412,6 +412,42 @@ TEST(core, lexical_cast_integer_rejects_invalid_values)
     EXPECT_THROW(lexical_cast<uint64_t>("18446744073709551615ab"), std::invalid_argument);
 }
 
+TEST(core, lexical_cast_integer_bool_wrapper_returns_status)
+{
+    int value = 0;
+    EXPECT_TRUE(::dsn::utils::lexical_cast_integer<int>("123", value));
+    EXPECT_EQ(123, value);
+
+    value = 7;
+    EXPECT_FALSE(::dsn::utils::lexical_cast_integer<int>("abc", value));
+    EXPECT_EQ(7, value);
+
+    uint16_t port = 0;
+    EXPECT_TRUE(::dsn::utils::lexical_cast_integer<uint16_t>("65535", port));
+    EXPECT_EQ((uint16_t)65535, port);
+
+    port = 10;
+    EXPECT_FALSE(::dsn::utils::lexical_cast_integer<uint16_t>("65536", port));
+    EXPECT_EQ((uint16_t)10, port);
+}
+
+TEST(core, lexical_cast_integer_range_wrapper_returns_status)
+{
+    int value = 0;
+    EXPECT_TRUE(::dsn::utils::lexical_cast_integer<int>("10", 1, 10, value));
+    EXPECT_EQ(10, value);
+
+    EXPECT_FALSE(::dsn::utils::lexical_cast_integer<int>("0", 1, 10, value));
+    EXPECT_EQ(0, value);
+
+    EXPECT_FALSE(::dsn::utils::lexical_cast_integer<int>("11", 1, 10, value));
+    EXPECT_EQ(11, value);
+
+    value = 5;
+    EXPECT_FALSE(::dsn::utils::lexical_cast_integer<int>("abc", 1, 10, value));
+    EXPECT_EQ(5, value);
+}
+
 TEST(core, lexical_cast_bool_accepts_valid_values)
 {
     EXPECT_FALSE(lexical_cast<bool>("0"));
@@ -444,6 +480,21 @@ TEST(core, lexical_cast_floating_point_rejects_invalid_values)
     EXPECT_THROW(lexical_cast<float>("1.25 "), std::invalid_argument);
     EXPECT_THROW(lexical_cast<double>("1.2.3"), std::invalid_argument);
     EXPECT_THROW(lexical_cast<double>("abc"), std::invalid_argument);
+}
+
+TEST(core, lexical_cast_floating_point_bool_wrapper_returns_status)
+{
+    double double_value = 0;
+    EXPECT_TRUE(::dsn::utils::lexical_cast_floating_point<double>("1.25", double_value));
+    EXPECT_DOUBLE_EQ(1.25, double_value);
+
+    double_value = 3.5;
+    EXPECT_FALSE(::dsn::utils::lexical_cast_floating_point<double>("abc", double_value));
+    EXPECT_DOUBLE_EQ(3.5, double_value);
+
+    float float_value = 0;
+    EXPECT_TRUE(::dsn::utils::lexical_cast_floating_point<float>("-3.125e-2", float_value));
+    EXPECT_FLOAT_EQ(-0.03125f, float_value);
 }
 
 TEST(core, dlink)

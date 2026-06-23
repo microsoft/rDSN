@@ -41,6 +41,8 @@
 # include <dsn/utility/configuration.h>
 # include <dsn/utility/factory_store.h>
 # include <dsn/tool-api/task.h>
+# include <dsn/cpp/utils.h>
+# include <cstdint>
 
 namespace dsn
 {
@@ -171,7 +173,15 @@ namespace dsn
             auto pos1 = arg.find_first_of(':');
             if (pos1 != std::string::npos)
             {
-                ::dsn::rpc_address ep(arg.substr(0, pos1).c_str(), atoi(arg.substr(pos1 + 1).c_str()));
+                std::string port_str = arg.substr(pos1 + 1);
+                uint16_t port = 0;
+                if (!::dsn::utils::lexical_cast_integer<uint16_t>(port_str, port))
+                {
+                    derror("invalid uri resolver port '%s'", port_str.c_str());
+                    continue;
+                }
+
+                ::dsn::rpc_address ep(arg.substr(0, pos1).c_str(), port);
                 dsn_group_add(_meta_server.group_handle(), ep.c_addr());
             }
         }

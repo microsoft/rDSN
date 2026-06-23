@@ -37,6 +37,7 @@
 # pragma once
 
 # include <memory>
+# include <dsn/cpp/utils.h>
 # include <vector>
 # include <map>
 # include <cerrno>
@@ -161,7 +162,19 @@ template<> inline double configuration::get_value<double>(const char* section, c
     }   
     else
     {
-        return atof(value);
+        double result = 0;
+        if (::dsn::utils::lexical_cast_floating_point<double>(value, result))
+        {
+            return result;
+        }
+
+        fprintf(stderr,
+                "WARNING: configuration '[%s] %s' has invalid value '%s', default value is '%lf'\n",
+                section,
+                key,
+                value,
+                default_value);
+        return default_value;
     }
 }
 
@@ -213,10 +226,8 @@ template<> inline long long configuration::get_value<long long>(const char* sect
         }
         else
         {
-            char* end = nullptr;
-            errno = 0;
-            long long v = std::strtoll(value, &end, 10);
-            if (errno != 0 || end == value || *end != '\0')
+            long long v = 0;
+            if (!::dsn::utils::lexical_cast_integer<long long>(value, v))
             {
                 fprintf(stderr, "WARNING: configuration '[%s] %s' has invalid integer value '%s', default value is '%lld'\n",
                     section,
@@ -277,10 +288,8 @@ template<> inline long configuration::get_value<long>(const char* section, const
         }
         else
         {
-            char* end = nullptr;
-            errno = 0;
-            long v = std::strtol(value, &end, 10);
-            if (errno != 0 || end == value || *end != '\0')
+            long v = 0;
+            if (!::dsn::utils::lexical_cast_integer<long>(value, v))
             {
                 fprintf(stderr, "WARNING: configuration '[%s] %s' has invalid integer value '%s', default value is '%ld'\n",
                     section,

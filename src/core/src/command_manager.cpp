@@ -34,6 +34,8 @@
  */
 
 # include "command_manager.h"
+# include <climits>
+# include <cstdlib>
 # include <iostream>
 # include <thread>
 # include <sstream>
@@ -500,14 +502,15 @@ namespace dsn {
                 return "insufficient arguments";
             }
 
-            int interval_seconds = atoi(args[0].c_str());
-            if (interval_seconds <= 0)
+            int interval_seconds = 0;
+            if (!::dsn::utils::lexical_cast_integer<int>(args[0].c_str(), interval_seconds) ||
+                interval_seconds <= 0)
             {
                 return "invalid interval argument";
             }
 
-            int max_count = atoi(args[1].c_str());
-            if (max_count < 0)
+            int max_count = 0;
+            if (!::dsn::utils::lexical_cast_integer<int>(args[1].c_str(), max_count) || max_count < 0)
             {
                 return "invalid max count";
             }

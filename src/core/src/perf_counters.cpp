@@ -38,6 +38,7 @@
 # include <dsn/tool-api/command.h>
 # include <dsn/tool-api/task.h>
 # include <dsn/cpp/json_helper.h>
+# include <dsn/cpp/utils.h>
 # include "service_engine.h"
 # include "perf_counters.h"
 
@@ -482,7 +483,12 @@ safe_string perf_counters::get_counter_value_i(const safe_vector<safe_string>& a
         return ss.str().c_str();
     }
 
-    uint64_t idx = atoll(args[0].c_str());
+    uint64_t idx = 0;
+    if (!::dsn::utils::lexical_cast_integer<uint64_t>(args[0], idx))
+    {
+        value_resp{ value, ts, std::string(), 0 }.encode_json_state(ss);
+        return ss.str().c_str();
+    }
 
     perf_counters& c = perf_counters::instance();
     auto counter = c.get_counter(idx);
@@ -513,7 +519,12 @@ safe_string perf_counters::get_counter_sample_i(const safe_vector<safe_string>& 
         return ss.str().c_str();
     }
 
-    uint64_t idx = atoll(args[0].c_str());
+    uint64_t idx = 0;
+    if (!::dsn::utils::lexical_cast_integer<uint64_t>(args[0], idx))
+    {
+        sample_resp{ sample, ts, std::string(), 0 }.encode_json_state(ss);
+        return ss.str().c_str();
+    }
 
     perf_counters& c = perf_counters::instance();
     auto counter = c.get_counter(idx);
@@ -548,4 +559,3 @@ safe_string perf_counters::get_counter_index(const safe_vector<safe_string>& arg
 }
 
 } // end namespace
-

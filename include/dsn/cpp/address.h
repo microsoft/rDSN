@@ -37,13 +37,14 @@
 # pragma once
 
 # include <dsn/service_api_c.h>
+# include <dsn/cpp/utils.h>
 # include <dsn/utility/autoref_ptr.h>
 # include <unordered_map>
 # include <unordered_set>
 # include <vector>
+# include <cstdint>
 # include <cstring> // for strcmp()
 # include <string>
-# include <cstdlib>
 
 #ifdef DSN_USE_THRIFT_SERIALIZATION
 # include <thrift/protocol/TProtocol.h>
@@ -293,8 +294,12 @@ namespace dsn
         else
         {
             auto host = str.substr(0, pos);
-            auto port = atoi(str.substr(pos + 1).c_str());
-            assign_ipv4(host.c_str(), (uint16_t)port);
+            uint16_t port = 0;
+            if (!::dsn::utils::lexical_cast_integer<uint16_t>(str.substr(pos + 1), port))
+            {
+                return false;
+            }
+            assign_ipv4(host.c_str(), port);
             return true;
         }
     }
@@ -312,7 +317,13 @@ namespace dsn
         auto sp = s.find(':');
         if (sp != std::string::npos)
         {
-            uint16_t port = (uint16_t)atoi(s.substr(sp + 1).c_str());
+            uint16_t port = 0;
+            if (!::dsn::utils::lexical_cast_integer<uint16_t>(s.substr(sp + 1), port))
+            {
+                _url_host = std::string(url_or_host_port);
+                assign_uri(dsn_uri_build(_url_host.c_str()));
+                return;
+            }
             if (port == 0)
             {
                 _url_host = std::string(url_or_host_port);

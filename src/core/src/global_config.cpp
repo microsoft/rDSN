@@ -34,8 +34,11 @@
  */
 
 # include <dsn/tool-api/global_config.h>
+# include <climits>
 # include <cstdio>
+# include <cstdint>
 # include <thread>
+# include <dsn/cpp/utils.h>
 # include <dsn/tool-api/task_spec.h>
 # include <dsn/tool-api/network.h>
 # include <dsn/utility/singleton_store.h>
@@ -97,9 +100,8 @@ static bool build_client_network_confs(
             
             network_client_config ns;
             ns.factory_name = vs.begin()->c_str();
-            ns.message_buffer_block_size = atoi(vs.rbegin()->c_str());
-
-            if (ns.message_buffer_block_size == 0)
+            if (!::dsn::utils::lexical_cast_integer<int>(*vs.rbegin(), ns.message_buffer_block_size) ||
+                (ns.message_buffer_block_size <= 0))
             {
                 fprintf(stderr, "invalid message buffer size specified: '%s'\n", vs.rbegin()->c_str());
                 return false;
@@ -161,7 +163,13 @@ static bool build_server_network_confs(
             return false;
         }
 
-        int port = atoi(ks.begin()->c_str());
+        int port = 0;
+        if (!::dsn::utils::lexical_cast_integer<int>(*ks.begin(), port) || (port < 0) ||
+            (port > UINT16_MAX))
+        {
+            fprintf(stderr, "invalid network server port specified: '%s'\n", ks.begin()->c_str());
+            return false;
+        }
         auto k3 = *ks.rbegin();
 
         if (is_template)
@@ -209,9 +217,8 @@ static bool build_server_network_confs(
 
             network_server_config ns(port, ch);
             ns.factory_name = vs.begin()->c_str();
-            ns.message_buffer_block_size = atoi(vs.rbegin()->c_str());
-
-            if (ns.message_buffer_block_size == 0)
+            if (!::dsn::utils::lexical_cast_integer<int>(*vs.rbegin(), ns.message_buffer_block_size) ||
+                (ns.message_buffer_block_size <= 0))
             {
                 fprintf(stderr, "invalid message buffer size specified: '%s'\n", vs.rbegin()->c_str());
                 return false;

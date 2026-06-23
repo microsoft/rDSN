@@ -34,6 +34,7 @@
  */
 
 # include "service_engine.h"
+# include <climits>
 # include "task_engine.h"
 # include "disk_engine.h"
 # include "rpc_engine.h"
@@ -701,7 +702,12 @@ safe_string service_engine::get_runtime_info(const safe_vector<safe_string>& arg
     else
     {
         auto indent = "";
-        int id = atoi(args[0].c_str());
+        int id = 0;
+        if (!::dsn::utils::lexical_cast_integer<int>(args[0], id) || (id < 0))
+        {
+            ss << "invalid app id";
+            return ss.str();
+        }
         auto it = engine._nodes_by_app_id.find(id);
         if (it != engine._nodes_by_app_id.end())
         {

@@ -121,9 +121,22 @@ namespace dsn {
         dsn_handle_t load_symbol(dsn_handle_t hmodule, const char* symbol)
         {
 # if defined(_WIN32)
-            return (dsn_handle_t)::GetProcAddress((HMODULE)hmodule, (LPCSTR)symbol);
+            dsn_handle_t sym = (dsn_handle_t)::GetProcAddress((HMODULE)hmodule, (LPCSTR)symbol);
+            if (sym == nullptr)
+            {
+                derror("GetProcAddress failed for symbol '%s', err = %d", symbol, ::GetLastError());
+            }
+            return sym;
 # else
-            return (dsn_handle_t)dlsym((void*)hmodule, symbol);
+            // Clear any stale dynamic-loader error before checking the result of dlsym().
+            dlerror();
+            dsn_handle_t sym = (dsn_handle_t)dlsym((void*)hmodule, symbol);
+            const char *err = dlerror();
+            if (err != nullptr)
+            {
+                derror("dlsym failed for symbol '%s': %s", symbol, err);
+            }
+            return sym;
 # endif 
         }
 

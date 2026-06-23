@@ -253,6 +253,39 @@ namespace dsn {
             return static_cast<T>(value);
         }
 
+        template <typename T>
+        inline typename std::enable_if<
+            std::is_integral<T>::value &&
+            !std::is_same<T, bool>::value,
+            bool>::type
+        lexical_cast_integer(const std::string& str, T& result)
+        {
+            try
+            {
+                result = lexical_cast_integer<T>(str);
+                return true;
+            }
+            catch (const std::exception&)
+            {
+                return false;
+            }
+        }
+
+        template <typename T>
+        inline typename std::enable_if<
+            std::is_integral<T>::value &&
+            !std::is_same<T, bool>::value,
+            bool>::type
+        lexical_cast_integer(const std::string& str, T min_value, T max_value, T& result)
+        {
+            if (!lexical_cast_integer(str, result))
+            {
+                return false;
+            }
+
+            return (result >= min_value) && (result <= max_value);
+        }
+
         inline bool lexical_cast_bool(const std::string& str)
         {
             if (str == "0")
@@ -288,6 +321,21 @@ namespace dsn {
             }
 
             return value;
+        }
+
+        template <typename T>
+        inline typename std::enable_if<std::is_floating_point<T>::value, bool>::type
+        lexical_cast_floating_point(const std::string& str, T& result)
+        {
+            try
+            {
+                result = lexical_cast_floating_point<T>(str);
+                return true;
+            }
+            catch (const std::exception&)
+            {
+                return false;
+            }
         }
 
         template <typename T>
