@@ -249,7 +249,7 @@ namespace dsn {
                 counter_type = find_counter_type(val[1].c_str());
                 percentile_type = find_percentail_type(val[2].c_str());
 
-                if ((task_id != TASK_CODE_INVALID) && (counter_type != PREF_COUNTER_INVALID) && (s_spec_profilers[task_id].ptr[counter_type] != NULL) && (s_spec_profilers[task_id].is_profile != false))
+                if ((task_id != TASK_CODE_INVALID) && (counter_type != PREF_COUNTER_INVALID) && (s_spec_profilers[task_id].ptr[counter_type] != nullptr) && (s_spec_profilers[task_id].is_profile != false))
                 {
                     ss << dsn_task_code_to_string(task_id) << ":" << counter_info_ptr[counter_type]->title << ":" << percentail_counter_string[percentile_type] << ":";
                     if (counter_info_ptr[counter_type]->type != COUNTER_TYPE_NUMBER_PERCENTILES)
@@ -265,7 +265,7 @@ namespace dsn {
                 {
                     for (int j = 0; j < PREF_COUNTER_COUNT; j++)
                     {
-                        if ((s_spec_profilers[task_id].ptr[j] != NULL) && (counter_info_ptr[j]->type == COUNTER_TYPE_NUMBER_PERCENTILES))
+                        if ((s_spec_profilers[task_id].ptr[j] != nullptr) && (counter_info_ptr[j]->type == COUNTER_TYPE_NUMBER_PERCENTILES))
                         {
                             ss << dsn_task_code_to_string(i) << ":" << counter_info_ptr[j]->title << ":" << percentail_counter_string[percentile_type] << ":" << s_spec_profilers[task_id].ptr[j]->get_percentile(percentile_type) << " ";
                         }
@@ -348,7 +348,7 @@ namespace dsn {
                         {
                             counter_type = static_cast<perf_counter_ptr_type>(k);
 
-                            if (s_spec_profilers[task_id].ptr[counter_type] == NULL)
+                            if (s_spec_profilers[task_id].ptr[counter_type] == nullptr)
                             {
                                 ss << ",\"\"";
                             }
@@ -432,7 +432,7 @@ namespace dsn {
                         {
                             counter_sample_resp resp;
 
-                            if (s_spec_profilers[task_id].ptr[counter_type] == NULL)
+                            if (s_spec_profilers[task_id].ptr[counter_type] == nullptr)
                                 continue;
 
                             char name[20] = { 0 };
@@ -532,7 +532,7 @@ namespace dsn {
 
                         if (counter_info_ptr[counter_type]->type == COUNTER_TYPE_NUMBER_PERCENTILES)
                         {
-                            if (s_spec_profilers[task_id].ptr[counter_type] == NULL)
+                            if (s_spec_profilers[task_id].ptr[counter_type] == nullptr)
                                 continue;
 
                             double timeGet = 0;
@@ -615,7 +615,7 @@ namespace dsn {
 
                         if (counter_info_ptr[counter_type]->type == COUNTER_TYPE_NUMBER_PERCENTILES)
                         {
-                            if (s_spec_profilers[task_id].ptr[counter_type] == NULL)
+                            if (s_spec_profilers[task_id].ptr[counter_type] == nullptr)
                                 continue;
 
                             char name[20] = { 0 };

@@ -52,8 +52,8 @@ namespace dsn { namespace tools {
 native_win_aio_provider::native_win_aio_provider(disk_engine* disk, aio_provider* inner_provider)
 : aio_provider(disk, inner_provider)
 {
-    _iocp = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, 0);
-    if ((_iocp == NULL) || (_iocp == INVALID_HANDLE_VALUE))
+    _iocp = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, nullptr, 0);
+    if ((_iocp == nullptr) || (_iocp == INVALID_HANDLE_VALUE))
     {
         derror("CreateIoCompletionPort failed, err = %d", ::GetLastError());
         _iocp = INVALID_HANDLE_VALUE;
@@ -62,9 +62,9 @@ native_win_aio_provider::native_win_aio_provider(disk_engine* disk, aio_provider
 
 native_win_aio_provider::~native_win_aio_provider()
 {
-    if (_worker_thr != nullptr && _iocp != NULL && _iocp != INVALID_HANDLE_VALUE)
+    if (_worker_thr != nullptr && _iocp != nullptr && _iocp != INVALID_HANDLE_VALUE)
     {
-        if (::PostQueuedCompletionStatus(_iocp, 0, 1, NULL) == FALSE)
+        if (::PostQueuedCompletionStatus(_iocp, 0, 1, nullptr) == FALSE)
         {
             derror("PostQueuedCompletionStatus failed, err = %d", ::GetLastError());
         }
@@ -81,7 +81,7 @@ native_win_aio_provider::~native_win_aio_provider()
 
 void native_win_aio_provider::start(io_modifer& ctx)
 {
-    if ((_iocp == NULL) || (_iocp == INVALID_HANDLE_VALUE))
+    if ((_iocp == nullptr) || (_iocp == INVALID_HANDLE_VALUE))
     {
         derror("cannot start native win aio provider without a valid IO completion port");
         return;
@@ -118,7 +118,7 @@ dsn_handle_t native_win_aio_provider::open(const char* file_name, int oflag, int
     SECURITY_ATTRIBUTES SecurityAttributes;
 
     SecurityAttributes.nLength = sizeof(SecurityAttributes);
-    SecurityAttributes.lpSecurityDescriptor = NULL;
+    SecurityAttributes.lpSecurityDescriptor = nullptr;
 
     if (oflag & _O_NOINHERIT) {
         SecurityAttributes.bInheritHandle = FALSE;
@@ -206,7 +206,7 @@ dsn_handle_t native_win_aio_provider::open(const char* file_name, int oflag, int
     if (fileHandle != INVALID_HANDLE_VALUE && fileHandle != nullptr)
     {
         HANDLE iocp = ::CreateIoCompletionPort(fileHandle, _iocp, 0, 0);
-        if ((iocp == NULL) || (iocp != _iocp))
+        if ((iocp == nullptr) || (iocp != _iocp))
         {
             derror("cannot associate file handle %s to io completion port, err = 0x%x",
                    file_name,
@@ -307,10 +307,10 @@ error_code native_win_aio_provider::aio_internal(aio_task* aio_tsk, bool async, 
     switch (aio->type)
     {
     case AIO_Read:
-        r = ::ReadFile((HANDLE)aio->file, aio->buffer, aio->buffer_size, NULL, &aio->olp);
+        r = ::ReadFile((HANDLE)aio->file, aio->buffer, aio->buffer_size, nullptr, &aio->olp);
         break;
     case AIO_Write:
-        r = ::WriteFile((HANDLE)aio->file, aio->buffer, aio->buffer_size, NULL, &aio->olp);
+        r = ::WriteFile((HANDLE)aio->file, aio->buffer, aio->buffer_size, nullptr, &aio->olp);
         break;
     default:
         dassert (false, "unknown aio type %u", static_cast<int>(aio->type));

@@ -138,7 +138,7 @@ namespace dsn {
 
             while (true)
             {
-                ret = io_getevents(_ctx, 1, 1, events, NULL);
+                ret = io_getevents(_ctx, 1, 1, events, nullptr);
                 if (ret > 0) // should be 1
                 {
                     dassert(ret == 1, "");

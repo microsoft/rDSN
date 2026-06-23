@@ -1735,7 +1735,7 @@ static BOOL SuspendAllThreads()
                 threads.find(ti.th32ThreadID) == threads.end()) 
                 {
                     HANDLE hThread = ::OpenThread(THREAD_ALL_ACCESS, FALSE, ti.th32ThreadID);
-                    if (hThread == NULL) 
+                    if (hThread == nullptr)
                     {
                         derror("OpenThread failed, err = %d", ::GetLastError());
                         goto err;

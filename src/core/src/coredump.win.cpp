@@ -63,7 +63,7 @@ namespace dsn {
             s_dump_dir = dump_dir;
 
             if (::GetModuleBaseNameA(::GetCurrentProcess(),
-                ::GetModuleHandleA(NULL),
+                ::GetModuleHandleA(nullptr),
                 s_app_name,
                 256
                 ) == 0)
@@ -128,7 +128,7 @@ namespace dsn {
                                s_dump_dir.c_str(),
                                s_app_name,
                                ::GetCurrentProcessId(),
-                               (int64_t)time(NULL));
+                               (int64_t)time(nullptr));
             if (len < 0 || static_cast<size_t>(len) >= sizeof(szDumpPath))
             {
                 szResult = "failed to format dump file path";
@@ -136,8 +136,8 @@ namespace dsn {
             }
 
             // create the file
-            fh = ::CreateFileA(szDumpPath, GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS,
-                                      FILE_ATTRIBUTE_NORMAL, NULL);
+            fh = ::CreateFileA(szDumpPath, GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS,
+                                      FILE_ATTRIBUTE_NORMAL, nullptr);
             if (fh == INVALID_HANDLE_VALUE)
             {
                 len = snprintf(szScratch,

@@ -91,7 +91,7 @@ std::vector<event_entry>* event_wheel::pop_next_events(/*out*/ uint64_t& ts)
 {
     utils::auto_lock< ::dsn::utils::ex_lock> l(_lock);
 
-    std::vector<event_entry>* evts = NULL;
+    std::vector<event_entry>* evts = nullptr;
     auto itr = _events.begin();
     if (itr != _events.end()){
         evts = itr->second;
