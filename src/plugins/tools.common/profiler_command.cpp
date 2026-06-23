@@ -42,6 +42,8 @@
 #include "profiler.h"
 #include "profiler_header.h"
 #include <dsn/cpp/json_helper.h>
+#include <climits>
+#include <dsn/cpp/utils.h>
 
 namespace dsn {
     namespace tools {
@@ -56,9 +58,11 @@ namespace dsn {
 
         static dsn_perf_counter_percentile_type_t find_percentail_type(const std::string &name)
         {
-            int num = atoi(name.c_str());
-            if (num == 0)
+            int num = 0;
+            if (!::dsn::utils::lexical_cast_integer<int>(name, num) || (num < 1))
+            {
                 return COUNTER_PERCENTILE_INVALID;
+            }
             switch (num)
             {
             case 50:
@@ -171,9 +175,8 @@ namespace dsn {
                     ss << "unenough arguments" << std::endl;
                     return ss.str().c_str();
                 }
-
-                int num = atoi(args[1].c_str());
-                if (num == 0)
+                int num = 0;
+                if (!::dsn::utils::lexical_cast_integer<int>(args[1].c_str(), num) || (num < 1))
                 {
                     ss << "not a legal value" << std::endl;
                     return ss.str().c_str();
@@ -213,7 +216,11 @@ namespace dsn {
                 {
                     return ss.str().c_str();
                 }
-                int num = atoi(args[1].c_str());
+                int num = 0;
+                if (!::dsn::utils::lexical_cast_integer<int>(args[1].c_str(), num) || (num < 1))
+                {
+                    return ss.str().c_str();
+                }
                 counter_type = find_counter_type(args[2].c_str());
                 percentile_type = find_percentail_type(args[3].c_str());
 
@@ -494,8 +501,14 @@ namespace dsn {
                     return ss.str().c_str();
                 }
                 int task_id = find_task_id(args[1].c_str());
-                int query_percentile = (args.size() == 2) ? 50 : atoi(args[2].c_str());
-                
+                int query_percentile = 50;
+                if (args.size() > 2 &&
+                    (!::dsn::utils::lexical_cast_integer<int>(args[2].c_str(), query_percentile) ||
+                     (query_percentile < 1)))
+                {
+                    ss << "not a legal percentile value" << std::endl;
+                    return ss.str().c_str();
+                }
 
                 if ((task_id == TASK_CODE_INVALID) || (s_spec_profilers[task_id].is_profile == false))
                 {

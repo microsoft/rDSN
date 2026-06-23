@@ -37,6 +37,7 @@
 # include <dsn/utility/ports.h>
 # include <dsn/tool-api/rpc_message.h>
 # include <dsn/utility/singleton.h>
+# include <dsn/cpp/utils.h>
 # include <vector>
 # include <iomanip>
 # include "http_message_parser.h"
@@ -99,9 +100,7 @@ http_message_parser::http_message_parser()
         hdr->context.u.serialize_format = fmt;
 
         // thread-hash
-        char *end;
-        hdr->client.thread_hash = std::strtol(args[1].c_str(), &end, 10);
-        if (end != args[1].c_str() + args[1].length())
+        if (!::dsn::utils::lexical_cast_integer<int>(args[1], hdr->client.thread_hash))
         {
             derror("invalid thread hash in url %s", url.c_str());
             return 1;
@@ -179,13 +178,12 @@ http_message_parser::http_message_parser()
     {
         auto owner = static_cast<http_message_parser*>(parser->data);
         message_header* header = owner->_current_message->header;
+        std::string value(at, length);
         switch(owner->_response_parse_state)
         {
         case parsing_id:
         {
-            char *end;
-            header->id = std::strtoull(at, &end, 10);
-            if (end != at + length)
+            if (!::dsn::utils::lexical_cast_integer(value, header->id))
             {
                 derror("invalid header.id '%.*s'", length, at);
                 return 1;
@@ -194,9 +192,7 @@ http_message_parser::http_message_parser()
         }
         case parsing_trace_id:
         {
-            char *end;
-            header->trace_id = std::strtoull(at, &end, 10);
-            if (end != at + length)
+            if (!::dsn::utils::lexical_cast_integer(value, header->trace_id))
             {
                 derror("invalid header.trace_id '%.*s'", length, at);
                 return 1;
@@ -220,9 +216,7 @@ http_message_parser::http_message_parser()
         }
         case parsing_app_id:
         {
-            char *end;
-            header->gpid.u.app_id = std::strtol(at, &end, 10);
-            if (end != at + length)
+            if (!::dsn::utils::lexical_cast_integer(value, header->gpid.u.app_id))
             {
                 derror("invalid header.app_id '%.*s'", length, at);
                 return 1;
@@ -231,9 +225,7 @@ http_message_parser::http_message_parser()
         }
         case parsing_partition_index:
         {
-            char *end;
-            header->gpid.u.partition_index = std::strtol(at, &end, 10);
-            if (end != at + length)
+            if (!::dsn::utils::lexical_cast_integer(value, header->gpid.u.partition_index))
             {
                 derror("invalid header.partition_index '%.*s'", length, at);
                 return 1;
@@ -242,7 +234,7 @@ http_message_parser::http_message_parser()
         }
         case parsing_serialize_format:
         {
-            dsn_msg_serialize_format fmt = enum_from_string(std::string(at, length).c_str(), DSF_INVALID);
+            dsn_msg_serialize_format fmt = enum_from_string(value.c_str(), DSF_INVALID);
             if (fmt == DSF_INVALID)
             {
                 derror("invalid header.serialize_format '%.*s'", length, at);
@@ -272,9 +264,9 @@ http_message_parser::http_message_parser()
                 derror("invalid header.from_address '%.*s'", length, at);
                 return 1;
             }
-            char *end;
-            unsigned long port = std::strtol(at + pos + 1, &end, 10);
-            if (end != at + length)
+            uint16_t port = 0;
+            std::string port_str(at + pos + 1, length - pos - 1);
+            if (!::dsn::utils::lexical_cast_integer(port_str, port))
             {
                 derror("invalid header.from_address '%.*s'", length, at);
                 return 1;
@@ -285,9 +277,7 @@ http_message_parser::http_message_parser()
         }
         case parsing_client_timeout:
         {
-            char *end;
-            header->client.timeout_ms = std::strtol(at, &end, 10);
-            if (end != at + length)
+            if (!::dsn::utils::lexical_cast_integer(value, header->client.timeout_ms))
             {
                 derror("invalid header.client_timeout '%.*s'", length, at);
                 return 1;
@@ -296,9 +286,7 @@ http_message_parser::http_message_parser()
         }
         case parsing_client_thread_hash:
         {
-            char *end;
-            header->client.thread_hash = std::strtol(at, &end, 10);
-            if (end != at + length)
+            if (!::dsn::utils::lexical_cast_integer(value, header->client.thread_hash))
             {
                 derror("invalid header.client_thread_hash '%.*s'", length, at);
                 return 1;
@@ -307,9 +295,7 @@ http_message_parser::http_message_parser()
         }
         case parsing_client_partition_hash:
         {
-            char *end;
-            header->client.partition_hash = std::strtoull(at, &end, 10);
-            if (end != at + length)
+            if (!::dsn::utils::lexical_cast_integer(value, header->client.partition_hash))
             {
                 derror("invalid header.client_partition_hash '%.*s'", length, at);
                 return 1;

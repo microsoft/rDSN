@@ -163,9 +163,8 @@ static bool build_server_network_confs(
             return false;
         }
 
-        int port = 0;
-        if (!::dsn::utils::lexical_cast_integer<int>(*ks.begin(), port) || (port < 0) ||
-            (port > UINT16_MAX))
+        uint16_t port = 0;
+        if (!::dsn::utils::lexical_cast_integer<uint16_t>(*ks.begin(), port))
         {
             fprintf(stderr, "invalid network server port specified: '%s'\n", ks.begin()->c_str());
             return false;

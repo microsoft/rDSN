@@ -34,6 +34,8 @@
 */
 
 #include "counter.server.impl.h"
+#include <cstdio>
+#include <dsn/cpp/utils.h>
 #include <fstream>
 #include <sstream>
 
@@ -46,6 +48,22 @@ using namespace ::dsn::service;
 
 namespace dsn {
     namespace example {
+
+        static bool parse_checkpoint_version(const std::string &name, int64_t *version)
+        {
+            const char *prefix = "checkpoint.";
+            if (name.substr(0, strlen(prefix)) != std::string(prefix))
+            {
+                return false;
+            }
+
+            if (!::dsn::utils::lexical_cast_integer<int64_t>(name.substr(strlen(prefix)), *version))
+            {
+                return false;
+            }
+
+            return true;
+        }
         
         counter_service_impl::counter_service_impl(dsn_gpid gpid)
             : ::dsn::replicated_service_app_type_1(gpid), _lock(true)
@@ -134,10 +152,10 @@ namespace dsn {
             for (auto& fpath : sub_list)
             {
                 auto&& s = dsn::utils::filesystem::get_file_name(fpath);
-                if (s.substr(0, strlen("checkpoint.")) != std::string("checkpoint."))
+                int64_t version = 0;
+                if (!parse_checkpoint_version(s, &version))
                     continue;
 
-                int64_t version = static_cast<int64_t>(atoll(s.substr(strlen("checkpoint.")).c_str()));
                 if (version > maxVersion)
                 {
                     maxVersion = version;
@@ -190,7 +208,12 @@ namespace dsn {
         ::dsn::error_code counter_service_impl::sync_checkpoint(int64_t last_commit)
         {
             char name[256];
-            sprintf(name, "%s/checkpoint.%" PRId64, data_dir(), last_commit);
+            int len = snprintf(name, sizeof(name), "%s/checkpoint.%" PRId64, data_dir(), last_commit);
+            if (len < 0 || static_cast<size_t>(len) >= sizeof(name))
+            {
+                derror("checkpoint path is too long");
+                return ::dsn::ERR_FILE_OPERATION_FAILED;
+            }
 
             zauto_lock l(_lock);
 
@@ -241,10 +264,16 @@ namespace dsn {
             if (last_durable_decree() > 0)
             {
                 char name[256];
-                sprintf(name, "%s/checkpoint.%" PRId64,
-                    data_dir(),
-                    last_durable_decree()
-                );
+                int len = snprintf(name,
+                                   sizeof(name),
+                                   "%s/checkpoint.%" PRId64,
+                                   data_dir(),
+                                   last_durable_decree());
+                if (len < 0 || static_cast<size_t>(len) >= sizeof(name))
+                {
+                    derror("checkpoint path is too long");
+                    return ::dsn::ERR_FILE_OPERATION_FAILED;
+                }
 
                 state.from_decree_excluded = 0;
                 state.to_decree_included = last_durable_decree();
@@ -275,14 +304,20 @@ namespace dsn {
                 dassert(state.to_decree_included > last_durable_decree(), "checkpoint's decree is smaller than current");
 
                 char name[256];
-                sprintf(name, "%s/checkpoint.%" PRId64,
-                    data_dir(),
-                    state.to_decree_included
-                );
+                int len = snprintf(name,
+                                   sizeof(name),
+                                   "%s/checkpoint.%" PRId64,
+                                   data_dir(),
+                                   state.to_decree_included);
+                if (len < 0 || static_cast<size_t>(len) >= sizeof(name))
+                {
+                    derror("checkpoint path is too long");
+                    return ::dsn::ERR_CHECKPOINT_FAILED;
+                }
                 std::string lname(name);
 
                 if (!utils::filesystem::rename_path(state.files[0], lname))
-                    return ERR_CHECKPOINT_FAILED;
+                    return ::dsn::ERR_CHECKPOINT_FAILED;
                 else
                 {
                     set_last_durable_decree(state.to_decree_included);
