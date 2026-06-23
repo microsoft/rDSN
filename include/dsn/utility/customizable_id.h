@@ -206,16 +206,23 @@ int customized_id_mgr<T>::register_id(const char* name)
         return -1;
     }
 
-    int id = get_id(name);
-    if (-1 != id)
+    try
     {
-        return id;
-    }
+        int id = get_id(name);
+        if (-1 != id)
+        {
+            return id;
+        }
 
-    int code = static_cast<int>(_names.size());
-    _names[std::string(name)] = code;
-    _names2.push_back(std::string(name));
-    return code;
+        int code = static_cast<int>(_names.size());
+        _names[std::string(name)] = code;
+        _names2.push_back(std::string(name));
+        return code;
+    }
+    catch (...)
+    {
+        return -1;
+    }
 }
 
 }} // end namespace dsn::utils
