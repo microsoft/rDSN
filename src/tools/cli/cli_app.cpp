@@ -106,8 +106,10 @@ namespace dsn {
                         std::string machine = args[1];
                         uint16_t port = 0;
                         unsigned int timeout_seconds = 0;
-                        if (!::dsn::utils::lexical_cast_integer<uint16_t>(args[2], port) ||
-                            !::dsn::utils::lexical_cast_integer<unsigned int>(args[3], timeout_seconds))
+                        if (!::dsn::utils::lexical_cast_integer<uint16_t>(
+                                std::string(args[2].c_str(), args[2].size()), port) ||
+                            !::dsn::utils::lexical_cast_integer<unsigned int>(
+                                std::string(args[3].c_str(), args[3].size()), timeout_seconds))
                         {
                             std::cout << "invalid remote port or timeout" << std::endl;
                             continue;
