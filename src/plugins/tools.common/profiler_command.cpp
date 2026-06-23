@@ -176,7 +176,9 @@ namespace dsn {
                     return ss.str().c_str();
                 }
                 int num = 0;
-                if (!::dsn::utils::lexical_cast_integer<int>(args[1].c_str(), num) || (num < 1))
+                if (!::dsn::utils::lexical_cast_integer<int>(
+                        std::string(args[1].c_str(), args[1].size()), num) ||
+                    (num < 1))
                 {
                     ss << "not a legal value" << std::endl;
                     return ss.str().c_str();
@@ -217,7 +219,9 @@ namespace dsn {
                     return ss.str().c_str();
                 }
                 int num = 0;
-                if (!::dsn::utils::lexical_cast_integer<int>(args[1].c_str(), num) || (num < 1))
+                if (!::dsn::utils::lexical_cast_integer<int>(
+                        std::string(args[1].c_str(), args[1].size()), num) ||
+                    (num < 1))
                 {
                     return ss.str().c_str();
                 }
@@ -503,7 +507,8 @@ namespace dsn {
                 int task_id = find_task_id(args[1].c_str());
                 int query_percentile = 50;
                 if (args.size() > 2 &&
-                    (!::dsn::utils::lexical_cast_integer<int>(args[2].c_str(), query_percentile) ||
+                    (!::dsn::utils::lexical_cast_integer<int>(
+                         std::string(args[2].c_str(), args[2].size()), query_percentile) ||
                      (query_percentile < 1)))
                 {
                     ss << "not a legal percentile value" << std::endl;
