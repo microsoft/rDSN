@@ -57,6 +57,7 @@
 # include "transient_memory.h"
 # include "library_utils.h"
 # include <cstdio>
+# include <exception>
 # include <fstream>
 
 # if defined(_WIN32)
@@ -762,12 +763,22 @@ DSN_API void dsn_run(int argc, char** argv, bool sleep_after_init)
         }
     }
 
-    if (!run(config, 
-        config_args.size() > 0 ? config_args.c_str() : nullptr, 
-        overwrites.size() > 0 ? overwrites.c_str() : nullptr,
-        sleep_after_init, 
-        app_list
-    ))
+    bool run_succeeded = false;
+    try
+    {
+        run_succeeded = run(config,
+            config_args.size() > 0 ? config_args.c_str() : nullptr,
+            overwrites.size() > 0 ? overwrites.c_str() : nullptr,
+            sleep_after_init,
+            app_list
+        );
+    }
+    catch (const std::exception& err)
+    {
+        fprintf(stderr, "run the system failed due to exception: %s\n", err.what());
+    }
+
+    if (!run_succeeded)
     {
         fprintf(stderr, "run the system failed\n");
         dsn_exit(-1);
@@ -783,8 +794,17 @@ DSN_API bool dsn_run_config(const char* config, bool sleep_after_init)
         return false;
     }
 
-    std::string name;
-    return run(config, nullptr, nullptr, sleep_after_init, name);
+    try
+    {
+        std::string name;
+        return run(config, nullptr, nullptr, sleep_after_init, name);
+    }
+    catch (const std::exception& err)
+    {
+        fprintf(stderr, "run the system failed due to exception: %s\n", err.what());
+    }
+
+    return false;
 }
 
 DSN_API int dsn_get_all_apps(dsn_app_info* info_buffer, int count)
