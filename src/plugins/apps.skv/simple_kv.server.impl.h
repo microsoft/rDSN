@@ -78,8 +78,8 @@ namespace dsn {
                     ) override;
 
             private:
-                void recover();
-                void recover(const std::string& name, int64_t version);
+                ::dsn::error_code recover();
+                bool recover(const std::string& name, int64_t version);
                 const char* data_dir() const { return _data_dir.c_str(); }
                 int64_t last_durable_decree() const { return _last_durable_decree; }
                 void set_last_durable_decree(int64_t d) { _last_durable_decree = d; }
