@@ -36,7 +36,9 @@
 # pragma once
 
 # include <dsn/service_api_c.h>
+# include <limits>
 # include <memory>
+# include <new>
 
 namespace dsn {
 
@@ -49,7 +51,12 @@ namespace dsn {
     public:
         void* operator new(size_t size)
         {
-            return a(uint32_t(size));
+            void* ptr = a(uint32_t(size));
+            if (ptr == nullptr)
+            {
+                throw std::bad_alloc();
+            }
+            return ptr;
         }
 
         void operator delete(void* p)
@@ -59,7 +66,12 @@ namespace dsn {
 
         void* operator new[](size_t size)
         {
-            return a((uint32_t)size);
+            void* ptr = a((uint32_t)size);
+            if (ptr == nullptr)
+            {
+                throw std::bad_alloc();
+            }
+            return ptr;
         }
 
         void operator delete[](void* p)
@@ -86,7 +98,23 @@ namespace dsn {
 
         T* allocate(size_type n, const void *hint = 0)
         {
-            return static_cast<T*>(a(uint32_t(n * sizeof(T))));
+            if (n == 0)
+            {
+                return nullptr;
+            }
+
+            // The underlying rDSN allocation API takes uint32_t bytes.
+            if (n > (std::numeric_limits<uint32_t>::max)() / sizeof(T))
+            {
+                throw std::bad_alloc();
+            }
+
+            T* ptr = static_cast<T*>(a(uint32_t(n * sizeof(T))));
+            if (ptr == nullptr)
+            {
+                throw std::bad_alloc();
+            }
+            return ptr;
         }
 
         void deallocate(T* p, size_type n)

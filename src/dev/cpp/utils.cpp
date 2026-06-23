@@ -401,7 +401,8 @@ namespace dsn
         // now ret should be sizeof(len).
         if (len < 0)
         {
-            dassert(false, "len is negative: %d", len);
+            derror("binary_reader::read got negative string length: %d", len);
+            return 0;
         }
         else if (len == 0)
         {
@@ -416,7 +417,8 @@ namespace dsn
         }
         else
         {
-            dassert(false, "read beyond the end of buffer");
+            derror("binary_reader::read string beyond the end of buffer");
+            return 0;
         }
         
         return ret;
@@ -435,7 +437,8 @@ namespace dsn
         // now ret should be sizeof(len).
         if (len < 0)
         {
-            dassert(false, "len is negative: %d", len);
+            derror("binary_reader::read got negative blob length: %d", len);
+            return 0;
         }
         else if (len == 0)
         {
@@ -459,7 +462,8 @@ namespace dsn
         }
         else
         {
-            dassert(false, "read beyond the end of buffer");
+            derror("binary_reader::read blob beyond the end of buffer");
+            return 0;
         }
 
         return ret;
@@ -488,7 +492,7 @@ namespace dsn
         }
         else
         {
-            dassert(false, "read beyond the end of buffer");
+            derror("binary_reader::read beyond the end of buffer");
             return 0;
         }
     }
