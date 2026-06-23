@@ -703,7 +703,8 @@ safe_string service_engine::get_runtime_info(const safe_vector<safe_string>& arg
     {
         auto indent = "";
         int id = 0;
-        if (!::dsn::utils::lexical_cast_integer<int>(args[0], id) || (id < 0))
+        if (!::dsn::utils::lexical_cast_integer<int>(std::string(args[0].c_str(), args[0].size()), id) ||
+            (id < 0))
         {
             ss << "invalid app id";
             return ss.str();

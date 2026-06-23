@@ -484,7 +484,7 @@ safe_string perf_counters::get_counter_value_i(const safe_vector<safe_string>& a
     }
 
     uint64_t idx = 0;
-    if (!::dsn::utils::lexical_cast_integer<uint64_t>(args[0], idx))
+    if (!::dsn::utils::lexical_cast_integer<uint64_t>(std::string(args[0].c_str(), args[0].size()), idx))
     {
         value_resp{ value, ts, std::string(), 0 }.encode_json_state(ss);
         return ss.str().c_str();
@@ -520,7 +520,7 @@ safe_string perf_counters::get_counter_sample_i(const safe_vector<safe_string>& 
     }
 
     uint64_t idx = 0;
-    if (!::dsn::utils::lexical_cast_integer<uint64_t>(args[0], idx))
+    if (!::dsn::utils::lexical_cast_integer<uint64_t>(std::string(args[0].c_str(), args[0].size()), idx))
     {
         sample_resp{ sample, ts, std::string(), 0 }.encode_json_state(ss);
         return ss.str().c_str();

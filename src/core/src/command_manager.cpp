@@ -503,14 +503,17 @@ namespace dsn {
             }
 
             int interval_seconds = 0;
-            if (!::dsn::utils::lexical_cast_integer<int>(args[0].c_str(), interval_seconds) ||
+            if (!::dsn::utils::lexical_cast_integer<int>(
+                    std::string(args[0].c_str(), args[0].size()), interval_seconds) ||
                 interval_seconds <= 0)
             {
                 return "invalid interval argument";
             }
 
             int max_count = 0;
-            if (!::dsn::utils::lexical_cast_integer<int>(args[1].c_str(), max_count) || max_count < 0)
+            if (!::dsn::utils::lexical_cast_integer<int>(
+                    std::string(args[1].c_str(), args[1].size()), max_count) ||
+                max_count < 0)
             {
                 return "invalid max count";
             }
