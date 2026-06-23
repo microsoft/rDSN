@@ -233,7 +233,10 @@ DSN_API dsn_task_code_t dsn_task_code_register(
 
     auto r = static_cast<dsn_task_code_t>(
         ::dsn::utils::customized_id_mgr<task_code_placeholder>::instance().register_id(name));
-    ::dsn::task_spec::register_task_code(r, type, pri, pool);
+    if (!::dsn::task_spec::register_task_code(r, type, pri, pool))
+    {
+        return static_cast<dsn_task_code_t>(::dsn::TASK_CODE_INVALID);
+    }
     return r;
 }
 

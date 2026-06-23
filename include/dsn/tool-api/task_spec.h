@@ -193,7 +193,7 @@ class task_spec : public extensible_object<task_spec, 4>
 {
 public:
     DSN_API static task_spec* get(int ec);
-    DSN_API static void register_task_code(dsn_task_code_t code, dsn_task_type_t type, dsn_task_priority_t pri, dsn_threadpool_code_t pool);
+    DSN_API static bool register_task_code(dsn_task_code_t code, dsn_task_type_t type, dsn_task_priority_t pri, dsn_threadpool_code_t pool);
 
 public:
     // not configurable [

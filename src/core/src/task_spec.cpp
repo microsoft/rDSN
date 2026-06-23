@@ -37,6 +37,7 @@
 # include <dsn/utility/singleton.h>
 # include <dsn/tool-api/perf_counter.h>
 # include <dsn/tool-api/command.h>
+# include <memory>
 # include <sstream>
 # include <vector>
 # include <thread>
@@ -48,59 +49,99 @@
 
 namespace dsn {
 
-void task_spec::register_task_code(dsn_task_code_t code, dsn_task_type_t type, dsn_task_priority_t pri, dsn_threadpool_code_t pool)
+bool task_spec::register_task_code(dsn_task_code_t code, dsn_task_type_t type, dsn_task_priority_t pri, dsn_threadpool_code_t pool)
 {
-    dassert(pool != THREAD_POOL_INVALID, 
-        "registered pool cannot be THREAD_POOL_INVALID for task %s, "
-        "make sure it is registered AFTER the pool is registered",
-        dsn_task_code_to_string(code)
-        );
-
-    if (!dsn::utils::singleton_vector_store<task_spec*, nullptr>::instance().contains(code))
+    if (code < 0)
     {
-        task_spec* spec = new task_spec(code, dsn_task_code_to_string(code), type, pri, pool);
-        dsn::utils::singleton_vector_store<task_spec*, nullptr>::instance().put(code, spec);
-
-        if (type == TASK_TYPE_RPC_REQUEST)
-        {
-            std::string ack_name = std::string(dsn_task_code_to_string(code)) + std::string("_ACK");
-            auto ack_code = dsn_task_code_register(ack_name.c_str(), TASK_TYPE_RPC_RESPONSE, pri, pool);
-            spec->rpc_paired_code = ack_code;
-            task_spec::get(ack_code)->rpc_paired_code = code;
-        }
+        return false;
     }
-    else
-    {
-        auto spec = task_spec::get(code);
-        if (spec->type != type)
-        {
-            dassert(false, "task code %s registerd for %s, which does not match with previously registered %s",
-                dsn_task_code_to_string(code),
-                enum_to_string(type),
-                enum_to_string(spec->type)
-                );
-            return;
-        }
-        
-        if (spec->priority != pri)
-        {
-            dwarn("overwrite priority for task %s from %s to %s",
-                dsn_task_code_to_string(code),
-                enum_to_string(spec->priority),
-                enum_to_string(pri)
-                );
-            spec->priority = pri;
-        }
 
-        if (spec->pool_code != pool)
+    if (pool == THREAD_POOL_INVALID)
+    {
+        derror("registered pool cannot be THREAD_POOL_INVALID for task %s, "
+               "make sure it is registered AFTER the pool is registered",
+               dsn_task_code_to_string(code));
+        return false;
+    }
+
+    try
+    {
+        auto& store = dsn::utils::singleton_vector_store<task_spec*, nullptr>::instance();
+        if (!store.contains(code))
         {
-            dwarn("overwrite default thread pool for task %s from %s to %s",
-                dsn_task_code_to_string(code),
-                dsn_threadpool_code_to_string(spec->pool_code),
-                dsn_threadpool_code_to_string(pool)
-            );
-            spec->pool_code = pool;
+            std::unique_ptr<task_spec> spec(
+                new task_spec(code, dsn_task_code_to_string(code), type, pri, pool));
+
+            if (type == TASK_TYPE_RPC_REQUEST)
+            {
+                std::string ack_name = std::string(dsn_task_code_to_string(code)) + std::string("_ACK");
+                auto ack_code = dsn_task_code_register(ack_name.c_str(), TASK_TYPE_RPC_RESPONSE, pri, pool);
+                auto ack_spec = task_spec::get(ack_code);
+                if (ack_spec == nullptr)
+                {
+                    return false;
+                }
+                spec->rpc_paired_code = ack_code;
+
+                if (!store.put(code, spec.get()))
+                {
+                    return false;
+                }
+                ack_spec->rpc_paired_code = code;
+                spec.release();
+            }
+            else
+            {
+                if (!store.put(code, spec.get()))
+                {
+                    return false;
+                }
+                spec.release();
+            }
         }
+        else
+        {
+            auto spec = task_spec::get(code);
+            if (spec == nullptr)
+            {
+                return false;
+            }
+
+            if (spec->type != type)
+            {
+                derror("task code %s registerd for %s, which does not match with previously registered %s",
+                    dsn_task_code_to_string(code),
+                    enum_to_string(type),
+                    enum_to_string(spec->type)
+                    );
+                return false;
+            }
+
+            if (spec->priority != pri)
+            {
+                dwarn("overwrite priority for task %s from %s to %s",
+                    dsn_task_code_to_string(code),
+                    enum_to_string(spec->priority),
+                    enum_to_string(pri)
+                    );
+                spec->priority = pri;
+            }
+
+            if (spec->pool_code != pool)
+            {
+                dwarn("overwrite default thread pool for task %s from %s to %s",
+                    dsn_task_code_to_string(code),
+                    dsn_threadpool_code_to_string(spec->pool_code),
+                    dsn_threadpool_code_to_string(pool)
+                );
+                spec->pool_code = pool;
+            }
+        }
+        return true;
+    }
+    catch (...)
+    {
+        return false;
     }
 }
 
