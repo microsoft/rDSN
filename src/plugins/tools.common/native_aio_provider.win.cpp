@@ -53,17 +53,26 @@ native_win_aio_provider::native_win_aio_provider(disk_engine* disk, aio_provider
 : aio_provider(disk, inner_provider)
 {
     _iocp = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, 0);
-    
+    if ((_iocp == NULL) || (_iocp == INVALID_HANDLE_VALUE))
+    {
+        derror("CreateIoCompletionPort failed, err = %d", ::GetLastError());
+        _iocp = INVALID_HANDLE_VALUE;
+    }
 }
 
 native_win_aio_provider::~native_win_aio_provider()
 {
     if (_worker_thr != nullptr && _iocp != NULL && _iocp != INVALID_HANDLE_VALUE)
     {
-        ::PostQueuedCompletionStatus(_iocp, 0, 1, NULL);
-        
+        if (::PostQueuedCompletionStatus(_iocp, 0, 1, NULL) == FALSE)
+        {
+            derror("PostQueuedCompletionStatus failed, err = %d", ::GetLastError());
+        }
         _worker_thr->join();
-        ::CloseHandle(_iocp);
+        if (::CloseHandle(_iocp) == FALSE)
+        {
+            derror("CloseHandle failed, err = %d", ::GetLastError());
+        }
         _iocp = INVALID_HANDLE_VALUE;
         delete _worker_thr;
         _worker_thr = nullptr;
@@ -72,6 +81,12 @@ native_win_aio_provider::~native_win_aio_provider()
 
 void native_win_aio_provider::start(io_modifer& ctx)
 {
+    if ((_iocp == NULL) || (_iocp == INVALID_HANDLE_VALUE))
+    {
+        derror("cannot start native win aio provider without a valid IO completion port");
+        return;
+    }
+
     _worker_thr = new std::thread([this, ctx]()
     {
         task::set_tls_dsn_context(node(), nullptr, ctx.queue);
@@ -190,10 +205,17 @@ dsn_handle_t native_win_aio_provider::open(const char* file_name, int oflag, int
 
     if (fileHandle != INVALID_HANDLE_VALUE && fileHandle != nullptr)
     {
-        if (_iocp != ::CreateIoCompletionPort(fileHandle, _iocp, 0, 0))
+        HANDLE iocp = ::CreateIoCompletionPort(fileHandle, _iocp, 0, 0);
+        if ((iocp == NULL) || (iocp != _iocp))
         {
-            dassert(false, "cannot associate file handle %s to io completion port, err = 0x%x", file_name, ::GetLastError());
-            return 0;
+            derror("cannot associate file handle %s to io completion port, err = 0x%x",
+                   file_name,
+                   ::GetLastError());
+            if (::CloseHandle(fileHandle) == FALSE)
+            {
+                derror("close file failed, err = 0x%x", ::GetLastError());
+            }
+            return DSN_INVALID_FILE_HANDLE;
         }
         else
         {
@@ -203,33 +225,43 @@ dsn_handle_t native_win_aio_provider::open(const char* file_name, int oflag, int
     else
     {
         derror("cannot create file %s, err = 0x%x", file_name, ::GetLastError());
-        return 0;
+        return DSN_INVALID_FILE_HANDLE;
     }
 }
 
 error_code native_win_aio_provider::close(dsn_handle_t fh)
 {
-    if (fh == DSN_INVALID_FILE_HANDLE || ::CloseHandle((HANDLE)(fh)))
+    if (fh == DSN_INVALID_FILE_HANDLE)
     {
-        return ERR_OK;
+        return ::dsn::ERR_OK;
+    }
+
+    if (::CloseHandle((HANDLE)(fh)))
+    {
+        return ::dsn::ERR_OK;
     }
     else
     {
         derror("close file failed, err = 0x%x", ::GetLastError());
-        return ERR_FILE_OPERATION_FAILED;
+        return ::dsn::ERR_FILE_OPERATION_FAILED;
     }        
 }
 
 error_code native_win_aio_provider::flush(dsn_handle_t fh)
 {
-    if (fh == DSN_INVALID_FILE_HANDLE || ::FlushFileBuffers((HANDLE)(fh)))
+    if (fh == DSN_INVALID_FILE_HANDLE)
     {
-        return ERR_OK;
+        return ::dsn::ERR_OK;
+    }
+
+    if (::FlushFileBuffers((HANDLE)(fh)))
+    {
+        return ::dsn::ERR_OK;
     }
     else
     {
-        derror("close file failed, err = 0x%x", ::GetLastError());
-        return ERR_FILE_OPERATION_FAILED;
+        derror("flush file failed, err = 0x%x", ::GetLastError());
+        return ::dsn::ERR_FILE_OPERATION_FAILED;
     }
 }
 
@@ -268,7 +300,7 @@ error_code native_win_aio_provider::aio_internal(aio_task* aio_tsk, bool async, 
     if (!async)
     {
         aio->evt = new utils::notify_event();
-        aio->err = ERR_OK;
+        aio->err = ::dsn::ERR_OK;
         aio->bytes = 0;
     }
 
@@ -293,8 +325,8 @@ error_code native_win_aio_provider::aio_internal(aio_task* aio_tsk, bool async, 
         {
             derror("file operation failed, err = %u", dwErrorCode);
 
-            error_code err = dwErrorCode == ERROR_SUCCESS ? ERR_OK :
-                (dwErrorCode == ERROR_HANDLE_EOF ? ERR_HANDLE_EOF : ERR_FILE_OPERATION_FAILED);
+            error_code err = (dwErrorCode == ERROR_SUCCESS) ? ::dsn::ERR_OK :
+                ((dwErrorCode == ERROR_HANDLE_EOF) ? ::dsn::ERR_HANDLE_EOF : ::dsn::ERR_FILE_OPERATION_FAILED);
 
             if (async)
             {
@@ -312,7 +344,7 @@ error_code native_win_aio_provider::aio_internal(aio_task* aio_tsk, bool async, 
 
     if (async)
     {
-        return ERR_IO_PENDING;
+        return ::dsn::ERR_IO_PENDING;
     }
     else
     {
@@ -343,11 +375,11 @@ void native_win_aio_provider::worker()
             if (!ctx->evt)
             {
                 aio_task* aio(ctx->tsk);
-                complete_io(aio, ERR_OK, dwTransLen);
+                complete_io(aio, ::dsn::ERR_OK, dwTransLen);
             }
             else
             {
-                ctx->err = ERR_OK;
+                ctx->err = ::dsn::ERR_OK;
                 ctx->bytes = dwTransLen;
                 ctx->evt->notify();
             }
@@ -358,8 +390,8 @@ void native_win_aio_provider::worker()
             dinfo("file operation failed, err = %u", dwErrorCode);
 
             windows_disk_aio_context* ctx = CONTAINING_RECORD(overLap, windows_disk_aio_context, olp);
-            error_code err = dwErrorCode == ERROR_SUCCESS ? ERR_OK :
-                (dwErrorCode == ERROR_HANDLE_EOF ? ERR_HANDLE_EOF : ERR_FILE_OPERATION_FAILED);
+            error_code err = (dwErrorCode == ERROR_SUCCESS) ? ::dsn::ERR_OK :
+                ((dwErrorCode == ERROR_HANDLE_EOF) ? ::dsn::ERR_HANDLE_EOF : ::dsn::ERR_FILE_OPERATION_FAILED);
 
             if (!ctx->evt)
             {

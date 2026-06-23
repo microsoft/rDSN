@@ -1701,7 +1701,7 @@ static BOOL SuspendAllThreads()
     std::map<uint32_t, HANDLE> threads;
     uint32_t dwCurrentThreadId = ::GetCurrentThreadId();
     uint32_t dwCurrentProcessId = ::GetCurrentProcessId();
-    HANDLE hSnapshot;
+    HANDLE hSnapshot = INVALID_HANDLE_VALUE;
     bool bChange = TRUE;
 
     while (bChange) 
@@ -1736,20 +1736,35 @@ static BOOL SuspendAllThreads()
                         derror("OpenThread failed, err = %d", ::GetLastError());
                         goto err;
                     }
-                    ::SuspendThread(hThread);
+                    if (::SuspendThread(hThread) == (DWORD)-1)
+                    {
+                        derror("SuspendThread failed, err = %d", ::GetLastError());
+                        if (::CloseHandle(hThread) == FALSE)
+                        {
+                            derror("CloseHandle failed, err = %d", ::GetLastError());
+                        }
+                        goto err;
+                    }
                     ddebug("thread %d find and suspended ...", ti.th32ThreadID);
                     threads.insert(std::make_pair(ti.th32ThreadID, hThread));
                     bChange = TRUE;
                 }
         } while (::Thread32Next(hSnapshot, &ti));
 
-        ::CloseHandle(hSnapshot);
+        if (::CloseHandle(hSnapshot) == FALSE)
+        {
+            derror("CloseHandle failed, err = %d", ::GetLastError());
+            return FALSE;
+        }
     }
 
     return TRUE;
 
 err:
-    ::CloseHandle(hSnapshot);
+    if ((hSnapshot != INVALID_HANDLE_VALUE) && (::CloseHandle(hSnapshot) == FALSE))
+    {
+        derror("CloseHandle failed, err = %d", ::GetLastError());
+    }
     return FALSE;
 }
 # endif
@@ -1764,7 +1779,11 @@ NORETURN DSN_API void dsn_exit(int code)
     // TODO: do not use std::map above, coz when suspend the other threads, they may stop
     // inside certain locks which causes deadlock
     // SuspendAllThreads();
-    ::TerminateProcess(::GetCurrentProcess(), code);
+    if (::TerminateProcess(::GetCurrentProcess(), code) == FALSE)
+    {
+        derror("TerminateProcess failed, err = %d", ::GetLastError());
+        ::abort();
+    }
 # else    
     _exit(code);
  // kill(getpid(), SIGKILL);

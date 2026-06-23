@@ -71,7 +71,7 @@ namespace dsn
 }
 
 # if defined(_WIN32)
-static void net_init()
+static bool net_init()
 {
     static std::once_flag flag;
     static bool flag_inited = false;
@@ -80,21 +80,37 @@ static void net_init()
         std::call_once(flag, [&]()
         {
             WSADATA wsaData;
-            WSAStartup(MAKEWORD(2, 2), &wsaData);
-            flag_inited = true;
+            int err = ::WSAStartup(MAKEWORD(2, 2), &wsaData);
+            if (err != 0)
+            {
+                derror("WSAStartup failed, err = %d", err);
+            }
+            else
+            {
+                flag_inited = true;
+            }
         });
     }
+
+    return flag_inited;
 }
 # endif
 
 // name to ip etc.
 DSN_API uint32_t dsn_ipv4_from_host(const char* name)
 {
-    if (name == nullptr || name[0] == '\0')
+    if ((name == nullptr) || (name[0] == '\0'))
     {
         derror("dsn_ipv4_from_host got null or empty name");
         return 0;
     }
+
+# if defined(_WIN32)
+    if (!net_init())
+    {
+        return 0;
+    }
+# endif
 
     sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));

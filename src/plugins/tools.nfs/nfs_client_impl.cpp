@@ -33,6 +33,7 @@
  *     xxxx-xx-xx, author, fix bug about xxx
  */
 # include "nfs_client_impl.h"
+# include <dsn/cpp/utils.h>
 # include <dsn/tool-api/nfs.h>
 # include <queue>
 
@@ -448,8 +449,11 @@ namespace dsn {
 
                     if (f.second->finished_segments != (int)f.second->copy_requests.size())
                     {
-                        ::remove((f.second->user_req->file_size_req.dst_dir 
-                            + f.second->file_name).c_str());
+                        std::string path = f.second->user_req->file_size_req.dst_dir + f.second->file_name;
+                        if (!::dsn::utils::filesystem::remove_path(path))
+                        {
+                            dwarn("failed to remove incomplete transfer file %s", path.c_str());
+                        }
                     }
 
                     f.second->copy_requests.clear();
