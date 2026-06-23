@@ -386,7 +386,11 @@ error_code service_node::start()
     // start io engines (only timer, disk and rpc), others are started in app start task
     for (auto& io : _ios)
     {
-        start_io_engine_in_main(io);
+        err = start_io_engine_in_main(io);
+        if (err != ERR_OK)
+        {
+            return err;
+        }
     }
 
     // start task engine
@@ -673,7 +677,11 @@ service_node* service_engine::start_node(service_app_spec& app_spec)
                 
         auto node = new service_node(app_spec);
         error_code err = node->start();
-        dassert (err == ERR_OK, "service node start failed, err = %s", err.to_string());
+        if (err != ERR_OK)
+        {
+            derror("service node start failed, err = %s", err.to_string());
+            return nullptr;
+        }
         
         _nodes_by_app_id[node->id()] = node;
         for (auto p1 : node->spec().ports)

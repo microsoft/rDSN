@@ -283,7 +283,9 @@ namespace dsn {
 
             if (client_only)
             {
-                do
+                static const int max_client_port_retry_count = 10;
+                int retry_count = 0;
+                for (; retry_count < max_client_port_retry_count; retry_count++)
                 {
                     //FIXME: we actually do not need to set a random port for client if the rpc_engine is refactored
                     _address.assign_ipv4(get_local_ipv4(), (std::numeric_limits<uint16_t>::max)() -
@@ -297,9 +299,23 @@ namespace dsn {
                     }
                     catch (boost::system::system_error& err)
                     {
-                        ddebug("asio udp listen on port %u failed, err: %s", _address.port(), err.what());
+                        if (err.code() == boost::asio::error::address_in_use)
+                        {
+                            ddebug("asio udp listen on port %u failed, err: %s", _address.port(), err.what());
+                            continue;
+                        }
+
+                        derror("asio udp listen on port %u failed, err: %s", _address.port(), err.what());
+                        return ERR_NETWORK_START_FAILED;
                     }
-                } while (true);
+                }
+
+                if (retry_count >= max_client_port_retry_count)
+                {
+                    derror("asio udp failed to find an available client port after %d retries",
+                           max_client_port_retry_count);
+                    return ERR_ADDRESS_ALREADY_USED;
+                }
             }
             else
             {

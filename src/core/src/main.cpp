@@ -619,7 +619,11 @@ bool run(
 
         if (create_it)
         {
-            ::dsn::service_engine::fast_instance().start_node(sp);
+            if (::dsn::service_engine::fast_instance().start_node(sp) == nullptr)
+            {
+                fprintf(stderr, "Fail to start app %s.\n", sp.name.c_str());
+                return false;
+            }
         }
     }
         
