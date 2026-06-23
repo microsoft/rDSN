@@ -431,23 +431,6 @@ TEST(core, lexical_cast_integer_bool_wrapper_returns_status)
     EXPECT_EQ((uint16_t)10, port);
 }
 
-TEST(core, lexical_cast_integer_range_wrapper_returns_status)
-{
-    int value = 0;
-    EXPECT_TRUE(::dsn::utils::lexical_cast_integer<int>("10", 1, 10, value));
-    EXPECT_EQ(10, value);
-
-    EXPECT_FALSE(::dsn::utils::lexical_cast_integer<int>("0", 1, 10, value));
-    EXPECT_EQ(0, value);
-
-    EXPECT_FALSE(::dsn::utils::lexical_cast_integer<int>("11", 1, 10, value));
-    EXPECT_EQ(11, value);
-
-    value = 5;
-    EXPECT_FALSE(::dsn::utils::lexical_cast_integer<int>("abc", 1, 10, value));
-    EXPECT_EQ(5, value);
-}
-
 TEST(core, lexical_cast_bool_accepts_valid_values)
 {
     EXPECT_FALSE(lexical_cast<bool>("0"));

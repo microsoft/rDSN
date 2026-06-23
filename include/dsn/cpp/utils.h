@@ -271,21 +271,6 @@ namespace dsn {
             }
         }
 
-        template <typename T>
-        inline typename std::enable_if<
-            std::is_integral<T>::value &&
-            !std::is_same<T, bool>::value,
-            bool>::type
-        lexical_cast_integer(const std::string& str, T min_value, T max_value, T& result)
-        {
-            if (!lexical_cast_integer(str, result))
-            {
-                return false;
-            }
-
-            return (result >= min_value) && (result <= max_value);
-        }
-
         inline bool lexical_cast_bool(const std::string& str)
         {
             if (str == "0")
