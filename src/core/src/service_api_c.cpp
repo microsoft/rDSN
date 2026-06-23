@@ -57,6 +57,7 @@
 # include "crc.h"
 # include "transient_memory.h"
 # include "library_utils.h"
+# include <exception>
 # include <fstream>
 
 # if defined(_WIN32)
@@ -231,9 +232,18 @@ DSN_API dsn_task_code_t dsn_task_code_register(
         return static_cast<dsn_task_code_t>(::dsn::TASK_CODE_INVALID);
     }
 
-    auto r = static_cast<dsn_task_code_t>(::dsn::utils::customized_id_mgr<task_code_placeholder>::instance().register_id(name));
-    ::dsn::task_spec::register_task_code(r, type, pri, pool);
-    return r;
+    try
+    {
+        auto r = static_cast<dsn_task_code_t>(
+            ::dsn::utils::customized_id_mgr<task_code_placeholder>::instance().register_id(name));
+        ::dsn::task_spec::register_task_code(r, type, pri, pool);
+        return r;
+    }
+    catch (const std::exception& err)
+    {
+        derror("dsn_task_code_register failed for %s due to exception: %s", name, err.what());
+        return static_cast<dsn_task_code_t>(::dsn::TASK_CODE_INVALID);
+    }
 }
 
 DSN_API void dsn_task_code_query(dsn_task_code_t code, dsn_task_type_t *ptype, dsn_task_priority_t *ppri, dsn_threadpool_code_t *ppool)
