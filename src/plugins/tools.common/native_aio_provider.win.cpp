@@ -52,7 +52,7 @@ namespace dsn { namespace tools {
 native_win_aio_provider::native_win_aio_provider(disk_engine* disk, aio_provider* inner_provider)
 : aio_provider(disk, inner_provider)
 {
-    _iocp = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, nullptr, 0);
+    _iocp = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 0);
     if ((_iocp == nullptr) || (_iocp == INVALID_HANDLE_VALUE))
     {
         derror("CreateIoCompletionPort failed, err = %d", ::GetLastError());
