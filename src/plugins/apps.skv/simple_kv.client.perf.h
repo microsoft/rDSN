@@ -2,8 +2,8 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2015 Microsoft Corporation
- * 
- * -=- Robust Distributed System Nucleus (rDSN) -=- 
+ *
+ * -=- Robust Distributed System Nucleus (rDSN) -=-
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,16 +36,16 @@
 # pragma once
 # include "simple_kv.client.2.h"
 
-namespace dsn { namespace replication { namespace application {  
+namespace dsn { namespace replication { namespace application {
 
- 
-class simple_kv_perf_test_client 
-    : public simple_kv_client2, 
-      public ::dsn::service::perf_client_helper 
+
+class simple_kv_perf_test_client
+    : public simple_kv_client2,
+      public ::dsn::service::perf_client_helper
 {
 public:
     using simple_kv_client2::simple_kv_client2;
-    
+
     virtual void send_one(int payload_bytes, int key_space_size, const std::vector<double>& ratios) override
     {
         auto prob = (double)dsn_random32(0, 1000) / 1000.0;
@@ -64,7 +64,7 @@ public:
         }
         else { /* nothing to do */ }
     }
-    
+
 
     void send_one_read(int payload_bytes, int key_space_size)
     {
@@ -119,4 +119,4 @@ public:
 
 };
 
-} } } 
+} } }

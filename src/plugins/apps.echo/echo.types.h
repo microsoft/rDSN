@@ -6,6 +6,6 @@
 #include "echo_types.h"
 
 
-namespace dsn { namespace example { 
+namespace dsn { namespace example {
 
-} } 
+} }

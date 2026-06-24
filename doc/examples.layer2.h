@@ -1,7 +1,7 @@
 /*!
  @defgroup example-layer2 Example
  @ingroup dev-layer2
- 
+
 Build a scalable and reliable counter service with built-in replication support
 
 We will continue using the [counter](https://github.com/Microsoft/rDSN/wiki/Tutorial:-Build-A-Single-Node-Counter-Service) example and turn it from a single node service to a partitioned and replicated service for scalability and reliability. A more serious case is [RocksDB](https://github.com/imzhenyu/rocksdb).
@@ -63,10 +63,10 @@ We register the new service implementation to rDSN in main (done by code generat
 dsn::replication::register_replica_provider< ::dsn::example::counter_service_impl>("counter");
 ```
 
-Note on windows, we still need to specify where are the boost header files and libraries, etc. 
+Note on windows, we still need to specify where are the boost header files and libraries, etc.
 
 ```bash
-c:\Projects\rDSN\tutorial\counter.rep\build>cmake .. -G "Visual Studio 12 2013" -DBOOST_INCLUDEDIR=c:\local\boost_1_57_0 -DBOOST_LIBRARYDIR=c:\local\boost_1_57_0\lib32-msvc-12.0 
+c:\Projects\rDSN\tutorial\counter.rep\build>cmake .. -G "Visual Studio 12 2013" -DBOOST_INCLUDEDIR=c:\local\boost_1_57_0 -DBOOST_LIBRARYDIR=c:\local\boost_1_57_0\lib32-msvc-12.0
 ```
 
 Before running the system, we need to configure the meta server and the replica servers.
@@ -77,16 +77,16 @@ name = client
 type = client
 arguments = counter.instance0
 run = true
-count = 2 
+count = 2
 
 [replication.app]
-app_name = counter.instance0 
-app_type = counter 
+app_name = counter.instance0
+app_type = counter
 partition_count = 1
 max_replica_count = 3
 ```
 
-Then go to the directory where 'counter.exe' is generated and run; make sure 'config.ini' is also copied there. 
+Then go to the directory where 'counter.exe' is generated and run; make sure 'config.ini' is also copied there.
 
 ```bash
 00:00:35.045(35045) replica3.replication0.0000000003c93bc8: 1.0 @ localhost:34803: mutation 14.39 ack_prepare_message
@@ -117,7 +117,6 @@ To use it, copy the .cmd and .ini files into the folder containing .exe file. Re
 
 Normally you should see multiple programs bumping out running at the same time.
 
-  
+
 
  */
- 

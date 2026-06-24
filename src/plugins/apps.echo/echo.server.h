@@ -34,8 +34,8 @@
 # include "echo.code.definition.h"
 # include <iostream>
 
-namespace dsn { namespace example { 
-class echo_service 
+namespace dsn { namespace example {
+class echo_service
     : public ::dsn::serverlet<echo_service>
 {
 public:
@@ -44,12 +44,12 @@ public:
 
 protected:
     // all service handlers to be implemented further
-    // RPC_ECHO_ECHO_PING 
+    // RPC_ECHO_ECHO_PING
     virtual void on_ping(const std::string& val, ::dsn::rpc_replier<std::string>& reply)
     {
         reply(val);
     }
-    
+
 public:
     void open_service()
     {
@@ -62,4 +62,4 @@ public:
     }
 };
 
-} } 
+} }

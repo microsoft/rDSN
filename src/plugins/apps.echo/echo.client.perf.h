@@ -2,8 +2,8 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2015 Microsoft Corporation
- * 
- * -=- Robust Distributed System Nucleus (rDSN) -=- 
+ *
+ * -=- Robust Distributed System Nucleus (rDSN) -=-
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@
 
 # include "echo.client.h"
 
-namespace dsn { namespace example { 
+namespace dsn { namespace example {
 class echo_perf_test_client
     : public echo_client,
       public ::dsn::service::perf_client_helper
@@ -72,4 +72,4 @@ public:
     }
 };
 
-} } 
+} }

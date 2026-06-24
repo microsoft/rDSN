@@ -2,8 +2,8 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2015 Microsoft Corporation
- * 
- * -=- Robust Distributed System Nucleus (rDSN) -=- 
+ *
+ * -=- Robust Distributed System Nucleus (rDSN) -=-
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,8 +36,8 @@
 # include "nfs_code_definition.h"
 # include <iostream>
 
-namespace dsn { namespace service { 
-class nfs_service 
+namespace dsn { namespace service {
+class nfs_service
     : public ::dsn::serverlet<nfs_service>
 {
 public:
@@ -46,21 +46,21 @@ public:
 
 protected:
     // all service handlers to be implemented further
-    // RPC_NFS_NFS_COPY 
+    // RPC_NFS_NFS_COPY
     virtual void on_copy(const copy_request& request, ::dsn::rpc_replier<copy_response>& reply)
     {
         std::cout << "... exec RPC_NFS_NFS_COPY ... (not implemented) " << std::endl;
         copy_response resp;
         reply(resp);
     }
-    // RPC_NFS_NFS_GET_FILE_SIZE 
+    // RPC_NFS_NFS_GET_FILE_SIZE
     virtual void on_get_file_size(const get_file_size_request& request, ::dsn::rpc_replier<get_file_size_response>& reply)
     {
         std::cout << "... exec RPC_NFS_NFS_GET_FILE_SIZE ... (not implemented) " << std::endl;
         get_file_size_response resp;
         reply(resp);
     }
-    
+
 public:
     void open_service()
     {
@@ -75,4 +75,4 @@ public:
     }
 };
 
-} } 
+} }

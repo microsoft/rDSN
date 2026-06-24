@@ -2,8 +2,8 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2015 Microsoft Corporation
- * 
- * -=- Robust Distributed System Nucleus (rDSN) -=- 
+ *
+ * -=- Robust Distributed System Nucleus (rDSN) -=-
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -39,9 +39,9 @@
 # include <cstdint>
 # include <dsn/cpp/utils.h>
 
-namespace dsn { namespace example { 
+namespace dsn { namespace example {
 // server app example
-class echo_server_app : 
+class echo_server_app :
     public ::dsn::service_app
 {
 public:
@@ -64,14 +64,14 @@ private:
 };
 
 // client app example
-class echo_client_app : 
-    public ::dsn::service_app, 
+class echo_client_app :
+    public ::dsn::service_app,
     public virtual ::dsn::clientlet
 {
 public:
     echo_client_app(dsn_gpid gpid) : ::dsn::service_app(gpid) {}
-    
-    ~echo_client_app() 
+
+    ~echo_client_app()
     {
         stop();
     }
@@ -98,7 +98,7 @@ public:
     virtual ::dsn::error_code stop(bool cleanup = false)
     {
         _timer->cancel(true);
- 
+
         _echo_client.reset();
 
         return ::dsn::ERR_OK;
@@ -111,21 +111,21 @@ public:
             //sync:
             auto result = _echo_client->ping_sync({});
             std::cout << "call RPC_ECHO_ECHO_PING end, return " << result.first.to_string() << std::endl;
-            //async: 
+            //async:
             //_echo_client->begin_ping(req);
-           
+
         }
     }
 
 private:
     ::dsn::task_ptr _timer;
     ::dsn::rpc_address _server;
-    
+
     std::unique_ptr<echo_client> _echo_client;
 };
 
 class echo_perf_test_client_app :
-    public ::dsn::service_app, 
+    public ::dsn::service_app,
     public virtual ::dsn::clientlet
 {
 public:
@@ -170,10 +170,10 @@ public:
 
         return ::dsn::ERR_OK;
     }
-    
+
 private:
     echo_perf_test_client *_echo_client;
     ::dsn::rpc_address _server;
 };
 
-} } 
+} }

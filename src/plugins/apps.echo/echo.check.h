@@ -2,8 +2,8 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2015 Microsoft Corporation
- * 
- * -=- Robust Distributed System Nucleus (rDSN) -=- 
+ *
+ * -=- Robust Distributed System Nucleus (rDSN) -=-
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,9 +35,9 @@
 
 # include <dsn/tool-api/global_checker.h>
 
-namespace dsn { namespace example {  
+namespace dsn { namespace example {
 
-class echo_checker 
+class echo_checker
     : public ::dsn::tools::checker
 {
 public:
@@ -83,4 +83,4 @@ private:
     //std::vector<meta_service_app*>        _meta_servers;
 };
 
-} } 
+} }

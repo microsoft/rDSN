@@ -1,10 +1,10 @@
 /*!
  @defgroup example-complexity Example
  @ingroup tools
- 
+
  Build a perfect failure detector with progressively added system complexity
- 
- Code is [here](https://github.com/Microsoft/rDSN/tree/master/src/dist/failure_detector) 
+
+ Code is [here](https://github.com/Microsoft/rDSN/tree/master/src/dist/failure_detector)
 
 Detailed tutorial with FD coming later~
 
@@ -96,4 +96,3 @@ When things go wrong, you can repeat the bugs. See examples [here](https://githu
 
 
  */
- 

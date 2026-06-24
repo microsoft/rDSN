@@ -2,8 +2,8 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2015 Microsoft Corporation
- * 
- * -=- Robust Distributed System Nucleus (rDSN) -=- 
+ *
+ * -=- Robust Distributed System Nucleus (rDSN) -=-
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@
 # include <dsn/tool_api.h>
 # include <dsn/tool-api/nfs.h>
 
-namespace dsn { 
+namespace dsn {
     namespace service {
 
         class nfs_service_impl;
@@ -55,11 +55,11 @@ namespace dsn {
             virtual ::dsn::error_code start(io_modifer& ctx) override;
 
             virtual error_code stop() override;
-    
+
         private:
             nfs_opts         *_opts;
             nfs_service_impl *_server;
             nfs_client_impl  *_client;
         };
-    } 
-} 
+    }
+}

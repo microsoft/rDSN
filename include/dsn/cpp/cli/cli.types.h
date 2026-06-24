@@ -6,7 +6,7 @@
 
 
 
-namespace dsn { 
+namespace dsn {
     GENERATED_TYPE_SERIALIZATION(command, THRIFT)
 
-} 
+}

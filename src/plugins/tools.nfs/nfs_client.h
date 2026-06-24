@@ -2,8 +2,8 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2015 Microsoft Corporation
- * 
- * -=- Robust Distributed System Nucleus (rDSN) -=- 
+ *
+ * -=- Robust Distributed System Nucleus (rDSN) -=-
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,8 +37,8 @@
 # include <iostream>
 
 
-namespace dsn { namespace service { 
-class nfs_client 
+namespace dsn { namespace service {
+class nfs_client
     : public virtual ::dsn::clientlet
 {
 public:
@@ -48,10 +48,10 @@ public:
 
 
     // ---------- call RPC_NFS_NFS_COPY ------------
-    // - synchronous 
+    // - synchronous
     std::pair< ::dsn::error_code, copy_response> copy_sync(
-        const copy_request& request, 
-        std::chrono::milliseconds timeout = std::chrono::milliseconds(0), 
+        const copy_request& request,
+        std::chrono::milliseconds timeout = std::chrono::milliseconds(0),
         int thread_hash = 0,
         uint64_t partition_hash = 0,
         dsn::optional< ::dsn::rpc_address> server_addr = dsn::none)
@@ -69,11 +69,11 @@ public:
                 )
             );
     }
-    
-    // - asynchronous with on-stack copy_request and copy_response 
+
+    // - asynchronous with on-stack copy_request and copy_response
     template<typename TCallback>
     ::dsn::task_ptr copy(
-        const copy_request& request, 
+        const copy_request& request,
         TCallback&& callback,
         std::chrono::milliseconds timeout = std::chrono::milliseconds(0),
         int thread_hash = 0,
@@ -83,9 +83,9 @@ public:
         )
     {
         return ::dsn::rpc::call(
-                    server_addr.unwrap_or(_server), 
-                    RPC_NFS_COPY, 
-                    request, 
+                    server_addr.unwrap_or(_server),
+                    RPC_NFS_COPY,
+                    request,
                     this,
                     std::forward<TCallback>(callback),
                     timeout,
@@ -96,9 +96,9 @@ public:
     }
 
     // ---------- call RPC_NFS_NFS_GET_FILE_SIZE ------------
-    // - synchronous 
+    // - synchronous
     std::pair< ::dsn::error_code, get_file_size_response> get_file_size_sync(
-        const get_file_size_request& request, 
+        const get_file_size_request& request,
         std::chrono::milliseconds timeout = std::chrono::milliseconds(0),
         int thread_hash = 0,
         uint64_t partition_hash = 0,
@@ -117,11 +117,11 @@ public:
                 )
             );
     }
-    
-    // - asynchronous with on-stack get_file_size_request and get_file_size_response 
+
+    // - asynchronous with on-stack get_file_size_request and get_file_size_response
     template<typename TCallback>
     ::dsn::task_ptr get_file_size(
-        const get_file_size_request& request, 
+        const get_file_size_request& request,
         TCallback&& callback,
         std::chrono::milliseconds timeout = std::chrono::milliseconds(0),
         int thread_hash = 0,
@@ -131,9 +131,9 @@ public:
         )
     {
         return ::dsn::rpc::call(
-                    server_addr.unwrap_or(_server), 
-                    RPC_NFS_GET_FILE_SIZE, 
-                    request, 
+                    server_addr.unwrap_or(_server),
+                    RPC_NFS_GET_FILE_SIZE,
+                    request,
                     this,
                     std::forward<TCallback>(callback),
                     timeout,
@@ -147,4 +147,4 @@ private:
     ::dsn::rpc_address _server;
 };
 
-} } 
+} }

@@ -2,8 +2,8 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2015 Microsoft Corporation
- * 
- * -=- Robust Distributed System Nucleus (rDSN) -=- 
+ *
+ * -=- Robust Distributed System Nucleus (rDSN) -=-
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,8 +37,8 @@
 # include <iostream>
 
 
-namespace dsn { namespace example { 
-class echo_client 
+namespace dsn { namespace example {
+class echo_client
     : public virtual ::dsn::clientlet
 {
 public:
@@ -48,10 +48,10 @@ public:
 
 
     // ---------- call RPC_ECHO_ECHO_PING ------------
-    // - synchronous 
+    // - synchronous
     std::pair< ::dsn::error_code, std::string> ping_sync(
-        const std::string& val, 
-        std::chrono::milliseconds timeout = std::chrono::milliseconds(0), 
+        const std::string& val,
+        std::chrono::milliseconds timeout = std::chrono::milliseconds(0),
         int thread_hash = 0,
         uint64_t partition_hash = 0,
         dsn::optional< ::dsn::rpc_address> server_addr = dsn::none)
@@ -69,11 +69,11 @@ public:
                 )
             );
     }
-    
-    // - asynchronous with on-stack std::string and std::string 
+
+    // - asynchronous with on-stack std::string and std::string
     template<typename TCallback>
     ::dsn::task_ptr ping(
-        const std::string& val, 
+        const std::string& val,
         TCallback&& callback,
         std::chrono::milliseconds timeout = std::chrono::milliseconds(0),
         int thread_hash = 0,
@@ -83,9 +83,9 @@ public:
         )
     {
         return ::dsn::rpc::call(
-                    server_addr.unwrap_or(_server), 
-                    RPC_ECHO_ECHO_PING, 
-                    val, 
+                    server_addr.unwrap_or(_server),
+                    RPC_ECHO_ECHO_PING,
+                    val,
                     this,
                     std::forward<TCallback>(callback),
                     timeout,
@@ -99,4 +99,4 @@ private:
     ::dsn::rpc_address _server;
 };
 
-} } 
+} }

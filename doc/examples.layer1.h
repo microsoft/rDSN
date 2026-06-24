@@ -1,12 +1,12 @@
 /*!
  @defgroup example-layer1 Example
  @ingroup dev-layer1
- 
+
   Quickly build a counter service with built-in tools
-  
+
  @{
- 
- 
+
+
  We will develop & operate a counter service here and go through many of rDSN's features at layer 1. Before exercising this tutorial, please make sure you have already [installed](https://github.com/Microsoft/rDSN/wiki/Installation) rDSN on your machine.
 
 ### Quick links
@@ -30,7 +30,7 @@
 
 ### STEP 1. Write the service interface and run!
 
-##### STEP 1.1 
+##### STEP 1.1
 Use the interface definition language from [Apache Thrift](https://thrift.apache.org/docs/idl) or [Google Protocol Buffers](https://developers.google.com/protocol-buffers/docs/proto) to describe your service interface. In this case, we are using thrift and writing the following interface definition for our service into counter.thrift.
 ```C++
 namespace cpp dsn.example
@@ -64,12 +64,12 @@ generate 'counter/counter.server.h' successfully!
 generate 'counter/counter.types.h' successfully!
 ...
 ```
-An introduction about these files. 
+An introduction about these files.
 
-* counter.main.cpp - the main program, which defines the possible service app and tool **roles** in the final executable. In this case, the counter server & client service, as well as all the default tools are registered. 
+* counter.main.cpp - the main program, which defines the possible service app and tool **roles** in the final executable. In this case, the counter server & client service, as well as all the default tools are registered.
 * config.ini - configuration file specifying what are the **role instances** for services and tools for a particular running process.
 * counter.code.definition.h - defines the event/task code for the RPC calls.
-* counter.client/server.h - define the server and client classes for counter service. 
+* counter.client/server.h - define the server and client classes for counter service.
 * counter.app.example.h - an example wrapper about how to put single/multiple client/server into service apps.
 * counter.types.h - how to marshall and unmarshall the request/response messages across network using rDSN's internal binary encoding/decoding. You may also use the ones from Thrift (more).
 * counter.check.h/.cpp - sketch for writing cross-nodes global assertions.
@@ -100,7 +100,7 @@ Note for the above "cmake .." on Windows, you may encounter certain errors, and 
 ~/projects/rdsn/tutorial/counter/build$ cmake .. -DCMAKE_INSTALL_PREFIX=c:\rdsn -DBOOST_INCLUDEDIR="c:\boost_1_57_0" -DBOOST_LIBRARYDIR="c:\boost_1_57_0\lib64-msvc-12.0" -G "NMake Makefiles"
 ```
 
-Also note for the above "make -j" on Windows, you could build in Visual Studio 2013 instead. Remember to enter "Configuration Manager" to change "Platform" to x64 if necessary. If you meet with problems like "value xx doesn't match value xx xx.obj", you must be confused with "Release" and "Debug". 
+Also note for the above "make -j" on Windows, you could build in Visual Studio 2013 instead. Remember to enter "Configuration Manager" to change "Platform" to x64 if necessary. If you meet with problems like "value xx doesn't match value xx xx.obj", you must be confused with "Release" and "Debug".
 
 
 ### STEP 2. Implement application logic
@@ -130,8 +130,8 @@ In order to plug-in the real application logic, we need to write a new service c
 ```
 To integrate the new class into the real execution, we need to change the member service in class **counter_server_app** from **counter_service** to **counter_service_impl**. We also change the logic in **counter_client_app** to do some meaningful test (all in **counter.app.example.h**).
 ```C++
-90 ::dsn::example::count_op req = {"counter1", 1}; 
-94 std::cout << "call RPC_COUNTER_COUNTER_ADD end, return " << resp << ", err = " << err.to_string() << std::endl; 
+90 ::dsn::example::count_op req = {"counter1", 1};
+94 std::cout << "call RPC_COUNTER_COUNTER_ADD end, return " << resp << ", err = " << err.to_string() << std::endl;
 ...
 ```
 After re-compiling and executing the program, we get:
@@ -148,7 +148,7 @@ rDSN provides both synchronous and asynchronous client access for the service as
 
 ### STEP 3. Deploy with single-executable, multiple-role, multiple-instance
 
-You may already feel strange that we don't start a client and a server separately for the above exercises. rDSN advocates a single-executable, multiple-role, multiple-instance deployment model. In the above case, both the client and the server roles are registered in **main** of the host process, so their execution code are within the same executable after compilation. In order to enable this, rDSN actually has some rules like no global variables etc. to avoid confliction, see [here](https://github.com/Microsoft/rDSN/wiki/Programming-Rules-and-FAQ) for more information. 
+You may already feel strange that we don't start a client and a server separately for the above exercises. rDSN advocates a single-executable, multiple-role, multiple-instance deployment model. In the above case, both the client and the server roles are registered in **main** of the host process, so their execution code are within the same executable after compilation. In order to enable this, rDSN actually has some rules like no global variables etc. to avoid confliction, see [here](https://github.com/Microsoft/rDSN/wiki/Programming-Rules-and-FAQ) for more information.
 
 ```C++
 int main(int argc, char** argv)
@@ -156,7 +156,7 @@ int main(int argc, char** argv)
   // register all possible service apps
   dsn::service::system::register_service< ::dsn::example::counter_server_app>("counter_server");
   dsn::service::system::register_service< ::dsn::example::counter_client_app>("counter_client");
-  
+
   // register all possible tools and toollets
   dsn::tools::register_tool<dsn::tools::nativerun>("nativerun");
   dsn::tools::register_tool<dsn::tools::simulator>("simulator");
@@ -169,7 +169,7 @@ When for the real execution, what roles and how many instances for each role as 
 [apps.server]
 name = server
 type = counter_server
-arguments = 
+arguments =
 ports = 27001
 run = true
 
@@ -181,7 +181,7 @@ count = 1
 run = true
 ```
 
-You may also notice that we also register **tools** etc. in the above **main** function. Similarly, the configuration file specifies what tools should be started for a given run. 
+You may also notice that we also register **tools** etc. in the above **main** function. Similarly, the configuration file specifies what tools should be started for a given run.
 
 ```
 [core]
@@ -209,7 +209,7 @@ You won't see differences except that the output becomes much slower. This is be
 
 ### STEP 4. Use Toollet - understand what is happening with logging
 
-Logging is still the most widely adopted mechanism to understand what happens in the system. Instead of manually and intensively writing **printf** in the code, rDSN provides the **tracer** tool with automatic logging. To load the tracer tool, we need to add **tracer** to the **toollets** list under **[core]** section. A toollet is similar to a **tool** like **simulator** and **nativerun**, except that it can co-exist with the other toollets and tools, while **tools** conflict with each other. 
+Logging is still the most widely adopted mechanism to understand what happens in the system. Instead of manually and intensively writing **printf** in the code, rDSN provides the **tracer** tool with automatic logging. To load the tracer tool, we need to add **tracer** to the **toollets** list under **[core]** section. A toollet is similar to a **tool** like **simulator** and **nativerun**, except that it can co-exist with the other toollets and tools, while **tools** conflict with each other.
 
 
 ```
@@ -259,9 +259,9 @@ A distributed system is composed of multiple nodes. Since rDSN enables all nodes
 
 ![dsn_all](https://raw.githubusercontent.com/Microsoft/rDSN/master/resources/rdsn-state-all.jpg)
 
-Because we can use **simualtor** as our underlying tool when debugging, which virtualizes the time, we don't need to worry about false timeout at all when pausing and inspecting the memory state in debugger - a common annoying problem when debugging distributed systems. 
+Because we can use **simualtor** as our underlying tool when debugging, which virtualizes the time, we don't need to worry about false timeout at all when pausing and inspecting the memory state in debugger - a common annoying problem when debugging distributed systems.
 
-### STEP 6. Deterministic execution for easy debugging 
+### STEP 6. Deterministic execution for easy debugging
 
 Implementing the application logic usually requires many rounds of try-and-error before it can be stabilized. rDSN provides deterministic execution in simulator so as to repeatedly produce the same state sequence for easy diagnosis.
 
@@ -273,7 +273,7 @@ tool = simulator
 random_seed = 2756568580
 ```
 
-The non-determinism of the whole system is now determined by a single ```random_seed``` as shown above. When the seed is non-zero, the system is deterministic as long as the random seed does not change. When the seed is zero, the system is non-deterministic. 
+The non-determinism of the whole system is now determined by a single ```random_seed``` as shown above. When the seed is non-zero, the system is deterministic as long as the random seed does not change. When the seed is zero, the system is non-deterministic.
 
 ### STEP 7. Scale-up the service
 
@@ -334,25 +334,25 @@ void on_test_timer()
 {
     int32_t resp2, resp1;
     ::dsn::error_code err1, err2;
-    
+
     // test for service 'counter'
     {
         count_op req = {"counter1", 1};
         //sync:
         err1 = _counter_client->add(req, resp1);
         std::cout << "call RPC_COUNTER_COUNTER_ADD end, return " << resp1 << ", err = " << err1.to_string() << std::endl;
-        //async: 
+        //async:
         //_counter_client->begin_add(req);
-       
+
     }
     {
         std::string req = "counter1";
         //sync:
         err2 = _counter_client->read(req, resp2);
         std::cout << "call RPC_COUNTER_COUNTER_READ end, return " << resp2 << ", err = " << err2.to_string() << std::endl;
-        //async: 
+        //async:
         //_counter_client->begin_read(req);
-       
+
     }
     if (err1 == 0 && err2 == 0)
     {
@@ -401,18 +401,18 @@ toollets = profiler
 pause_on_start = false
 ```
 
-### STEP 10. Operate your system with local and remote cli 
+### STEP 10. Operate your system with local and remote cli
 
 The cli tool provides a console with which developers can get information from all tools (cli exposes API as part of the Tool API interface, so tools can register their commands), and possibly control their behavior (e.g., switch on/off). Both local and remote cli tools are enabled via configuration. Note we also need to ensure logs are dumped to files instead of on-screen to avoid interference with local cli console I/O.
 
-``` 
+```
 [core]
 cli_local = true
 cli_remote = true
 ;logging_factory_name = dsn::tools::screen_logger
 ```
 
-// TODO: cli with fault injection, tracer, and profiler 
+// TODO: cli with fault injection, tracer, and profiler
 By using local or remote cli (via our bin tool ```dsn.cli```), you can get a console to query and/or control the local/remote processes. Note when using the remote cli, you need to use ```[core]tool=nativerun``` so remote cli can connect to it. On both cases, simply type 'help' to start.
 
 ### STEP 11. Check global correctness using global assertion across nodes
@@ -433,7 +433,7 @@ max_input_queue_length = 1024
 // TODO: You can also register your own admission controller and set it in the configuration file.
 
 ### STEP 13. Plug-in your own low level components (optional)
-You probably already notice that there is a configuration above like "[core] logging_factory_name = dsn::tools::screen_logger". In this case, we are specifying that we would like to use the **screen_logger** as our logging provider. You may also change it to "dsn::tools::simple_logger" as a file logger. Or even better, you may already have your own logging system already, and rDSN allows easy integration as follows. 
+You probably already notice that there is a configuration above like "[core] logging_factory_name = dsn::tools::screen_logger". In this case, we are specifying that we would like to use the **screen_logger** as our logging provider. You may also change it to "dsn::tools::simple_logger" as a file logger. Or even better, you may already have your own logging system already, and rDSN allows easy integration as follows.
 
 #### 13.1. Follow the example in **$(rDSN_DIR)/src/tools/common/simple_logger.h/.cpp** to implement a new logging provider by wrapping your existing logger.
 
@@ -464,7 +464,7 @@ You probably already notice that there is a configuration above like "[core] log
  32 }
 ```
 
-#### 13.3. In config.ini, specify the logging provider, and it is done. 
+#### 13.3. In config.ini, specify the logging provider, and it is done.
 
 ```
 [core]
@@ -495,13 +495,13 @@ RPC_CHANNEL_TCP = NET_HDR_THRIFT,dsn::tools::asio_network_provider, 65536
 
 ### STEP 15. Open service with multiple ports (optional)
 
-rDSN also supports opening multiple ports for the same services, and each port may allow different data transmission protocols. Specifically, the message headers can be different, but the data encoding/decoding must be the same (so far). One possible scenario is that we open a dedicated port for external request handling (possibly with a different message protocol). Following is an example where we open two ports for our sample application, and allow both rDSN's message protocol and standard Thrift binary protocol. 
+rDSN also supports opening multiple ports for the same services, and each port may allow different data transmission protocols. Specifically, the message headers can be different, but the data encoding/decoding must be the same (so far). One possible scenario is that we open a dedicated port for external request handling (possibly with a different message protocol). Following is an example where we open two ports for our sample application, and allow both rDSN's message protocol and standard Thrift binary protocol.
 
 ```
 [apps.counter.server]
 name = counter.server
 type = counter_server
-arguments = 
+arguments =
 ports = 27001,27002
 run = true
 
@@ -520,4 +520,3 @@ Please click [here](https://github.com/Microsoft/rDSN/wiki/Find-useful-informati
 
  @}
  */
- 

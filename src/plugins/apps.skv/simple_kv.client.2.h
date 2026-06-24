@@ -3,8 +3,8 @@
 # include "simple_kv.types.h"
 # include <iostream>
 
-namespace dsn { namespace replication { namespace application { 
-class simple_kv_client2 
+namespace dsn { namespace replication { namespace application {
+class simple_kv_client2
     : public virtual ::dsn::clientlet
 {
 public:
@@ -16,11 +16,11 @@ public:
     simple_kv_client2() { }
 
     virtual ~simple_kv_client2() {}
- 
+
     // ---------- call RPC_SIMPLE_KV_SIMPLE_KV_READ ------------
-    // - synchronous 
+    // - synchronous
     std::pair< ::dsn::error_code, std::string> read_sync(
-        const std::string& key, 
+        const std::string& key,
         std::chrono::milliseconds timeout = std::chrono::milliseconds(0),
         int thread_hash = 0,
         uint64_t partition_hash = 0,
@@ -40,11 +40,11 @@ public:
                 )
             );
     }
-    
-    // - asynchronous with on-stack std::string and std::string  
+
+    // - asynchronous with on-stack std::string and std::string
     template<typename TCallback>
     ::dsn::task_ptr read(
-        const std::string& key, 
+        const std::string& key,
         TCallback&& callback,
         std::chrono::milliseconds timeout = std::chrono::milliseconds(0),
         int thread_hash = 0,
@@ -54,9 +54,9 @@ public:
         )
     {
         return ::dsn::rpc::call(
-                    server_addr.unwrap_or(_server), 
-                    RPC_SIMPLE_KV_SIMPLE_KV_READ, 
-                    key, 
+                    server_addr.unwrap_or(_server),
+                    RPC_SIMPLE_KV_SIMPLE_KV_READ,
+                    key,
                     this,
                     std::forward<TCallback>(callback),
                     timeout,
@@ -65,12 +65,12 @@ public:
                     reply_thread_hash
                     );
     }
- 
+
     // ---------- call RPC_SIMPLE_KV_SIMPLE_KV_WRITE ------------
-    // - synchronous 
+    // - synchronous
     std::pair< ::dsn::error_code, int32_t> write_sync(
-        const kv_pair& pr, 
-        std::chrono::milliseconds timeout = std::chrono::milliseconds(0), 
+        const kv_pair& pr,
+        std::chrono::milliseconds timeout = std::chrono::milliseconds(0),
         int thread_hash = 0,
         uint64_t partition_hash = 0,
         dsn::optional< ::dsn::rpc_address> server_addr = dsn::none
@@ -90,11 +90,11 @@ public:
                 )
             );
     }
-    
-    // - asynchronous with on-stack kv_pair and int32_t  
+
+    // - asynchronous with on-stack kv_pair and int32_t
     template<typename TCallback>
     ::dsn::task_ptr write(
-        const kv_pair& pr, 
+        const kv_pair& pr,
         TCallback&& callback,
         std::chrono::milliseconds timeout = std::chrono::milliseconds(0),
         int thread_hash = 0,
@@ -104,9 +104,9 @@ public:
         )
     {
         return ::dsn::rpc::call(
-                    server_addr.unwrap_or(_server), 
-                    RPC_SIMPLE_KV_SIMPLE_KV_WRITE, 
-                    pr, 
+                    server_addr.unwrap_or(_server),
+                    RPC_SIMPLE_KV_SIMPLE_KV_WRITE,
+                    pr,
                     this,
                     std::forward<TCallback>(callback),
                     timeout,
@@ -115,12 +115,12 @@ public:
                     reply_thread_hash
                     );
     }
- 
+
     // ---------- call RPC_SIMPLE_KV_SIMPLE_KV_APPEND ------------
-    // - synchronous 
+    // - synchronous
     std::pair< ::dsn::error_code, int32_t> append_sync(
-        const kv_pair& pr, 
-        std::chrono::milliseconds timeout = std::chrono::milliseconds(0), 
+        const kv_pair& pr,
+        std::chrono::milliseconds timeout = std::chrono::milliseconds(0),
         int thread_hash = 0,
         uint64_t partition_hash = 0,
         dsn::optional< ::dsn::rpc_address> server_addr = dsn::none
@@ -139,11 +139,11 @@ public:
                 )
             );
     }
-    
-    // - asynchronous with on-stack kv_pair and int32_t  
+
+    // - asynchronous with on-stack kv_pair and int32_t
     template<typename TCallback>
     ::dsn::task_ptr append(
-        const kv_pair& pr, 
+        const kv_pair& pr,
         TCallback&& callback,
         std::chrono::milliseconds timeout = std::chrono::milliseconds(0),
         int thread_hash = 0,
@@ -153,9 +153,9 @@ public:
         )
     {
         return ::dsn::rpc::call(
-                    server_addr.unwrap_or(_server), 
-                    RPC_SIMPLE_KV_SIMPLE_KV_APPEND, 
-                    pr, 
+                    server_addr.unwrap_or(_server),
+                    RPC_SIMPLE_KV_SIMPLE_KV_APPEND,
+                    pr,
                     this,
                     std::forward<TCallback>(callback),
                     timeout,
@@ -169,4 +169,4 @@ private:
     ::dsn::rpc_address _server;
 };
 
-} } } 
+} } }
