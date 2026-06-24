@@ -250,9 +250,11 @@ perf_counter_ptr perf_counters::get_counter(const char* app, const char *section
         auto it = _counters.find(full_name);
         if (it == _counters.end())
         {
-            dassert(_quick_counters_empty_slots.size() > 0,
-                "no more slots for perf counters, please increase [core] perf_counter_max_count"
-                );
+            if (_quick_counters_empty_slots.empty())
+            {
+                derror("no more slots for perf counters, please increase [core] perf_counter_max_count");
+                return nullptr;
+            }
 
             uint64_t idx = _quick_counters_empty_slots.front();
             _quick_counters_empty_slots.pop();
@@ -269,10 +271,11 @@ perf_counter_ptr perf_counters::get_counter(const char* app, const char *section
         }
         else
         {
-            dassert (it->second->type() == flags,
-                "counters with the same name %s with differnt types",
-                full_name.c_str()
-                );
+            if (it->second->type() != flags)
+            {
+                derror("counter with the same name %s has different type", full_name.c_str());
+                return nullptr;
+            }
             return it->second;
         }
     }

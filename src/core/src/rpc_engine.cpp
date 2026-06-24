@@ -739,7 +739,15 @@ namespace dsn {
 
         _uri_resolver_mgr.reset(new uri_resolver_manager());
 
-        _local_primary_address = _client_nets[NET_HDR_DSN][0]->address();
+        std::vector<network*>& dsn_client_nets = _client_nets[NET_HDR_DSN];
+        if (dsn_client_nets.empty() || dsn_client_nets[0] == nullptr)
+        {
+            derror("network client for channel %s with fmt %s is not initialized",
+                rpc_channel::to_string(0),
+                network_header_format::to_string(NET_HDR_DSN));
+            return ERR_NETWORK_INIT_FAILED;
+        }
+        _local_primary_address = dsn_client_nets[0]->address();
         _local_primary_address.c_addr_ptr()->u.v4.port = aspec.ports.size() > 0 ? *aspec.ports.begin() : aspec.id + ctx.port_shift_value;
 
         ddebug("=== service_node=[%s], primary_address=[%s] ===",

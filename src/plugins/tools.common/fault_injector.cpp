@@ -204,7 +204,14 @@ namespace dsn {
             if (corrupt_type == "header")
                 replace_value(request->buffers, dsn_random32(0, sizeof(message_header)-1));
             else if (corrupt_type == "body")
+            {
+                if (request->body_size() == 0)
+                {
+                    dwarn("skip body data corruption for empty message body");
+                    return;
+                }
                 replace_value(request->buffers, dsn_random32(0, request->body_size()-1) + sizeof(message_header));
+            }
             else if (corrupt_type == "random")
                 replace_value(request->buffers, dsn_random32(0, request->body_size() + sizeof(message_header) - 1));
             else

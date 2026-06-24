@@ -202,7 +202,7 @@ namespace dsn {
                     uint64_t size = st.st_size;
 
                     resp.size_list.push_back(size);
-                    resp.file_list.push_back((folder + request.file_list[i]).substr(request.source_dir.length(), (folder + request.file_list[i]).length() - 1));
+                    resp.file_list.push_back(file_path.substr(request.source_dir.length()));
                 }
             }
 
