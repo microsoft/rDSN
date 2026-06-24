@@ -20,7 +20,7 @@ namespace dsn.dev.csharp
             JsonFormatter jformatter = JsonFormatter.Default;
             string jstr = jformatter.Format(val);
             byte[] bytes = System.Text.Encoding.ASCII.GetBytes(jstr);
-                        
+
             ws.Write(bytes, 0, bytes.Length);
             ws.Flush();
         }
