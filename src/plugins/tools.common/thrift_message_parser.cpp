@@ -266,7 +266,7 @@ namespace dsn
         }
         if (header.hdr_length != sizeof(thrift_message_header))
         {
-            derror("hdr_length should be %u, but %u", sizeof(thrift_message_header), header.hdr_length);
+            derror("hdr_length should be %zu, but %u", sizeof(thrift_message_header), header.hdr_length);
             return false;
         }
         return true;

@@ -146,8 +146,14 @@ namespace dsn
         bool r = (it != _members.end());
         if (r)
         {
-            if (-1 != _leader_index && addr == _members[_leader_index])
-                _leader_index = -1;
+            if (-1 != _leader_index)
+            {
+                int idx = static_cast<int>(it - _members.begin());
+                if (idx == _leader_index)
+                    _leader_index = -1;
+                else if (idx < _leader_index)
+                    --_leader_index;
+            }
 
             _members.erase(it);
         }

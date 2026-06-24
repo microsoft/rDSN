@@ -123,6 +123,10 @@ namespace dsn {
                     "counter_computation_interval_seconds",
                     30,
                     "period (seconds) the system computes the percentiles of the counters");
+                if (_counter_computation_interval_seconds < 1)
+                {
+                    _counter_computation_interval_seconds = 1;
+                }
 
                 _timer.reset(new boost::asio::deadline_timer(shared_io_service::instance().ios));
                 _timer->expires_from_now(boost::posix_time::seconds(rand() % _counter_computation_interval_seconds + 1));
