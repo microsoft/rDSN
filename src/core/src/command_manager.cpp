@@ -375,7 +375,11 @@ namespace dsn {
                 if (resp != nullptr)
                 {
                     std::string o2 = output.c_str();
-                    ::dsn::unmarshall(resp, o2);
+                    if (::dsn::try_unmarshall(resp, o2) != ERR_OK)
+                    {
+                        dwarn("cli run for %s failed: invalid response", cmd.c_str());
+                        return false;
+                    }
                     return true;
                 }
                 else

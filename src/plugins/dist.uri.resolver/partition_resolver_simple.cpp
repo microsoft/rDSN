@@ -296,8 +296,19 @@ namespace dsn
             if (err == ERR_OK)
             {
                 configuration_query_by_index_response resp;
-                unmarshall(response, resp);
-                if (resp.err == ERR_OK)
+                auto decode_err = ::dsn::try_unmarshall(response, resp);
+                if (decode_err != ERR_OK)
+                {
+                    derror("%s.client: query config reply, gpid = %d.%d, invalid response: %s",
+                        _app_path.c_str(),
+                        _app_id,
+                        partition_index,
+                        decode_err.to_string()
+                        );
+
+                    client_err = decode_err;
+                }
+                else if (resp.err == ERR_OK)
                 {
                     zauto_write_lock l(_config_lock);
 

@@ -159,8 +159,15 @@ namespace dsn {
         if (err == ERR_FORWARD_TO_OTHERS)
         {
             rpc_address addr;
-            ::dsn::unmarshall((dsn_message_t)reply, addr);
-
+            if (::dsn::try_unmarshall((dsn_message_t)reply, addr) != ERR_OK)
+            {
+                derror("invalid forward reply: failed to decode forward address, trace_id = %016" PRIx64,
+                    reply->header->trace_id);
+                call->set_delay(delay_ms);
+                call->enqueue(ERR_NETWORK_FAILURE, reply);
+            }
+            else
+            {
             // handle the case of forwarding to itself where addr == req->to_address.
             dbg_dassert(addr != req->to_address,
                 "impossible forwarding to myself as this only happens when i'm pure client so i don't get a named to_address %s",
@@ -195,6 +202,7 @@ namespace dsn {
             dassert(reply->get_count() == 0,
                 "reply should not be referenced by anybody so far");
             delete reply;
+            }
         }
         else
         {
