@@ -37,6 +37,7 @@
 
 # include <string>
 # include <sstream>
+# include <stdexcept>
 # include <dsn/cpp/serialization_helper/dsn_types.h>
 # include <dsn/cpp/rpc_stream.h>
 
@@ -92,7 +93,8 @@ namespace dsn
         switch (fmt)
         {
             THRIFT_UNMARSHALLER
-        default: dassert(false, serialization::no_registered_function_error_notice(value, fmt).c_str());
+        default:
+            throw std::invalid_argument(serialization::no_registered_function_error_notice(value, fmt));
         }
     }
 #else
@@ -128,7 +130,7 @@ namespace dsn
         switch (fmt) \
         { \
             SerializationType##_UNMARSHALLER \
-            default: dassert(false, serialization::no_registered_function_error_notice(value, fmt).c_str()); \
+            default: throw std::invalid_argument(serialization::no_registered_function_error_notice(value, fmt)); \
         } \
     }
 
@@ -153,9 +155,26 @@ namespace dsn
     template<typename T>
     inline void unmarshall(dsn_message_t msg, /*out*/ T& val)
     {
-        dassert(msg != nullptr, "unmarshall got null message");
+        if (msg == nullptr)
+        {
+            throw std::invalid_argument("unmarshall got null message");
+        }
 
         ::dsn::rpc_read_stream reader(msg);
         unmarshall(reader, val, dsn_msg_get_serialize_format(msg));
+    }
+
+    template<typename T>
+    inline error_code try_unmarshall(dsn_message_t msg, /*out*/ T& val)
+    {
+        try
+        {
+            unmarshall(msg, val);
+            return ERR_OK;
+        }
+        catch (...)
+        {
+            return ERR_INVALID_DATA;
+        }
     }
 }

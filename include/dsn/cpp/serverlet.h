@@ -123,6 +123,22 @@ namespace dsn
             TCallback cb;
         };
 
+        static void reply_invalid_request(dsn_message_t request)
+        {
+            auto response = dsn_msg_create_response(request);
+            if (response == nullptr)
+            {
+                derror("dsn_msg_create_response failed");
+                return;
+            }
+
+            auto err = dsn_rpc_reply(response, ERR_INVALID_DATA.get());
+            if (err != ERR_OK)
+            {
+                derror("dsn_rpc_reply failed: %s", error_code(err).to_string());
+            }
+        }
+
         std::string _name;
     };
 
@@ -143,7 +159,7 @@ namespace dsn
     {
         if (handler == nullptr)
         {
-            dlog(LOG_LEVEL_ERROR, "cpp.serverlet", "register_rpc_handler got null handler");
+            derror("register_rpc_handler got null handler");
             return false;
         }
 
@@ -151,7 +167,7 @@ namespace dsn
         auto hc = (hc_type1*)malloc(sizeof(hc_type1));
         if (hc == nullptr)
         {
-            dlog(LOG_LEVEL_ERROR, "cpp.serverlet", "failed to allocate rpc handler context");
+            derror("failed to allocate rpc handler context");
             return false;
         }
         hc->this_ = (T*)this;
@@ -162,7 +178,10 @@ namespace dsn
             auto hc2 = (hc_type1*)param;
 
             TRequest req;
-            ::dsn::unmarshall(request, req);
+            if (::dsn::try_unmarshall(request, req) != ERR_OK)
+            {
+                return;
+            }
             ((hc2->this_)->*(hc2->cb))(req);
         };
 
@@ -179,7 +198,7 @@ namespace dsn
     {
         if (handler == nullptr)
         {
-            dlog(LOG_LEVEL_ERROR, "cpp.serverlet", "register_rpc_handler got null handler");
+            derror("register_rpc_handler got null handler");
             return false;
         }
 
@@ -187,7 +206,7 @@ namespace dsn
         auto hc = (hc_type2*)malloc(sizeof(hc_type2));
         if (hc == nullptr)
         {
-            dlog(LOG_LEVEL_ERROR, "cpp.serverlet", "failed to allocate rpc handler context");
+            derror("failed to allocate rpc handler context");
             return false;
         }
         hc->this_ = (T*)this;
@@ -198,7 +217,11 @@ namespace dsn
             auto hc2 = (hc_type2*)param;
 
             TRequest req;
-            ::dsn::unmarshall(request, req);
+            if (::dsn::try_unmarshall(request, req) != ERR_OK)
+            {
+                reply_invalid_request(request);
+                return;
+            }
 
             TResponse resp;
             ((hc2->this_)->*(hc2->cb))(req, resp);
@@ -220,7 +243,7 @@ namespace dsn
     {
         if (handler == nullptr)
         {
-            dlog(LOG_LEVEL_ERROR, "cpp.serverlet", "register_async_rpc_handler got null handler");
+            derror("register_async_rpc_handler got null handler");
             return false;
         }
 
@@ -228,7 +251,7 @@ namespace dsn
         auto hc = (hc_type3*)malloc(sizeof(hc_type3));
         if (hc == nullptr)
         {
-            dlog(LOG_LEVEL_ERROR, "cpp.serverlet", "failed to allocate async rpc handler context");
+            derror("failed to allocate async rpc handler context");
             return false;
         }
         hc->this_ = (T*)this;
@@ -239,7 +262,11 @@ namespace dsn
             auto hc2 = (hc_type3*)param;
 
             TRequest req;
-            ::dsn::unmarshall(request, req);
+            if (::dsn::try_unmarshall(request, req) != ERR_OK)
+            {
+                reply_invalid_request(request);
+                return;
+            }
 
             rpc_replier<TResponse> replier(dsn_msg_create_response(request));
             ((hc2->this_)->*(hc2->cb))(req, replier);
@@ -258,7 +285,7 @@ namespace dsn
     {
         if (handler == nullptr)
         {
-            dlog(LOG_LEVEL_ERROR, "cpp.serverlet", "register_rpc_handler got null handler");
+            derror("register_rpc_handler got null handler");
             return false;
         }
 
@@ -266,7 +293,7 @@ namespace dsn
         auto hc = (hc_type4*)malloc(sizeof(hc_type4));
         if (hc == nullptr)
         {
-            dlog(LOG_LEVEL_ERROR, "cpp.serverlet", "failed to allocate rpc handler context");
+            derror("failed to allocate rpc handler context");
             return false;
         }
         hc->this_ = (T*)this;

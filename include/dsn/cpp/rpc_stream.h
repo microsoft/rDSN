@@ -38,6 +38,7 @@
 # include <dsn/service_api_c.h>
 # include <dsn/cpp/blob.h>
 # include <dsn/cpp/auto_codes.h>
+# include <stdexcept>
 
 namespace dsn
 {
@@ -66,14 +67,20 @@ namespace dsn
 
         void set_read_msg(dsn_message_t msg)
         {
-            dassert(msg != nullptr, "rpc_read_stream::set_read_msg got null message");
+            if (msg == nullptr)
+            {
+                throw std::invalid_argument("rpc_read_stream::set_read_msg got null message");
+            }
 
             assign(msg, false);
 
             void* ptr;
             size_t size;
             bool r = dsn_msg_read_next(msg, &ptr, &size);
-            dassert(r, "read msg must have one segment of buffer ready");
+            if (!r)
+            {
+                throw std::out_of_range("read msg must have one segment of buffer ready");
+            }
 
             blob bb((const char*)ptr, 0, (int)size);
             init(bb);

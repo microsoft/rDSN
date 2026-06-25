@@ -253,8 +253,12 @@ namespace dsn {
         {
             //the protocol is binary protocol
             auto r = iprot->readI64(reinterpret_cast<int64_t&>(_addr.u.value));
-            dassert(_addr.u.v4.type == HOST_TYPE_INVALID || _addr.u.v4.type == HOST_TYPE_IPV4,
+            if (_addr.u.v4.type != HOST_TYPE_INVALID && _addr.u.v4.type != HOST_TYPE_IPV4)
+            {
+                throw ::apache::thrift::protocol::TProtocolException(
+                    ::apache::thrift::protocol::TProtocolException::INVALID_DATA,
                     "only invalid or ipv4 can be deserialized from binary");
+            }
             return r;
         }
         else

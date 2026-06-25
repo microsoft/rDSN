@@ -38,6 +38,7 @@
 # include <dsn/cpp/serialization.h>
 # include <dsn/cpp/task_helper.h>
 # include <dsn/cpp/function_traits.h>
+# include <utility>
 
 namespace dsn
 { 
@@ -300,7 +301,16 @@ namespace dsn
                     typename is_typed_rpc_callback<TCallback>::response_t response{};
                     if (err == ERR_OK)
                     {
-                        ::dsn::unmarshall(resp, response);
+                        decltype(response) parsed{};
+                        auto decode_err = ::dsn::try_unmarshall(resp, parsed);
+                        if (decode_err != ERR_OK)
+                        {
+                            err = decode_err;
+                        }
+                        else
+                        {
+                            response = std::move(parsed);
+                        }
                     }
                     cb_fwd(err, std::move(response));
                 },
@@ -431,7 +441,16 @@ namespace dsn
             result.first = task->error();
             if (task->error() == ::dsn::ERR_OK)
             {
-                ::dsn::unmarshall(task->response(), result.second);
+                TResponse parsed{};
+                auto decode_err = ::dsn::try_unmarshall(task->response(), parsed);
+                if (decode_err != ::dsn::ERR_OK)
+                {
+                    result.first = decode_err;
+                }
+                else
+                {
+                    result.second = std::move(parsed);
+                }
             }
             return result;
         }

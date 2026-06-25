@@ -36,6 +36,7 @@
 
 #include "fault_injector.h"
 #include <dsn/service_api_c.h>
+#include <cstddef>
 
 # ifdef __TITLE__
 # undef __TITLE__
@@ -202,7 +203,13 @@ namespace dsn {
         static void corrupt_data(message_ex* request, const std::string& corrupt_type)
         {
             if (corrupt_type == "header")
-                replace_value(request->buffers, dsn_random32(0, sizeof(message_header)-1));
+            {
+                static const unsigned int header_mutable_offset =
+                    static_cast<unsigned int>(offsetof(message_header, id));
+                replace_value(request->buffers,
+                              dsn_random32(header_mutable_offset,
+                                           sizeof(message_header) - 1));
+            }
             else if (corrupt_type == "body")
             {
                 if (request->body_size() == 0)
@@ -213,7 +220,14 @@ namespace dsn {
                 replace_value(request->buffers, dsn_random32(0, request->body_size()-1) + sizeof(message_header));
             }
             else if (corrupt_type == "random")
-                replace_value(request->buffers, dsn_random32(0, request->body_size() + sizeof(message_header) - 1));
+            {
+                if (request->body_size() == 0)
+                {
+                    dwarn("skip random data corruption for empty message body");
+                    return;
+                }
+                replace_value(request->buffers, dsn_random32(0, request->body_size()-1) + sizeof(message_header));
+            }
             else
             {
                 derror("try to inject an unknown data corrupt type: %s", corrupt_type.c_str());

@@ -47,6 +47,7 @@
 # include <cerrno>
 # include <chrono>
 # include <cstring>
+# include <stdexcept>
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <random>
@@ -401,8 +402,7 @@ namespace dsn
         // now ret should be sizeof(len).
         if (len < 0)
         {
-            derror("binary_reader::read got negative string length: %d", len);
-            return 0;
+            throw std::invalid_argument("binary_reader::read got negative string length");
         }
         else if (len == 0)
         {
@@ -417,8 +417,7 @@ namespace dsn
         }
         else
         {
-            derror("binary_reader::read string beyond the end of buffer");
-            return 0;
+            throw std::out_of_range("binary_reader::read string beyond the end of buffer");
         }
         
         return ret;
@@ -437,8 +436,7 @@ namespace dsn
         // now ret should be sizeof(len).
         if (len < 0)
         {
-            derror("binary_reader::read got negative blob length: %d", len);
-            return 0;
+            throw std::invalid_argument("binary_reader::read got negative blob length");
         }
         else if (len == 0)
         {
@@ -462,8 +460,7 @@ namespace dsn
         }
         else
         {
-            derror("binary_reader::read blob beyond the end of buffer");
-            return 0;
+            throw std::out_of_range("binary_reader::read blob beyond the end of buffer");
         }
 
         return ret;
@@ -473,8 +470,7 @@ namespace dsn
     {
         if (sz < 0)
         {
-            dassert(false, "sz is negative: %d", sz);
-            return 0;
+            throw std::invalid_argument("binary_reader::read got negative size");
         }
         else if (sz == 0)
         {
@@ -483,7 +479,10 @@ namespace dsn
         }
         else if (sz <= get_remaining_size())
         {
-            dassert(buffer != nullptr, "binary_reader::read got null buffer");
+            if (buffer == nullptr)
+            {
+                throw std::invalid_argument("binary_reader::read got null buffer");
+            }
 
             memcpy((void*)buffer, _ptr, sz);
             _ptr += sz;
@@ -492,8 +491,7 @@ namespace dsn
         }
         else
         {
-            derror("binary_reader::read beyond the end of buffer");
-            return 0;
+            throw std::out_of_range("binary_reader::read beyond the end of buffer");
         }
     }
 
@@ -531,8 +529,7 @@ namespace dsn
     {
         if (count < 0)
         {
-            dassert(false, "count is negative: %d", count);
-            return false;
+            throw std::invalid_argument("binary_reader::skip got negative count");
         }
         else if (count <= get_remaining_size())
         {
@@ -543,8 +540,7 @@ namespace dsn
         }
         else
         {
-            dassert(false, "read beyond the end of buffer");
-            return false;
+            throw std::out_of_range("read beyond the end of buffer");
         }
     }
 

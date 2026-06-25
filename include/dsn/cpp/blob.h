@@ -37,6 +37,7 @@
 
 # include <dsn/service_api_c.h>
 # include <memory>
+# include <stdexcept>
 # include <vector>
 # include <cstring>
 
@@ -327,8 +328,7 @@ namespace dsn
         }
         else
         {
-            dassert(false, "read beyond the end of buffer");
-            return 0;
+            throw std::out_of_range("read beyond the end of buffer");
         }
     }
 
