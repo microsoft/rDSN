@@ -206,9 +206,12 @@ namespace dsn {
             {
                 static const unsigned int header_mutable_offset =
                     static_cast<unsigned int>(offsetof(message_header, id));
+                static const unsigned int header_mutable_size =
+                    static_cast<unsigned int>(offsetof(message_header, context)) -
+                    header_mutable_offset;
                 replace_value(request->buffers,
-                              dsn_random32(header_mutable_offset,
-                                           sizeof(message_header) - 1));
+                              header_mutable_offset +
+                                  dsn_random32(0, header_mutable_size - 1));
             }
             else if (corrupt_type == "body")
             {
