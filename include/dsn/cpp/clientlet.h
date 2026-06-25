@@ -357,7 +357,13 @@ namespace dsn
             {
                 return nullptr;
             }
-            ::dsn::marshall(msg, std::forward<TRequest>(req));
+            auto err = ::dsn::try_marshall(msg, std::forward<TRequest>(req));
+            if (err != ERR_OK)
+            {
+                derror("marshall request failed: %s", err.to_string());
+                dsn_msg_release_ref(msg);
+                return nullptr;
+            }
             return call(server, msg, owner, std::forward<TCallback>(callback), reply_thread_hash);
         }
 
@@ -392,7 +398,13 @@ namespace dsn
             {
                 return rpc_message_helper(nullptr);
             }
-            ::dsn::marshall(msg, std::forward<TRequest>(req));
+            auto err = ::dsn::try_marshall(msg, std::forward<TRequest>(req));
+            if (err != ERR_OK)
+            {
+                derror("marshall request failed: %s", err.to_string());
+                dsn_msg_release_ref(msg);
+                return rpc_message_helper(nullptr);
+            }
             return rpc_message_helper(msg);
         }
 
