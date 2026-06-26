@@ -343,3 +343,63 @@ TEST(core, dsn_msg_invalid_parameters)
 
     dsn_msg_release_ref(request);
 }
+
+TEST(core, try_marshall)
+{
+    const std::string value("hello, rdsn");
+
+    ASSERT_EQ(ERR_INVALID_PARAMETERS, ::dsn::try_marshall(nullptr, value));
+
+    dsn_message_t invalid_request = dsn_msg_create_request(RPC_CODE_FOR_TEST, 100, 1, 2);
+    ASSERT_NE(nullptr, invalid_request);
+    dsn_msg_add_ref(invalid_request);
+
+    ASSERT_EQ(ERR_INVALID_PARAMETERS,
+              ::dsn::try_marshall(
+                  invalid_request, value, static_cast<dsn_msg_serialize_format>(DSF_JSON + 1)));
+    dsn_msg_release_ref(invalid_request);
+
+    dsn_message_t request = dsn_msg_create_request(RPC_CODE_FOR_TEST, 100, 1, 2);
+    ASSERT_NE(nullptr, request);
+    dsn_msg_add_ref(request);
+
+    ASSERT_EQ(ERR_OK, ::dsn::try_marshall(request, value, DSF_THRIFT_BINARY));
+
+    dsn_message_t received_request = dsn_msg_copy(request, true, true);
+    ASSERT_NE(nullptr, received_request);
+    dsn_msg_add_ref(received_request);
+
+    std::string decoded;
+    ::dsn::unmarshall(received_request, decoded, DSF_THRIFT_BINARY);
+    ASSERT_EQ(value, decoded);
+
+    dsn_msg_release_ref(received_request);
+    dsn_msg_release_ref(request);
+}
+
+TEST(core, try_unmarshall)
+{
+    std::string decoded;
+    ASSERT_EQ(ERR_INVALID_DATA, ::dsn::try_unmarshall(nullptr, decoded));
+
+    const std::string value("hello, rdsn");
+    dsn_message_t request = dsn_msg_create_request(RPC_CODE_FOR_TEST, 100, 1, 2);
+    ASSERT_NE(nullptr, request);
+    dsn_msg_add_ref(request);
+
+    ::dsn::marshall(request, value, DSF_THRIFT_BINARY);
+    dsn_message_t received_request = dsn_msg_copy(request, true, true);
+    ASSERT_NE(nullptr, received_request);
+    dsn_msg_add_ref(received_request);
+
+    ASSERT_EQ(ERR_INVALID_DATA,
+              ::dsn::try_unmarshall(
+                  received_request, decoded, static_cast<dsn_msg_serialize_format>(DSF_JSON + 1)));
+
+    decoded.clear();
+    ASSERT_EQ(ERR_OK, ::dsn::try_unmarshall(received_request, decoded, DSF_THRIFT_BINARY));
+    ASSERT_EQ(value, decoded);
+
+    dsn_msg_release_ref(received_request);
+    dsn_msg_release_ref(request);
+}
