@@ -98,6 +98,17 @@ namespace dsn
                 dsn::blob msg_bb = buf.range(0, msg_sz);
                 message_ex* msg = parse_message(_thrift_header, msg_bb);
 
+                // parse_message returns null when the (untrusted) thrift body is malformed
+                // (bad message-begin envelope, over-long rpc name, or a non-request message).
+                // The receive loop only treats read_next == -1 as a hard failure, so we must
+                // signal it here instead of falling through and dereferencing the null msg.
+                if (msg == nullptr)
+                {
+                    derror("thrift message body check failed");
+                    read_next = -1;
+                    return nullptr;
+                }
+
                 reader->_buffer = buf.range(msg_sz);
                 reader->_buffer_occupied -= msg_sz;
                 _header_parsed = false;
@@ -278,15 +289,38 @@ namespace dsn
         dsn::message_ex* msg = message_ex::create_receive_message_with_standalone_header(body_data);
         dsn::message_header* dsn_hdr = msg->header;
 
-        dsn::rpc_read_stream stream(msg);
-        ::dsn::binary_reader_transport binary_transport(stream);
-        boost::shared_ptr< ::dsn::binary_reader_transport > trans_ptr(&binary_transport, [](::dsn::binary_reader_transport*) {});
-        ::apache::thrift::protocol::TBinaryProtocol iprot(trans_ptr);
-
         std::string fname;
-        ::apache::thrift::protocol::TMessageType mtype;
-        int32_t seqid;
-        iprot.readMessageBegin(fname, mtype, seqid);
+        ::apache::thrift::protocol::TMessageType mtype = ::apache::thrift::protocol::T_CALL;
+        int32_t seqid = 0;
+        bool parsed = false;
+
+        // The thrift message-begin envelope is decoded from untrusted network bytes. A corrupt
+        // length/string can make readMessageBegin throw (TProtocolException / out_of_range from
+        // the underlying binary_reader). Keep the read stream in an inner scope so it (and its
+        // dsn_msg_read_commit) is destroyed before we may free msg on the failure path.
+        {
+            dsn::rpc_read_stream stream(msg);
+            ::dsn::binary_reader_transport binary_transport(stream);
+            boost::shared_ptr< ::dsn::binary_reader_transport > trans_ptr(&binary_transport, [](::dsn::binary_reader_transport*) {});
+            ::apache::thrift::protocol::TBinaryProtocol iprot(trans_ptr);
+
+            try
+            {
+                iprot.readMessageBegin(fname, mtype, seqid);
+                parsed = true;
+            }
+            catch (std::exception& ex)
+            {
+                derror("thrift message begin parse failed: %s", ex.what());
+            }
+        }
+
+        if (!parsed)
+        {
+            delete msg;
+            return nullptr;
+        }
+
         dinfo("rpc name: %s, type: %d, seqid: %d", fname.c_str(), mtype, seqid);
 
         dsn_hdr->hdr_type = THRIFT_HDR_SIG;
@@ -299,6 +333,7 @@ namespace dsn
         if (name_len < 0 || static_cast<size_t>(name_len) >= sizeof(dsn_hdr->rpc_name))
         {
             derror("thrift rpc name is too long: %s", fname.c_str());
+            delete msg;
             return nullptr;
         }
         dsn_hdr->gpid.u.app_id = thrift_header.app_id;
@@ -309,7 +344,16 @@ namespace dsn
 
         if (mtype == ::apache::thrift::protocol::T_CALL || mtype == ::apache::thrift::protocol::T_ONEWAY)
             dsn_hdr->context.u.is_request = 1;
-        dassert(dsn_hdr->context.u.is_request == 1, "only support receive request");
+
+        // Only requests are accepted here; a corrupt/unexpected message type used to abort via
+        // dassert. Reject it through the parser's error channel (caller closes the connection)
+        // instead of crashing the whole process on malformed network input.
+        if (dsn_hdr->context.u.is_request != 1)
+        {
+            derror("thrift message is not a request, type = %d", mtype);
+            delete msg;
+            return nullptr;
+        }
         dsn_hdr->context.u.serialize_format = DSF_THRIFT_BINARY; // always serialize in thrift binary
 
         return msg;
