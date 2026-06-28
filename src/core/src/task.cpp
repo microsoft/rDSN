@@ -283,7 +283,16 @@ void task::signal_waiters()
 // multiple callers may wait on this
 bool task::wait(int timeout_milliseconds, bool on_cancel)
 {
-    dassert (this != task::get_current_task(), "task cannot wait itself");
+    // a task waiting on itself would deadlock; this is a caller misuse rather
+    // than an internal invariant, so report it through the bool return instead
+    // of aborting the whole process. dsn_task_wait_timeout (bool) propagates
+    // this to the caller; the void dsn_task_wait keeps its own dassert because
+    // it has no error channel.
+    if (this == task::get_current_task())
+    {
+        derror("task %016llx cannot wait itself", static_cast<unsigned long long>(id()));
+        return false;
+    }
 
     auto cs = state();
     if (!on_cancel)

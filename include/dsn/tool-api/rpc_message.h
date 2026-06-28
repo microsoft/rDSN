@@ -151,11 +151,11 @@ namespace dsn
         //
         // routines for buffer management
         //        
-        DSN_API void write_next(void** ptr, size_t* size, size_t min_size);
-        DSN_API void write_commit(size_t size);
+        DSN_API bool write_next(void** ptr, size_t* size, size_t min_size);
+        DSN_API bool write_commit(size_t size);
         DSN_API void write_append(const blob& data);
         DSN_API bool read_next(void** ptr, size_t* size);
-        DSN_API void read_commit(size_t size);
+        DSN_API bool read_commit(size_t size);
         size_t body_size() { return (size_t)header->body_length; }
         DSN_API void* rw_ptr(size_t offset_begin);
 

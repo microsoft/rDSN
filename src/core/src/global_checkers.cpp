@@ -36,6 +36,7 @@
 # include <dsn/tool-api/global_checkers.h>
 # include <dsn/utility/singleton.h>
 # include <dsn/tool_api.h>
+# include "c_api_guard.h"
 
 namespace dsn 
 {
@@ -54,6 +55,7 @@ namespace dsn
 
 DSN_API bool dsn_register_app_checker(const char* name, dsn_checker_create create, dsn_checker_apply apply)
 {
+    DSN_C_GUARD_BEGIN
     if (name == nullptr || name[0] == '\0')
     {
         derror("dsn_register_app_checker got null or empty name");
@@ -79,4 +81,5 @@ DSN_API bool dsn_register_app_checker(const char* name, dsn_checker_create creat
 
     ::dsn::global_checker_store::instance().checkers.push_back(ck);
     return true;
+    DSN_C_GUARD_END(false)
 }

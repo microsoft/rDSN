@@ -41,6 +41,7 @@
 
 # include "task_engine.h"
 # include "transient_memory.h"
+# include "c_api_guard.h"
 
 using namespace dsn::utils;
 
@@ -65,6 +66,7 @@ DSN_API dsn_message_t dsn_msg_create_request(
     uint64_t partition_hash
     )
 {
+    DSN_C_GUARD_BEGIN
     const auto spec = ::dsn::task_spec::get(rpc_code);
     if (rpc_code == ::dsn::TASK_CODE_INVALID || spec == nullptr || spec->type != TASK_TYPE_RPC_REQUEST)
     {
@@ -73,6 +75,7 @@ DSN_API dsn_message_t dsn_msg_create_request(
     }
 
     return ::dsn::message_ex::create_request(rpc_code, timeout_milliseconds, thread_hash, partition_hash);
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API dsn_message_t dsn_msg_create_received_request(
@@ -84,6 +87,7 @@ DSN_API dsn_message_t dsn_msg_create_received_request(
     uint64_t partition_hash
     )
 {
+    DSN_C_GUARD_BEGIN
     const auto spec = ::dsn::task_spec::get(rpc_code);
     if (spec == nullptr || spec->type != TASK_TYPE_RPC_REQUEST)
     {
@@ -118,10 +122,12 @@ DSN_API dsn_message_t dsn_msg_create_received_request(
     msg->header->context.u.serialize_format = serialization_type;
     msg->add_ref(); // released by callers explicitly using dsn_msg_release
     return msg;
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API dsn_message_t dsn_msg_copy(dsn_message_t msg, bool clone_content, bool copy_for_receive)
 {
+    DSN_C_GUARD_BEGIN
     if (msg == nullptr)
     {
         derror("dsn_msg_copy got null message");
@@ -129,10 +135,12 @@ DSN_API dsn_message_t dsn_msg_copy(dsn_message_t msg, bool clone_content, bool c
     }
 
     return ((::dsn::message_ex*)msg)->copy(clone_content, copy_for_receive);
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API dsn_message_t dsn_msg_create_response(dsn_message_t request)
 {
+    DSN_C_GUARD_BEGIN
     if (request == nullptr)
     {
         derror("dsn_msg_create_response got null request");
@@ -147,10 +155,12 @@ DSN_API dsn_message_t dsn_msg_create_response(dsn_message_t request)
 
     auto msg = ((::dsn::message_ex*)request)->create_response();
     return msg;
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API bool dsn_msg_write_next(dsn_message_t msg, void** ptr, size_t* size, size_t min_size)
 {
+    DSN_C_GUARD_BEGIN
     if (msg == nullptr)
     {
         derror("dsn_msg_write_next got null message");
@@ -177,20 +187,21 @@ DSN_API bool dsn_msg_write_next(dsn_message_t msg, void** ptr, size_t* size, siz
         return false;
     }
 
-    ((::dsn::message_ex*)msg)->write_next(ptr, size, min_size);
-    return true;
+    return ((::dsn::message_ex*)msg)->write_next(ptr, size, min_size);
+    DSN_C_GUARD_END(false)
 }
 
 DSN_API bool dsn_msg_write_commit(dsn_message_t msg, size_t size)
 {
+    DSN_C_GUARD_BEGIN
     if (msg == nullptr)
     {
         derror("dsn_msg_write_commit got null message");
         return false;
     }
 
-    ((::dsn::message_ex*)msg)->write_commit(size);
-    return true;
+    return ((::dsn::message_ex*)msg)->write_commit(size);
+    DSN_C_GUARD_END(false)
 }
 
 DSN_API bool dsn_msg_read_next(dsn_message_t msg, void** ptr, size_t* size)
@@ -232,8 +243,7 @@ DSN_API bool dsn_msg_read_commit(dsn_message_t msg, size_t size)
         return false;
     }
 
-    ((::dsn::message_ex*)msg)->read_commit(size);
-    return true;
+    return ((::dsn::message_ex*)msg)->read_commit(size);
 }
 
 DSN_API size_t dsn_msg_body_size(dsn_message_t msg)
@@ -779,12 +789,39 @@ void message_ex::prepare_buffer_header()
     header = (message_header*)ptr;
 }
 
-void message_ex::write_next(void** ptr, size_t* size, size_t min_size)
+bool message_ex::write_next(void** ptr, size_t* size, size_t min_size)
 {
     // printf("%p %s\n", this, __FUNCTION__);
-    dassert(!this->_is_read && this->_rw_committed, "there are pending msg write not committed"
-        ", please invoke dsn_msg_write_next and dsn_msg_write_commit in pairs");
+    if (ptr == nullptr || size == nullptr)
+    {
+        derror("message_ex::write_next: null ptr or size out-parameter");
+        return false;
+    }
+
+    if (this->_is_read || !this->_rw_committed)
+    {
+        derror("message_ex::write_next: there are pending msg write not committed"
+            ", please invoke dsn_msg_write_next and dsn_msg_write_commit in pairs");
+        *ptr = nullptr;
+        *size = 0;
+        return false;
+    }
     ::dsn::tls_trans_mem_next(ptr, size, min_size);
+
+    // tls_trans_mem_next must hand back a valid transient buffer. A genuine
+    // allocation failure throws (translated to false at the dsn_msg_write_next
+    // boundary), so a null *ptr here means the allocator broke its contract.
+    // Bail out instead of doing pointer arithmetic on null below; re-commit 0
+    // bytes first to keep the tls_trans_mem_next/commit pairing consistent for
+    // later writes on this thread.
+    if (*ptr == nullptr)
+    {
+        derror("message_ex::write_next: transient memory returned a null buffer");
+        ::dsn::tls_trans_mem_commit(0);
+        *size = 0;
+        return false;
+    }
+
     this->_rw_committed = false;
 
     // optimization
@@ -802,7 +839,7 @@ void message_ex::write_next(void** ptr, size_t* size, size_t min_size)
                 (int)(lbb.length() + *size)
                 );
 
-            return;
+            return true;
         }
     }
 
@@ -816,13 +853,18 @@ void message_ex::write_next(void** ptr, size_t* size, size_t min_size)
     this->buffers.push_back(buffer);
 
     dassert(this->_rw_index + 1 == (int)this->buffers.size(), "message write buffer count is not right");
+    return true;
 }
 
-void message_ex::write_commit(size_t size)
+bool message_ex::write_commit(size_t size)
 {
     // printf("%p %s\n", this, __FUNCTION__);
-    dassert(!this->_rw_committed, "there are no pending msg write to be committed"
-        ", please invoke dsn_msg_write_next and dsn_msg_write_commit in pairs");
+    if (this->_rw_committed)
+    {
+        derror("message_ex::write_commit: there are no pending msg write to be committed"
+            ", please invoke dsn_msg_write_next and dsn_msg_write_commit in pairs");
+        return false;
+    }
 
     ::dsn::tls_trans_mem_commit(size);
 
@@ -830,6 +872,7 @@ void message_ex::write_commit(size_t size)
     *this->buffers.rbegin() = this->buffers.rbegin()->range(0, (int)this->_rw_offset);
     this->_rw_committed = true;
     this->header->body_length += (int)size;
+    return true;
 }
 
 void message_ex::write_append(const blob& data)
@@ -851,8 +894,20 @@ void message_ex::write_append(const blob& data)
 bool message_ex::read_next(void** ptr, size_t* size)
 {
     // printf("%p %s %d\n", this, __FUNCTION__, utils::get_current_tid());
-    dassert(this->_is_read && this->_rw_committed, "there are pending msg read not committed"
-        ", please invoke dsn_msg_read_next and dsn_msg_read_commit in pairs");
+    if (ptr == nullptr || size == nullptr)
+    {
+        derror("message_ex::read_next: null ptr or size out-parameter");
+        return false;
+    }
+
+    if (!this->_is_read || !this->_rw_committed)
+    {
+        derror("message_ex::read_next: there are pending msg read not committed"
+            ", please invoke dsn_msg_read_next and dsn_msg_read_commit in pairs");
+        *ptr = nullptr;
+        *size = 0;
+        return false;
+    }
 
     int idx = this->_rw_index;
     if (-1 == idx ||
@@ -864,9 +919,21 @@ bool message_ex::read_next(void** ptr, size_t* size)
 
     if (idx < (int)this->buffers.size())
     {
-        this->_rw_committed = false;
         *ptr = (void*)(this->buffers[idx].data() + this->_rw_offset);
         *size = (size_t)this->buffers[idx].length() - this->_rw_offset;
+
+        // Don't hand back a null *ptr as a successful read: buffers[idx] can be
+        // an empty blob whose data() is null (and _rw_offset is 0 in that case).
+        // Validate the produced *ptr here, before mutating the read state, so the
+        // read next/commit pairing stays consistent on this failure path.
+        if (*ptr == nullptr)
+        {
+            derror("message_ex::read_next: null buffer pointer at current read index");
+            *size = 0;
+            return false;
+        }
+
+        this->_rw_committed = false;
         return true;
     }
     else
@@ -877,15 +944,24 @@ bool message_ex::read_next(void** ptr, size_t* size)
     }   
 }
 
-void message_ex::read_commit(size_t size)
+bool message_ex::read_commit(size_t size)
 {
     // printf("%p %s\n", this, __FUNCTION__);
-    dassert(!this->_rw_committed, "there are no pending msg read to be committed"
-        ", please invoke dsn_msg_read_next and dsn_msg_read_commit in pairs");
+    if (this->_rw_committed)
+    {
+        derror("message_ex::read_commit: there are no pending msg read to be committed"
+            ", please invoke dsn_msg_read_next and dsn_msg_read_commit in pairs");
+        return false;
+    }
 
-    dassert(-1 != this->_rw_index, "no buffer in curent msg is under read");
+    if (-1 == this->_rw_index)
+    {
+        derror("message_ex::read_commit: no buffer in current msg is under read");
+        return false;
+    }
     this->_rw_offset += (int)size;
     this->_rw_committed = true;
+    return true;
 }
 
 void* message_ex::rw_ptr(size_t offset_begin)

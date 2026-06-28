@@ -41,9 +41,11 @@
 # include <dsn/cpp/utils.h>
 # include "service_engine.h"
 # include "perf_counters.h"
+# include "c_api_guard.h"
 
 DSN_API dsn_handle_t dsn_perf_counter_create(const char* section, const char* name, dsn_perf_counter_type_t type, const char* description)
 {
+    DSN_C_GUARD_BEGIN
     if (section == nullptr || section[0] == '\0')
     {
         derror("dsn_perf_counter_create got null or empty section");
@@ -73,6 +75,7 @@ DSN_API dsn_handle_t dsn_perf_counter_create(const char* section, const char* na
     auto c = dsn::perf_counters::instance().get_counter(cnode->name(), section, name, type, description, true);
     c->add_ref();
     return c.get();
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API void dsn_perf_counter_remove(dsn_handle_t handle)

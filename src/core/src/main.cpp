@@ -56,6 +56,7 @@
 # include "coredump.h"
 # include "transient_memory.h"
 # include "library_utils.h"
+# include "c_api_guard.h"
 # include <cstdio>
 # include <exception>
 # include <fstream>
@@ -100,6 +101,7 @@ static struct _all_info_
 
 DSN_API const char* dsn_config_get_value_string(const char* section, const char* key, const char* default_value, const char* dsptr)
 {
+    DSN_C_GUARD_BEGIN
     if (section == nullptr || section[0] == '\0')
     {
         derror("dsn_config_get_value_string got null or empty section");
@@ -125,10 +127,12 @@ DSN_API const char* dsn_config_get_value_string(const char* section, const char*
     }
 
     return dsn_all.config->get_string_value(section, key, default_value, dsptr);
+    DSN_C_GUARD_END(default_value)
 }
 
 DSN_API bool dsn_config_get_value_bool(const char* section, const char* key, bool default_value, const char* dsptr)
 {
+    DSN_C_GUARD_BEGIN
     if (section == nullptr || section[0] == '\0')
     {
         derror("dsn_config_get_value_bool got null or empty section");
@@ -148,10 +152,12 @@ DSN_API bool dsn_config_get_value_bool(const char* section, const char* key, boo
     }
 
     return dsn_all.config->get_value<bool>(section, key, default_value, dsptr);
+    DSN_C_GUARD_END(default_value)
 }
 
 DSN_API uint64_t dsn_config_get_value_uint64(const char* section, const char* key, uint64_t default_value, const char* dsptr)
 {
+    DSN_C_GUARD_BEGIN
     if (section == nullptr || section[0] == '\0')
     {
         derror("dsn_config_get_value_uint64 got null or empty section");
@@ -171,10 +177,12 @@ DSN_API uint64_t dsn_config_get_value_uint64(const char* section, const char* ke
     }
 
     return dsn_all.config->get_value<uint64_t>(section, key, default_value, dsptr);
+    DSN_C_GUARD_END(default_value)
 }
 
 DSN_API double dsn_config_get_value_double(const char* section, const char* key, double default_value, const char* dsptr)
 {
+    DSN_C_GUARD_BEGIN
     if (section == nullptr || section[0] == '\0')
     {
         derror("dsn_config_get_value_double got null or empty section");
@@ -194,10 +202,12 @@ DSN_API double dsn_config_get_value_double(const char* section, const char* key,
     }
 
     return dsn_all.config->get_value<double>(section, key, default_value, dsptr);
+    DSN_C_GUARD_END(default_value)
 }
 
 DSN_API int dsn_config_get_all_sections(const char** buffers, /*inout*/ int* buffer_count)
 {
+    DSN_C_GUARD_BEGIN
     if (buffer_count == nullptr)
     {
         derror("dsn_config_get_all_sections got null buffer_count");
@@ -235,10 +245,12 @@ DSN_API int dsn_config_get_all_sections(const char** buffers, /*inout*/ int* buf
     }
 
     return scount;
+    DSN_C_GUARD_END(-1)
 }
 
 DSN_API int dsn_config_get_all_keys(const char* section, const char** buffers, /*inout*/ int* buffer_count) // return all key count (may greater than buffer_count)
 {
+    DSN_C_GUARD_BEGIN
     if (section == nullptr || section[0] == '\0')
     {
         derror("dsn_config_get_all_keys got null or empty section");
@@ -282,10 +294,12 @@ DSN_API int dsn_config_get_all_keys(const char* section, const char** buffers, /
     }
 
     return kcount;
+    DSN_C_GUARD_END(-1)
 }
 
 DSN_API void dsn_config_dump(const char* file)
 {
+    DSN_C_GUARD_BEGIN
     if (file == nullptr || file[0] == '\0')
     {
         derror("dsn_config_dump got null or empty file");
@@ -301,6 +315,7 @@ DSN_API void dsn_config_dump(const char* file)
     std::ofstream os(file, std::ios::out);
     dsn_all.config->dump(os);
     os.close();
+    DSN_C_GUARD_END_VOID()
 }
 
 extern bool dsn_log_init();
@@ -816,6 +831,7 @@ DSN_API bool dsn_run_config(const char* config, bool sleep_after_init)
 
 DSN_API int dsn_get_all_apps(dsn_app_info* info_buffer, int count)
 {
+    DSN_C_GUARD_BEGIN
     if (info_buffer == nullptr)
     {
         derror("dsn_get_all_apps got null info_buffer");
@@ -861,6 +877,7 @@ DSN_API int dsn_get_all_apps(dsn_app_info* info_buffer, int count)
         }
     }
     return i;
+    DSN_C_GUARD_END(-1)
 }
 
 

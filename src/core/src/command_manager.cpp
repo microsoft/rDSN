@@ -46,6 +46,7 @@
 # include <dsn/tool-api/rpc_message.h>
 # include "rpc_engine.h"
 # include <dsn/cpp/cli.h>
+# include "c_api_guard.h"
 
 # ifdef __TITLE__
 # undef __TITLE__
@@ -54,6 +55,7 @@
 
 DSN_API const char* dsn_cli_run(const char* command_line) // return command output
 {
+    DSN_C_GUARD_BEGIN
     ::dsn::safe_string output;
     if (!dsn::run_command(command_line, output))
     {
@@ -70,6 +72,7 @@ DSN_API const char* dsn_cli_run(const char* command_line) // return command outp
     memcpy(c_output, &output[0], output.length());
     c_output[output.length()] = '\0';
     return c_output;
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API void dsn_cli_free(const char* command_output)
@@ -92,6 +95,7 @@ DSN_API dsn_handle_t dsn_cli_register(
     dsn_cli_free_handler output_freer
     )
 {
+    DSN_C_GUARD_BEGIN
     if (cmd_handler == nullptr)
     {
         derror("dsn_cli_register got null command handler");
@@ -122,6 +126,7 @@ DSN_API dsn_handle_t dsn_cli_register(
             return cpp_output;
         }
         );
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API dsn_handle_t dsn_cli_app_register(
@@ -133,6 +138,7 @@ DSN_API dsn_handle_t dsn_cli_app_register(
     dsn_cli_free_handler output_freer
     )
 { 
+    DSN_C_GUARD_BEGIN
     if (command == nullptr || command[0] == '\0')
     {
         derror("dsn_cli_app_register got null or empty command");
@@ -162,6 +168,7 @@ DSN_API dsn_handle_t dsn_cli_app_register(
 
     dsn::command_manager::instance().set_cli_target_address(handle, dsn::task::get_current_rpc()->primary_address());
     return handle;
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API void dsn_cli_deregister(dsn_handle_t handle)

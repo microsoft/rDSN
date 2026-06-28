@@ -57,6 +57,7 @@
 # include "crc.h"
 # include "transient_memory.h"
 # include "library_utils.h"
+# include "c_api_guard.h"
 # include <fstream>
 
 # if defined(_WIN32)
@@ -119,6 +120,7 @@ DSN_API const char* dsn_error_to_string(dsn_error_t err)
 
 DSN_API dsn_error_t dsn_error_from_string(const char* s, dsn_error_t default_err)
 {
+    DSN_C_GUARD_BEGIN
     if (s == nullptr || s[0] == '\0')
     {
         derror("dsn_error_from_string got null or empty string");
@@ -127,6 +129,7 @@ DSN_API dsn_error_t dsn_error_from_string(const char* s, dsn_error_t default_err
 
     auto r = error_code_mgr::instance().get_id(s);
     return r == -1 ? default_err : r;
+    DSN_C_GUARD_END(default_err)
 }
 
 DSN_API volatile int* dsn_task_queue_virtual_length_ptr(
@@ -134,6 +137,7 @@ DSN_API volatile int* dsn_task_queue_virtual_length_ptr(
     int hash
     )
 {
+    DSN_C_GUARD_BEGIN
     if (code < 0 || code == ::dsn::TASK_CODE_INVALID)
     {
         derror("dsn_task_queue_virtual_length_ptr got invalid code = %d", code);
@@ -148,6 +152,7 @@ DSN_API volatile int* dsn_task_queue_virtual_length_ptr(
     }
 
     return node->computation()->get_task_queue_virtual_length_ptr(code, hash);
+    DSN_C_GUARD_END(nullptr)
 }
 
 // use ::dsn::threadpool_code2; for parsing purpose
@@ -171,6 +176,7 @@ DSN_API const char* dsn_threadpool_code_to_string(dsn_threadpool_code_t pool_cod
 
 DSN_API dsn_threadpool_code_t dsn_threadpool_code_from_string(const char* s, dsn_threadpool_code_t default_code)
 {
+    DSN_C_GUARD_BEGIN
     if (s == nullptr || s[0] == '\0')
     {
         derror("dsn_threadpool_code_from_string got null or empty string");
@@ -179,6 +185,7 @@ DSN_API dsn_threadpool_code_t dsn_threadpool_code_from_string(const char* s, dsn
 
     auto r = ::dsn::utils::customized_id_mgr< ::dsn::threadpool_code2_>::instance().get_id(s);
     return r == -1 ? default_code : r;
+    DSN_C_GUARD_END(default_code)
 }
 
 DSN_API int dsn_threadpool_code_max()
@@ -303,6 +310,7 @@ DSN_API const char* dsn_task_code_to_string(dsn_task_code_t code)
 
 DSN_API dsn_task_code_t dsn_task_code_from_string(const char* s, dsn_task_code_t default_code)
 {
+    DSN_C_GUARD_BEGIN
     if (s == nullptr || s[0] == '\0')
     {
         derror("dsn_task_code_from_string got null or empty string");
@@ -311,6 +319,7 @@ DSN_API dsn_task_code_t dsn_task_code_from_string(const char* s, dsn_task_code_t
 
     auto r = ::dsn::utils::customized_id_mgr<task_code_placeholder>::instance().get_id(s);
     return r == -1 ? default_code : r;
+    DSN_C_GUARD_END(default_code)
 }
 
 DSN_API int dsn_task_code_max()
@@ -400,6 +409,7 @@ DSN_API uint64_t dsn_crc64_concatenate(uint32_t xy_init, uint64_t x_init, uint64
 
 DSN_API dsn_task_t dsn_task_create(dsn_task_code_t code, dsn_task_handler_t cb, void* context, int hash, dsn_task_tracker_t tracker)
 {
+    DSN_C_GUARD_BEGIN
     auto sp = ::dsn::task_spec::get(code);
     if (code == ::dsn::TASK_CODE_INVALID || sp == nullptr || sp->type != TASK_TYPE_COMPUTE)
     {
@@ -418,11 +428,13 @@ DSN_API dsn_task_t dsn_task_create(dsn_task_code_t code, dsn_task_handler_t cb, 
     t->set_tracker((dsn::task_tracker*)tracker);
     t->spec().on_task_create.execute(::dsn::task::get_current_task(), t);
     return t;
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API dsn_task_t dsn_task_create_timer(dsn_task_code_t code, dsn_task_handler_t cb, 
     void* context, int hash, int interval_milliseconds, dsn_task_tracker_t tracker)
 {
+    DSN_C_GUARD_BEGIN
     auto sp = ::dsn::task_spec::get(code);
     if (code == ::dsn::TASK_CODE_INVALID || sp == nullptr || sp->type != TASK_TYPE_COMPUTE)
     {
@@ -446,11 +458,13 @@ DSN_API dsn_task_t dsn_task_create_timer(dsn_task_code_t code, dsn_task_handler_
     t->set_tracker((dsn::task_tracker*)tracker);
     t->spec().on_task_create.execute(::dsn::task::get_current_task(), t);
     return t;
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API dsn_task_t dsn_task_create_ex(dsn_task_code_t code, dsn_task_handler_t cb, 
     dsn_task_cancelled_handler_t on_cancel, void* context, int hash, dsn_task_tracker_t tracker)
 {
+    DSN_C_GUARD_BEGIN
     auto sp = ::dsn::task_spec::get(code);
     if (code == ::dsn::TASK_CODE_INVALID || sp == nullptr || sp->type != TASK_TYPE_COMPUTE)
     {
@@ -468,12 +482,14 @@ DSN_API dsn_task_t dsn_task_create_ex(dsn_task_code_t code, dsn_task_handler_t c
     t->set_tracker((dsn::task_tracker*)tracker);
     t->spec().on_task_create.execute(::dsn::task::get_current_task(), t);
     return t;
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API dsn_task_t dsn_task_create_timer_ex(dsn_task_code_t code, dsn_task_handler_t cb,
     dsn_task_cancelled_handler_t on_cancel, 
     void* context, int hash, int interval_milliseconds, dsn_task_tracker_t tracker)
 {
+    DSN_C_GUARD_BEGIN
     auto sp = ::dsn::task_spec::get(code);
     if (code == ::dsn::TASK_CODE_INVALID || sp == nullptr || sp->type != TASK_TYPE_COMPUTE)
     {
@@ -498,10 +514,12 @@ DSN_API dsn_task_t dsn_task_create_timer_ex(dsn_task_code_t code, dsn_task_handl
     t->set_tracker((dsn::task_tracker*)tracker);
     t->spec().on_task_create.execute(::dsn::task::get_current_task(), t);
     return t;
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API dsn_task_tracker_t dsn_task_tracker_create(int task_bucket_count)
 {
+    DSN_C_GUARD_BEGIN
     if (task_bucket_count <= 0)
     {
         derror("dsn_task_tracker_create got invalid task_bucket_count = %d", task_bucket_count);
@@ -509,6 +527,7 @@ DSN_API dsn_task_tracker_t dsn_task_tracker_create(int task_bucket_count)
     }
 
     return (dsn_task_tracker_t)(new ::dsn::task_tracker(task_bucket_count));
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API void dsn_task_tracker_destroy(dsn_task_tracker_t tracker)
@@ -546,6 +565,7 @@ DSN_API void dsn_task_tracker_wait_all(dsn_task_tracker_t tracker)
 
 DSN_API bool dsn_task_call(dsn_task_t task, int delay_milliseconds)
 {
+    DSN_C_GUARD_BEGIN
     if (task == nullptr)
     {
         derror("dsn_task_call got null task");
@@ -568,6 +588,7 @@ DSN_API bool dsn_task_call(dsn_task_t task, int delay_milliseconds)
     t->set_delay(delay_milliseconds);
     t->enqueue();
     return true;
+    DSN_C_GUARD_END(false)
 }
 
 DSN_API void dsn_task_add_ref(dsn_task_t task)
@@ -666,8 +687,11 @@ DSN_API void dsn_task_wait(dsn_task_t task)
 
     auto t = (::dsn::task*)task;
     auto r = t->wait();
-    dassert(r, 
-        "task wait without timeout must succeeds (task_id = %016" PRIx64 ")",
+    // dsn_task_wait returns void, so it has no channel to report a failed wait;
+    // per design it keeps the dassert. For an infinite (no-timeout) wait the
+    // only way r is false is a self-wait, which task::wait already logged.
+    dassert(r,
+        "dsn_task_wait failed: a task must not wait on itself (task_id = %016" PRIx64 ")",
         t->id()
         );
 }
@@ -701,6 +725,7 @@ DSN_API dsn_error_t dsn_task_error(dsn_task_t task)
 //------------------------------------------------------------------------------
 DSN_API dsn_handle_t dsn_exlock_create(bool recursive)
 {
+    DSN_C_GUARD_BEGIN
     if (recursive)
     {
         ::dsn::lock_provider* last = ::dsn::utils::factory_store< ::dsn::lock_provider>::create(
@@ -727,6 +752,7 @@ DSN_API dsn_handle_t dsn_exlock_create(bool recursive)
 
         return (dsn_handle_t)dynamic_cast< ::dsn::ilock*>(last);
     }
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API void dsn_exlock_destroy(dsn_handle_t l)
@@ -783,6 +809,7 @@ DSN_API void dsn_exlock_unlock(dsn_handle_t l)
 // non-recursive rwlock
 DSN_API dsn_handle_t dsn_rwlock_nr_create()
 {
+    DSN_C_GUARD_BEGIN
     ::dsn::rwlock_nr_provider* last = ::dsn::utils::factory_store< ::dsn::rwlock_nr_provider>::create(
         ::dsn::service_engine::fast_instance().spec().rwlock_nr_factory_name.c_str(), ::dsn::PROVIDER_TYPE_MAIN, nullptr);
 
@@ -792,6 +819,7 @@ DSN_API dsn_handle_t dsn_rwlock_nr_create()
         last = ::dsn::utils::factory_store< ::dsn::rwlock_nr_provider>::create(s.c_str(), ::dsn::PROVIDER_TYPE_ASPECT, last);
     }
     return (dsn_handle_t)(last);
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API void dsn_rwlock_nr_destroy(dsn_handle_t l)
@@ -881,6 +909,7 @@ DSN_API bool dsn_rwlock_nr_try_lock_write(dsn_handle_t l)
 
 DSN_API dsn_handle_t dsn_semaphore_create(int initial_count)
 {
+    DSN_C_GUARD_BEGIN
     if (initial_count < 0)
     {
         derror("dsn_semaphore_create got invalid initial_count = %d", initial_count);
@@ -897,6 +926,7 @@ DSN_API dsn_handle_t dsn_semaphore_create(int initial_count)
             s.c_str(), ::dsn::PROVIDER_TYPE_ASPECT, initial_count, last);
     }
     return (dsn_handle_t)(last);
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API void dsn_semaphore_destroy(dsn_handle_t s)
@@ -977,6 +1007,7 @@ DSN_API bool dsn_rpc_register_handler(
     dsn_gpid gpid
     )
 {
+    DSN_C_GUARD_BEGIN
     auto sp = ::dsn::task_spec::get(code);
     if (code == ::dsn::TASK_CODE_INVALID || sp == nullptr || sp->type != TASK_TYPE_RPC_REQUEST)
     {
@@ -1009,10 +1040,12 @@ DSN_API bool dsn_rpc_register_handler(
         delete h;
     }
     return r;
+    DSN_C_GUARD_END(false)
 }
 
 DSN_API void* dsn_rpc_unregiser_handler(dsn_task_code_t code, dsn_gpid gpid)
 {
+    DSN_C_GUARD_BEGIN
     auto sp = ::dsn::task_spec::get(code);
     if (code == ::dsn::TASK_CODE_INVALID || sp == nullptr || sp->type != TASK_TYPE_RPC_REQUEST)
     {
@@ -1031,11 +1064,13 @@ DSN_API void* dsn_rpc_unregiser_handler(dsn_task_code_t code, dsn_gpid gpid)
     }
 
     return param;
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API dsn_task_t dsn_rpc_create_response_task(dsn_message_t request, dsn_rpc_response_handler_t cb, 
     void* context, int reply_thread_hash, dsn_task_tracker_t tracker)
 {
+    DSN_C_GUARD_BEGIN
     auto msg = ((::dsn::message_ex*)request);
     if (msg == nullptr)
     {
@@ -1047,12 +1082,14 @@ DSN_API dsn_task_t dsn_rpc_create_response_task(dsn_message_t request, dsn_rpc_r
     t->set_tracker((dsn::task_tracker*)tracker);
     t->spec().on_task_create.execute(::dsn::task::get_current_task(), t);
     return t;
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API dsn_task_t dsn_rpc_create_response_task_ex(dsn_message_t request, dsn_rpc_response_handler_t cb, 
     dsn_task_cancelled_handler_t on_cancel,
     void* context, int reply_thread_hash, dsn_task_tracker_t tracker)
 {
+    DSN_C_GUARD_BEGIN
     auto msg = ((::dsn::message_ex*)request);
     if (msg == nullptr)
     {
@@ -1064,10 +1101,12 @@ DSN_API dsn_task_t dsn_rpc_create_response_task_ex(dsn_message_t request, dsn_rp
     t->set_tracker((dsn::task_tracker*)tracker);
     t->spec().on_task_create.execute(::dsn::task::get_current_task(), t);
     return t;
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API dsn_error_t dsn_rpc_call(dsn_address_t server, dsn_task_t rpc_call)
 {
+    DSN_C_GUARD_BEGIN
     ::dsn::rpc_response_task* task = (::dsn::rpc_response_task*)rpc_call;
     if (task == nullptr)
     {
@@ -1104,10 +1143,12 @@ DSN_API dsn_error_t dsn_rpc_call(dsn_address_t server, dsn_task_t rpc_call)
     msg->server_address = server;
     rpc->call(msg, task);
     return ::dsn::ERR_OK.get();
+    DSN_C_GUARD_END(::dsn::ERR_UNKNOWN.get())
 }
 
 DSN_API dsn_message_t dsn_rpc_call_wait(dsn_address_t server, dsn_message_t request)
 {
+    DSN_C_GUARD_BEGIN
     auto msg = ((::dsn::message_ex*)request);
     if (msg == nullptr)
     {
@@ -1146,10 +1187,12 @@ DSN_API dsn_message_t dsn_rpc_call_wait(dsn_address_t server, dsn_message_t requ
         rtask->release_ref(); // added above
         return nullptr;
     }
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API dsn_error_t dsn_rpc_call_one_way(dsn_address_t server, dsn_message_t request)
 {
+    DSN_C_GUARD_BEGIN
     auto msg = ((::dsn::message_ex*)request);
     if (msg == nullptr)
     {
@@ -1174,10 +1217,12 @@ DSN_API dsn_error_t dsn_rpc_call_one_way(dsn_address_t server, dsn_message_t req
 
     rpc->call(msg, nullptr);
     return ::dsn::ERR_OK.get();
+    DSN_C_GUARD_END(::dsn::ERR_UNKNOWN.get())
 }
 
 DSN_API dsn_error_t dsn_rpc_reply(dsn_message_t response, dsn_error_t err)
 {
+    DSN_C_GUARD_BEGIN
     auto msg = ((::dsn::message_ex*)response);
     if (msg == nullptr)
     {
@@ -1194,10 +1239,12 @@ DSN_API dsn_error_t dsn_rpc_reply(dsn_message_t response, dsn_error_t err)
 
     rpc->reply(msg, err);
     return ::dsn::ERR_OK.get();
+    DSN_C_GUARD_END(::dsn::ERR_UNKNOWN.get())
 }
 
 DSN_API dsn_error_t dsn_rpc_forward(dsn_message_t request, dsn_address_t addr)
 {
+    DSN_C_GUARD_BEGIN
     auto msg = (::dsn::message_ex*)(request);
     if (msg == nullptr)
     {
@@ -1221,6 +1268,7 @@ DSN_API dsn_error_t dsn_rpc_forward(dsn_message_t request, dsn_address_t addr)
 
     rpc->forward(msg, target);
     return ::dsn::ERR_OK.get();
+    DSN_C_GUARD_END(::dsn::ERR_UNKNOWN.get())
 }
 
 DSN_API dsn_message_t dsn_rpc_get_response(dsn_task_t rpc_call)
@@ -1250,6 +1298,7 @@ DSN_API dsn_message_t dsn_rpc_get_response(dsn_task_t rpc_call)
 
 DSN_API dsn_error_t dsn_rpc_enqueue_response(dsn_task_t rpc_call, dsn_error_t err, dsn_message_t response)
 {
+    DSN_C_GUARD_BEGIN
     ::dsn::rpc_response_task* task = (::dsn::rpc_response_task*)rpc_call;
     if (task == nullptr)
     {
@@ -1266,6 +1315,7 @@ DSN_API dsn_error_t dsn_rpc_enqueue_response(dsn_task_t rpc_call, dsn_error_t er
     auto resp = ((::dsn::message_ex*)response);
     task->enqueue(err, resp);
     return ::dsn::ERR_OK.get();
+    DSN_C_GUARD_END(::dsn::ERR_UNKNOWN.get())
 }
 
 //------------------------------------------------------------------------------
@@ -1276,6 +1326,7 @@ DSN_API dsn_error_t dsn_rpc_enqueue_response(dsn_task_t rpc_call, dsn_error_t er
 
 DSN_API dsn_handle_t dsn_file_open(const char* file_name, int flag, int pmode)
 {
+    DSN_C_GUARD_BEGIN
     if (file_name == nullptr || file_name[0] == '\0')
     {
         derror("dsn_file_open got null or empty file_name");
@@ -1290,10 +1341,12 @@ DSN_API dsn_handle_t dsn_file_open(const char* file_name, int flag, int pmode)
     }
 
     return disk->open(file_name, flag, pmode);
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API dsn_error_t dsn_file_close(dsn_handle_t file)
 {
+    DSN_C_GUARD_BEGIN
     if (file == nullptr)
     {
         derror("dsn_file_close got null file handle");
@@ -1308,10 +1361,12 @@ DSN_API dsn_error_t dsn_file_close(dsn_handle_t file)
     }
 
     return disk->close(file).get();
+    DSN_C_GUARD_END(::dsn::ERR_UNKNOWN.get())
 }
 
 DSN_API dsn_error_t dsn_file_flush(dsn_handle_t file)
 {
+    DSN_C_GUARD_BEGIN
     if (file == nullptr)
     {
         derror("dsn_file_flush got null file handle");
@@ -1326,6 +1381,7 @@ DSN_API dsn_error_t dsn_file_flush(dsn_handle_t file)
     }
 
     return disk->flush(file).get();
+    DSN_C_GUARD_END(::dsn::ERR_UNKNOWN.get())
 }
 
 // native HANDLE: HANDLE for windows, int for non-windows
@@ -1343,6 +1399,7 @@ DSN_API void* dsn_file_native_handle(dsn_handle_t file)
 
 DSN_API dsn_task_t dsn_file_create_aio_task(dsn_task_code_t code, dsn_aio_handler_t cb, void* context, int hash, dsn_task_tracker_t tracker)
 {
+    DSN_C_GUARD_BEGIN
     auto sp = ::dsn::task_spec::get(code);
     if (code == ::dsn::TASK_CODE_INVALID || sp == nullptr || sp->type != TASK_TYPE_AIO)
     {
@@ -1354,12 +1411,14 @@ DSN_API dsn_task_t dsn_file_create_aio_task(dsn_task_code_t code, dsn_aio_handle
     t->set_tracker((dsn::task_tracker*)tracker);
     t->spec().on_task_create.execute(::dsn::task::get_current_task(), t);
     return t;
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API dsn_task_t dsn_file_create_aio_task_ex(dsn_task_code_t code, dsn_aio_handler_t cb, 
     dsn_task_cancelled_handler_t on_cancel,
     void* context, int hash, dsn_task_tracker_t tracker)
 {
+    DSN_C_GUARD_BEGIN
     auto sp = ::dsn::task_spec::get(code);
     if (code == ::dsn::TASK_CODE_INVALID || sp == nullptr || sp->type != TASK_TYPE_AIO)
     {
@@ -1371,10 +1430,12 @@ DSN_API dsn_task_t dsn_file_create_aio_task_ex(dsn_task_code_t code, dsn_aio_han
     t->set_tracker((dsn::task_tracker*)tracker);
     t->spec().on_task_create.execute(::dsn::task::get_current_task(), t);
     return t;
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API dsn_error_t dsn_file_read(dsn_handle_t file, char* buffer, int count, uint64_t offset, dsn_task_t cb)
 {
+    DSN_C_GUARD_BEGIN
     if (file == nullptr)
     {
         derror("dsn_file_read got null file handle");
@@ -1416,10 +1477,12 @@ DSN_API dsn_error_t dsn_file_read(dsn_handle_t file, char* buffer, int count, ui
 
     disk->read(callback);
     return ::dsn::ERR_OK.get();
+    DSN_C_GUARD_END(::dsn::ERR_UNKNOWN.get())
 }
 
 DSN_API dsn_error_t dsn_file_write(dsn_handle_t file, const char* buffer, int count, uint64_t offset, dsn_task_t cb)
 {
+    DSN_C_GUARD_BEGIN
     if (file == nullptr)
     {
         derror("dsn_file_write got null file handle");
@@ -1461,10 +1524,12 @@ DSN_API dsn_error_t dsn_file_write(dsn_handle_t file, const char* buffer, int co
 
     disk->write(callback);
     return ::dsn::ERR_OK.get();
+    DSN_C_GUARD_END(::dsn::ERR_UNKNOWN.get())
 }
 
 DSN_API dsn_error_t dsn_file_write_vector(dsn_handle_t file, const dsn_file_buffer_t* buffers, int buffer_count, uint64_t offset, dsn_task_t cb)
 {
+    DSN_C_GUARD_BEGIN
     if (file == nullptr)
     {
         derror("dsn_file_write_vector got null file handle");
@@ -1528,11 +1593,13 @@ DSN_API dsn_error_t dsn_file_write_vector(dsn_handle_t file, const dsn_file_buff
 
     disk->write(callback);
     return ::dsn::ERR_OK.get();
+    DSN_C_GUARD_END(::dsn::ERR_UNKNOWN.get())
 }
 
 DSN_API dsn_error_t dsn_file_copy_remote_directory(dsn_address_t remote, const char* source_dir,
     const char* dest_dir, bool overwrite, dsn_task_t cb)
 {
+    DSN_C_GUARD_BEGIN
     if (::dsn::rpc_address(remote).is_invalid())
     {
         derror("dsn_file_copy_remote_directory got invalid remote address");
@@ -1574,10 +1641,12 @@ DSN_API dsn_error_t dsn_file_copy_remote_directory(dsn_address_t remote, const c
 
     nfs->call(rci, callback);
     return ::dsn::ERR_OK.get();
+    DSN_C_GUARD_END(::dsn::ERR_UNKNOWN.get())
 }
 
 DSN_API dsn_error_t dsn_file_copy_remote_files(dsn_address_t remote, const char* source_dir, const char** source_files, const char* dest_dir, bool overwrite, dsn_task_t cb)
 {
+    DSN_C_GUARD_BEGIN
     if (::dsn::rpc_address(remote).is_invalid())
     {
         derror("dsn_file_copy_remote_files got invalid remote address");
@@ -1638,6 +1707,7 @@ DSN_API dsn_error_t dsn_file_copy_remote_files(dsn_address_t remote, const char*
 
     nfs->call(rci, callback);
     return ::dsn::ERR_OK.get();
+    DSN_C_GUARD_END(::dsn::ERR_UNKNOWN.get())
 }
 
 DSN_API size_t dsn_file_get_io_size(dsn_task_t cb_task)
@@ -1660,6 +1730,7 @@ DSN_API size_t dsn_file_get_io_size(dsn_task_t cb_task)
 
 DSN_API dsn_error_t dsn_file_task_enqueue(dsn_task_t cb_task, dsn_error_t err, size_t size)
 {
+    DSN_C_GUARD_BEGIN
     ::dsn::task* task = (::dsn::task*)cb_task;
     if (task == nullptr)
     {
@@ -1675,6 +1746,7 @@ DSN_API dsn_error_t dsn_file_task_enqueue(dsn_task_t cb_task, dsn_error_t err, s
 
     ((::dsn::aio_task*)task)->enqueue(err, size);
     return ::dsn::ERR_OK.get();
+    DSN_C_GUARD_END(::dsn::ERR_UNKNOWN.get())
 }
 
 //------------------------------------------------------------------------------
@@ -1796,6 +1868,7 @@ NORETURN DSN_API void dsn_exit(int code)
 
 DSN_API bool dsn_mimic_app(const char* app_name, int index)
 {
+    DSN_C_GUARD_BEGIN
     if (app_name == nullptr || app_name[0] == '\0')
     {
         derror("dsn_mimic_app got null or empty app_name");
@@ -1844,10 +1917,12 @@ DSN_API bool dsn_mimic_app(const char* app_name, int index)
 
     derror("cannot find host app %s with index %d", app_name, index);
     return false;
+    DSN_C_GUARD_END(false)
 }
 
 DSN_API const char* dsn_get_app_data_dir(dsn_gpid gpid)
 {
+    DSN_C_GUARD_BEGIN
     if (gpid.value != 0 && (gpid.u.app_id <= 0 || gpid.u.partition_index < 0))
     {
         derror("dsn_get_app_data_dir got invalid gpid = %d.%d",
@@ -1858,6 +1933,7 @@ DSN_API const char* dsn_get_app_data_dir(dsn_gpid gpid)
 
     auto info = dsn_get_app_info_ptr(gpid);
     return info ? info->data_dir : nullptr;
+    DSN_C_GUARD_END(nullptr)
 }
 
 DSN_API bool dsn_get_current_app_info(/*out*/ dsn_app_info* app_info)
@@ -1880,6 +1956,7 @@ DSN_API bool dsn_get_current_app_info(/*out*/ dsn_app_info* app_info)
 
 DSN_API dsn_app_info* dsn_get_app_info_ptr(dsn_gpid gpid)
 {
+    DSN_C_GUARD_BEGIN
     if (gpid.value != 0 && (gpid.u.app_id <= 0 || gpid.u.partition_index < 0))
     {
         derror("dsn_get_app_info_ptr got invalid gpid = %d.%d",
@@ -1900,6 +1977,7 @@ DSN_API dsn_app_info* dsn_get_app_info_ptr(dsn_gpid gpid)
     }
     else
         return nullptr;
+    DSN_C_GUARD_END(nullptr)
 }
 
 ::dsn::utils::notify_event s_loader_event;

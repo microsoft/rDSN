@@ -36,9 +36,11 @@
 # include "service_engine.h"
 # include "rpc_engine.h"
 # include <dsn/utility/singleton_store.h>
+# include "c_api_guard.h"
 
 DSN_API bool dsn_register_app(dsn_app* app_type)
 {
+    DSN_C_GUARD_BEGIN
     if (app_type == nullptr)
     {
         derror("dsn_register_app got null app_type");
@@ -72,10 +74,12 @@ DSN_API bool dsn_register_app(dsn_app* app_type)
         delete app;
     }
     return r;
+    DSN_C_GUARD_END(false)
 }
 
 DSN_API bool dsn_get_app_callbacks(const char* name, /* out */ dsn_app_callbacks* callbacks)
 {
+    DSN_C_GUARD_BEGIN
     if (name == nullptr || name[0] == '\0')
     {
         derror("dsn_get_app_callbacks got null or empty name");
@@ -100,6 +104,7 @@ DSN_API bool dsn_get_app_callbacks(const char* name, /* out */ dsn_app_callbacks
         dwarn("application model '%s' is not found, make sure it is registered", name);
         return false;
     }
+    DSN_C_GUARD_END(false)
 }
 
 DSN_API dsn_error_t dsn_hosted_app_create(
@@ -110,6 +115,7 @@ DSN_API dsn_error_t dsn_hosted_app_create(
     /*out*/void** app_context_for_callbacks
     )
 {
+    DSN_C_GUARD_BEGIN
     if (type == nullptr || type[0] == '\0')
     {
         derror("dsn_hosted_app_create got null or empty type");
@@ -152,10 +158,12 @@ DSN_API dsn_error_t dsn_hosted_app_create(
     return node->get_l2_handler()
         .create_app(type, gpid, data_dir, app_context_for_downcalls, app_context_for_callbacks)
         .get();
+    DSN_C_GUARD_END(::dsn::ERR_UNKNOWN.get())
 }
 
 DSN_API dsn_error_t dsn_hosted_app_start(void* app_context, int argc, char** argv)
 {
+    DSN_C_GUARD_BEGIN
     if (app_context == nullptr)
     {
         derror("dsn_hosted_app_start got null app_context");
@@ -191,10 +199,12 @@ DSN_API dsn_error_t dsn_hosted_app_start(void* app_context, int argc, char** arg
     }
 
     return node->get_l2_handler().start_app(app_context, argc, argv).get();
+    DSN_C_GUARD_END(::dsn::ERR_UNKNOWN.get())
 }
 
 DSN_API dsn_error_t dsn_hosted_app_destroy(void* app_context, bool cleanup)
 {
+    DSN_C_GUARD_BEGIN
     if (app_context == nullptr)
     {
         derror("dsn_hosted_app_destroy got null app_context");
@@ -209,10 +219,12 @@ DSN_API dsn_error_t dsn_hosted_app_destroy(void* app_context, bool cleanup)
     }
 
     return node->get_l2_handler().destroy_app(app_context, cleanup).get();
+    DSN_C_GUARD_END(::dsn::ERR_UNKNOWN.get())
 }
 
 DSN_API dsn_error_t dsn_hosted_app_commit_rpc_request(void* app_context, dsn_message_t msg, bool exec_inline)
 {
+    DSN_C_GUARD_BEGIN
     if (app_context == nullptr)
     {
         derror("dsn_hosted_app_commit_rpc_request got null app_context");
@@ -255,6 +267,7 @@ DSN_API dsn_error_t dsn_hosted_app_commit_rpc_request(void* app_context, dsn_mes
     }
 
     return ::dsn::ERR_OK.get();
+    DSN_C_GUARD_END(::dsn::ERR_UNKNOWN.get())
 }
 
 
