@@ -246,6 +246,78 @@ TEST(core, message_ex)
     }
 }
 
+TEST(core, message_ex_rw_pairing)
+{
+    // write_next/write_commit and read_next/read_commit used to abort the
+    // process via dassert when they were called out of order. They now report
+    // the sequencing violation by returning false instead, so a faulty caller
+    // can recover. Exercise those pairing checks here.
+    const char* data = "adaoihfeuifgggggisdosghkbvjhzxvdafdiofgeof";
+    size_t data_size = strlen(data);
+
+    void* ptr = nullptr;
+    size_t sz = 0;
+
+    { // write side
+        message_ex* request = message_ex::create_request(RPC_CODE_FOR_TEST, 100, 1);
+        request->add_ref();
+
+        // nothing is pending on a fresh message, so there is nothing to commit
+        ASSERT_FALSE(request->write_commit(data_size));
+
+        tls_trans_mem_alloc(1024); // reset tls buffer
+        ASSERT_TRUE(request->write_next(&ptr, &sz, data_size));
+        ASSERT_NE(nullptr, ptr);
+
+        // a second write_next before commit is rejected and clears the out-params
+        void* pending_ptr = reinterpret_cast<void*>(1);
+        size_t pending_sz = 1;
+        ASSERT_FALSE(request->write_next(&pending_ptr, &pending_sz, data_size));
+        ASSERT_EQ(nullptr, pending_ptr);
+        ASSERT_EQ(0u, pending_sz);
+
+        memcpy(ptr, data, data_size);
+        ASSERT_TRUE(request->write_commit(data_size));
+        // committing again is rejected: there is no longer a pending write
+        ASSERT_FALSE(request->write_commit(data_size));
+
+        request->release_ref();
+    }
+
+    { // read side
+        message_ex* request = message_ex::create_request(RPC_CODE_FOR_TEST, 100, 1);
+        request->add_ref();
+
+        tls_trans_mem_alloc(1024); // reset tls buffer
+        ASSERT_TRUE(request->write_next(&ptr, &sz, data_size));
+        memcpy(ptr, data, data_size);
+        ASSERT_TRUE(request->write_commit(data_size));
+
+        message_ex* receive = message_ex::create_receive_message(request->buffers[0]);
+        receive->add_ref();
+
+        // no buffer is under read yet, so there is nothing to commit
+        ASSERT_FALSE(receive->read_commit(data_size));
+
+        ASSERT_TRUE(receive->read_next(&ptr, &sz));
+        ASSERT_EQ(data_size, sz);
+
+        // a second read_next before commit is rejected and clears the out-params
+        void* pending_ptr = reinterpret_cast<void*>(1);
+        size_t pending_sz = 1;
+        ASSERT_FALSE(receive->read_next(&pending_ptr, &pending_sz));
+        ASSERT_EQ(nullptr, pending_ptr);
+        ASSERT_EQ(0u, pending_sz);
+
+        ASSERT_TRUE(receive->read_commit(sz));
+        // committing again is rejected: there is no longer a pending read
+        ASSERT_FALSE(receive->read_commit(sz));
+
+        receive->release_ref();
+        request->release_ref();
+    }
+}
+
 TEST(core, dsn_msg_invalid_parameters)
 {
     void* ptr = reinterpret_cast<void*>(1);
