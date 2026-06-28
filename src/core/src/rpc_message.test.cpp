@@ -288,7 +288,6 @@ TEST(core, message_ex_rw_pairing)
         message_ex* request = message_ex::create_request(RPC_CODE_FOR_TEST, 100, 1);
         request->add_ref();
 
-        tls_trans_mem_alloc(1024); // reset tls buffer
         ASSERT_TRUE(request->write_next(&ptr, &sz, data_size));
         memcpy(ptr, data, data_size);
         ASSERT_TRUE(request->write_commit(data_size));
