@@ -183,8 +183,6 @@ namespace dsn {
                 fprintf(stderr, "\t\t%s (type: %s)\n", it->c_str(), entry.type == PROVIDER_TYPE_MAIN ? "provider" : "aspect");
             }
             fprintf(stderr, "\tPlease specify the correct factory name in your tool_app or in configuration file\n");
-
-            std::abort();
         }
 
     private:

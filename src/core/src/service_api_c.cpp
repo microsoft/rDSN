@@ -723,35 +723,51 @@ DSN_API dsn_error_t dsn_task_error(dsn_task_t task)
 // synchronization - concurrent access and coordination among threads
 //
 //------------------------------------------------------------------------------
+namespace {
+
+template <typename TProvider, typename TAspects>
+::dsn::ilock* create_lock_chain(const char* api_name,
+                                const char* factory_name,
+                                const TAspects& aspects)
+{
+    TProvider* last = ::dsn::utils::factory_store<TProvider>::create(
+        factory_name, ::dsn::PROVIDER_TYPE_MAIN, nullptr);
+    if (last == nullptr)
+    {
+        derror("%s got null provider factory result for '%s'", api_name, factory_name);
+        return nullptr;
+    }
+
+    // TODO: perf opt by saving the func ptrs somewhere
+    for (auto& s : aspects)
+    {
+        TProvider* next = ::dsn::utils::factory_store<TProvider>::create(
+            s.c_str(), ::dsn::PROVIDER_TYPE_ASPECT, last);
+        if (next == nullptr)
+        {
+            derror("%s got null aspect factory result for '%s'", api_name, s.c_str());
+            // Provider destructors own their inner_provider, so deleting the head
+            // releases the whole chain built so far.
+            delete last;
+            return nullptr;
+        }
+        last = next;
+    }
+
+    return static_cast<::dsn::ilock*>(last);
+}
+
+} // anonymous namespace
+
 DSN_API dsn_handle_t dsn_exlock_create(bool recursive)
 {
     DSN_C_GUARD_BEGIN
-    if (recursive)
-    {
-        ::dsn::lock_provider* last = ::dsn::utils::factory_store< ::dsn::lock_provider>::create(
-            ::dsn::service_engine::fast_instance().spec().lock_factory_name.c_str(), ::dsn::PROVIDER_TYPE_MAIN, nullptr);
-
-        // TODO: perf opt by saving the func ptrs somewhere
-        for (auto& s : ::dsn::service_engine::fast_instance().spec().lock_aspects)
-        {
-            last = ::dsn::utils::factory_store< ::dsn::lock_provider>::create(s.c_str(), ::dsn::PROVIDER_TYPE_ASPECT, last);
-        }
-
-        return (dsn_handle_t)dynamic_cast< ::dsn::ilock*>(last);
-    }
-    else
-    {
-        ::dsn::lock_nr_provider* last = ::dsn::utils::factory_store< ::dsn::lock_nr_provider>::create(
-            ::dsn::service_engine::fast_instance().spec().lock_nr_factory_name.c_str(), ::dsn::PROVIDER_TYPE_MAIN, nullptr);
-
-        // TODO: perf opt by saving the func ptrs somewhere
-        for (auto& s : ::dsn::service_engine::fast_instance().spec().lock_nr_aspects)
-        {
-            last = ::dsn::utils::factory_store< ::dsn::lock_nr_provider>::create(s.c_str(), ::dsn::PROVIDER_TYPE_ASPECT, last);
-        }
-
-        return (dsn_handle_t)dynamic_cast< ::dsn::ilock*>(last);
-    }
+    const auto& spec = ::dsn::service_engine::fast_instance().spec();
+    return recursive
+        ? (dsn_handle_t)create_lock_chain<::dsn::lock_provider>(
+            __FUNCTION__, spec.lock_factory_name.c_str(), spec.lock_aspects)
+        : (dsn_handle_t)create_lock_chain<::dsn::lock_nr_provider>(
+            __FUNCTION__, spec.lock_nr_factory_name.c_str(), spec.lock_nr_aspects);
     DSN_C_GUARD_END(nullptr)
 }
 
@@ -810,13 +826,30 @@ DSN_API void dsn_exlock_unlock(dsn_handle_t l)
 DSN_API dsn_handle_t dsn_rwlock_nr_create()
 {
     DSN_C_GUARD_BEGIN
+    const auto& spec = ::dsn::service_engine::fast_instance().spec();
     ::dsn::rwlock_nr_provider* last = ::dsn::utils::factory_store< ::dsn::rwlock_nr_provider>::create(
-        ::dsn::service_engine::fast_instance().spec().rwlock_nr_factory_name.c_str(), ::dsn::PROVIDER_TYPE_MAIN, nullptr);
+        spec.rwlock_nr_factory_name.c_str(), ::dsn::PROVIDER_TYPE_MAIN, nullptr);
+    if (last == nullptr)
+    {
+        derror("dsn_rwlock_nr_create got null provider factory result for '%s'",
+               spec.rwlock_nr_factory_name.c_str());
+        return nullptr;
+    }
 
     // TODO: perf opt by saving the func ptrs somewhere
-    for (auto& s : ::dsn::service_engine::fast_instance().spec().rwlock_nr_aspects)
+    for (auto& s : spec.rwlock_nr_aspects)
     {
-        last = ::dsn::utils::factory_store< ::dsn::rwlock_nr_provider>::create(s.c_str(), ::dsn::PROVIDER_TYPE_ASPECT, last);
+        ::dsn::rwlock_nr_provider* next = ::dsn::utils::factory_store< ::dsn::rwlock_nr_provider>::create(
+            s.c_str(), ::dsn::PROVIDER_TYPE_ASPECT, last);
+        if (next == nullptr)
+        {
+            derror("dsn_rwlock_nr_create got null aspect factory result for '%s'", s.c_str());
+            // Provider destructors own their inner_provider, so deleting the head
+            // releases the whole chain built so far.
+            delete last;
+            return nullptr;
+        }
+        last = next;
     }
     return (dsn_handle_t)(last);
     DSN_C_GUARD_END(nullptr)
@@ -916,14 +949,30 @@ DSN_API dsn_handle_t dsn_semaphore_create(int initial_count)
         return nullptr;
     }
 
+    const auto& spec = ::dsn::service_engine::fast_instance().spec();
     ::dsn::semaphore_provider* last = ::dsn::utils::factory_store< ::dsn::semaphore_provider>::create(
-        ::dsn::service_engine::fast_instance().spec().semaphore_factory_name.c_str(), ::dsn::PROVIDER_TYPE_MAIN, initial_count, nullptr);
+        spec.semaphore_factory_name.c_str(), ::dsn::PROVIDER_TYPE_MAIN, initial_count, nullptr);
+    if (last == nullptr)
+    {
+        derror("dsn_semaphore_create got null provider factory result for '%s'",
+               spec.semaphore_factory_name.c_str());
+        return nullptr;
+    }
 
     // TODO: perf opt by saving the func ptrs somewhere
-    for (auto& s : ::dsn::service_engine::fast_instance().spec().semaphore_aspects)
+    for (auto& s : spec.semaphore_aspects)
     {
-        last = ::dsn::utils::factory_store< ::dsn::semaphore_provider>::create(
+        ::dsn::semaphore_provider* next = ::dsn::utils::factory_store< ::dsn::semaphore_provider>::create(
             s.c_str(), ::dsn::PROVIDER_TYPE_ASPECT, initial_count, last);
+        if (next == nullptr)
+        {
+            derror("dsn_semaphore_create got null aspect factory result for '%s'", s.c_str());
+            // Provider destructors own their inner_provider, so deleting the head
+            // releases the whole chain built so far.
+            delete last;
+            return nullptr;
+        }
+        last = next;
     }
     return (dsn_handle_t)(last);
     DSN_C_GUARD_END(nullptr)
