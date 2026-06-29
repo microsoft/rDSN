@@ -38,6 +38,7 @@
 # include <dsn/tool-api/aio_provider.h>
 # include <dsn/cpp/utils.h>
 # include "transient_memory.h"
+# include <exception>
 
 # ifdef __TITLE__
 # undef __TITLE__
@@ -331,10 +332,30 @@ void disk_engine::write(aio_task* aio)
 
 void disk_engine::process_write(aio_task* aio, uint32_t sz)
 {
+    auto complete_write_with_error = [this](aio_task* wk, error_code err)
+    {
+        auto df = (disk_file*)wk->aio()->file_object;
+        uint32_t next_sz;
+        auto next = df->on_write_completed(wk, (void*)&next_sz, err, 0);
+        if (next)
+        {
+            process_write(next, next_sz);
+        }
+    };
+
     // no batching
     if (aio->aio()->buffer_size == sz)
     {
-        aio->collapse();
+        try
+        {
+            aio->collapse();
+        }
+        catch (const std::exception& ex)
+        {
+            derror("collapse aio write buffer failed: %s", ex.what());
+            complete_write_with_error(aio, ERR_FILE_OPERATION_FAILED);
+            return;
+        }
         return _provider->aio(aio);
     }
 
@@ -342,36 +363,49 @@ void disk_engine::process_write(aio_task* aio, uint32_t sz)
     else
     {
         // merge the buffers
-        auto bb = tls_trans_mem_alloc_blob((size_t)sz);
-        char* ptr = (char*)bb.data();
-        auto current_wk = aio;
-        do
+        try
         {
-            current_wk->copy_to(ptr);
-            ptr += current_wk->aio()->buffer_size;
-            current_wk = (aio_task*)current_wk->next;
-        } while (current_wk);
-        
+            auto bb = tls_trans_mem_alloc_blob((size_t)sz);
+            char* ptr = (char*)bb.data();
+            auto current_wk = aio;
+            do
+            {
+                current_wk->copy_to(ptr);
+                ptr += current_wk->aio()->buffer_size;
+                current_wk = (aio_task*)current_wk->next;
+            } while (current_wk);
 
-        dassert(ptr == (char*)bb.data() + bb.length(), "");
+            if (ptr != (char*)bb.data() + bb.length())
+            {
+                derror("merge aio write buffers copied unexpected size");
+                complete_write_with_error(aio, ERR_FILE_OPERATION_FAILED);
+                return;
+            }
 
-        // setup io task
-        auto new_task = new batch_write_io_task(
-            aio,
-            bb
-            );
-        auto dio = new_task->aio();
-        dio->buffer = (void*)bb.data();
-        dio->buffer_size = sz;
-        dio->file_offset = aio->aio()->file_offset;
+            // setup io task
+            auto new_task = new batch_write_io_task(
+                aio,
+                bb
+                );
+            auto dio = new_task->aio();
+            dio->buffer = (void*)bb.data();
+            dio->buffer_size = sz;
+            dio->file_offset = aio->aio()->file_offset;
 
-        dio->file = aio->aio()->file;
-        dio->file_object = aio->aio()->file_object;
-        dio->engine = aio->aio()->engine;
-        dio->type = AIO_Write;
+            dio->file = aio->aio()->file;
+            dio->file_object = aio->aio()->file_object;
+            dio->engine = aio->aio()->engine;
+            dio->type = AIO_Write;
 
-        new_task->add_ref(); // released in complete_io
-        return _provider->aio(new_task);
+            new_task->add_ref(); // released in complete_io
+            return _provider->aio(new_task);
+        }
+        catch (const std::exception& ex)
+        {
+            derror("merge aio write buffers failed: %s", ex.what());
+            complete_write_with_error(aio, ERR_FILE_OPERATION_FAILED);
+            return;
+        }
     }
 }
 
