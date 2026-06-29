@@ -37,7 +37,9 @@
 # include <climits>
 # include <cstdio>
 # include <cstdint>
+# include <exception>
 # include <thread>
+# include <vector>
 # include <dsn/cpp/utils.h>
 # include <dsn/tool-api/task_spec.h>
 # include <dsn/tool-api/network.h>
@@ -52,6 +54,54 @@
 
 namespace dsn {
 
+static bool read_all_config_keys(const char* section, std::vector<const char*>& keys)
+{
+    int key_capacity = 0;
+    int key_count = dsn_config_get_all_keys(section, nullptr, &key_capacity);
+    if (key_count < 0)
+    {
+        fprintf(stderr, "failed to read config keys from section [%s]\n", section);
+        return false;
+    }
+
+    if (key_count == 0)
+    {
+        keys.clear();
+        return true;
+    }
+
+    try
+    {
+        keys.resize(key_count);
+    }
+    catch (const std::exception& ex)
+    {
+        fprintf(stderr, "failed to allocate config keys for section [%s]: %s\n", section, ex.what());
+        return false;
+    }
+
+    key_capacity = key_count;
+    int actual_key_count = dsn_config_get_all_keys(section, keys.data(), &key_capacity);
+    if (actual_key_count < 0)
+    {
+        fprintf(stderr, "failed to read config keys from section [%s]\n", section);
+        return false;
+    }
+
+    if (actual_key_count > key_capacity)
+    {
+        fprintf(stderr,
+                "config keys in section [%s] changed while reading: capacity = %d, actual = %d\n",
+                section,
+                key_capacity,
+                actual_key_count);
+        return false;
+    }
+
+    keys.resize(key_capacity);
+    return true;
+}
+
 static bool build_client_network_confs(
     const char* section, 
     /*out*/ network_client_configs& nss,
@@ -59,14 +109,21 @@ static bool build_client_network_confs(
 {
     nss.clear();
 
-    const char* keys[128];
-    int kcapacity = 128;
-    int kcount = dsn_config_get_all_keys(section, keys, &kcapacity);
-    dassert(kcount <= 128, "");
-
-    for (int i = 0; i < kcapacity; i++)
+    std::vector<const char*> keys;
+    if (!read_all_config_keys(section, keys))
     {
-        std::string k = keys[i];
+        return false;
+    }
+
+    for (const char* key : keys)
+    {
+        if (key == nullptr)
+        {
+            fprintf(stderr, "config section [%s] has null key\n", section);
+            return false;
+        }
+
+        std::string k = key;
         if (k.length() <= strlen("network.client."))
             continue;
 
@@ -140,14 +197,21 @@ static bool build_server_network_confs(
 {
     nss.clear();
 
-    const char* keys[128];
-    int kcapacity = 128;
-    int kcount = dsn_config_get_all_keys(section, keys, &kcapacity);
-    dassert(kcount <= 128, "");
-
-    for (int i = 0; i < kcapacity; i++)
+    std::vector<const char*> keys;
+    if (!read_all_config_keys(section, keys))
     {
-        std::string k = keys[i];
+        return false;
+    }
+
+    for (const char* key : keys)
+    {
+        if (key == nullptr)
+        {
+            fprintf(stderr, "config section [%s] has null key\n", section);
+            return false;
+        }
+
+        std::string k = key;
         if (k.length() <= strlen("network.server."))
             continue;
 
