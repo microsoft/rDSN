@@ -754,7 +754,7 @@ template <typename TProvider, typename TAspects>
         last = next;
     }
 
-    return static_cast<::dsn::ilock*>(last);
+    return static_cast< ::dsn::ilock*>(last);
 }
 
 } // anonymous namespace
@@ -764,9 +764,9 @@ DSN_API dsn_handle_t dsn_exlock_create(bool recursive)
     DSN_C_GUARD_BEGIN
     const auto& spec = ::dsn::service_engine::fast_instance().spec();
     return recursive
-        ? (dsn_handle_t)create_lock_chain<::dsn::lock_provider>(
+        ? (dsn_handle_t)create_lock_chain< ::dsn::lock_provider>(
             __FUNCTION__, spec.lock_factory_name.c_str(), spec.lock_aspects)
-        : (dsn_handle_t)create_lock_chain<::dsn::lock_nr_provider>(
+        : (dsn_handle_t)create_lock_chain< ::dsn::lock_nr_provider>(
             __FUNCTION__, spec.lock_nr_factory_name.c_str(), spec.lock_nr_aspects);
     DSN_C_GUARD_END(nullptr)
 }
