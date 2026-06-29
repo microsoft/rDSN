@@ -71,12 +71,17 @@ namespace dsn
 
         void operator () (const TResponse& resp)
         {
-            if (_response != nullptr)
+            if (_response == nullptr)
             {
-                ::dsn::marshall(_response, resp);
-                auto err = dsn_rpc_reply(_response);
-                dassert(err == ERR_OK, "dsn_rpc_reply failed: %s", error_code(err).to_string());
+                derror("rpc_replier got null response");
+                return;
             }
+
+            auto err = ::dsn::try_marshall(_response, resp);
+            dassert(err == ERR_OK, "marshall response failed: %s", err.to_string());
+
+            auto reply_err = dsn_rpc_reply(_response);
+            dassert(reply_err == ERR_OK, "dsn_rpc_reply failed: %s", error_code(reply_err).to_string());
         }
 
         bool is_empty() const
@@ -326,9 +331,12 @@ namespace dsn
     {
         auto msg = dsn_msg_create_response(request);
         dassert(msg != nullptr, "dsn_msg_create_response failed");
-        ::dsn::marshall(msg, resp);
-        auto err = dsn_rpc_reply(msg);
-        dassert(err == ERR_OK, "dsn_rpc_reply failed: %s", error_code(err).to_string());
+
+        auto err = ::dsn::try_marshall(msg, resp);
+        dassert(err == ERR_OK, "marshall response failed: %s", err.to_string());
+
+        auto reply_err = dsn_rpc_reply(msg);
+        dassert(reply_err == ERR_OK, "dsn_rpc_reply failed: %s", error_code(reply_err).to_string());
     }
     /*@}*/
 } // end namespace
