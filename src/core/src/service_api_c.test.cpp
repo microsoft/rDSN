@@ -38,6 +38,7 @@
 # include <dsn/tool_api.h>
 # include <dsn/utility/configuration.h>
 # include <gtest/gtest.h>
+# include <string>
 # include <thread>
 # include "service_engine.h"
 # include <dsn/cpp/test_utils.h>
@@ -240,6 +241,25 @@ TEST(core, dsn_config)
     ASSERT_EQ(2, dsn_config_get_all_keys("core.test", buffers, &buffer_count));
     ASSERT_EQ(1, buffer_count);
     ASSERT_STREQ("count", buffers[0]);
+}
+
+TEST(core, dsn_config_get_all_keys_reports_total_count)
+{
+    const std::string section = "core.test.large_key_count";
+    for (int i = 0; i < 140; ++i)
+    {
+        const std::string key = "key." + std::to_string(i);
+        get_main_config()->set(section.c_str(), key.c_str(), "value", "");
+    }
+
+    const char* buffers[128];
+    int buffer_count = 128;
+    ASSERT_EQ(140, dsn_config_get_all_keys(section.c_str(), buffers, &buffer_count));
+    ASSERT_EQ(128, buffer_count);
+
+    buffer_count = 0;
+    ASSERT_EQ(140, dsn_config_get_all_keys(section.c_str(), nullptr, &buffer_count));
+    ASSERT_EQ(0, buffer_count);
 }
 
 TEST(core, dsn_config_invalid_numeric_values)

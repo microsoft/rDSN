@@ -27,6 +27,7 @@
 #include "dsn_message_parser.h"
 #include <gtest/gtest.h>
 #include <cstring>
+#include <limits>
 
 using namespace dsn;
 
@@ -74,4 +75,16 @@ TEST(tools_common, dsn_message_parser_rejects_non_terminated_names)
     set_reader_header(reader2, header);
     ASSERT_EQ(nullptr, parser.get_message_on_receive(&reader2, read_next));
     ASSERT_EQ(-1, read_next);
+}
+
+TEST(tools_common, message_reader_rejects_overflow_read_size)
+{
+    message_reader reader(16);
+    ASSERT_NE(nullptr, reader.read_buffer_ptr(8));
+    reader.mark_read(8);
+
+    ASSERT_EQ(nullptr,
+              reader.read_buffer_ptr(std::numeric_limits<unsigned int>::max() - 7));
+    ASSERT_EQ(8u, reader._buffer_occupied);
+    ASSERT_EQ(8u, reader.read_buffer_capacity());
 }
