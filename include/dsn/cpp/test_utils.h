@@ -56,6 +56,8 @@ DEFINE_TASK_CODE_RPC(RPC_TEST_HASH1, TASK_PRIORITY_COMMON, THREAD_POOL_TEST_SERV
 DEFINE_TASK_CODE_RPC(RPC_TEST_HASH2, TASK_PRIORITY_COMMON, THREAD_POOL_TEST_SERVER)
 DEFINE_TASK_CODE_RPC(RPC_TEST_HASH3, TASK_PRIORITY_COMMON, THREAD_POOL_TEST_SERVER)
 DEFINE_TASK_CODE_RPC(RPC_TEST_HASH4, TASK_PRIORITY_COMMON, THREAD_POOL_TEST_SERVER)
+DEFINE_TASK_CODE_RPC(RPC_TEST_HASH5, TASK_PRIORITY_COMMON, THREAD_POOL_TEST_SERVER)
+DEFINE_TASK_CODE_RPC(RPC_TEST_HASH6, TASK_PRIORITY_COMMON, THREAD_POOL_TEST_SERVER)
 DEFINE_TASK_CODE_RPC(RPC_TEST_STRING_COMMAND, TASK_PRIORITY_COMMON, THREAD_POOL_TEST_SERVER)
 
 DEFINE_TASK_CODE_AIO(LPC_AIO_TEST, TASK_PRIORITY_COMMON, THREAD_POOL_DEFAULT)
@@ -124,6 +126,8 @@ public:
             register_async_rpc_handler(RPC_TEST_HASH2, "rpc.test.hash2", &test_client::on_rpc_test);
             register_async_rpc_handler(RPC_TEST_HASH3, "rpc.test.hash3", &test_client::on_rpc_test);
             register_async_rpc_handler(RPC_TEST_HASH4, "rpc.test.hash4", &test_client::on_rpc_test);
+            register_async_rpc_handler(RPC_TEST_HASH5, "rpc.test.hash5", &test_client::on_rpc_test);
+            register_async_rpc_handler(RPC_TEST_HASH6, "rpc.test.hash6", &test_client::on_rpc_test);
 
             register_rpc_handler(RPC_TEST_STRING_COMMAND, "rpc.test.string.command", &test_client::on_rpc_string_test);
         }

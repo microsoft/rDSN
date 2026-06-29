@@ -82,7 +82,7 @@ namespace dsn {
 
             CONFIG_FLD(double, double, rpc_request_data_corrupted_ratio, 0, "data corrupted ratio for rpc request message")
             CONFIG_FLD(double, double, rpc_response_data_corrupted_ratio, 0, "data corrupted ratio for rpc response message")
-            CONFIG_FLD_STRING(rpc_message_data_corrupted_type, "random", "data corrupted type: random/header/body")
+            CONFIG_FLD_STRING(rpc_message_data_corrupted_type, "random", "data corrupted type: random/header/header_rpc/header_id/body")
 
             CONFIG_FLD(double, double, rpc_request_drop_ratio, 0, "drop ratio for rpc request messages")
             CONFIG_FLD(double, double, rpc_response_drop_ratio, 0, "drop ratio for rpc response messages")
@@ -200,6 +200,69 @@ namespace dsn {
             }
         }
 
+        static uint32_t compute_body_crc32(message_ex* request)
+        {
+            auto& buffers = request->buffers;
+            int i_max = (int)buffers.size() - 1;
+            uint32_t crc32 = 0;
+            size_t len = 0;
+            for (int i = 0; i <= i_max; i++)
+            {
+                uint32_t lcrc;
+                const void* ptr;
+                size_t sz;
+
+                if (i == 0)
+                {
+                    ptr = (const void*)(buffers[i].data() + sizeof(message_header));
+                    sz = (size_t)buffers[i].length() - sizeof(message_header);
+                }
+                else
+                {
+                    ptr = (const void*)buffers[i].data();
+                    sz = (size_t)buffers[i].length();
+                }
+
+                lcrc = dsn_crc32_compute(ptr, sz, crc32);
+                crc32 = dsn_crc32_concatenate(0, 0, crc32, len, crc32, lcrc, sz);
+                len += sz;
+            }
+
+            dassert(len == (size_t)request->header->body_length, "data length is wrong");
+            return crc32;
+        }
+
+        static void invalidate_body_crc32(message_ex* request)
+        {
+            task_spec* spec = task_spec::get(request->local_rpc_code);
+            if (spec != nullptr && spec->rpc_message_crc_required)
+            {
+                uint32_t crc32 = compute_body_crc32(request);
+                request->header->body_crc32 = (crc32 == 1 ? 2 : 1);
+            }
+        }
+
+        static void corrupt_body(message_ex* request)
+        {
+            if (request->body_size() == 0)
+            {
+                dwarn("skip body data corruption for empty message body");
+                return;
+            }
+
+            replace_value(request->buffers,
+                          dsn_random32(0, request->body_size() - 1) + sizeof(message_header));
+            invalidate_body_crc32(request);
+        }
+
+        static void corrupt_rpc_lookup_header(message_ex* request)
+        {
+            replace_value(request->buffers, static_cast<unsigned int>(offsetof(message_header, rpc_name)));
+            replace_value(request->buffers,
+                          static_cast<unsigned int>(offsetof(message_header, rpc_code) +
+                                                    offsetof(fast_code, local_hash)));
+        }
+
         static void corrupt_data(message_ex* request, const std::string& corrupt_type)
         {
             if (corrupt_type == "header")
@@ -213,23 +276,21 @@ namespace dsn {
                               header_mutable_offset +
                                   dsn_random32(0, header_mutable_size - 1));
             }
+            else if (corrupt_type == "header_id")
+            {
+                replace_value(request->buffers, static_cast<unsigned int>(offsetof(message_header, id)));
+            }
+            else if (corrupt_type == "header_rpc")
+            {
+                corrupt_rpc_lookup_header(request);
+            }
             else if (corrupt_type == "body")
             {
-                if (request->body_size() == 0)
-                {
-                    dwarn("skip body data corruption for empty message body");
-                    return;
-                }
-                replace_value(request->buffers, dsn_random32(0, request->body_size()-1) + sizeof(message_header));
+                corrupt_body(request);
             }
             else if (corrupt_type == "random")
             {
-                if (request->body_size() == 0)
-                {
-                    dwarn("skip random data corruption for empty message body");
-                    return;
-                }
-                replace_value(request->buffers, dsn_random32(0, request->body_size()-1) + sizeof(message_header));
+                corrupt_body(request);
             }
             else
             {
