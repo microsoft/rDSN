@@ -85,7 +85,7 @@ namespace dsn {
             }
 
         private:
-            void do_receive();
+            bool do_receive();
 
             // create parser on demand
             message_parser* get_message_parser(network_header_format hdr_format);

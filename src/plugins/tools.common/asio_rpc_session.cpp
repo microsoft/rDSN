@@ -100,6 +100,13 @@ namespace dsn {
 
             void* ptr = _reader.read_buffer_ptr(read_next);
             int remaining = _reader.read_buffer_capacity();
+            if (ptr == nullptr || remaining <= 0)
+            {
+                derror("asio read from %s failed: unable to prepare read buffer", _remote_addr.to_string());
+                on_failure();
+                release_ref();
+                return;
+            }
 
             _socket->async_read_some(boost::asio::buffer(ptr, remaining),
                 [this](boost::system::error_code ec, std::size_t length)

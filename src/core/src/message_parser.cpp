@@ -35,6 +35,8 @@
 
 # include "message_parser_manager.h"
 # include <dsn/service_api_c.h>
+# include <exception>
+# include <limits>
 
 # ifdef __TITLE__
 # undef __TITLE__
@@ -164,27 +166,47 @@ namespace dsn {
     //-------------------- msg reader --------------------
     char* message_reader::read_buffer_ptr(unsigned int read_next)
     {
-        if (read_next + _buffer_occupied > _buffer.length())
+        if (read_next > std::numeric_limits<unsigned int>::max() - _buffer_occupied)
         {
-            // remember currently read content
-            blob rb;
-            if (_buffer_occupied > 0)
-                rb = _buffer.range(0, _buffer_occupied);
-            
-            // switch to next
-            unsigned int sz = (read_next + _buffer_occupied > _buffer_block_size ?
-                        read_next + _buffer_occupied : _buffer_block_size);
-            _buffer.assign(dsn::make_shared_array<char>(sz), 0, sz);
-            _buffer_occupied = 0;
+            derror("message_reader::read_buffer_ptr got too large read size, read_next = %u, occupied = %u",
+                   read_next,
+                   _buffer_occupied);
+            return nullptr;
+        }
 
-            // copy
-            if (rb.length() > 0)
+        const unsigned int required_size = read_next + _buffer_occupied;
+        if (required_size > _buffer.length())
+        {
+            try
             {
-                memcpy((void*)_buffer.data(), (const void*)rb.data(), rb.length());
-                _buffer_occupied = rb.length();
+                // remember currently read content
+                blob rb;
+                if (_buffer_occupied > 0)
+                    rb = _buffer.range(0, _buffer_occupied);
+
+                // switch to next
+                unsigned int sz = (required_size > _buffer_block_size ? required_size : _buffer_block_size);
+                _buffer.assign(dsn::make_shared_array<char>(sz), 0, sz);
+                _buffer_occupied = 0;
+
+                // copy
+                if (rb.length() > 0)
+                {
+                    memcpy((void*)_buffer.data(), (const void*)rb.data(), rb.length());
+                    _buffer_occupied = rb.length();
+                }
+
+                if (read_next + _buffer_occupied > _buffer.length())
+                {
+                    derror("message_reader::read_buffer_ptr failed to prepare enough buffer");
+                    return nullptr;
+                }
             }
-            
-            dassert (read_next + _buffer_occupied <= _buffer.length(), "");
+            catch (const std::exception& ex)
+            {
+                derror("message_reader::read_buffer_ptr failed: %s", ex.what());
+                return nullptr;
+            }
         }
 
         return (char*)(_buffer.data() + _buffer_occupied);

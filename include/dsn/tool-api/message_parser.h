@@ -53,11 +53,14 @@ namespace dsn
             : _buffer_occupied(0), _buffer_block_size(buffer_block_size) {}
         ~message_reader() {}
 
-        // called before read to extend read buffer
+        // called before read to extend read buffer; returns nullptr if the buffer cannot be prepared.
         DSN_API char* read_buffer_ptr(unsigned int read_next);
 
         // get remaining buffer capacity
-        unsigned int read_buffer_capacity() const { return _buffer.length() - _buffer_occupied; }
+        unsigned int read_buffer_capacity() const
+        {
+            return _buffer.length() >= _buffer_occupied ? _buffer.length() - _buffer_occupied : 0;
+        }
 
         // called after read to mark data occupied
         void mark_read(unsigned int read_length) { _buffer_occupied += read_length; }

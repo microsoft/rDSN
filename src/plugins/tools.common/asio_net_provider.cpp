@@ -215,13 +215,17 @@ namespace dsn {
             return _parsers[hdr_format];
         }
 
-        void asio_udp_provider::do_receive()
+        bool asio_udp_provider::do_receive()
         {
             std::shared_ptr< ::boost::asio::ip::udp::endpoint> send_endpoint(new ::boost::asio::ip::udp::endpoint);
 
             _recv_reader.truncate_read();
             auto buffer_ptr = _recv_reader.read_buffer_ptr(max_udp_packet_size);
-            dassert(_recv_reader.read_buffer_capacity() >= max_udp_packet_size, "failed to load enough buffer in parser");
+            if (buffer_ptr == nullptr || _recv_reader.read_buffer_capacity() < max_udp_packet_size)
+            {
+                derror("%s: asio udp read failed: unable to prepare read buffer", _address.to_string());
+                return false;
+            }
 
             _socket->async_receive_from(
                 ::boost::asio::buffer(buffer_ptr, max_udp_packet_size),
@@ -281,6 +285,8 @@ namespace dsn {
                     do_receive();
                 }
             );
+
+            return true;
         }
 
         error_code asio_udp_provider::start(rpc_channel channel, int port, bool client_only, io_modifer& ctx)
@@ -370,7 +376,10 @@ namespace dsn {
                 return ERR_NETWORK_START_FAILED;
             }
 
-            do_receive();
+            if (!do_receive())
+            {
+                return ERR_NETWORK_START_FAILED;
+            }
 
             return ERR_OK;
         }
