@@ -62,6 +62,12 @@ http_message_parser::http_message_parser()
         auto owner = static_cast<http_message_parser*>(parser->data);
 
         owner->_current_message.reset(message_ex::create_receive_message_with_standalone_header(blob()));
+        if (!owner->_current_message)
+        {
+            derror("http message creation failed");
+            return 1;
+        }
+
         owner->_response_parse_state = parsing_nothing;
 
         message_header* header = owner->_current_message->header;
@@ -379,10 +385,18 @@ message_ex* http_message_parser::get_message_on_receive(message_reader* reader, 
     if (reader->_buffer_occupied > 0)
     {
         _current_buffer = reader->_buffer;
-        auto nparsed = http_parser_execute(&_parser, &_parser_setting, reader->_buffer.data(), reader->_buffer_occupied);
+        auto occupied = reader->_buffer_occupied;
+        auto nparsed = http_parser_execute(&_parser, &_parser_setting, reader->_buffer.data(), occupied);
         _current_buffer = blob();
         reader->_buffer = reader->_buffer.range(nparsed);
         reader->_buffer_occupied -= nparsed;
+        if (nparsed != occupied)
+        {
+            derror("http message parse failed");
+            read_next = -1;
+            return nullptr;
+        }
+
         if (_parser.upgrade)
         {
             derror("unsupported http protocol");

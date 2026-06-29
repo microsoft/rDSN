@@ -52,6 +52,12 @@ void raw_message_parser::notify_rpc_session_disconnected(rpc_session *sp)
     if (!sp->is_client())
     {
         message_ex* special_msg = message_ex::create_receive_message_with_standalone_header(blob());
+        if (special_msg == nullptr)
+        {
+            derror("raw disconnect message creation failed");
+            return;
+        }
+
         dsn::message_header* header = special_msg->header;
         header->context.u.is_request = 1;
         header->context.u.is_forwarded = 0;
@@ -102,6 +108,13 @@ message_ex* raw_message_parser::get_message_on_receive(message_reader* reader, /
         auto msg_length = reader->_buffer_occupied;
         dsn::blob msg_blob = reader->_buffer.range(0, msg_length);
         message_ex* new_message = message_ex::create_receive_message_with_standalone_header(msg_blob);
+        if (new_message == nullptr)
+        {
+            derror("raw message creation failed");
+            read_next = -1;
+            return nullptr;
+        }
+
         message_header* header = new_message->header;
 
         header->hdr_length = sizeof(*header);

@@ -38,6 +38,7 @@
 # include <dsn/tool-api/network.h>
 # include <dsn/tool-api/message_parser.h>
 # include <cctype> // for isprint()
+# include <exception>
 
 # include "task_engine.h"
 # include "transient_memory.h"
@@ -116,6 +117,12 @@ DSN_API dsn_message_t dsn_msg_create_received_request(
 
     ::dsn::blob bb((const char*)buffer, 0, size);
     auto msg = ::dsn::message_ex::create_receive_message_with_standalone_header(bb);
+    if (msg == nullptr)
+    {
+        derror("dsn_msg_create_received_request failed to create message");
+        return nullptr;
+    }
+
     msg->local_rpc_code = rpc_code;
     msg->header->client.thread_hash = thread_hash;
     msg->header->client.partition_hash = partition_hash;
@@ -564,19 +571,38 @@ message_ex* message_ex::create_receive_message(const blob& data)
 
 message_ex* message_ex::create_receive_message_with_standalone_header(const blob& data)
 {
-    message_ex* msg = new message_ex();
-    std::shared_ptr<char> header_holder(static_cast<char*>(dsn_transient_malloc(sizeof(message_header))), [](char* c) {dsn_transient_free(c);});
-    msg->header = reinterpret_cast<message_header*>(header_holder.get());
-    memset(reinterpret_cast<void*>(msg->header), 0, sizeof(message_header));
-    msg->buffers.emplace_back(blob(std::move(header_holder), sizeof(message_header)));
-    msg->buffers.push_back(data);
+    message_ex* msg = nullptr;
+    try
+    {
+        msg = new message_ex();
+        char* header_ptr = static_cast<char*>(dsn_transient_malloc(sizeof(message_header)));
+        if (header_ptr == nullptr)
+        {
+            derror("message_ex::create_receive_message_with_standalone_header failed to allocate header");
+            delete msg;
+            return nullptr;
+        }
 
-    msg->header->body_length = data.length();
-    msg->_is_read = true;
-    //we skip the message header
-    msg->_rw_index = 1;
+        std::shared_ptr<char> header_holder(header_ptr, [](char* c) { dsn_transient_free(c); });
+        msg->header = reinterpret_cast<message_header*>(header_holder.get());
+        memset(reinterpret_cast<void*>(msg->header), 0, sizeof(message_header));
+        msg->buffers.emplace_back(blob(std::move(header_holder), sizeof(message_header)));
+        msg->buffers.push_back(data);
 
-    return msg;
+        msg->header->body_length = data.length();
+        msg->_is_read = true;
+        //we skip the message header
+        msg->_rw_index = 1;
+
+        return msg;
+    }
+    catch (const std::exception& ex)
+    {
+        derror("message_ex::create_receive_message_with_standalone_header failed: %s", ex.what());
+    }
+
+    delete msg;
+    return nullptr;
 }
 
 message_ex* message_ex::copy(bool clone_content, bool copy_for_receive)

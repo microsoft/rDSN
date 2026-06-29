@@ -287,6 +287,12 @@ namespace dsn
     {
         dsn::blob body_data = message_data.range(thrift_header.hdr_length);
         dsn::message_ex* msg = message_ex::create_receive_message_with_standalone_header(body_data);
+        if (msg == nullptr)
+        {
+            derror("thrift message creation failed");
+            return nullptr;
+        }
+
         dsn::message_header* dsn_hdr = msg->header;
 
         std::string fname;
