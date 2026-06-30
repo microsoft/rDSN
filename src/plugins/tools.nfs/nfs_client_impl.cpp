@@ -93,6 +93,22 @@ namespace dsn {
                 return;
             }
 
+            // size_list and file_list are parallel arrays in the (remote, untrusted)
+            // response, but the loop below iterates size_list while indexing file_list.
+            // A malformed or corrupted response with mismatched lengths would otherwise
+            // read file_list out of bounds. Validate the lengths match and fail the
+            // request through the existing nfs_task error channel.
+            if (resp.size_list.size() != resp.file_list.size())
+            {
+                derror("invalid get file size response: size_list (%d) and file_list (%d) "
+                       "have mismatched lengths",
+                       (int)resp.size_list.size(),
+                       (int)resp.file_list.size());
+                ureq->nfs_task->enqueue(ERR_INVALID_DATA, 0);
+                delete ureq;
+                return;
+            }
+
             for (size_t i = 0; i < resp.size_list.size(); i++) // file list
             {
                 file_context *filec;
