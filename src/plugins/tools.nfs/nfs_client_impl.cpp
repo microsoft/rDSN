@@ -279,82 +279,91 @@ namespace dsn {
                 return;
             }
 
-            // get write
-            dsn::ref_ptr<copy_request_ex> reqc;
+            // Loop rather than recurse on per-file failures: a persistent error
+            // (e.g. a full disk that fails every transfer) would otherwise make
+            // continue_write() invoke itself once per failed request and could
+            // grow the call stack without bound.
             while (true)
             {
+                // get write
+                dsn::ref_ptr<copy_request_ex> reqc;
+                while (true)
                 {
-                    zauto_lock l(_local_writes_lock);
-                    if (!_local_writes.empty())
                     {
-                        reqc = _local_writes.front();
-                        _local_writes.pop();
+                        zauto_lock l(_local_writes_lock);
+                        if (!_local_writes.empty())
+                        {
+                            reqc = _local_writes.front();
+                            _local_writes.pop();
+                        }
+                        else
+                        {
+                            reqc = nullptr;
+                            break;
+                        }
                     }
-                    else
+
                     {
-                        reqc = nullptr;
-                        break;
-                    }   
+                        zauto_lock l(reqc->lock);
+                        if (reqc->is_valid)
+                            break;
+                    }
+                }
+
+                if (nullptr == reqc)
+                {
+                    --_concurrent_local_write_count;
+                    return;
+                }
+
+                // real write
+                std::string file_path = dsn::utils::filesystem::path_combine(reqc->copy_req.dst_dir, reqc->file_ctx->file_name);
+                std::string path = dsn::utils::filesystem::remove_file_name(file_path.c_str());
+                if (!dsn::utils::filesystem::create_directory(path))
+                {
+                    derror("create directory %s failed", path.c_str());
+                    error_code err = ERR_FILE_OPERATION_FAILED;
+                    handle_completion(reqc->file_ctx->user_req, err);
+                    continue;
+                }
+
+                dsn_handle_t hfile = reqc->file_ctx->file.load();
+                if (!hfile)
+                {
+                    zauto_lock l(reqc->file_ctx->user_req->user_req_lock);
+                    hfile = reqc->file_ctx->file.load();
+                    if (!hfile)
+                    {
+                        hfile = dsn_file_open(file_path.c_str(), O_RDWR | O_CREAT | O_BINARY, 0666);
+                        reqc->file_ctx->file = hfile;
+                    }
+                }
+
+                if (!hfile)
+                {
+                    derror("file open %s failed", file_path.c_str());
+                    error_code err = ERR_FILE_OPERATION_FAILED;
+                    handle_completion(reqc->file_ctx->user_req, err);
+                    continue;
                 }
 
                 {
                     zauto_lock l(reqc->lock);
-                    if (reqc->is_valid)
-                        break;
+                    auto& reqc_save = *reqc.get();
+                    reqc_save.local_write_task = file::write(
+                        hfile,
+                        reqc_save.response.file_content.data(),
+                        reqc_save.response.size,
+                        reqc_save.response.offset,
+                        LPC_NFS_WRITE,
+                        this,
+                        [this, reqc_cap = std::move(reqc)] (error_code err, int sz)
+                        {
+                            local_write_callback(err, sz, std::move(reqc_cap));
+                        }
+                    );
                 }
-            }
-
-            if (nullptr == reqc)
-            {
-                --_concurrent_local_write_count;
                 return;
-            }   
-
-            // real write
-            std::string file_path = dsn::utils::filesystem::path_combine(reqc->copy_req.dst_dir, reqc->file_ctx->file_name);
-            std::string path = dsn::utils::filesystem::remove_file_name(file_path.c_str());
-            if (!dsn::utils::filesystem::create_directory(path))
-            {
-                dassert(false, "Fail to create directory %s.", path.c_str());
-            }
-
-            dsn_handle_t hfile = reqc->file_ctx->file.load();
-            if (!hfile)
-            {
-                zauto_lock l(reqc->file_ctx->user_req->user_req_lock);
-                hfile = reqc->file_ctx->file.load();
-                if (!hfile)
-                {
-                    hfile = dsn_file_open(file_path.c_str(), O_RDWR | O_CREAT | O_BINARY, 0666);
-                    reqc->file_ctx->file = hfile;
-                }
-            }
-
-            if (!hfile)
-            {
-                derror("file open %s failed", file_path.c_str());
-                error_code err = ERR_FILE_OPERATION_FAILED;
-                handle_completion(reqc->file_ctx->user_req, err);
-                --_concurrent_local_write_count;
-                continue_write();
-                return;
-            }
-
-            {
-                zauto_lock l(reqc->lock);
-                auto& reqc_save = *reqc.get();
-                reqc_save.local_write_task = file::write(
-                    hfile,
-                    reqc_save.response.file_content.data(),
-                    reqc_save.response.size,
-                    reqc_save.response.offset,
-                    LPC_NFS_WRITE,
-                    this,
-                    [this, reqc_cap = std::move(reqc)] (error_code err, int sz)
-                    {
-                        local_write_callback(err, sz, std::move(reqc_cap));
-                    }
-                );
             }
         }
 
@@ -443,7 +452,10 @@ namespace dsn {
                 if (f.second->file)
                 {
                     auto err2 = dsn_file_close(f.second->file);
-                    dassert(err2 == ERR_OK, "dsn_file_close failed, err = %s", dsn_error_to_string(err2)); 
+                    if (err2 != ERR_OK)
+                    {
+                        dwarn("dsn_file_close failed, err = %s", dsn_error_to_string(err2));
+                    }
 
                     f.second->file = nullptr;
 

@@ -173,7 +173,9 @@ namespace dsn {
                             int64_t sz;
                             if (!dsn::utils::filesystem::file_size(fpath, sz))
                             {
-                                dassert(false, "Fail to get file size of %s.", fpath.c_str());
+                                derror("get file size of %s failed", fpath.c_str());
+                                err = ERR_FILE_OPERATION_FAILED;
+                                break;
                             }
 
                             resp.size_list.push_back((uint64_t)sz);
@@ -222,11 +224,18 @@ namespace dsn {
                 if (fptr->file_access_count == 0 
                     && dsn_now_ms() - fptr->last_access_time > (uint64_t)_opts.file_close_expire_time_ms)
                 {
-                    dinfo("nfs: close file handle %s", it->first.c_str());
+                    std::string file_name = it->first;
+                    dinfo("nfs: close file handle %s", file_name.c_str());
                     it = _handles_map.erase(it);
 
                     ::dsn::error_code err = dsn_file_close(fptr->file_handle);
-                    dassert(err == ERR_OK, "dsn_file_close failed, err = %s", err.to_string());
+                    if (err != ERR_OK)
+                    {
+                        dwarn("nfs: close file handle %s failed, err = %s",
+                              file_name.c_str(),
+                              err.to_string());
+                    }
+
                     delete fptr;
                 }
                 else
