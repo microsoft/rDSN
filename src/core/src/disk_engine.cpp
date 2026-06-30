@@ -147,14 +147,25 @@ aio_task* disk_file::on_write_completed(aio_task* wk, void* ctx, error_code err,
         if (err == ERR_OK)
         {
             size_t this_size = (size_t)wk->aio()->buffer_size;
-            dassert(size >= this_size, 
-                "written buffer size does not equal to input buffer's size: %d vs %d",
-                (int)size,
-                (int)this_size
-                );
-
-            wk->enqueue(err, this_size);
-            size -= this_size;
+            if (size < this_size)
+            {
+                // Short write from the underlying provider (e.g. the disk is full):
+                // fewer bytes were written than this task requested. Report a
+                // file-operation failure for this task and the remaining batched
+                // tasks (whose data was not written either) through the aio callback
+                // channel instead of aborting the whole process.
+                derror("disk write completed with fewer bytes than requested: %d vs %d",
+                    (int)size,
+                    (int)this_size
+                    );
+                wk->enqueue(ERR_FILE_OPERATION_FAILED, size);
+                size = 0;
+            }
+            else
+            {
+                wk->enqueue(err, this_size);
+                size -= this_size;
+            }
         }
         else
         {
