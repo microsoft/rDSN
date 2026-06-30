@@ -542,8 +542,18 @@ namespace dsn {
                 {
                     bool succ;
 
-                    dassert((typeflag == FTW_F) || (typeflag == FTW_DP),
-                        "Invalid typeflag = %d.", typeflag);
+                    // nftw reports FTW_NS when stat() fails on an entry (a transient
+                    // I/O error, a permission problem, or a concurrent removal) and
+                    // FTW_DNR for an unreadable directory. These are recoverable, so
+                    // stop the walk and let remove_directory()/remove_path() return
+                    // false through their existing bool channel instead of aborting
+                    // the whole process.
+                    if ((typeflag != FTW_F) && (typeflag != FTW_DP))
+                    {
+                        dwarn("remove path %s failed: unexpected file tree walk typeflag = %d",
+                            fpath, typeflag);
+                        return FTW_STOP;
+                    }
 #ifdef _WIN32
                     if (typeflag != FTW_F)
                     {
