@@ -326,6 +326,7 @@ void cmake(Language lang, bool &result)
         if (!result)
         {
             std::cerr << "Failed to build generated counter project with MSBuild." << std::endl;
+            dump_log_on_failure(result);
             return;
         }
         execute(file(combine(generated_build_dir, "bin/counter/Debug/counter.exe")) + " " +
