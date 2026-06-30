@@ -212,6 +212,20 @@ namespace dsn {
                                 break;
                             }
 
+                            // fpath is built from the normalized source folder, while the
+                            // strip length below uses the raw (untrusted) request.source_dir.
+                            // A non-normalized source_dir (e.g. redundant or trailing '/')
+                            // from the peer can be longer than the normalized fpath, which
+                            // would make substr() throw std::out_of_range and abort the
+                            // server. Reject such a request instead of crashing.
+                            if (request.source_dir.length() > fpath.length())
+                            {
+                                derror("invalid source_dir(%s) does not prefix file(%s)",
+                                       request.source_dir.c_str(), fpath.c_str());
+                                err = ERR_INVALID_PARAMETERS;
+                                break;
+                            }
+
                             resp.size_list.push_back((uint64_t)sz);
                             resp.file_list.push_back(fpath.substr(request.source_dir.length(), fpath.length() - 1));
                         }
@@ -236,6 +250,18 @@ namespace dsn {
                     // TODO: using int64 instead as file may exceed the size of 32bit
                     // Done
                     uint64_t size = st.st_size;
+
+                    // path_combine normalizes file_path, which may be shorter than the
+                    // raw (untrusted) request.source_dir; using source_dir.length() as the
+                    // substr position would throw std::out_of_range and abort the server on
+                    // a non-normalized source_dir from the peer. Reject it instead.
+                    if (request.source_dir.length() > file_path.length())
+                    {
+                        derror("invalid source_dir(%s) does not prefix file(%s)",
+                               request.source_dir.c_str(), file_path.c_str());
+                        err = ERR_INVALID_PARAMETERS;
+                        break;
+                    }
 
                     resp.size_list.push_back(size);
                     resp.file_list.push_back(file_path.substr(request.source_dir.length()));
