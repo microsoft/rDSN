@@ -250,7 +250,28 @@ namespace dsn {
                 handle_completion(reqc->file_ctx->user_req, err);
                 return;
             }
-            
+
+            // response.size and response.file_content are independent fields filled in by the
+            // (untrusted) remote server. The local write issues
+            // file::write(response.file_content.data(), response.size, ...), so a response whose
+            // declared size is negative or larger than the actual file_content buffer would make
+            // that write read past the end of the buffer -- corrupting the destination file with
+            // adjacent heap memory (and disclosing it into the replicated data) or crashing. This
+            // is the client-side counterpart of the size validation on_copy already performs on
+            // the request. A zero size is legal (empty-file segment) and is handled specially in
+            // continue_write. On the honest path file_content is the full block buffer and size is
+            // the valid prefix, so size <= file_content.length() always holds.
+            if (resp.size < 0 || static_cast<uint64_t>(resp.size) > resp.file_content.length())
+            {
+                derror("nfs: invalid copy response for file %s: declared size %d exceeds "
+                       "content buffer length %u",
+                       reqc->file_ctx->file_name.c_str(),
+                       resp.size,
+                       (uint32_t)resp.file_content.length());
+                handle_completion(reqc->file_ctx->user_req, ERR_INVALID_DATA);
+                return;
+            }
+
             reqc->response = resp;
             reqc->response.error.end_tracking(); // always ERR_OK
             reqc->is_ready_for_write = true;
