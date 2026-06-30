@@ -59,7 +59,12 @@ namespace dsn {
         native_linux_aio_provider::~native_linux_aio_provider()
         {
             auto ret = io_destroy(_ctx);
-            dassert(ret == 0, "io_destroy error, ret = %d", ret);
+            if (ret != 0)
+            {
+                // A destructor must not abort. io_destroy can fail (e.g. EINVAL on an
+                // already-released context); log and continue so shutdown proceeds.
+                derror("io_destroy error, ret = %d", ret);
+            }
         }
 
         void native_linux_aio_provider::start(io_modifer& ctx)
