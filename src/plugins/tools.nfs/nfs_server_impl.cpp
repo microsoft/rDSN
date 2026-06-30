@@ -44,11 +44,14 @@ namespace dsn {
             //dinfo(">>> on call RPC_COPY end, exec RPC_NFS_COPY");
 
             // request.size is supplied by the (untrusted) client but the read below targets a
-            // buffer of exactly nfs_copy_block_bytes. Reject out-of-range sizes to avoid a heap
-            // buffer overflow when reading the file content into the fixed-size block buffer.
-            if (request.size <= 0 || static_cast<uint32_t>(request.size) > _opts.nfs_copy_block_bytes)
+            // buffer of exactly nfs_copy_block_bytes. Reject negative or oversized lengths to
+            // avoid a heap buffer overflow when reading the file content into the fixed-size
+            // block buffer. A zero length is legal and must be preserved: an empty source file
+            // produces a single zero-byte copy request, which has to succeed so the destination
+            // empty file still gets created (otherwise one empty file fails the whole transfer).
+            if (request.size < 0 || static_cast<uint32_t>(request.size) > _opts.nfs_copy_block_bytes)
             {
-                derror("nfs: invalid copy request size %d (allowed range is (0, %u]) for file %s",
+                derror("nfs: invalid copy request size %d (allowed range is [0, %u]) for file %s",
                     request.size, _opts.nfs_copy_block_bytes, request.file_name.c_str());
                 ::dsn::service::copy_response resp;
                 resp.error = ERR_INVALID_PARAMETERS;
