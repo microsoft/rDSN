@@ -253,3 +253,46 @@ TEST(core, operation_failed)
 
     EXPECT_TRUE(utils::filesystem::remove_path(tmp_file));
 }
+
+// Pins the zero-length aio contract that the NFS file-copy plugin depends on:
+// a zero-length write/read completes with ERR_HANDLE_EOF (not ERR_OK) and count 0.
+// Because of this, nfs_service_impl::on_copy / nfs_client_impl::continue_write must
+// special-case empty (size==0) files instead of issuing a zero-length read/write,
+// which would otherwise be reported to the copy caller as a failure.
+TEST(core, aio_zero_length)
+{
+    // if in dsn_mimic_app() and disk_io_mode == IOE_PER_QUEUE
+    if (task::get_current_disk() == nullptr) return;
+
+    ASSERT_TRUE(::dsn::utils::test::prepare_test_tmp_dir("dsn.core.aio_zero"));
+    const std::string tmp_file =
+        ::dsn::utils::test::test_tmp_path("dsn.core.aio_zero", "zero_test_file");
+
+    ::dsn::error_code werr;
+    size_t wcount = 0xdead;
+    ::dsn::error_code rerr;
+    size_t rcount = 0xdead;
+    char buffer[8] = {};
+
+    // zero-length write to a freshly created file
+    auto fp = dsn_file_open(tmp_file.c_str(), O_RDWR | O_CREAT | O_BINARY, 0666);
+    ASSERT_TRUE(fp != nullptr);
+    auto t = ::dsn::file::write(fp, buffer, 0, 0, LPC_AIO_TEST, nullptr,
+        [&werr, &wcount](::dsn::error_code e, size_t n) { werr = e; wcount = n; }, 0);
+    t->wait();
+    EXPECT_TRUE(werr == ERR_HANDLE_EOF);
+    EXPECT_EQ(0u, wcount);
+    dsn_file_close(fp);
+
+    // zero-length read from the (now empty) file
+    auto fp2 = dsn_file_open(tmp_file.c_str(), O_RDONLY | O_BINARY, 0);
+    ASSERT_TRUE(fp2 != nullptr);
+    t = ::dsn::file::read(fp2, buffer, 0, 0, LPC_AIO_TEST, nullptr,
+        [&rerr, &rcount](::dsn::error_code e, size_t n) { rerr = e; rcount = n; }, 0);
+    t->wait();
+    EXPECT_TRUE(rerr == ERR_HANDLE_EOF);
+    EXPECT_EQ(0u, rcount);
+    dsn_file_close(fp2);
+
+    EXPECT_TRUE(utils::filesystem::remove_path(tmp_file));
+}

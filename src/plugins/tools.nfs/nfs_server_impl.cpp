@@ -59,6 +59,22 @@ namespace dsn {
                 return;
             }
 
+            // An empty source file produces exactly one zero-byte copy request. A
+            // zero-length file::read completes with ERR_HANDLE_EOF (not ERR_OK), which the
+            // client treats as a copy failure, so the destination empty file would never
+            // be created and one empty file would fail the whole transfer. There is no
+            // content to ship, so reply success directly without opening or reading the
+            // file; the client creates the empty destination on its own O_CREAT open.
+            if (request.size == 0)
+            {
+                ::dsn::service::copy_response resp;
+                resp.error = ERR_OK;
+                resp.offset = request.offset;
+                resp.size = 0;
+                reply(resp);
+                return;
+            }
+
             std::string file_path = dsn::utils::filesystem::path_combine(request.source_dir, request.file_name);
             dsn_handle_t hfile;
 
@@ -135,6 +151,21 @@ namespace dsn {
                 {
                     it->second->file_access_count--;
                 }
+            }
+
+            // A short read (ERR_OK but fewer bytes than requested) means the source file
+            // no longer holds the full requested range -- it was truncated, raced with a
+            // writer, or is corrupt. cp.bb is allocated with make_shared_array<char>, i.e.
+            // uninitialized heap, and is sent in full with resp.size = cp.size (the
+            // requested size). Reporting success here would make the client write cp.size
+            // bytes whose tail [sz, cp.size) was never filled by the read, corrupting the
+            // destination file and disclosing uninitialized heap memory into the replicated
+            // data. Fail this copy block through the existing response error channel instead.
+            if (err == ERR_OK && sz != cp.size)
+            {
+                derror("nfs: short read on file %s at offset %" PRId64 ": read %u of %u bytes",
+                    cp.file_path.c_str(), cp.offset, (uint32_t)sz, (uint32_t)cp.size);
+                err = ERR_FILE_OPERATION_FAILED;
             }
 
             ::dsn::service::copy_response resp;

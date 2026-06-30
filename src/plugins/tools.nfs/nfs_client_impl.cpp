@@ -363,6 +363,36 @@ namespace dsn {
                     continue;
                 }
 
+                // An empty source file yields a copy request with response.size == 0. The
+                // destination file has just been created (or already exists) via the
+                // O_RDWR | O_CREAT open above, so there is nothing to write: a zero-length
+                // file::write would complete with ERR_HANDLE_EOF and be reported as a
+                // failure. Finalize this segment as a success inline -- mirroring the
+                // success bookkeeping in local_write_callback -- and continue the loop
+                // (no recursion) instead of issuing the zero-length write.
+                if (reqc->response.size == 0)
+                {
+                    reqc->response.file_content = blob();
+
+                    bool completed = false;
+                    {
+                        zauto_lock l(reqc->file_ctx->user_req->user_req_lock);
+                        if (++reqc->file_ctx->finished_segments == (int)reqc->file_ctx->copy_requests.size())
+                        {
+                            if (++reqc->file_ctx->user_req->finished_files == (int)reqc->file_ctx->user_req->file_context_map.size())
+                            {
+                                completed = true;
+                            }
+                        }
+                    }
+
+                    if (completed)
+                    {
+                        handle_completion(reqc->file_ctx->user_req, ERR_OK);
+                    }
+                    continue;
+                }
+
                 {
                     zauto_lock l(reqc->lock);
                     auto& reqc_save = *reqc.get();
