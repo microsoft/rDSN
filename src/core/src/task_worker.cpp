@@ -279,7 +279,7 @@ void task_worker::set_affinity(uint64_t affinity)
         # endif
     # endif
     cpu_set_t cpuset;
-    int nr_bits = std::min(nr_cpu, static_cast<int>(sizeof(affinity) * 8));
+    int nr_bits = (std::min)(nr_cpu, static_cast<int>(sizeof(affinity) * 8));
 
     CPU_ZERO(&cpuset);
     for (int i = 0; i < nr_bits; i++)

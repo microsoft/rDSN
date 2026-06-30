@@ -84,7 +84,7 @@ TEST(tools_common, message_reader_rejects_overflow_read_size)
     reader.mark_read(8);
 
     ASSERT_EQ(nullptr,
-              reader.read_buffer_ptr(std::numeric_limits<unsigned int>::max() - 7));
+              reader.read_buffer_ptr((std::numeric_limits<unsigned int>::max)() - 7));
     ASSERT_EQ(8u, reader._buffer_occupied);
     ASSERT_EQ(8u, reader.read_buffer_capacity());
 }

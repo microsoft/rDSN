@@ -166,7 +166,7 @@ namespace dsn {
     //-------------------- msg reader --------------------
     char* message_reader::read_buffer_ptr(unsigned int read_next)
     {
-        if (read_next > std::numeric_limits<unsigned int>::max() - _buffer_occupied)
+        if (read_next > (std::numeric_limits<unsigned int>::max)() - _buffer_occupied)
         {
             derror("message_reader::read_buffer_ptr got too large read size, read_next = %u, occupied = %u",
                    read_next,

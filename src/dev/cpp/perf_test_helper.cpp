@@ -137,7 +137,7 @@ namespace dsn {
                         c.ratios.resize(max_request_kind_count_for_hybrid_test, 0.0);
                         
                         double ratio = 0.0;
-                        for (size_t i = 0; i < std::min(opt.perf_test_hybrid_request_ratio.size(), c.ratios.size()); i++)
+                        for (size_t i = 0; i < (std::min)(opt.perf_test_hybrid_request_ratio.size(), c.ratios.size()); i++)
                         {
                             ratio += (double)(opt.perf_test_hybrid_request_ratio[i]) / ratio_sum;
                             c.ratios[i] = ratio;
@@ -353,5 +353,3 @@ namespace dsn {
         }
     }
 }
-
-
