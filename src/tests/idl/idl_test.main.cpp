@@ -310,6 +310,25 @@ void cmake(Language lang, bool &result)
     {
         cmake_cmd += std::string(" -DBOOST_INCLUDEDIR=") + boost_include_dir;
     }
+    auto append_cmake_dir_if_exists = [&cmake_cmd](const char *cmake_var, const std::string &dir) {
+        if (::dsn::utils::filesystem::directory_exists(dir))
+        {
+            cmake_cmd += std::string(" -D") + cmake_var + "=" + dir;
+            return;
+        }
+
+        std::cerr << "Generated counter project CMake argument " << cmake_var
+                  << " is not set because directory does not exist: " << dir << std::endl;
+    };
+
+    append_cmake_dir_if_exists("THRIFT_INCLUDE_DIR",
+                               combine(get_dsn_build_dir(), "ext/thrift/include"));
+    append_cmake_dir_if_exists("THRIFT_LIB_DIR",
+                               combine(get_dsn_build_dir(), "ext/thrift/lib"));
+    append_cmake_dir_if_exists("PROTOBUF_INCLUDE_DIR",
+                               combine(get_dsn_build_dir(), "ext/protobuf/include"));
+    append_cmake_dir_if_exists("PROTOBUF_LIB_DIR",
+                               combine(get_dsn_build_dir(), "ext/protobuf/lib"));
     
     execute(cmake_cmd, result);
     if (!result)
