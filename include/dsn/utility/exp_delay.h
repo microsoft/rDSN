@@ -38,6 +38,7 @@
 # include <dsn/utility/singleton.h>
 # include <vector>
 # include <cassert>
+# include <cstring>
 
 namespace dsn
 {
