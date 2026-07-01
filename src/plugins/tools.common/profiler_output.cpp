@@ -42,6 +42,8 @@
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
+#include <string>
+#include <sstream>
 #include "profiler.h"
 #include "profiler_header.h"
 

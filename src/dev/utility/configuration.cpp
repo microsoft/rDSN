@@ -39,6 +39,8 @@
 # include <errno.h>
 # include <iostream>
 # include <algorithm>
+# include <cstring>
+# include <utility>
 
 namespace dsn {
 

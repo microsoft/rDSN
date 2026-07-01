@@ -36,6 +36,8 @@
 
 # include "tracer.h"
 # include <dsn/tool-api/command.h>
+# include <cstdio>
+# include <cinttypes>
 
 # ifdef __TITLE__
 # undef __TITLE__

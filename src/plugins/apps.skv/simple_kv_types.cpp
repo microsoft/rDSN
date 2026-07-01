@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <ostream>
+#include <utility>
 
 #include <thrift/TToString.h>
 

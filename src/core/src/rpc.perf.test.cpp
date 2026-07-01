@@ -35,6 +35,7 @@
 #include <gtest/gtest.h>
 #include <dsn/cpp/test_utils.h>
 #include <dsn/service_api_cpp.h>
+#include <chrono>
 
 void rpc_testcase(uint64_t block_size, size_t concurrency)
 {

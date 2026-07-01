@@ -2,6 +2,10 @@
 # include "simple_kv.code.definition.h"
 # include "simple_kv.types.h"
 # include <iostream>
+# include <cstdint>
+# include <utility>
+# include <string>
+# include <chrono>
 
 namespace dsn { namespace replication { namespace application {
 class simple_kv_client2

@@ -41,6 +41,8 @@
 # include <dsn/utility/factory_store.h>
 # include "message_parser_manager.h"
 # include "rpc_engine.h"
+# include <cstring>
+# include <utility>
 
 # if defined(__TITLE__)
 # undef __TITLE__

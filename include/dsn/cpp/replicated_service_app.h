@@ -36,6 +36,7 @@
 # pragma once
 
 # include <dsn/cpp/service_app.h>
+# include <cstring>
 
 namespace dsn 
 {

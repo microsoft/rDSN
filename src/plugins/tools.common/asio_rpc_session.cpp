@@ -34,6 +34,10 @@
  */
 
 # include "asio_rpc_session.h"
+# include <cstdint>
+# include <memory>
+# include <vector>
+# include <exception>
 
 # ifdef __TITLE__
 # undef __TITLE__

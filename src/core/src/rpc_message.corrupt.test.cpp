@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <chrono>
 #include <dsn/cpp/test_utils.h>
 
 //this only works with the fault injector

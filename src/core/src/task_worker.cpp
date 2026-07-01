@@ -37,6 +37,8 @@
 # include "task_engine.h"
 # include <sstream>
 # include <errno.h>
+# include <cstring>
+# include <chrono>
 
 # ifdef _WIN32
 

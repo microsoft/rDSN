@@ -39,6 +39,8 @@
 # include <iostream>
 # include <thread>
 # include <sstream>
+# include <cstring>
+# include <chrono>
 # include <dsn/cpp/utils.h>
 # include <dsn/cpp/rpc_stream.h>
 # include "service_engine.h"

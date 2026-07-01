@@ -34,6 +34,9 @@
  */
 # include <dsn/cpp/perf_test_helper.h>
 # include <fstream>
+# include <cstring>
+# include <thread>
+# include <chrono>
 
 # ifdef __TITLE__
 # undef __TITLE__

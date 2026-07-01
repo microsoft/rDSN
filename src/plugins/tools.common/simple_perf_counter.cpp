@@ -42,6 +42,13 @@
 
 # include "simple_perf_counter.h"
 # include "shared_io_service.h"
+# include <cstring>
+# include <cstdint>
+# include <cstdlib>
+# include <memory>
+# include <functional>
+# include <utility>
+# include <atomic>
 
 namespace dsn {
     namespace tools {

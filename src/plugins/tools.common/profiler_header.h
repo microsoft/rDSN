@@ -38,6 +38,13 @@
 
 #pragma once
 #include <iomanip>
+#include <cstring>
+#include <cstdint>
+#include <string>
+#include <sstream>
+#include <vector>
+#include <map>
+#include <atomic>
 #include "shared_io_service.h"
 
 namespace dsn {

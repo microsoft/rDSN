@@ -60,6 +60,8 @@
 # include <cstdio>
 # include <exception>
 # include <fstream>
+# include <cstring>
+# include <chrono>
 
 # if defined(_WIN32)
 # include <tlhelp32.h>

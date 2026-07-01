@@ -38,6 +38,7 @@
 # include <dsn/utility/factory_store.h>
 # include <dsn/tool_api.h>
 # include <dsn/cpp/test_utils.h>
+# include <cstring>
 
 using namespace ::dsn;
 const char str[64] = "this is a logging test for log %010d @ thread %010d";

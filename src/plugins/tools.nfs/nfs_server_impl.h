@@ -35,6 +35,10 @@
 # pragma once
 # include "nfs_server.h"
 # include "nfs_client_impl.h"
+# include <cstdint>
+# include <string>
+# include <unordered_map>
+# include <chrono>
 
 namespace dsn {
     namespace service {

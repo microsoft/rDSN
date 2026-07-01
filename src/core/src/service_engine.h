@@ -40,6 +40,7 @@
 # include <dsn/tool-api/global_config.h>
 # include <dsn/cpp/auto_codes.h>
 # include <sstream>
+# include <cstring>
 # include <dsn/utility/synchronize.h>
 # include "app_manager.h"
 

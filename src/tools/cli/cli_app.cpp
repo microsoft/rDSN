@@ -39,6 +39,7 @@
 # include <cstdint>
 # include <dsn/cpp/utils.h>
 # include <iostream>
+# include <tuple>
 
 namespace dsn {
     namespace service {

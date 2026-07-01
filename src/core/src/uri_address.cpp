@@ -43,6 +43,8 @@
 # include <dsn/tool-api/task.h>
 # include <dsn/cpp/utils.h>
 # include <cstdint>
+# include <cstring>
+# include <utility>
 
 namespace dsn
 {

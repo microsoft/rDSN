@@ -37,6 +37,12 @@
 # include "simple_kv.client.2.h"
 # include "simple_kv.client.perf.h"
 # include "simple_kv.server.h"
+# include <cstdint>
+# include <memory>
+# include <string>
+# include <tuple>
+# include <chrono>
+# include <iostream>
 
 # define TRANSPARENT_LAYER2_CLIENT
 

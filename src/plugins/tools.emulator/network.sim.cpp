@@ -39,6 +39,7 @@
 # include <dsn/utility/singleton_store.h>
 # include <dsn/tool-api/node_scoper.h>
 # include "network.sim.h" 
+# include <cstring>
 
 # ifdef __TITLE__
 # undef __TITLE__

@@ -46,6 +46,7 @@
 # include <thrift/transport/TVirtualTransport.h>
 # include <thrift/TApplicationException.h>
 # include <cstdio>
+# include <cstring>
 # include <type_traits>
 
 using namespace ::apache::thrift::transport;

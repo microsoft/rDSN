@@ -34,6 +34,7 @@
  */
 
 #include "diske.sim.h"
+#include <cstdint>
 
 # ifdef __TITLE__
 # undef __TITLE__

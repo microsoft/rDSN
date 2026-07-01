@@ -38,6 +38,7 @@
 # include <dsn/cpp/utils.h>
 # include <gtest/gtest.h>
 # include <dsn/cpp/test_utils.h>
+# include <cstring>
 
 using namespace ::dsn;
 

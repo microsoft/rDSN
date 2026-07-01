@@ -34,6 +34,11 @@
  */
 # include "nfs_server_impl.h"
 # include <cstdlib>
+# include <cstring>
+# include <utility>
+# include <cerrno>
+# include <cinttypes>
+# include <vector>
 # include <sys/stat.h>
 
 namespace dsn {

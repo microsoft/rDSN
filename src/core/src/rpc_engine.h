@@ -41,6 +41,7 @@
 # include <dsn/tool-api/global_config.h>
 # include <dsn/utility/configuration.h>
 # include <atomic>
+# include <utility>
 
 namespace dsn {
 

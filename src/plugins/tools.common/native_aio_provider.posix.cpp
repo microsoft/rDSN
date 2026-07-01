@@ -41,6 +41,9 @@
 # include <aio.h>
 # include <fcntl.h>
 # include <cstdlib>
+# include <cstring>
+# include <cstdint>
+# include <cerrno>
 # if defined(__APPLE__)
 # include <thread>
 # endif

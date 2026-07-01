@@ -8,6 +8,10 @@
 #define dsn_layer2_TYPES_H
 
 #include <iosfwd>
+#include <cstdint>
+#include <string>
+#include <vector>
+#include <map>
 
 #include <thrift/Thrift.h>
 #include <thrift/TApplicationException.h>

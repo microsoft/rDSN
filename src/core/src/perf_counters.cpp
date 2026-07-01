@@ -42,6 +42,8 @@
 # include "service_engine.h"
 # include "perf_counters.h"
 # include "c_api_guard.h"
+# include <cstring>
+# include <tuple>
 
 DSN_API dsn_handle_t dsn_perf_counter_create(const char* section, const char* name, dsn_perf_counter_type_t type, const char* description)
 {

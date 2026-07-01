@@ -35,6 +35,8 @@
 
 #include "task_engine.sim.h"
 #include "scheduler.h"
+#include <cstdint>
+#include <map>
 
 namespace dsn { namespace tools {
 

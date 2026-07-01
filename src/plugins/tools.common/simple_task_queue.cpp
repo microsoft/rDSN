@@ -34,6 +34,9 @@
  */
 
 # include "simple_task_queue.h"
+# include <cstdio>
+# include <memory>
+# include <thread>
 
 # ifdef __TITLE__
 # undef __TITLE__

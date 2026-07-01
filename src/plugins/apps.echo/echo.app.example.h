@@ -37,6 +37,8 @@
 # include "echo.client.perf.h"
 # include "echo.server.h"
 # include <cstdint>
+# include <chrono>
+# include <iostream>
 # include <dsn/cpp/utils.h>
 
 namespace dsn { namespace example {

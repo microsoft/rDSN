@@ -38,6 +38,7 @@
 # include <dsn/tool-api/rpc_message.h>
 # include <gtest/gtest.h>
 # include "transient_memory.h"
+# include <cstring>
 
 using namespace ::dsn;
 

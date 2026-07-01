@@ -8,6 +8,11 @@
 #define idl_test_TYPES_H
 
 #include <iosfwd>
+#include <cstdint>
+#include <string>
+#include <vector>
+#include <map>
+#include <set>
 
 #include <thrift/Thrift.h>
 #include <thrift/TApplicationException.h>

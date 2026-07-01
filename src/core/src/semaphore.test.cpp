@@ -37,6 +37,7 @@
 # include <gtest/gtest.h>
 # include <atomic>
 # include <thread>
+# include <chrono>
 
 TEST(core, Semaphore)
 {

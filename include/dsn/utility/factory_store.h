@@ -37,6 +37,7 @@
 
 # include <dsn/utility/singleton_store.h>
 # include <cstdio>
+# include <typeinfo>
 
 namespace dsn { 
     

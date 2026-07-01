@@ -36,6 +36,8 @@
 # include <dsn/cpp/utils.h>
 # include <dsn/tool-api/nfs.h>
 # include <queue>
+# include <utility>
+# include <chrono>
 
 namespace dsn {
     namespace service {

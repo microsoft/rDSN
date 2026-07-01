@@ -39,6 +39,7 @@
 # include <vector>
 # include <atomic>
 # include <cassert>
+# include <cstring>
 
 namespace dsn {
 /*!

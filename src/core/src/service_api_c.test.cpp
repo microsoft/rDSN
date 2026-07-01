@@ -40,6 +40,8 @@
 # include <gtest/gtest.h>
 # include <string>
 # include <thread>
+# include <cstring>
+# include <chrono>
 # include "service_engine.h"
 # include <dsn/cpp/test_utils.h>
 

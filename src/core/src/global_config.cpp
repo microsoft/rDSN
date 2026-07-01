@@ -40,6 +40,7 @@
 # include <exception>
 # include <thread>
 # include <vector>
+# include <cstring>
 # include <dsn/cpp/utils.h>
 # include <dsn/tool-api/task_spec.h>
 # include <dsn/tool-api/network.h>

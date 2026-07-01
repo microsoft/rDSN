@@ -35,6 +35,8 @@
 
 # include "dsn_message_parser.h"
 # include <dsn/service_api_c.h>
+# include <cstring>
+# include <cinttypes>
 
 # ifdef __TITLE__
 # undef __TITLE__

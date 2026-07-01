@@ -42,6 +42,8 @@
 # include <limits>
 # include <sstream>
 # include <string>
+# include <cstring>
+# include <utility>
 # if defined(_WIN32)
 # include <basetsd.h>
 # else

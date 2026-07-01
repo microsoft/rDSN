@@ -53,6 +53,7 @@
 # include <dsn/tool-api/task_queue.h>
 # include <dsn/cpp/serialization.h>
 # include <set>
+# include <chrono>
 # include <dsn/cpp/layer2_handler.h>
 
 # if defined(__TITLE__)

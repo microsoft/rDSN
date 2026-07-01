@@ -38,6 +38,7 @@
 #include <dsn/cpp/test_utils.h>
 #include <mutex>
 #include <condition_variable>
+#include <chrono>
 
 //worker = 1
 DEFINE_THREAD_POOL_CODE(THREAD_POOL_TEST_TASK_QUEUE_1);

@@ -44,6 +44,7 @@
 # include <dsn/cpp/callocator.h>
 # include <dsn/cpp/auto_codes.h>
 # include <dsn/cpp/utils.h>
+# include <cstring>
 
 namespace dsn 
 {

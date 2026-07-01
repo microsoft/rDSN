@@ -35,6 +35,9 @@
 # pragma once
 # include "nfs_code_definition.h"
 # include <iostream>
+# include <cstdint>
+# include <utility>
+# include <chrono>
 
 
 namespace dsn { namespace service {

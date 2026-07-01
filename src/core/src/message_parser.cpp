@@ -37,6 +37,12 @@
 # include <dsn/service_api_c.h>
 # include <exception>
 # include <limits>
+# include <cstring>
+# include <cstdio>
+# include <cctype>
+# include <string>
+# include <vector>
+# include <unordered_map>
 
 # ifdef __TITLE__
 # undef __TITLE__

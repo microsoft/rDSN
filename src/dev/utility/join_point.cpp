@@ -36,6 +36,7 @@
 # include <dsn/utility/join_point.h>
 # include <cassert>
 # include <cstdio>
+# include <cstring>
 
 namespace dsn
 {

@@ -39,6 +39,12 @@
 
 # include "simple_perf_counter_v2_atomic.h"
 # include "shared_io_service.h"
+# include <cstdint>
+# include <cstdlib>
+# include <memory>
+# include <functional>
+# include <utility>
+# include <atomic>
 
 namespace dsn {
     namespace tools {

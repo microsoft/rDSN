@@ -43,6 +43,8 @@
 #include "profiler_header.h"
 #include <dsn/cpp/json_helper.h>
 #include <climits>
+#include <cstring>
+#include <cmath>
 #include <dsn/cpp/utils.h>
 
 namespace dsn {

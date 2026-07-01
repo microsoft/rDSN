@@ -35,6 +35,10 @@
 
 # pragma once
 # include "simple_kv.client.2.h"
+# include <cstdint>
+# include <string>
+# include <sstream>
+# include <vector>
 
 namespace dsn { namespace replication { namespace application {
 

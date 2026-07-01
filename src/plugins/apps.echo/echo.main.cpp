@@ -34,6 +34,7 @@
  */
 // apps
 # include "echo.app.example.h"
+# include <string>
 
 static void dsn_app_registration_echo()
 {

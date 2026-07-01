@@ -5,6 +5,7 @@
 #include "idl_test.pb.h"
 
 #include <algorithm>
+#include <utility>
 
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/port.h>

@@ -37,6 +37,7 @@
 #include <thread>
 #include <cmath>
 #include <vector>
+#include <chrono>
 
 using namespace dsn;
 using namespace dsn::tools;

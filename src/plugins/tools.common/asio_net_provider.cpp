@@ -37,6 +37,12 @@
 #include "asio_rpc_session.h"
 
 #include <exception>
+#include <cstring>
+#include <cstdint>
+#include <cstdio>
+#include <memory>
+#include <limits>
+#include <thread>
 
 # ifdef __TITLE__
 # undef __TITLE__

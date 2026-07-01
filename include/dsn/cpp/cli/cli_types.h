@@ -8,6 +8,9 @@
 #define cli_TYPES_H
 
 #include <iosfwd>
+#include <cstdint>
+#include <string>
+#include <vector>
 
 #include <thrift/Thrift.h>
 #include <thrift/TApplicationException.h>

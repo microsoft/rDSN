@@ -33,6 +33,7 @@
 # pragma once
 # include "echo.code.definition.h"
 # include <iostream>
+# include <string>
 
 namespace dsn { namespace example {
 class echo_service

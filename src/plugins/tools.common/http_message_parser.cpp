@@ -40,6 +40,8 @@
 # include <dsn/cpp/utils.h>
 # include <vector>
 # include <iomanip>
+# include <cstring>
+# include <utility>
 # include "http_message_parser.h"
 # include <dsn/cpp/serialization.h>
 

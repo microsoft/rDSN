@@ -35,6 +35,8 @@
 #pragma once
 
 #include <type_traits>
+#include <functional>
+#include <tuple>
 
 namespace dsn {
 template <typename T>

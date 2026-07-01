@@ -46,6 +46,7 @@
 # include "service_engine.h"
 # include "disk_engine.h"
 # include "rpc_engine.h"
+# include <cstring>
 
 
 # ifdef __TITLE__

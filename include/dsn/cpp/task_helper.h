@@ -48,6 +48,8 @@
 # include <set>
 # include <map>
 # include <thread>
+# include <utility>
+# include <chrono>
 # include <dsn/cpp/optional.h>
 
 namespace dsn 

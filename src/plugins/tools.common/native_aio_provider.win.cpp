@@ -41,6 +41,8 @@
 #include <sys/stat.h>
 #include <io.h>
 #include <stdio.h>
+#include <cstdint>
+#include <thread>
 
 # ifdef __TITLE__
 # undef __TITLE__

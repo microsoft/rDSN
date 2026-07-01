@@ -37,6 +37,7 @@
 
 # include <dsn/tool-api/partition_resolver.h>
 # include <dsn/cpp/zlocks.h>
+# include <deque>
 
 namespace dsn
 {

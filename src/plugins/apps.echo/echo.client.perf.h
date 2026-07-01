@@ -35,6 +35,8 @@
 # pragma once
 
 # include "echo.client.h"
+# include <string>
+# include <vector>
 
 namespace dsn { namespace example {
 class echo_perf_test_client

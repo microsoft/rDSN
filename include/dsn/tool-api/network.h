@@ -42,6 +42,7 @@
 # include <dsn/utility/exp_delay.h>
 # include <dsn/utility/dlib.h>
 # include <atomic>
+# include <utility>
 
 namespace dsn {
 

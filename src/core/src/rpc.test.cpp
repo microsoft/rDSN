@@ -41,6 +41,7 @@
 #include <vector>
 #include <string>
 #include <queue>
+#include <chrono>
 
 typedef std::function<void(error_code, dsn_message_t, dsn_message_t)> rpc_reply_handler;
 

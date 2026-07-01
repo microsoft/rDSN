@@ -52,10 +52,6 @@
 # include <net/if.h>
 # include <unistd.h>
 
-# if defined(__FreeBSD__)
-# include <netinet/in.h>
-# endif
-
 # endif
 
 # include <dsn/utility/ports.h>
@@ -65,6 +61,7 @@
 # include "group_address.h"
 # include "uri_address.h"
 # include "c_api_guard.h"
+# include <cstring>
 
 namespace dsn
 {

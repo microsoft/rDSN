@@ -36,6 +36,7 @@
 # include <dsn/cpp/address.h>
 # include "group_address.h"
 # include <gtest/gtest.h>
+# include <cstring>
 
 using namespace ::dsn;
 

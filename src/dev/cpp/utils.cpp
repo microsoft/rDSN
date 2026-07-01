@@ -48,6 +48,7 @@
 # include <chrono>
 # include <cstring>
 # include <stdexcept>
+# include <ctime>
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <random>

@@ -37,6 +37,7 @@
 
 # include <dsn/service_api_cpp.h>
 # include <dsn/cpp/service_app.h>
+# include <cstring>
 
  /*
   base contract for the layer2 frameworks on server side

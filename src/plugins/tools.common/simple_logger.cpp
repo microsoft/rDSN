@@ -37,6 +37,11 @@
 # include <sstream>
 # include <cerrno>
 # include <cstring>
+# include <cstdint>
+# include <cstdarg>
+# include <cinttypes>
+# include <string>
+# include <vector>
 
 namespace dsn {
     namespace tools {

@@ -59,6 +59,7 @@
 # include "library_utils.h"
 # include "c_api_guard.h"
 # include <fstream>
+# include <cstring>
 
 # if defined(_WIN32)
 # include <tlhelp32.h>

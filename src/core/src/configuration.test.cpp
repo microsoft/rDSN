@@ -38,6 +38,7 @@
 # include <gtest/gtest.h>
 # include <algorithm>
 # include <fstream>
+# include <cstring>
 
 using namespace ::dsn;
 

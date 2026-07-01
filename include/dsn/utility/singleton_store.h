@@ -39,6 +39,7 @@
 # include <dsn/utility/synchronize.h>
 # include <map>
 # include <vector>
+# include <utility>
 
 namespace dsn { namespace utils {
 

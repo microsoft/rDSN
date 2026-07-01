@@ -36,6 +36,7 @@
 # include "nfs_node_simple.h"
 # include "nfs_client_impl.h"
 # include "nfs_server_impl.h"
+# include <memory>
 
 namespace dsn {
     namespace service {

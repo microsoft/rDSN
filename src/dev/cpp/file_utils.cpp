@@ -37,6 +37,7 @@
 # include <dsn/cpp/utils.h>
 # include <sys/stat.h>
 # include <errno.h>
+# include <cstring>
 
 # ifdef _WIN32
 

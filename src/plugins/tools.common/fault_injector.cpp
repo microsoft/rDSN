@@ -37,6 +37,9 @@
 #include "fault_injector.h"
 #include <dsn/service_api_c.h>
 #include <cstddef>
+#include <string>
+#include <thread>
+#include <chrono>
 
 # ifdef __TITLE__
 # undef __TITLE__

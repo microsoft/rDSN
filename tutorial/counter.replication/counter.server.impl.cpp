@@ -38,6 +38,7 @@
 #include <dsn/cpp/utils.h>
 #include <fstream>
 #include <sstream>
+#include <cstring>
 
 # ifdef __TITLE__
 # undef __TITLE__

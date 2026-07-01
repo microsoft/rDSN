@@ -35,6 +35,8 @@
 
 # include "partition_resolver_simple.h"
 # include <dsn/cpp/utils.h>
+# include <utility>
+# include <chrono>
 
 # ifdef __TITLE__
 # undef __TITLE__

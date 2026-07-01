@@ -35,6 +35,7 @@
 
 #include "env.sim.h"
 #include "scheduler.h"
+#include <cstdint>
 
 # ifdef __TITLE__
 # undef __TITLE__

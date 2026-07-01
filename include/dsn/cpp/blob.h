@@ -40,6 +40,8 @@
 # include <stdexcept>
 # include <vector>
 # include <cstring>
+# include <utility>
+# include <string>
 
 #ifdef DSN_USE_THRIFT_SERIALIZATION
 # include <thrift/protocol/TProtocol.h>

@@ -36,6 +36,8 @@
 # include "../../tools/cli/cli.client.h"
 # include <dsn/tool-api/command.h>
 # include <gtest/gtest.h>
+# include <tuple>
+# include <chrono>
 
 using namespace ::dsn;
 

@@ -35,6 +35,7 @@
 
 
 # include "empty_aio_provider.h"
+# include <cstddef>
 
 namespace dsn {
     namespace tools {

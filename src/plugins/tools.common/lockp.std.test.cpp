@@ -35,6 +35,7 @@
 
 #include "lockp.std.h"
 #include <gtest/gtest.h>
+#include <thread>
 
 using namespace dsn;
 using namespace dsn::tools;

@@ -39,6 +39,8 @@
 # include <dsn/tool-api/message_parser.h>
 # include <cctype> // for isprint()
 # include <exception>
+# include <cstring>
+# include <utility>
 
 # include "task_engine.h"
 # include "transient_memory.h"

@@ -41,6 +41,7 @@
 # include <sstream>
 # include <vector>
 # include <thread>
+# include <cstring>
 
 # ifdef __TITLE__
 # undef __TITLE__

@@ -38,6 +38,9 @@
 
 # include <fcntl.h>
 # include <cstdlib>
+# include <cstdint>
+# include <cerrno>
+# include <thread>
 
 # ifdef __TITLE__
 # undef __TITLE__

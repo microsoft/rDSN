@@ -33,6 +33,7 @@
  */
 
 #include <cinttypes>
+#include <chrono>
 #include <gtest/gtest.h>
 #include <dsn/service_api_cpp.h>
 #include <dsn/cpp/utils.h>

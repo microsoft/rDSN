@@ -37,6 +37,8 @@
 
 # include <cstddef>
 # include <cstdint>
+# include <cstdlib>
+# include <memory>
 
 # if defined(__TITLE__)
 # undef __TITLE__

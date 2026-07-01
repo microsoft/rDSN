@@ -40,6 +40,7 @@
 # include <dsn/cpp/address.h>
 # include <vector>
 # include <string>
+# include <cstring>
 
 namespace dsn 
 {

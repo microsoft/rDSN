@@ -38,6 +38,7 @@
 # include <string>
 # include <sstream>
 # include <stdexcept>
+# include <typeinfo>
 # include <dsn/cpp/serialization_helper/dsn_types.h>
 # include <dsn/cpp/rpc_stream.h>
 

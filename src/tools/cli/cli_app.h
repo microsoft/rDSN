@@ -38,6 +38,7 @@
 
 # include <dsn/cpp/serverlet.h>
 # include "cli.client.h"
+# include <chrono>
 
 namespace dsn {
     namespace service {

@@ -70,6 +70,9 @@ START<======== queue(server) ======ENQUEUE <===================== net(reply) ===
 #include "profiler_header.h"
 #include <dsn/tool-api/command.h>
 #include <dsn/tool-api/perf_counter.h>
+#include <algorithm>
+#include <cinttypes>
+#include <iomanip>
 
 # ifdef __TITLE__
 # undef __TITLE__

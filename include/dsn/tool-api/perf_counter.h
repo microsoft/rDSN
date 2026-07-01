@@ -42,6 +42,7 @@
 # include <memory>
 # include <sstream>
 # include <vector>
+# include <utility>
 
 namespace dsn {
 
