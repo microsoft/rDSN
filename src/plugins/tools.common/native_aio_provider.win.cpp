@@ -374,14 +374,18 @@ void native_win_aio_provider::worker()
         if (ret)
         {
             windows_disk_aio_context* ctx = CONTAINING_RECORD(overLap, windows_disk_aio_context, olp);
+            // A successful completion that transferred zero bytes is end-of-file (or a zero-length
+            // request). Map it to ERR_HANDLE_EOF so this provider matches the POSIX/Linux providers
+            // (bytes > 0 ? ERR_OK : ERR_HANDLE_EOF), a contract the NFS file-copy plugin relies on.
+            error_code err = (dwTransLen > 0) ? ::dsn::ERR_OK : ::dsn::ERR_HANDLE_EOF;
             if (!ctx->evt)
             {
                 aio_task* aio(ctx->tsk);
-                complete_io(aio, ::dsn::ERR_OK, dwTransLen);
+                complete_io(aio, err, dwTransLen);
             }
             else
             {
-                ctx->err = ::dsn::ERR_OK;
+                ctx->err = err;
                 ctx->bytes = dwTransLen;
                 ctx->evt->notify();
             }
