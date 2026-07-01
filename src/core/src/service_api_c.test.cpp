@@ -557,6 +557,22 @@ TEST(core, dsn_rpc_dispatch_invalid_parameters)
     ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_rpc_call(invalid_address, rpc_response_task));
     dsn_task_release_ref(rpc_response_task);
 
+    // A valid, non-null message that is not a valid RPC request (here, a response message whose
+    // code is the paired _ACK / TASK_TYPE_RPC_RESPONSE code) must be rejected with nullptr instead
+    // of tripping the rpc_response_task constructor's invariant asserts and aborting the process.
+    auto response = dsn_msg_create_response(request);
+    ASSERT_NE(nullptr, response);
+    dsn_msg_add_ref(response);
+    ASSERT_EQ(nullptr,
+              dsn_rpc_create_response_task(response, noop_rpc_response_handler, nullptr, 0));
+    ASSERT_EQ(nullptr, dsn_rpc_create_response_task_ex(response,
+                                                       noop_rpc_response_handler,
+                                                       nullptr,
+                                                       nullptr,
+                                                       0,
+                                                       nullptr));
+    dsn_msg_release_ref(response);
+
     auto compute_task = dsn_task_create(TASK_CODE_COMPUTE_FOR_TEST, noop_task_handler, nullptr, 0);
     ASSERT_NE(nullptr, compute_task);
     dsn_task_add_ref(compute_task);
