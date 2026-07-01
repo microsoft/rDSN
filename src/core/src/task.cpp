@@ -592,11 +592,18 @@ void rpc_request_task::enqueue()
 
 static dsn_task_code_t get_response_task_paired_code(message_ex* request)
 {
-    // The response task's code is the request code's paired (ack) code. task_spec::get() can
-    // return null for an unknown/unregistered rpc code (e.g. a malformed request), so guard the
-    // dereference and fall back to TASK_CODE_INVALID instead of crashing.
-    task_spec* spec = (request != nullptr) ? task_spec::get(request->local_rpc_code) : nullptr;
-    return (spec != nullptr) ? spec->rpc_paired_code : TASK_CODE_INVALID;
+    // The response task's code is the request code's paired (ack) code. An rpc_response_task is
+    // always constructed for a registered request rpc code, so task_spec::get() must succeed here.
+    // If it does not, the caller built a response task for an unregistered code -- a programmer
+    // error. Fail loudly with a clear diagnostic instead of falling back to TASK_CODE_INVALID:
+    // that fallback would abort in debug builds (dbg_dassert below) and, worse, silently construct
+    // a task with the wrong spec (type/pool/hooks) in release builds.
+    dassert(request != nullptr, "rpc_response_task requires a non-null request message");
+    task_spec* spec = task_spec::get(request->local_rpc_code);
+    dassert(spec != nullptr,
+        "no task spec registered for rpc code %d; rpc_response_task requires a registered request code",
+        request->local_rpc_code);
+    return spec->rpc_paired_code;
 }
 
 rpc_response_task::rpc_response_task(

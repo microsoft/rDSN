@@ -152,22 +152,20 @@ void task_worker_pool::add_timer(task* t)
         _per_node_timer_svc->add_timer(t);
     else
     {
-        if (_per_queue_timer_svcs.empty())
-        {
-            derror("cannot add timer for pool %s: no per-queue timer service is configured",
-                _spec.name.c_str());
-            return;
-        }
+        // A pool that receives delayed tasks must have its per-queue timer services populated during
+        // start(). Reaching here with an empty/null vector is a configuration/startup error. We must
+        // NOT just return: task::enqueue() has already add_ref()'d this task, so returning would leak
+        // it and hang any caller waiting on it. Fail loudly instead.
+        dassert(!_per_queue_timer_svcs.empty(),
+            "pool %s has no per-queue timer service configured for delayed tasks",
+            _spec.name.c_str());
         unsigned int idx = (_spec.partitioned
             ? static_cast<unsigned int>(t->hash()) % static_cast<unsigned int>(_per_queue_timer_svcs.size())
             : 0);
         timer_service* svc = _per_queue_timer_svcs[idx];
-        if (svc == nullptr)
-        {
-            derror("cannot add timer for pool %s: null timer service at index %u",
-                _spec.name.c_str(), idx);
-            return;
-        }
+        dassert(svc != nullptr,
+            "pool %s has a null per-queue timer service at index %u",
+            _spec.name.c_str(), idx);
         svc->add_timer(t);
     }
 }

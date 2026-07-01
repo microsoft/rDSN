@@ -176,7 +176,8 @@ namespace dsn {
             {
                 // Do not abort during logger initialization if the log directory cannot be listed:
                 // skip scanning existing files and continue with a fresh index. Use stderr directly
-                // because the logging system is not fully initialized at this point.
+                // because the logging system is not fully initialized at this point. Existing logs are
+                // preserved because create_log_file() opens in append mode rather than truncating.
                 fprintf(stderr, "Fail to get subfiles in %s, skip scanning existing log files.\n",
                     _log_dir.c_str());
                 sub_list.clear();
@@ -225,7 +226,11 @@ namespace dsn {
             std::stringstream str;
             // so now the start index is from 0
             str << _log_dir << "/log." << _index++ << ".txt";
-            _log = ::fopen(str.str().c_str(), "w+");
+            // Open in append mode ("a+") rather than truncating ("w+"): during normal rotation the
+            // computed index refers to a fresh file so this is equivalent, but if scanning existing
+            // files was skipped (e.g. get_subfiles() failed and we reset to index 1) this avoids
+            // clobbering logs that already exist on disk.
+            _log = ::fopen(str.str().c_str(), "a+");
             if (_log == nullptr)
             {
                 fprintf(stderr, "failed to open log file %s: %s\n", str.str().c_str(), strerror(errno));
