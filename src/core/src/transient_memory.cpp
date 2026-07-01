@@ -38,6 +38,7 @@
 # include <cstddef>
 # include <cstdint>
 # include <cstdlib>
+# include <limits>
 # include <memory>
 
 # if defined(__TITLE__)
@@ -127,6 +128,14 @@ namespace dsn
         const size_t user_size = sz;
         const size_t header_size = sizeof(std::shared_ptr<char>) + sizeof(uint32_t);
         const size_t alignment = alignof(std::max_align_t);
+        // Guard against size_t overflow when padding the request for the header and alignment.
+        // Without this, a ~4GB request on a 32-bit build would wrap alloc_size to a tiny value,
+        // and the subsequent writes would run past the end of the allocation (heap overflow).
+        if (user_size > (std::numeric_limits<std::size_t>::max)() - (header_size + alignment - 1))
+        {
+            derror("tls_trans_malloc: requested size %zu is too large", user_size);
+            return nullptr;
+        }
         const size_t alloc_size = user_size + header_size + alignment - 1;
         void* ptr;
         size_t sz2;

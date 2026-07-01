@@ -47,6 +47,8 @@
 # include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 # include <google/protobuf/descriptor.h>
 
+# include <stdexcept>
+
 namespace dsn {
 
     class gproto_binary_reader : public ::google::protobuf::io::ZeroCopyInputStream
@@ -118,7 +120,18 @@ namespace dsn {
     {
         gproto_binary_writer wt2(writer);
         ::google::protobuf::io::CodedOutputStream os(&wt2);
-        val.SerializeToCodedStream(&os);
+        if (!val.SerializeToCodedStream(&os))
+        {
+            // Serialization failing (e.g. a required field is unset, or the message exceeds the
+            // protobuf 2GB limit) must not silently put a truncated message on the wire. Throw so
+            // try_marshall() surfaces ERR_INVALID_DATA, consistent with the thrift marshaller which
+            // also throws on failure.
+            std::string type_name = val.GetTypeName();
+            derror("marshall_protobuf_binary failed to serialize message of type %s",
+                type_name.c_str());
+            throw std::runtime_error(
+                "marshall_protobuf_binary failed to serialize message of type " + type_name);
+        }
     }
 
     template<typename T>
@@ -126,7 +139,17 @@ namespace dsn {
     {
         gproto_binary_reader rd2(reader);
         ::google::protobuf::io::CodedInputStream is(&rd2);
-        val.MergePartialFromCodedStream(&is);
+        if (!val.MergePartialFromCodedStream(&is))
+        {
+            // The input is (potentially untrusted) network data. Do not return a partially parsed
+            // message as if it were valid: throw so unmarshall()/try_unmarshall() reject it with
+            // ERR_INVALID_DATA, exactly like the thrift unmarshaller (which throws on bad input).
+            std::string type_name = val.GetTypeName();
+            derror("unmarshall_protobuf_binary failed to parse message of type %s",
+                type_name.c_str());
+            throw std::runtime_error(
+                "unmarshall_protobuf_binary failed to parse message of type " + type_name);
+        }
     }
 
     /* you may want to specify your own url prefix here */
@@ -146,10 +169,23 @@ namespace dsn {
     {
         std::string type_url = protobuf_resolve_type_url(val);
         std::string binary_str;
-        val.SerializeToString(&binary_str);
+        if (!val.SerializeToString(&binary_str))
+        {
+            derror("marshall_protobuf_json failed to serialize message of type %s",
+                type_url.c_str());
+            throw std::runtime_error(
+                "marshall_protobuf_json failed to serialize message of type " + type_url);
+        }
         gproto_binary_writer wt2(writer);
         google::protobuf::io::ArrayInputStream input_stream(binary_str.data(), binary_str.size());
-        google::protobuf::util::BinaryToJsonStream(protobuf_type_resolver, type_url, &input_stream, &wt2);
+        auto status = google::protobuf::util::BinaryToJsonStream(protobuf_type_resolver, type_url, &input_stream, &wt2);
+        if (!status.ok())
+        {
+            derror("marshall_protobuf_json failed for type %s: %s",
+                type_url.c_str(), status.ToString().c_str());
+            throw std::runtime_error(
+                "marshall_protobuf_json failed for type " + type_url + ": " + status.ToString());
+        }
     }
 
     template<typename T>
@@ -159,7 +195,20 @@ namespace dsn {
         gproto_binary_reader rd2(reader);
         std::string binary_str;
         google::protobuf::io::StringOutputStream output_stream(&binary_str);
-        google::protobuf::util::JsonToBinaryStream(protobuf_type_resolver, type_url, &rd2, &output_stream);
-        val.ParseFromString(binary_str);
+        auto status = google::protobuf::util::JsonToBinaryStream(protobuf_type_resolver, type_url, &rd2, &output_stream);
+        if (!status.ok())
+        {
+            // Reject malformed (potentially untrusted) JSON instead of parsing an empty buffer.
+            derror("unmarshall_protobuf_json failed for type %s: %s",
+                type_url.c_str(), status.ToString().c_str());
+            throw std::runtime_error(
+                "unmarshall_protobuf_json failed for type " + type_url + ": " + status.ToString());
+        }
+        if (!val.ParseFromString(binary_str))
+        {
+            derror("unmarshall_protobuf_json failed to parse message of type %s", type_url.c_str());
+            throw std::runtime_error(
+                "unmarshall_protobuf_json failed to parse message of type " + type_url);
+        }
     }
 }

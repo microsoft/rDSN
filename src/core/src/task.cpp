@@ -590,6 +590,15 @@ void rpc_request_task::enqueue()
     task::enqueue(node()->computation()->get_pool(spec().pool_code));
 }
 
+static dsn_task_code_t get_response_task_paired_code(message_ex* request)
+{
+    // The response task's code is the request code's paired (ack) code. task_spec::get() can
+    // return null for an unknown/unregistered rpc code (e.g. a malformed request), so guard the
+    // dereference and fall back to TASK_CODE_INVALID instead of crashing.
+    task_spec* spec = (request != nullptr) ? task_spec::get(request->local_rpc_code) : nullptr;
+    return (spec != nullptr) ? spec->rpc_paired_code : TASK_CODE_INVALID;
+}
+
 rpc_response_task::rpc_response_task(
     message_ex* request, 
     dsn_rpc_response_handler_t cb,
@@ -598,7 +607,7 @@ rpc_response_task::rpc_response_task(
     int hash, 
     service_node* node
     )
-    : task(task_spec::get(request->local_rpc_code)->rpc_paired_code, context, on_cancel,
+    : task(get_response_task_paired_code(request), context, on_cancel,
            hash == 0 ? request->header->client.thread_hash : hash, node)
 {
     _cb = cb;

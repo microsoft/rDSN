@@ -176,6 +176,8 @@ namespace dsn
             blob temp = *this;
             temp._data += offset;
             temp._length -= offset;
+            dassert(temp._buffer == nullptr || temp._data >= temp._buffer,
+                    "offset moves data before the start of the underlying buffer");
             return temp;
         }
 
@@ -186,6 +188,8 @@ namespace dsn
             blob temp = *this;
             temp._data += offset;
             temp._length -= offset;
+            dassert(temp._buffer == nullptr || temp._data >= temp._buffer,
+                    "offset moves data before the start of the underlying buffer");
             dassert(temp._length >= len, "buffer length must exceed the required length");
             temp._length = len;
             return temp;

@@ -152,10 +152,29 @@ namespace dsn {
         uint32_t size;
         ::apache::thrift::protocol::TType element_type;
         xfer += iprot->readListBegin(element_type, size);
-        val.resize(size);
-        for (uint32_t i = 0; i != size; ++i)
+        // Do not resize()/reserve() to the full, untrusted 'size': a malicious or corrupt peer
+        // can claim a huge element count and trigger an out-of-memory abort before a single
+        // element is read. Instead bound the speculative up-front reserve and grow the vector
+        // incrementally; if the peer lied about the count, unmarshall_base() hits end-of-stream
+        // and throws well before any large allocation happens.
+        //
+        // The reserve is bounded by a fixed *byte* budget rather than a flat element count,
+        // because the memory reserved is size * sizeof(T): a count cap (e.g. "1024 elements")
+        // reserves wildly different amounts depending on the element type. This budget is the
+        // only speculative allocation per call, so it directly caps per-message memory. It is
+        // large enough that realistic lists avoid reallocation churn (vector growth is amortized
+        // O(1) regardless) yet small enough that a lying peer cannot force a big allocation.
+        const uint32_t max_preallocate_bytes = 64 * 1024;
+        uint32_t max_preallocate = max_preallocate_bytes / static_cast<uint32_t>(sizeof(T));
+        if (max_preallocate == 0)
         {
-            xfer += unmarshall_base(iprot, val[i]);
+            max_preallocate = 1;
+        }
+        val.reserve(size < max_preallocate ? size : max_preallocate);
+        for (uint32_t i = 0; i < size; ++i)
+        {
+            val.emplace_back();
+            xfer += unmarshall_base(iprot, val.back());
         }
         xfer += iprot->readListEnd();
 
@@ -511,16 +530,41 @@ namespace dsn {
 
     inline uint32_t blob::read(apache::thrift::protocol::TProtocol *iprot)
     {
-        //for optimization, it is dangerous if the oprot is not a binary proto
-        apache::thrift::protocol::TBinaryProtocol* binary_proto = static_cast<apache::thrift::protocol::TBinaryProtocol*>(iprot);
-        blob_string str(*this);
-        return binary_proto->readString<blob_string>(str);
+        // Reading directly into the blob is an optimization that is only valid for the binary protocol.
+        // Guard the downcast with dynamic_cast (as every other helper in this file does):
+        // a static_cast of a non-binary protocol is undefined behavior.
+        apache::thrift::protocol::TBinaryProtocol* binary_proto = dynamic_cast<apache::thrift::protocol::TBinaryProtocol*>(iprot);
+        if (binary_proto != nullptr)
+        {
+            // the protocol is binary protocol
+            blob_string str(*this);
+            return binary_proto->readString<blob_string>(str);
+        }
+        else
+        {
+            // the protocol is json protocol or some other protocol
+            std::string data;
+            uint32_t xfer = iprot->readBinary(data);
+            std::shared_ptr<char> buffer = ::dsn::make_shared_array<char>(data.length());
+            memcpy(buffer.get(), data.data(), data.length());
+            assign(std::move(buffer), 0, static_cast<unsigned int>(data.length()));
+            return xfer;
+        }
     }
 
     inline uint32_t blob::write(apache::thrift::protocol::TProtocol *oprot) const
     {
-        apache::thrift::protocol::TBinaryProtocol* binary_proto = static_cast<apache::thrift::protocol::TBinaryProtocol*>(oprot);
-        return binary_proto->writeString<blob_string>(blob_string(const_cast<blob&>(*this)));
+        apache::thrift::protocol::TBinaryProtocol* binary_proto = dynamic_cast<apache::thrift::protocol::TBinaryProtocol*>(oprot);
+        if (binary_proto != nullptr)
+        {
+            //the protocol is binary protocol
+            return binary_proto->writeString<blob_string>(blob_string(const_cast<blob&>(*this)));
+        }
+        else
+        {
+            //the protocol is json protocol or some other protocol
+            return oprot->writeBinary(std::string(data(), length()));
+        }
     }
 
     inline uint32_t error_code::read(apache::thrift::protocol::TProtocol *iprot)
