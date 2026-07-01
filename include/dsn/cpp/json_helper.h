@@ -41,6 +41,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <stdexcept>
 #include <type_traits>
 #include <cctype>
 #include <utility>
@@ -145,7 +146,11 @@ public:
 public:
     string_tokenizer(const char* b, unsigned offset, unsigned len): buffer(b), pos(offset), length(len)
     {
-        dassert(pos<length, "");
+        // an offset beyond the buffer end is a programming error; an offset that
+        // equals the length (empty or fully-consumed buffer) is tolerated so that
+        // corrupt/empty input surfaces as a parse failure (thrown below) rather
+        // than a process abort here.
+        dassert(pos <= length, "invalid json tokenizer offset %u (length %u)", pos, length);
     }
     string_tokenizer(const dsn::blob& source, unsigned from): string_tokenizer(source.data(), from, source.length()) {}
     string_tokenizer(const dsn::blob& source): string_tokenizer(source.data(), 0, source.length()) {}
@@ -160,7 +165,9 @@ public:
             ++pos, ++j;
         if (token[j]!=0)
         {
-            dassert(false, "invalid buffer:%s at pos %d", buffer, pos);
+            // malformed input: report through the exception channel that the
+            // top-level decode() already handles, instead of aborting.
+            throw std::runtime_error("json parse error: unexpected token");
         }
     }
     void expect_token(char token)
@@ -170,14 +177,16 @@ public:
             ++pos;
         else
         {
-            dassert(false, "invalid buffer:%s at pos %d", buffer, pos);
+            throw std::runtime_error("json parse error: unexpected token");
         }
     }
     char peek_next() const
     {
-        int i = pos;
+        unsigned i = pos;
         while (i<length && isblank(buffer[i])) ++i;
-        return buffer[i];
+        // guard against reading past the end of the buffer on truncated input;
+        // returning a non-splitter sentinel lets the caller's decode throw.
+        return i<length ? buffer[i] : '\0';
     }
     void walk_until(char token)
     {
@@ -186,7 +195,7 @@ public:
             return;
         else
         {
-            dassert(false, "invalid buffer:%s at pos %d", buffer, pos);
+            throw std::runtime_error("json parse error: unterminated token");
         }
     }
     void walk_until_json_splitter()
