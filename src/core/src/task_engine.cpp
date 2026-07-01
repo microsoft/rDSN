@@ -134,6 +134,13 @@ void task_worker_pool::start()
             dassert(svc, "per queue timer service must be present");
             _per_queue_timer_svcs.push_back(svc);
         }
+
+        // add_timer() indexes _per_queue_timer_svcs with a per-queue hash, so enforce the invariant
+        // it relies on once here at startup: exactly one (non-null) timer service per queue. The
+        // per-call asserts in add_timer() remain as a cheap runtime backstop.
+        dassert(_per_queue_timer_svcs.size() == _queues.size(),
+            "per-queue timer service count (%d) must equal queue count (%d)",
+            static_cast<int>(_per_queue_timer_svcs.size()), static_cast<int>(_queues.size()));
     }
     else
     {

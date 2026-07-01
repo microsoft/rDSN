@@ -592,18 +592,41 @@ void rpc_request_task::enqueue()
 
 static dsn_task_code_t get_response_task_paired_code(message_ex* request)
 {
-    // The response task's code is the request code's paired (ack) code. An rpc_response_task is
-    // always constructed for a registered request rpc code, so task_spec::get() must succeed here.
-    // If it does not, the caller built a response task for an unregistered code -- a programmer
-    // error. Fail loudly with a clear diagnostic instead of falling back to TASK_CODE_INVALID:
-    // that fallback would abort in debug builds (dbg_dassert below) and, worse, silently construct
-    // a task with the wrong spec (type/pool/hooks) in release builds.
+    // The response task's code is the request code's paired (ack) code. An rpc_response_task is only
+    // ever constructed from a registered TASK_TYPE_RPC_REQUEST message, and register_task_code()
+    // guarantees such a request has a valid TASK_TYPE_RPC_RESPONSE paired code (see task_spec.cpp).
+    // Validate that whole chain here and fail loudly on any violation: falling back to
+    // TASK_CODE_INVALID would abort in debug builds (dbg_dassert below) and, worse, silently build a
+    // task with the wrong spec (type/pool/hooks) in release builds.
     dassert(request != nullptr, "rpc_response_task requires a non-null request message");
-    task_spec* spec = task_spec::get(request->local_rpc_code);
-    dassert(spec != nullptr,
+
+    task_spec* req_spec = task_spec::get(request->local_rpc_code);
+    dassert(req_spec != nullptr,
         "no task spec registered for rpc code %d; rpc_response_task requires a registered request code",
         request->local_rpc_code);
-    return spec->rpc_paired_code;
+    dassert(req_spec->type == TASK_TYPE_RPC_REQUEST,
+        "%s is not an RPC_REQUEST code; use DEFINE_TASK_CODE_RPC to define request codes",
+        req_spec->name.c_str());
+
+    dsn_task_code_t paired = req_spec->rpc_paired_code;
+    dassert(paired != TASK_CODE_INVALID,
+        "rpc request code %s has no paired response code", req_spec->name.c_str());
+
+    task_spec* resp_spec = task_spec::get(paired);
+    dassert(resp_spec != nullptr && resp_spec->type == TASK_TYPE_RPC_RESPONSE,
+        "paired code of request %s is not a valid RPC_RESPONSE code", req_spec->name.c_str());
+
+    return paired;
+}
+
+// Selecting the dispatch hash also dereferences `request`, so wrap it too: the constructor's base
+// initializer evaluates its arguments in an unspecified order, so doing `request->header->...`
+// inline there could dereference a null request before get_response_task_paired_code()'s assert
+// runs. Asserting here preserves the null-request diagnostic regardless of evaluation order.
+static int get_response_task_thread_hash(message_ex* request, int hash)
+{
+    dassert(request != nullptr, "rpc_response_task requires a non-null request message");
+    return hash == 0 ? request->header->client.thread_hash : hash;
 }
 
 rpc_response_task::rpc_response_task(
@@ -615,7 +638,7 @@ rpc_response_task::rpc_response_task(
     service_node* node
     )
     : task(get_response_task_paired_code(request), context, on_cancel,
-           hash == 0 ? request->header->client.thread_hash : hash, node)
+           get_response_task_thread_hash(request, hash), node)
 {
     _cb = cb;
     _is_null = (_cb == nullptr);
