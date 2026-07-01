@@ -115,17 +115,9 @@ void task_worker_pool::start()
     if (_is_running.load(std::memory_order_acquire))
         return;
 
-    for (auto& wk : _workers)
-        wk->start();
-
-    ddebug("[%s] thread pool [%s] started, pool_code = %s, worker_count = %d, worker_share_core = %s, partitioned = %s, ...",
-        _node->name(), _spec.name.c_str(),
-        dsn_threadpool_code_to_string(_spec.pool_code),
-        _spec.worker_count,
-        _spec.worker_share_core ? "true" : "false",
-        _spec.partitioned ? "true" : "false");
-
-    // setup cached ptrs for fast timer service access
+    // Populate the timer-service caches BEFORE starting workers: a worker's on_start hook may enqueue
+    // a delayed task, which calls add_timer() directly and requires these caches to already be set.
+    // Doing this after wk->start() would leave a window where add_timer() sees a null/empty cache.
     if (service_engine::fast_instance().spec().timer_io_mode == IOE_PER_QUEUE)
     {
         for (size_t i = 0; i < _queues.size(); i++)
@@ -146,6 +138,18 @@ void task_worker_pool::start()
     {
         _per_node_timer_svc = node()->tsvc(nullptr);
     }
+
+    for (auto& wk : _workers)
+    {
+        wk->start();
+    }
+
+    ddebug("[%s] thread pool [%s] started, pool_code = %s, worker_count = %d, worker_share_core = %s, partitioned = %s, ...",
+        _node->name(), _spec.name.c_str(),
+        dsn_threadpool_code_to_string(_spec.pool_code),
+        _spec.worker_count,
+        _spec.worker_share_core ? "true" : "false",
+        _spec.partitioned ? "true" : "false");
 
     _is_running.store(true, std::memory_order_release);
 }

@@ -1117,6 +1117,31 @@ DSN_API void* dsn_rpc_unregiser_handler(dsn_task_code_t code, dsn_gpid gpid)
     DSN_C_GUARD_END(nullptr)
 }
 
+// Returns true iff `msg` can be used to construct an rpc_response_task: its rpc code is a registered
+// TASK_TYPE_RPC_REQUEST with a valid paired TASK_TYPE_RPC_RESPONSE code. This mirrors the invariant
+// asserted in rpc_response_task's constructor, letting the C API reject invalid caller input with an
+// error return instead of tripping those asserts and aborting the process.
+static bool is_valid_rpc_request_message(::dsn::message_ex* msg)
+{
+    if (msg == nullptr)
+    {
+        return false;
+    }
+
+    auto req_spec = ::dsn::task_spec::get(msg->local_rpc_code);
+    if (req_spec == nullptr || req_spec->type != TASK_TYPE_RPC_REQUEST)
+    {
+        return false;
+    }
+    if (req_spec->rpc_paired_code == ::dsn::TASK_CODE_INVALID)
+    {
+        return false;
+    }
+
+    auto resp_spec = ::dsn::task_spec::get(req_spec->rpc_paired_code);
+    return resp_spec != nullptr && resp_spec->type == TASK_TYPE_RPC_RESPONSE;
+}
+
 DSN_API dsn_task_t dsn_rpc_create_response_task(dsn_message_t request, dsn_rpc_response_handler_t cb, 
     void* context, int reply_thread_hash, dsn_task_tracker_t tracker)
 {
@@ -1125,6 +1150,12 @@ DSN_API dsn_task_t dsn_rpc_create_response_task(dsn_message_t request, dsn_rpc_r
     if (msg == nullptr)
     {
         derror("dsn_rpc_create_response_task got null request");
+        return nullptr;
+    }
+    if (!is_valid_rpc_request_message(msg))
+    {
+        derror("dsn_rpc_create_response_task got an invalid request message: "
+            "it is not a registered rpc request with a paired response code");
         return nullptr;
     }
 
@@ -1144,6 +1175,12 @@ DSN_API dsn_task_t dsn_rpc_create_response_task_ex(dsn_message_t request, dsn_rp
     if (msg == nullptr)
     {
         derror("dsn_rpc_create_response_task_ex got null request");
+        return nullptr;
+    }
+    if (!is_valid_rpc_request_message(msg))
+    {
+        derror("dsn_rpc_create_response_task_ex got an invalid request message: "
+            "it is not a registered rpc request with a paired response code");
         return nullptr;
     }
 
@@ -1203,6 +1240,12 @@ DSN_API dsn_message_t dsn_rpc_call_wait(dsn_address_t server, dsn_message_t requ
     if (msg == nullptr)
     {
         derror("dsn_rpc_call_wait got null request");
+        return nullptr;
+    }
+    if (!is_valid_rpc_request_message(msg))
+    {
+        derror("dsn_rpc_call_wait got an invalid request message: "
+            "it is not a registered rpc request with a paired response code");
         return nullptr;
     }
 
