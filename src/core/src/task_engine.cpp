@@ -112,12 +112,23 @@ void task_worker_pool::create()
 
 void task_worker_pool::start()
 {
-    if (_is_running.load(std::memory_order_acquire))
-        return;
+    // Convenience path for starting a single pool standalone. task_engine::start() does NOT call this;
+    // it instead drives the two phases across all pools -- enable_enqueue() on every pool, then
+    // start_workers() on every pool -- so a worker on_start hook can safely enqueue to any pool during
+    // startup (see task_engine::start()).
+    enable_enqueue();
+    start_workers();
+}
 
-    // Populate the timer-service caches BEFORE starting workers: a worker's on_start hook may enqueue
+void task_worker_pool::enable_enqueue()
+{
+    if (_is_running.load(std::memory_order_acquire))
+    {
+        return;
+    }
+
+    // Populate the timer-service caches BEFORE any worker starts: a worker's on_start hook may enqueue
     // a delayed task, which calls add_timer() directly and requires these caches to already be set.
-    // Doing this after wk->start() would leave a window where add_timer() sees a null/empty cache.
     if (service_engine::fast_instance().spec().timer_io_mode == IOE_PER_QUEUE)
     {
         for (size_t i = 0; i < _queues.size(); i++)
@@ -139,14 +150,18 @@ void task_worker_pool::start()
         _per_node_timer_svc = node()->tsvc(nullptr);
     }
 
-    // Publish the running state BEFORE starting workers. A worker's on_start hook can enqueue an
-    // immediate task, or a short-delay timer can fire before startup finishes; both reach
-    // task_worker_pool::enqueue(), which fatally asserts the pool is already running. The queues
-    // already exist (from create()), so such tasks safely wait in-queue until the workers enter
-    // loop() and drain them. This release store also publishes the timer-service caches populated
-    // above to any thread that later observes _is_running via enqueue() or add_timer().
+    // Publish the running state so this pool accepts enqueues before any worker runs its on_start
+    // hook. Such a hook can enqueue an immediate task (to this pool or another), or a short-delay
+    // timer can fire before startup finishes; both reach task_worker_pool::enqueue(), which fatally
+    // asserts the target pool is already running. The queues already exist (from create()), so such
+    // tasks safely wait in-queue until the workers enter loop() and drain them. This release store
+    // also publishes the timer-service caches populated above to any thread that later observes
+    // _is_running via enqueue() or add_timer().
     _is_running.store(true, std::memory_order_release);
+}
 
+void task_worker_pool::start_workers()
+{
     for (auto& wk : _workers)
     {
         wk->start();
@@ -298,12 +313,30 @@ void task_engine::create(const safe_list<dsn_threadpool_code_t>& pools)
 void task_engine::start()
 {
     if (_is_running.load(std::memory_order_acquire))
+    {
         return;
+    }
+
+    // Two-phase startup across all pools. First enable_enqueue() on every pool (init timer caches and
+    // publish _is_running), THEN start_workers() on every pool. A worker on_start hook in one pool may
+    // enqueue a task targeting a DIFFERENT pool; enabling enqueue everywhere first guarantees the
+    // target pool already accepts tasks (buffering them in its queues) instead of tripping
+    // task_worker_pool::enqueue()'s "must be started" assert. Starting pools one-by-one (enable+start
+    // per pool) left earlier-started pools able to enqueue into not-yet-started pools.
+    for (auto& pl : _pools)
+    {
+        if (pl)
+        {
+            pl->enable_enqueue();
+        }
+    }
 
     for (auto& pl : _pools)
     {
         if (pl)
-            pl->start();
+        {
+            pl->start_workers();
+        }
     }
 
     _is_running.store(true, std::memory_order_release);

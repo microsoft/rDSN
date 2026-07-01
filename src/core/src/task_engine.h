@@ -62,6 +62,13 @@ public:
     void create();    
     void start();
 
+    // Two-phase startup helpers used by task_engine::start(). enable_enqueue() initializes the timer
+    // caches and publishes _is_running so the pool accepts enqueues; start_workers() starts the worker
+    // threads. start() calls both. Splitting them lets task_engine enable enqueue on ALL pools before
+    // starting any workers, so a worker on_start hook can safely enqueue cross-pool during startup.
+    void enable_enqueue();
+    void start_workers();
+
     // task procecessing
     void enqueue(task* task);
     void on_dequeue(int count);
