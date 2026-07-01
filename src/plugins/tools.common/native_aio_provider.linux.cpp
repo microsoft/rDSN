@@ -40,6 +40,8 @@
 # include <cstdlib>
 # include <cstdint>
 # include <cerrno>
+# include <cstring>
+# include <ctime>
 # include <thread>
 
 # ifdef __TITLE__
@@ -51,16 +53,28 @@ namespace dsn {
     namespace tools {
 
         native_linux_aio_provider::native_linux_aio_provider(disk_engine* disk, aio_provider* inner_provider)
-            : aio_provider(disk, inner_provider)
+            : aio_provider(disk, inner_provider), _is_running(false)
         {
 
             memset(&_ctx, 0, sizeof(_ctx));
             auto ret = io_setup(128, &_ctx); // 128 concurrent events
+            // io_setup failing (e.g. the system-wide aio-max-nr limit is exhausted) leaves this
+            // provider unable to service any disk I/O for its entire lifetime -- there is no retry
+            // path, so every aio request would fail. A storage node that stays up but silently
+            // fails all disk I/O is worse for the cluster than one that dies loudly and lets the
+            // orchestrator restart/replace it, so fail fast here.
             dassert(ret == 0, "io_setup error, ret = %d", ret);
+            _is_running = true;
         }
 
         native_linux_aio_provider::~native_linux_aio_provider()
         {
+            // Stop the completion worker before releasing the io context, otherwise
+            // io_destroy() below can race with io_getevents() still running on the worker.
+            _is_running = false;
+            if (_worker.joinable())
+                _worker.join();
+
             auto ret = io_destroy(_ctx);
             if (ret != 0)
             {
@@ -72,7 +86,9 @@ namespace dsn {
 
         void native_linux_aio_provider::start(io_modifer& ctx)
         {
-            new std::thread([this, ctx]()
+            // Keep the worker joinable so the destructor can shut it down cleanly instead of
+            // leaking a detached thread that outlives the provider and touches a freed context.
+            _worker = std::thread([this, ctx]()
             {
                 task::set_tls_dsn_context(node(), nullptr, ctx.queue);
                 get_event();
@@ -144,14 +160,25 @@ namespace dsn {
             }
             task_worker::set_name(buffer);
 
-            while (true)
+            struct timespec timeout;
+            while (_is_running.load(std::memory_order_relaxed))
             {
-                ret = io_getevents(_ctx, 1, 1, events, nullptr);
+                // use a bounded timeout so the worker periodically observes _is_running and can
+                // exit cleanly on shutdown instead of blocking in io_getevents() forever.
+                timeout.tv_sec = 1;
+                timeout.tv_nsec = 0;
+                ret = io_getevents(_ctx, 1, 1, events, &timeout);
                 if (ret > 0) // should be 1
                 {
                     dassert(ret == 1, "");
                     struct iocb *io = events[0].obj;
-                    complete_aio(io, static_cast<int>(events[0].res), static_cast<int>(events[0].res2));
+                    complete_aio(io, static_cast<int64_t>(events[0].res), static_cast<int64_t>(events[0].res2));
+                }
+                else if (ret == 0 || ret == -EINTR)
+                {
+                    // timed out with no completion, or interrupted by a signal:
+                    // loop back and re-check whether we should keep running.
+                    continue;
                 }
                 else
                 {
@@ -160,19 +187,31 @@ namespace dsn {
             }
         }
 
-        void native_linux_aio_provider::complete_aio(struct iocb* io, int bytes, int err)
+        void native_linux_aio_provider::complete_aio(struct iocb* io, int64_t res, int64_t res2)
         {
             linux_disk_aio_context* aio = CONTAINING_RECORD(io, linux_disk_aio_context, cb);
             error_code ec;
-            if (err != 0)
+            uint32_t bytes = 0;
+            if (res < 0)
             {
-                derror("aio error, err = %s", strerror(err));
+                // io_getevents reports a failed operation as a negative errno in res; res2 is a
+                // secondary status that is almost always 0. The previous code only inspected res2
+                // and therefore turned a real I/O error (res < 0) into a spurious ERR_HANDLE_EOF
+                // with a negative byte count. Decode res correctly here.
+                derror("aio error, err = %s", strerror(static_cast<int>(-res)));
                 ec = ERR_FILE_OPERATION_FAILED;
+            }
+            else if (res == 0)
+            {
+                // a zero-byte transfer on a read is end-of-file
+                ec = ERR_HANDLE_EOF;
             }
             else
             {
-                ec = bytes > 0 ? ERR_OK : ERR_HANDLE_EOF;
+                ec = ERR_OK;
+                bytes = static_cast<uint32_t>(res);
             }
+            (void)res2;
 
             if (!aio->evt)
             {

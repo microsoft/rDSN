@@ -312,55 +312,79 @@ namespace dsn
                 }
                 else if (resp.err == ERR_OK)
                 {
-                    zauto_write_lock l(_config_lock);
-
-                    if (_app_id != -1 && _app_id != resp.app_id)
+                    if (resp.app_id <= 0 || resp.partition_count <= 0)
                     {
-                        dassert(false, "app id is changed (mostly the app was removed and created with the same name), local Vs remote: %u vs %u ",
-                            _app_id, resp.app_id);
-                    }
-                    if (_app_partition_count != -1 && _app_partition_count != resp.partition_count)
-                    {
-                        dassert(false, "partition count is changed (mostly the app was removed and created with the same name), local Vs remote: %u vs %u ",
-                            _app_partition_count, resp.partition_count);
-                    }
-                    _app_id = resp.app_id;
-                    _app_partition_count = resp.partition_count;
-                    _app_is_stateful = resp.is_stateful;
-
-                    for (auto it = resp.partitions.begin(); it != resp.partitions.end(); ++it)
-                    {
-                        auto& new_config = *it;
-
-                        dinfo("%s.client: query config reply, gpid = %d.%d, ballot = %" PRId64 ", primary = %s",
+                        // Reject a malformed or hostile config reply instead of caching a
+                        // non-positive partition_count, which would later cause a
+                        // division-by-zero crash in get_partition_index().
+                        derror("%s.client: query config reply, gpid = %d.%d, invalid config: app_id = %d, partition_count = %d",
                             _app_path.c_str(),
-                            new_config.pid.get_app_id(),
-                            new_config.pid.get_partition_index(),
-                            new_config.ballot,
-                            new_config.primary.to_string()
+                            _app_id,
+                            partition_index,
+                            resp.app_id,
+                            resp.partition_count
                             );
 
-                        auto it2 = _config_cache.find(new_config.pid.get_partition_index());
-                        if (it2 == _config_cache.end())
+                        client_err = ERR_INVALID_DATA;
+                    }
+                    else
+                    {
+                        zauto_write_lock l(_config_lock);
+
+                        if ((_app_id != -1 && _app_id != resp.app_id)
+                            || (_app_partition_count != -1 && _app_partition_count != resp.partition_count))
                         {
-                            std::unique_ptr<partition_info> pi(new partition_info);
-                            pi->timeout_count = 0;
-                            pi->config = new_config;
-                            _config_cache.emplace(new_config.pid.get_partition_index(), std::move(pi));
+                            // The app was most likely removed and re-created with the same name, so
+                            // its app id / partition count changed. This is recoverable: drop the
+                            // stale cache and adopt the new configuration rather than aborting the
+                            // whole process (the previous code called dassert(false, ...) here).
+                            dwarn("%s.client: app config changed (mostly the app was removed and re-created "
+                                  "with the same name), app_id %d -> %d, partition_count %d -> %d; resetting local cache",
+                                _app_path.c_str(),
+                                _app_id, resp.app_id,
+                                _app_partition_count, resp.partition_count
+                                );
+
+                            _config_cache.clear();
                         }
-                        else if (_app_is_stateful && it2->second->config.ballot < new_config.ballot)
+                        _app_id = resp.app_id;
+                        _app_partition_count = resp.partition_count;
+                        _app_is_stateful = resp.is_stateful;
+
+                        for (auto it = resp.partitions.begin(); it != resp.partitions.end(); ++it)
                         {
-                            it2->second->timeout_count = 0;
-                            it2->second->config = new_config;
-                        }
-                        else if (!_app_is_stateful)
-                        {
-                            it2->second->timeout_count = 0;
-                            it2->second->config = new_config;
-                        }
-                        else
-                        {
-                            // nothing to do
+                            auto& new_config = *it;
+
+                            dinfo("%s.client: query config reply, gpid = %d.%d, ballot = %" PRId64 ", primary = %s",
+                                _app_path.c_str(),
+                                new_config.pid.get_app_id(),
+                                new_config.pid.get_partition_index(),
+                                new_config.ballot,
+                                new_config.primary.to_string()
+                                );
+
+                            auto it2 = _config_cache.find(new_config.pid.get_partition_index());
+                            if (it2 == _config_cache.end())
+                            {
+                                std::unique_ptr<partition_info> pi(new partition_info);
+                                pi->timeout_count = 0;
+                                pi->config = new_config;
+                                _config_cache.emplace(new_config.pid.get_partition_index(), std::move(pi));
+                            }
+                            else if (_app_is_stateful && it2->second->config.ballot < new_config.ballot)
+                            {
+                                it2->second->timeout_count = 0;
+                                it2->second->config = new_config;
+                            }
+                            else if (!_app_is_stateful)
+                            {
+                                it2->second->timeout_count = 0;
+                                it2->second->config = new_config;
+                            }
+                            else
+                            {
+                                // nothing to do
+                            }
                         }
                     }
                 }
@@ -556,6 +580,14 @@ namespace dsn
 
         int partition_resolver_simple::get_partition_index(int partition_count, uint64_t partition_hash)
         {
+            if (partition_count <= 0)
+            {
+                // Defense in depth: never divide by zero even if an invalid partition_count
+                // somehow reaches here. Callers treat a negative index as "unresolved".
+                derror("%s.client: get_partition_index with invalid partition_count = %d",
+                    _app_path.c_str(), partition_count);
+                return -1;
+            }
             return partition_hash % static_cast<uint64_t>(partition_count);
         }
     }

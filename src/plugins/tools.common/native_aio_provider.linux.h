@@ -41,6 +41,8 @@
 # include <dsn/tool_api.h>
 # include <dsn/utility/synchronize.h>
 # include <queue>
+# include <atomic>
+# include <thread>
 # include <cinttypes>     /* uint64_t */
 # include <cstring>       /* memset() */
 # include <cstdio>        /* for perror() */
@@ -77,11 +79,13 @@ namespace dsn {
 
         protected:
             error_code aio_internal(aio_task* aio, bool async, /*out*/ uint32_t* pbytes = nullptr);
-            void complete_aio(struct iocb* io, int bytes, int err);
+            void complete_aio(struct iocb* io, int64_t res, int64_t res2);
             void get_event();
 
         private:
             io_context_t _ctx;
+            std::atomic<bool> _is_running;
+            std::thread _worker;
         };
     }
 }

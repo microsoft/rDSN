@@ -71,7 +71,7 @@ aio_task* disk_write_queue::unlink_next_workload(void* plength)
         {
             // batch condition
             if (next_offset == io->file_offset
-                && sz + io->buffer_size <= _max_batch_bytes)
+                && static_cast<uint64_t>(sz) + io->buffer_size <= _max_batch_bytes)
             {
                 sz += io->buffer_size;
                 next_offset += io->buffer_size;
@@ -109,8 +109,11 @@ disk_file::disk_file(dsn_handle_t handle)
 
 void disk_file::ctrl(dsn_ctrl_code_t code, int param)
 {
-    // TODO: 
-    dassert(false, "NOT IMPLEMENTED");
+    // Not implemented. This method has no callers today, so reaching it means a developer wired
+    // up a control path against an unimplemented operation -- a programmer error, not a runtime or
+    // user-data condition. Fail loudly (as rDSN does elsewhere for "can't happen" paths) instead of
+    // silently ignoring the request.
+    dassert(false, "disk_file::ctrl is not implemented (code = %d)", code);
 }
 
 aio_task* disk_file::read(aio_task* tsk)
@@ -343,79 +346,82 @@ void disk_engine::write(aio_task* aio)
 
 void disk_engine::process_write(aio_task* aio, uint32_t sz)
 {
-    auto complete_write_with_error = [this](aio_task* wk, error_code err)
+    // Returns the next queued work item (or nullptr) after completing 'wk' with an error, and
+    // writes the next batch size through next_sz. We loop on this below instead of recursing so
+    // that a disk that keeps failing synchronously cannot overflow the stack.
+    auto complete_write_with_error = [this](aio_task* wk, error_code err, uint32_t* next_sz) -> aio_task*
     {
         auto df = (disk_file*)wk->aio()->file_object;
-        uint32_t next_sz;
-        auto next = df->on_write_completed(wk, (void*)&next_sz, err, 0);
-        if (next)
-        {
-            process_write(next, next_sz);
-        }
+        return df->on_write_completed(wk, (void*)next_sz, err, 0);
     };
 
-    // no batching
-    if (aio->aio()->buffer_size == sz)
+    while (aio != nullptr)
     {
-        try
+        // no batching
+        if (aio->aio()->buffer_size == sz)
         {
-            aio->collapse();
-        }
-        catch (const std::exception& ex)
-        {
-            derror("collapse aio write buffer failed: %s", ex.what());
-            complete_write_with_error(aio, ERR_FILE_OPERATION_FAILED);
+            try
+            {
+                aio->collapse();
+            }
+            catch (const std::exception& ex)
+            {
+                derror("collapse aio write buffer failed: %s", ex.what());
+                aio = complete_write_with_error(aio, ERR_FILE_OPERATION_FAILED, &sz);
+                continue;
+            }
+            _provider->aio(aio);
             return;
         }
-        return _provider->aio(aio);
-    }
 
-    // batching
-    else
-    {
-        // merge the buffers
-        try
+        // batching
+        else
         {
-            auto bb = tls_trans_mem_alloc_blob((size_t)sz);
-            char* ptr = (char*)bb.data();
-            auto current_wk = aio;
-            do
+            // merge the buffers
+            try
             {
-                current_wk->copy_to(ptr);
-                ptr += current_wk->aio()->buffer_size;
-                current_wk = (aio_task*)current_wk->next;
-            } while (current_wk);
+                auto bb = tls_trans_mem_alloc_blob((size_t)sz);
+                char* ptr = (char*)bb.data();
+                auto current_wk = aio;
+                do
+                {
+                    current_wk->copy_to(ptr);
+                    ptr += current_wk->aio()->buffer_size;
+                    current_wk = (aio_task*)current_wk->next;
+                } while (current_wk);
 
-            if (ptr != (char*)bb.data() + bb.length())
-            {
-                derror("merge aio write buffers copied unexpected size");
-                complete_write_with_error(aio, ERR_FILE_OPERATION_FAILED);
+                if (ptr != (char*)bb.data() + bb.length())
+                {
+                    derror("merge aio write buffers copied unexpected size");
+                    aio = complete_write_with_error(aio, ERR_FILE_OPERATION_FAILED, &sz);
+                    continue;
+                }
+
+                // setup io task
+                auto new_task = new batch_write_io_task(
+                    aio,
+                    bb
+                    );
+                auto dio = new_task->aio();
+                dio->buffer = (void*)bb.data();
+                dio->buffer_size = sz;
+                dio->file_offset = aio->aio()->file_offset;
+
+                dio->file = aio->aio()->file;
+                dio->file_object = aio->aio()->file_object;
+                dio->engine = aio->aio()->engine;
+                dio->type = AIO_Write;
+
+                new_task->add_ref(); // released in complete_io
+                _provider->aio(new_task);
                 return;
             }
-
-            // setup io task
-            auto new_task = new batch_write_io_task(
-                aio,
-                bb
-                );
-            auto dio = new_task->aio();
-            dio->buffer = (void*)bb.data();
-            dio->buffer_size = sz;
-            dio->file_offset = aio->aio()->file_offset;
-
-            dio->file = aio->aio()->file;
-            dio->file_object = aio->aio()->file_object;
-            dio->engine = aio->aio()->engine;
-            dio->type = AIO_Write;
-
-            new_task->add_ref(); // released in complete_io
-            return _provider->aio(new_task);
-        }
-        catch (const std::exception& ex)
-        {
-            derror("merge aio write buffers failed: %s", ex.what());
-            complete_write_with_error(aio, ERR_FILE_OPERATION_FAILED);
-            return;
+            catch (const std::exception& ex)
+            {
+                derror("merge aio write buffers failed: %s", ex.what());
+                aio = complete_write_with_error(aio, ERR_FILE_OPERATION_FAILED, &sz);
+                continue;
+            }
         }
     }
 }

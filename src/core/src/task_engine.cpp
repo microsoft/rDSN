@@ -152,8 +152,23 @@ void task_worker_pool::add_timer(task* t)
         _per_node_timer_svc->add_timer(t);
     else
     {
-        unsigned int idx = (_spec.partitioned ? static_cast<unsigned int>(t->hash()) % static_cast<unsigned int>(_queues.size()) : 0);
-        _per_queue_timer_svcs[idx]->add_timer(t);
+        if (_per_queue_timer_svcs.empty())
+        {
+            derror("cannot add timer for pool %s: no per-queue timer service is configured",
+                _spec.name.c_str());
+            return;
+        }
+        unsigned int idx = (_spec.partitioned
+            ? static_cast<unsigned int>(t->hash()) % static_cast<unsigned int>(_per_queue_timer_svcs.size())
+            : 0);
+        timer_service* svc = _per_queue_timer_svcs[idx];
+        if (svc == nullptr)
+        {
+            derror("cannot add timer for pool %s: null timer service at index %u",
+                _spec.name.c_str(), idx);
+            return;
+        }
+        svc->add_timer(t);
     }
 }
 
@@ -284,8 +299,36 @@ volatile int* task_engine::get_task_queue_virtual_length_ptr(
     int hash
     )
 {
-    auto pl = get_pool(task_spec::get(code)->pool_code);
-    auto idx = (pl->spec().partitioned ? hash % pl->spec().worker_count : 0);
+    task_spec* spec = task_spec::get(code);
+    if (spec == nullptr)
+    {
+        derror("get_task_queue_virtual_length_ptr got invalid task code %d", code);
+        return nullptr;
+    }
+
+    auto pl = get_pool(spec->pool_code);
+    if (pl == nullptr)
+    {
+        derror("get_task_queue_virtual_length_ptr: no thread pool for task code %s",
+            spec->name.c_str());
+        return nullptr;
+    }
+
+    int worker_count = pl->spec().worker_count;
+    unsigned int idx = 0;
+    if (pl->spec().partitioned && worker_count > 0)
+    {
+        // treat hash as unsigned so a negative hash cannot produce a negative index
+        idx = static_cast<unsigned int>(hash) % static_cast<unsigned int>(worker_count);
+    }
+
+    if (idx >= pl->queues().size())
+    {
+        derror("get_task_queue_virtual_length_ptr: queue index %u out of range (%u queues) for task code %s",
+            idx, static_cast<unsigned int>(pl->queues().size()), spec->name.c_str());
+        return nullptr;
+    }
+
     return pl->queues()[idx]->get_virtual_length_ptr();
 }
 
