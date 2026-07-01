@@ -139,6 +139,14 @@ void task_worker_pool::start()
         _per_node_timer_svc = node()->tsvc(nullptr);
     }
 
+    // Publish the running state BEFORE starting workers. A worker's on_start hook can enqueue an
+    // immediate task, or a short-delay timer can fire before startup finishes; both reach
+    // task_worker_pool::enqueue(), which fatally asserts the pool is already running. The queues
+    // already exist (from create()), so such tasks safely wait in-queue until the workers enter
+    // loop() and drain them. This release store also publishes the timer-service caches populated
+    // above to any thread that later observes _is_running via enqueue() or add_timer().
+    _is_running.store(true, std::memory_order_release);
+
     for (auto& wk : _workers)
     {
         wk->start();
@@ -150,8 +158,6 @@ void task_worker_pool::start()
         _spec.worker_count,
         _spec.worker_share_core ? "true" : "false",
         _spec.partitioned ? "true" : "false");
-
-    _is_running.store(true, std::memory_order_release);
 }
 
 void task_worker_pool::add_timer(task* t)
