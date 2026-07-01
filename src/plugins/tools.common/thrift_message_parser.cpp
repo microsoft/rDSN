@@ -156,7 +156,7 @@ namespace dsn
 
         // write thrift message end
         binary_writer end_writer;
-        binary_writer_transport end_trans(header_writer);
+        binary_writer_transport end_trans(end_writer);
         boost::shared_ptr<binary_writer_transport> end_trans_ptr(&end_trans, [](binary_writer_transport*) {});
         ::apache::thrift::protocol::TBinaryProtocol end_proto(end_trans_ptr);
         end_proto.writeMessageEnd();

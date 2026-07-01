@@ -193,7 +193,7 @@ http_message_parser::http_message_parser()
         {
             if (!::dsn::utils::lexical_cast_integer(value, header->id))
             {
-                derror("invalid header.id '%.*s'", length, at);
+                derror("invalid header.id '%.*s'", static_cast<int>(length), at);
                 return 1;
             }
             break;
@@ -202,7 +202,7 @@ http_message_parser::http_message_parser()
         {
             if (!::dsn::utils::lexical_cast_integer(value, header->trace_id))
             {
-                derror("invalid header.trace_id '%.*s'", length, at);
+                derror("invalid header.trace_id '%.*s'", static_cast<int>(length), at);
                 return 1;
             }
             break;
@@ -211,13 +211,13 @@ http_message_parser::http_message_parser()
         {
             if (length >= DSN_MAX_TASK_CODE_NAME_LENGTH)
             {
-                derror("too long header.rpc_name '%.*s'", length, at);
+                derror("too long header.rpc_name '%.*s'", static_cast<int>(length), at);
                 return 1;
             }
             int name_len = snprintf(header->rpc_name, sizeof(header->rpc_name), "%.*s", static_cast<int>(length), at);
             if (name_len < 0 || static_cast<size_t>(name_len) >= sizeof(header->rpc_name))
             {
-                derror("too long header.rpc_name '%.*s'", length, at);
+                derror("too long header.rpc_name '%.*s'", static_cast<int>(length), at);
                 return 1;
             }
             break;
@@ -226,7 +226,7 @@ http_message_parser::http_message_parser()
         {
             if (!::dsn::utils::lexical_cast_integer(value, header->gpid.u.app_id))
             {
-                derror("invalid header.app_id '%.*s'", length, at);
+                derror("invalid header.app_id '%.*s'", static_cast<int>(length), at);
                 return 1;
             }
             break;
@@ -235,7 +235,7 @@ http_message_parser::http_message_parser()
         {
             if (!::dsn::utils::lexical_cast_integer(value, header->gpid.u.partition_index))
             {
-                derror("invalid header.partition_index '%.*s'", length, at);
+                derror("invalid header.partition_index '%.*s'", static_cast<int>(length), at);
                 return 1;
             }
             break;
@@ -245,7 +245,7 @@ http_message_parser::http_message_parser()
             dsn_msg_serialize_format fmt = enum_from_string(value.c_str(), DSF_INVALID);
             if (fmt == DSF_INVALID)
             {
-                derror("invalid header.serialize_format '%.*s'", length, at);
+                derror("invalid header.serialize_format '%.*s'", static_cast<int>(length), at);
                 return 1;
             }
             header->context.u.serialize_format = fmt;
@@ -269,14 +269,14 @@ http_message_parser::http_message_parser()
             }
             if (pos == -1 || pos == (length - 1) || dot_count != 3)
             {
-                derror("invalid header.from_address '%.*s'", length, at);
+                derror("invalid header.from_address '%.*s'", static_cast<int>(length), at);
                 return 1;
             }
             uint16_t port = 0;
             std::string port_str(at + pos + 1, length - pos - 1);
             if (!::dsn::utils::lexical_cast_integer(port_str, port))
             {
-                derror("invalid header.from_address '%.*s'", length, at);
+                derror("invalid header.from_address '%.*s'", static_cast<int>(length), at);
                 return 1;
             }
             std::string host(at, pos);
@@ -287,7 +287,7 @@ http_message_parser::http_message_parser()
         {
             if (!::dsn::utils::lexical_cast_integer(value, header->client.timeout_ms))
             {
-                derror("invalid header.client_timeout '%.*s'", length, at);
+                derror("invalid header.client_timeout '%.*s'", static_cast<int>(length), at);
                 return 1;
             }
             break;
@@ -296,7 +296,7 @@ http_message_parser::http_message_parser()
         {
             if (!::dsn::utils::lexical_cast_integer(value, header->client.thread_hash))
             {
-                derror("invalid header.client_thread_hash '%.*s'", length, at);
+                derror("invalid header.client_thread_hash '%.*s'", static_cast<int>(length), at);
                 return 1;
             }
             break;
@@ -305,7 +305,7 @@ http_message_parser::http_message_parser()
         {
             if (!::dsn::utils::lexical_cast_integer(value, header->client.partition_hash))
             {
-                derror("invalid header.client_partition_hash '%.*s'", length, at);
+                derror("invalid header.client_partition_hash '%.*s'", static_cast<int>(length), at);
                 return 1;
             }
             break;
@@ -314,13 +314,13 @@ http_message_parser::http_message_parser()
         {
             if (length >= DSN_MAX_ERROR_CODE_NAME_LENGTH)
             {
-                derror("too long header.server_error '%.*s'", length, at);
+                derror("too long header.server_error '%.*s'", static_cast<int>(length), at);
                 return 1;
             }
             int name_len = snprintf(header->server.error_name, sizeof(header->server.error_name), "%.*s", static_cast<int>(length), at);
             if (name_len < 0 || static_cast<size_t>(name_len) >= sizeof(header->server.error_name))
             {
-                derror("too long header.server_error '%.*s'", length, at);
+                derror("too long header.server_error '%.*s'", static_cast<int>(length), at);
                 return 1;
             }
             break;
@@ -366,12 +366,54 @@ http_message_parser::http_message_parser()
     _parser_setting.on_body = [](http_parser* parser, const char *at, size_t length)->int
     {
         auto owner = static_cast<http_message_parser*>(parser->data);
+        if (!owner->_current_message)
+        {
+            derror("http body received without an active message");
+            return 1;
+        }
         dassert(owner->_current_buffer.buffer() != nullptr, "the read buffer is not owning");
-        owner->_current_message->buffers.rbegin()->assign(owner->_current_buffer.buffer(), at - owner->_current_buffer.buffer_ptr(), length);
-        owner->_current_message->header->body_length = length;
+
+        // http_parser may deliver the body in several segments (chunked encoding, or a body
+        // split across multiple socket reads). The previous code moved _current_message into
+        // _received_messages on the very first segment, so any subsequent segment dereferenced
+        // a moved-from (null) _current_message and crashed. Accumulate here instead and only
+        // finalize the message in on_message_complete.
+        auto& body_buf = *owner->_current_message->buffers.rbegin();
+        if (body_buf.length() == 0)
+        {
+            // fast path: first (and usually only) segment references the read buffer directly.
+            body_buf.assign(owner->_current_buffer.buffer(),
+                            static_cast<int>(at - owner->_current_buffer.buffer_ptr()),
+                            static_cast<unsigned int>(length));
+        }
+        else
+        {
+            // more than one segment: concatenate into a fresh contiguous buffer so no earlier
+            // segment is lost (a single blob slice cannot span non-contiguous segments).
+            unsigned int old_len = body_buf.length();
+            unsigned int new_len = old_len + static_cast<unsigned int>(length);
+            std::shared_ptr<char> holder = make_shared_array<char>(new_len);
+            memcpy(holder.get(), body_buf.data(), old_len);
+            memcpy(holder.get() + old_len, at, length);
+            body_buf.assign(std::move(holder), 0, new_len);
+        }
+        owner->_current_message->header->body_length = owner->_current_message->buffers.rbegin()->length();
+        return 0;
+    };
+    _parser_setting.on_message_complete = [](http_parser* parser)->int
+    {
+        auto owner = static_cast<http_message_parser*>(parser->data);
+        if (!owner->_current_message)
+        {
+            derror("http message completed without an active message");
+            return 1;
+        }
+        // The message (including any body) is fully parsed now; hand it off. Doing this here
+        // rather than in on_body also fixes bodyless requests (e.g. GET), which never trigger
+        // on_body and were therefore previously never delivered.
         owner->_received_messages.emplace(std::move(owner->_current_message));
         return 0;
-    };    
+    };
     http_parser_init(&_parser, HTTP_BOTH);
 }
 

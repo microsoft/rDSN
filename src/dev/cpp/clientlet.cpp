@@ -152,16 +152,19 @@ namespace dsn
             }
             else
             {
-                const char** ptr = (const char**)alloca(sizeof(const char*) * (files.size() + 1));
-                const char** ptr_base = ptr;
+                // Use a heap vector instead of alloca(): 'files' is caller-supplied and a large
+                // list would overflow the stack. The c_str() pointers remain valid for the
+                // synchronous call below because 'files' outlives it.
+                std::vector<const char*> ptrs;
+                ptrs.reserve(files.size() + 1);
                 for (auto& f : files)
                 {
-                    *ptr++ = f.c_str();
+                    ptrs.push_back(f.c_str());
                 }
-                *ptr = nullptr;
+                ptrs.push_back(nullptr);
 
                 return dsn_file_copy_remote_files(
-                    remote.c_addr(), source_dir.c_str(), ptr_base,
+                    remote.c_addr(), source_dir.c_str(), ptrs.data(),
                     dest_dir.c_str(), overwrite, native_task
                     );
             }

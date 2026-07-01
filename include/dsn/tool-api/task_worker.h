@@ -87,7 +87,7 @@ private:
     int               _index;
     int               _native_tid;
     safe_string       _name;
-    std::thread      *_thread;
+    std::atomic<std::thread*> _thread;
     std::atomic<bool> _is_running;
     utils::notify_event _started;
     int              _processed_task_count;

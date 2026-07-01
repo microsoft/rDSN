@@ -174,8 +174,13 @@ namespace dsn {
             std::vector<std::string> sub_list;
             if (!dsn::utils::filesystem::get_subfiles(_log_dir, sub_list, false))
             {
-                dassert(false, "Fail to get subfiles in %s.", _log_dir.c_str());
-            }             
+                // Do not abort during logger initialization if the log directory cannot be listed:
+                // skip scanning existing files and continue with a fresh index. Use stderr directly
+                // because the logging system is not fully initialized at this point.
+                fprintf(stderr, "Fail to get subfiles in %s, skip scanning existing log files.\n",
+                    _log_dir.c_str());
+                sub_list.clear();
+            }
             for (auto& fpath : sub_list)
             {
                 auto&& name = dsn::utils::filesystem::get_file_name(fpath);

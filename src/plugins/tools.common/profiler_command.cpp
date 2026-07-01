@@ -214,6 +214,14 @@ namespace dsn {
             ::std::stringstream ss;
             safe_vector<safe_string> val;
 
+            // percentail_counter_string has COUNTER_PERCENTILE_COUNT entries; percentile_type may be
+            // COUNTER_PERCENTILE_INVALID (== COUNTER_PERCENTILE_COUNT range), so never index the array blindly.
+            auto safe_pct_label = [](int pt) -> const char* {
+                return (pt >= 0 && pt < COUNTER_PERCENTILE_COUNT)
+                           ? percentail_counter_string[pt].c_str()
+                           : "InvalidPercentile";
+            };
+
             if ((args.size() > 0) && (args[0] == "top"))
             {
                 if (k < 4)
@@ -253,7 +261,7 @@ namespace dsn {
 
                 if ((task_id != TASK_CODE_INVALID) && (counter_type != PREF_COUNTER_INVALID) && (s_spec_profilers[task_id].ptr[counter_type] != nullptr) && (s_spec_profilers[task_id].is_profile != false))
                 {
-                    ss << dsn_task_code_to_string(task_id) << ":" << counter_info_ptr[counter_type]->title << ":" << percentail_counter_string[percentile_type] << ":";
+                    ss << dsn_task_code_to_string(task_id) << ":" << counter_info_ptr[counter_type]->title << ":" << safe_pct_label(percentile_type) << ":";
                     if (counter_info_ptr[counter_type]->type != COUNTER_TYPE_NUMBER_PERCENTILES)
                     {
                         ss << s_spec_profilers[task_id].ptr[counter_type]->get_value() << " ";
@@ -263,13 +271,13 @@ namespace dsn {
                         ss << s_spec_profilers[task_id].ptr[counter_type]->get_percentile(percentile_type) << " ";
                     }
                 }
-                else if ((task_id != TASK_CODE_INVALID) && (val[1] == "AllPercentile") && (s_spec_profilers[task_id].is_profile != false))
+                else if ((task_id != TASK_CODE_INVALID) && (val[1] == "AllPercentile") && (percentile_type != COUNTER_PERCENTILE_INVALID) && (s_spec_profilers[task_id].is_profile != false))
                 {
                     for (int j = 0; j < PREF_COUNTER_COUNT; j++)
                     {
                         if ((s_spec_profilers[task_id].ptr[j] != nullptr) && (counter_info_ptr[j]->type == COUNTER_TYPE_NUMBER_PERCENTILES))
                         {
-                            ss << dsn_task_code_to_string(i) << ":" << counter_info_ptr[j]->title << ":" << percentail_counter_string[percentile_type] << ":" << s_spec_profilers[task_id].ptr[j]->get_percentile(percentile_type) << " ";
+                            ss << dsn_task_code_to_string(task_id) << ":" << counter_info_ptr[j]->title << ":" << safe_pct_label(percentile_type) << ":" << s_spec_profilers[task_id].ptr[j]->get_percentile(percentile_type) << " ";
                         }
                     }
                     val.clear();

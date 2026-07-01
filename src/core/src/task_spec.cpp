@@ -320,7 +320,14 @@ bool threadpool_spec::init(/*out*/ safe_vector<threadpool_spec>& specs)
 
         if (false == spec.worker_share_core && 0 == spec.worker_affinity_mask)
         {
-            spec.worker_affinity_mask = (1 << std::thread::hardware_concurrency()) - 1;
+            // worker_affinity_mask is a 64-bit mask. Shifting the literal int 1 by
+            // hardware_concurrency() is undefined behavior once the count reaches 32 (and it
+            // silently produced wrong masks on many-core machines). Compute the mask in 64-bit
+            // and saturate to all-ones when there are 64 or more hardware threads.
+            unsigned int hc = std::thread::hardware_concurrency();
+            spec.worker_affinity_mask =
+                (hc >= 64) ? ~static_cast<uint64_t>(0)
+                           : ((static_cast<uint64_t>(1) << hc) - 1);
         }
 
         specs.push_back(spec);

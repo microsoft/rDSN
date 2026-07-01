@@ -103,7 +103,8 @@ void task_worker::start()
 
     _is_running.store(true, std::memory_order_release);
 
-    _thread = new std::thread(std::bind(&task_worker::run_internal, this));
+    _thread.store(new std::thread(std::bind(&task_worker::run_internal, this)),
+                  std::memory_order_release);
 
     _started.wait();
 }
@@ -115,9 +116,10 @@ void task_worker::stop()
 
     _is_running.store(false, std::memory_order_release);
 
-    _thread->join();
-    delete _thread;
-    _thread = nullptr;
+    std::thread* t = _thread.load(std::memory_order_acquire);
+    t->join();
+    delete t;
+    _thread.store(nullptr, std::memory_order_release);
 
     _is_running.store(false, std::memory_order_release);
 }
@@ -302,7 +304,9 @@ void task_worker::set_affinity(uint64_t affinity)
 
 void task_worker::run_internal()
 {
-    while (_thread == nullptr)
+    // Wait until start() has published the thread handle. _thread is atomic so this read is
+    // a well-defined, synchronized access rather than a data race on a raw pointer.
+    while (_thread.load(std::memory_order_acquire) == nullptr)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }

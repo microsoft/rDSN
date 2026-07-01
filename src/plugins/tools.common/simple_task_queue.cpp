@@ -79,11 +79,12 @@ namespace dsn
 
         void simple_timer_service::add_timer(task* task)
         {
+            int delay_ms = task->delay_milliseconds();
             std::shared_ptr<boost::asio::deadline_timer> timer(new boost::asio::deadline_timer(_ios));
-            timer->expires_from_now(boost::posix_time::milliseconds(task->delay_milliseconds()));
+            timer->expires_from_now(boost::posix_time::milliseconds(delay_ms));
             task->set_delay(0);
 
-            timer->async_wait([task, timer](const boost::system::error_code& ec)
+            timer->async_wait([task, timer, delay_ms](const boost::system::error_code& ec)
             {
                 if (!ec)
                 {
@@ -91,8 +92,15 @@ namespace dsn
                 }
                 else if (ec != ::boost::asio::error::operation_aborted)
                 {
-                    dfatal("timer failed for task %s, err = %u",
-                        task->spec().name.c_str(), ec.value());
+                    // A timer failure used to abort the whole process (dfatal), which is too harsh
+                    // for a single timer. But we must not run the task early either: its delay has
+                    // not actually elapsed. Restore the delay and re-enqueue -- task::enqueue routes
+                    // delayed tasks back to add_timer, re-arming a fresh timer -- so the task still
+                    // fires after ~its intended delay instead of immediately, and is not lost.
+                    derror("timer failed for task %s, err = %u, rescheduling after %d ms",
+                        task->spec().name.c_str(), ec.value(), delay_ms);
+                    task->set_delay(delay_ms);
+                    task->enqueue();
                 }
 
                 // to consume the added ref count by task::enqueue for add_timer

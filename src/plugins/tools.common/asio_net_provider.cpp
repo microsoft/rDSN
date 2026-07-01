@@ -165,7 +165,15 @@ namespace dsn {
             {
                 tlen += bufs[i].sz;
             }
-            dassert(tlen <= max_udp_packet_size, "the message is too large to send via a udp channel");
+            if (tlen > max_udp_packet_size)
+            {
+                // Do not abort the whole process because one message is oversized: drop it and
+                // let the rpc matcher time the call out (same as the send-failure path below).
+                derror("the message (%zu bytes) is too large to send via a udp channel (max %zu); dropping it",
+                    tlen,
+                    max_udp_packet_size);
+                return;
+            }
 
             std::unique_ptr<char[]> packet_buffer(new char[tlen]);
             for (int i = 0; i < rcount; i ++)
