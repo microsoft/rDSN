@@ -272,9 +272,13 @@ inline void json_decode(dsn::json::string_tokenizer& in, dsn::gpid& pid)
     json_decode(in, gpid_message);
     dsn_global_partition_id c_gpid;
     c_gpid.value = 0;
-    dassert(sscanf(gpid_message.c_str(), "%d.%d", &c_gpid.u.app_id, &c_gpid.u.partition_index) == 2,
-            "invalid gpid format: %s",
-            gpid_message.c_str());
+    if (sscanf(gpid_message.c_str(), "%d.%d", &c_gpid.u.app_id, &c_gpid.u.partition_index) != 2)
+    {
+        // malformed gpid from (untrusted/corrupt) input: report through the
+        // exception channel that the top-level decode() already handles, instead
+        // of aborting the process via dassert.
+        throw std::runtime_error("json parse error: invalid gpid format");
+    }
     pid = dsn::gpid(c_gpid);
 }
 
@@ -286,7 +290,22 @@ inline void json_decode(dsn::json::string_tokenizer& in, dsn::rpc_address& addre
 {
     std::string rpc_address_string;
     json_decode(in, rpc_address_string);
-    address.from_string_ipv4(rpc_address_string.c_str());
+    // An unset/invalid address is legitimately encoded as "invalid address"
+    // (see dsn_address_to_string); accept that marker and leave the address
+    // invalid so e.g. a partition with no primary round-trips correctly. Any
+    // other string that fails to parse is malformed input: report it through the
+    // exception channel the top-level decode() handles, instead of silently
+    // storing an invalid address that a later invariant check (e.g. the
+    // secondaries assert in initialize_node_state) would abort on.
+    address.set_invalid();
+    if (rpc_address_string == "invalid address")
+    {
+        return;
+    }
+    if (!address.from_string_ipv4(rpc_address_string.c_str()))
+    {
+        throw std::runtime_error("json parse error: invalid rpc_address");
+    }
 }
 
 inline void json_encode(std::stringstream& out, const dsn::partition_configuration& config);

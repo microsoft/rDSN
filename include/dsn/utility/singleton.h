@@ -59,16 +59,27 @@ public:
                 }
             }
 
+            // Release _l on every exit path -- including when T's constructor
+            // throws (e.g. std::bad_alloc under memory pressure). Otherwise the
+            // lock stays held forever and any later instance() call spins on _l
+            // for good. That is especially dangerous for a re-entrant call on
+            // this same thread -- e.g. the failure is reported through a path
+            // that logs, and logging itself calls instance() -- which would
+            // self-deadlock. The guard turns the failure into a clean, retryable
+            // throw (fail-stop) instead of a hang.
+            struct unlocker
+            {
+                std::atomic<int>& l;
+                ~unlocker() { l.store(0, std::memory_order_release); }
+            } unlock_guard{_l};
+
             // re-check and assign
             instance = _instance.load(std::memory_order_acquire);
             if (nullptr == instance)
             {
                 instance = new T();
                 _instance.store(instance, std::memory_order_release);
-            }            
-
-            // unlock
-            _l.store(0, std::memory_order_release);
+            }
         }
         return *instance;
     }

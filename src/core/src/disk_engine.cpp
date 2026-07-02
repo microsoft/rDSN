@@ -349,7 +349,7 @@ void disk_engine::process_write(aio_task* aio, uint32_t sz)
     // Returns the next queued work item (or nullptr) after completing 'wk' with an error, and
     // writes the next batch size through next_sz. We loop on this below instead of recursing so
     // that a disk that keeps failing synchronously cannot overflow the stack.
-    auto complete_write_with_error = [this](aio_task* wk, error_code err, uint32_t* next_sz) -> aio_task*
+    auto complete_write_with_error = [](aio_task* wk, error_code err, uint32_t* next_sz) -> aio_task*
     {
         auto df = (disk_file*)wk->aio()->file_object;
         return df->on_write_completed(wk, (void*)next_sz, err, 0);
