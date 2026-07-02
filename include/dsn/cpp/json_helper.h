@@ -302,7 +302,14 @@ inline void json_decode(dsn::json::string_tokenizer& in, dsn::rpc_address& addre
     {
         return;
     }
-    if (!address.from_string_ipv4(rpc_address_string.c_str()))
+    // from_string_ipv4() returns true even when the host cannot be converted: it
+    // splits host:port and calls assign_ipv4(), which stores
+    // dsn_ipv4_from_host(host) -- and that yields 0 for a malformed/unresolvable
+    // host (e.g. "999.999.999.999:12345") or an empty host (":12345"). The result
+    // is a non-invalid 0.0.0.0:port that would slip past the is_invalid() checks
+    // downstream. A genuine serialized node address is never 0.0.0.0, so treat a
+    // false return OR a zero ip as malformed input and reject it.
+    if (!address.from_string_ipv4(rpc_address_string.c_str()) || address.ip() == 0)
     {
         throw std::runtime_error("json parse error: invalid rpc_address");
     }
