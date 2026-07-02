@@ -634,9 +634,23 @@ bool run(
                 if (::dsn::safe_string("apps.") + argskvs.front() == sp.config_section)
                 {
                     if (argskvs.size() < 2)
+                    {
                         create_it = true;
+                    }
                     else
-                        create_it = (std::stoi(argskvs.back().c_str()) == sp.index);
+                    {
+                        int app_index = 0;
+                        if (!::dsn::utils::lexical_cast_integer<int>(
+                                std::string(argskvs.back().c_str()), app_index))
+                        {
+                            fprintf(stderr,
+                                "Invalid app index '%s' in app_list for %s, expected an integer.\n",
+                                argskvs.back().c_str(),
+                                sp.config_section.c_str());
+                            return false;
+                        }
+                        create_it = (app_index == sp.index);
+                    }
                     break;
                 }
             }
