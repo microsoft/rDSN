@@ -54,16 +54,55 @@ configuration::~configuration()
 {
 }
 
+static bool cfg_is_absolute_path(const char* path)
+{
+    if (path == nullptr || path[0] == '\0')
+    {
+        return false;
+    }
+    if (path[0] == '/' || path[0] == '\\')
+    {
+        return true;
+    }
+#ifdef _WIN32
+    if (((path[0] >= 'a' && path[0] <= 'z') || (path[0] >= 'A' && path[0] <= 'Z'))
+        && path[1] == ':')
+    {
+        return true;
+    }
+#endif
+    return false;
+}
+
 bool configuration::load_include(const char* inc, const char* arguments)
 {
-    configuration conf;
-    if (!conf.load(inc, arguments))
+    // Resolve a relative @include path against the directory of the parent
+    // configuration file (like the C preprocessor / nginx), rather than the
+    // process working directory, so that a config and its includes stay
+    // relocatable. Fall back to the original (working-directory relative) path
+    // when the parent-relative file does not exist, for backward compatibility.
+    std::string include_file = inc;
+    if (!cfg_is_absolute_path(inc))
     {
-        fprintf(stderr, "load included configuration file %s failed\n", inc);
+        std::string parent_dir = dsn::utils::filesystem::remove_file_name(_file_name);
+        if (!parent_dir.empty())
+        {
+            std::string candidate = dsn::utils::filesystem::path_combine(parent_dir, inc);
+            if (!candidate.empty() && dsn::utils::filesystem::file_exists(candidate))
+            {
+                include_file = candidate;
+            }
+        }
+    }
+
+    configuration conf;
+    if (!conf.load(include_file.c_str(), arguments))
+    {
+        fprintf(stderr, "load included configuration file %s failed\n", include_file.c_str());
         return false;
     }
 
-    printf("load included configuration file %s ...\n", inc);
+    fprintf(stderr, "load included configuration file %s ...\n", include_file.c_str());
     for (auto& sec : conf._configs)
     {
         for (auto& kv : sec.second)
@@ -156,7 +195,7 @@ bool configuration::load(const char* file_name, const char* arguments, const cha
 
             _file_data = utils::replace_string(_file_data, key, value);
 
-            printf("config.replace: %s => %s\n", key.c_str(), value.c_str());
+            fprintf(stderr, "config.replace: %s => %s\n", key.c_str(), value.c_str());
         }
     }
     
@@ -349,7 +388,7 @@ Next:
                             value // 12345
                         );
 
-                        printf("config.config.args: [%s] %s = %s\n",
+                        fprintf(stderr, "config.config.args: [%s] %s = %s\n",
                             kv.second->section.c_str(),
                             kv.second->key.c_str(),
                             kv.second->value.c_str()

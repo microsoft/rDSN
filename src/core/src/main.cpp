@@ -562,6 +562,12 @@ bool run(
     
     // init tools
     dsn_all.tool = ::dsn::utils::factory_store< ::dsn::tools::tool_app>::create(spec.tool.c_str(), ::dsn::PROVIDER_TYPE_MAIN, spec.tool.c_str());
+    if (dsn_all.tool == nullptr)
+    {
+        fprintf(stderr, "cannot create tool '%s' specified by [core] tool, "
+                        "please check it is a valid and registered tool name\n", spec.tool.c_str());
+        return false;
+    }
     dsn_all.tool->install(spec);
 
     // init app specs

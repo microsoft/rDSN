@@ -108,7 +108,10 @@ typedef void*       (*dsn_app_create)(
     \param argc  as in traditional main(argc, argv)
     \param argv  as in traditional main(argc, argv)
 
-    \return error code for app start
+    \return ERR_OK on success. On the standard launch path (nativerun/simulator),
+            returning a non-ERR_OK code is treated as a fatal start failure and
+            causes the process to exit (fail-stop). Note the mimic launch path
+            (dsn_mimic_app) never invokes this callback.
  */
 typedef dsn_error_t(*dsn_app_start)(
     void*  app,

@@ -64,7 +64,15 @@ namespace dsn {
                 }
                 
                 err = _node->start_app();
-                dassert(err == ERR_OK, "start app failed, err = %s", err.to_string());
+                if (err != ERR_OK)
+                {
+                    // A node whose app cannot be started is non-functional, so
+                    // fail-stop the process. Exit gracefully with a clear
+                    // diagnostic instead of aborting with a coredump.
+                    derror("start app %s failed, err = %s; exiting the process",
+                           sp.name.c_str(), err.to_string());
+                    dsn_exit(1);
+                }
             }
             else
             {

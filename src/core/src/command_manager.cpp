@@ -402,7 +402,7 @@ namespace dsn {
 
     void command_manager::run_console()
     {
-        std::cout << "dsn cli begin ... (type 'help' + Enter to learn more)" << std::endl;
+        std::cerr << "dsn cli begin ... (type 'help' + Enter to learn more)" << std::endl;
         std::cout << ">";
 
         std::string cmdline;
