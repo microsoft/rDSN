@@ -37,6 +37,7 @@
 
 # include <dsn/service_api_c.h>
 # include <stdarg.h>
+# include <cstdio>
 
 namespace dsn {
 
@@ -62,6 +63,11 @@ public:
     virtual void dsn_logv(const char *file, const char *function, const int line, dsn_log_level_t log_level, const char* title, const char* fmt, va_list args) = 0;
 
     virtual void flush() = 0;
+
+    // print the unified log-line header (level char, timestamp, and thread/task
+    // context) to the given stream. shared by all logging providers and by the
+    // no-provider fallback in dsn_logv so the on-screen log format stays consistent.
+    DSN_API static void print_header(FILE* fp, dsn_log_level_t log_level);
 };
 
 /*@}*/

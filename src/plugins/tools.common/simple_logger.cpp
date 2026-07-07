@@ -46,65 +46,6 @@
 namespace dsn {
     namespace tools {
 
-        static void print_header(FILE* fp, dsn_log_level_t log_level)
-        {
-            static char s_level_char[] = "IDWEF";
-
-            uint64_t ts = 0;
-            if (::dsn::tools::is_engine_ready())
-                ts = dsn_now_ns();
-
-            char str[24];
-            ::dsn::utils::time_ms_to_string(ts / 1000000, str, sizeof(str));
-
-            int tid = ::dsn::utils::get_current_tid(); 
-
-            fprintf(fp, "%c%s (%" PRIu64 " %04x) ", s_level_char[log_level],
-                    str, ts, tid);
-
-            auto t = task::get_current_task_id();
-            if (t)
-            {
-                if (nullptr != task::get_current_worker2())
-                {
-                    fprintf(fp, "%6s.%7s%d.%016" PRIx64 ": ",
-                        task::get_current_node_name(),
-                        task::get_current_worker2()->pool_spec().name.c_str(),
-                        task::get_current_worker2()->index(),
-                        t
-                        );
-                }
-                else
-                {
-                    fprintf(fp, "%6s.%7s.%05d.%016" PRIx64 ": ",
-                        task::get_current_node_name(),
-                        "io-thrd",
-                        tid,
-                        t
-                        );
-                }
-            }
-            else
-            {
-                if (nullptr != task::get_current_worker2())
-                {
-                    fprintf(fp, "%6s.%7s%u: ",
-                        task::get_current_node_name(),
-                        task::get_current_worker2()->pool_spec().name.c_str(),
-                        task::get_current_worker2()->index()
-                        );
-                }
-                else
-                {
-                    fprintf(fp, "%6s.%7s.%05d: ",
-                        task::get_current_node_name(),
-                        "io-thrd",
-                        tid
-                        );
-                }
-            }
-        }
-
         screen_logger::screen_logger(const char* log_dir, logging_provider* inner)
             : logging_provider(log_dir, inner)
         {
@@ -127,18 +68,20 @@ namespace dsn {
         {
             utils::auto_lock< ::dsn::utils::ex_lock_nr> l(_lock);
 
-            print_header(stdout, log_level);
+            // write logs to stderr (not stdout) so that stdout stays clean for
+            // machine-readable program output (metrics, cli results, etc.)
+            logging_provider::print_header(stderr, log_level);
             if (!_short_header)
             {
-                printf("%s:%d:%s(): ", title, line, function);
+                fprintf(stderr, "%s:%d:%s(): ", title, line, function);
             }
-            vprintf(fmt, args);
-            printf("\n");
+            vfprintf(stderr, fmt, args);
+            fprintf(stderr, "\n");
         }
 
         void screen_logger::flush()
         {
-            ::fflush(stdout);
+            ::fflush(stderr);
         }
 
         simple_logger::simple_logger(const char* log_dir, logging_provider* inner)
@@ -300,7 +243,7 @@ namespace dsn {
                 {
                     if (log_level >= _stderr_start_level)
                     {
-                        print_header(stderr, log_level);
+                        logging_provider::print_header(stderr, log_level);
                         if (!_short_header)
                         {
                             fprintf(stderr, "%s:%d:%s(): ", title, line, function);
@@ -316,7 +259,7 @@ namespace dsn {
                 }
             }
          
-            print_header(_log, log_level);
+            logging_provider::print_header(_log, log_level);
             if (!_short_header)
             {
                 fprintf(_log, "%s:%d:%s(): ", title, line, function);
@@ -333,7 +276,7 @@ namespace dsn {
 
             if (log_level >= _stderr_start_level)
             {
-                print_header(stderr, log_level);
+                logging_provider::print_header(stderr, log_level);
                 if (!_short_header)
                 {
                     fprintf(stderr, "%s:%d:%s(): ", title, line, function);

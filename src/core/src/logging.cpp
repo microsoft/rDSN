@@ -41,6 +41,7 @@
 # include "service_engine.h"
 # include <dsn/cpp/auto_codes.h>
 # include <cstdio>
+# include <cinttypes>
 
 DSN_API dsn_log_level_t dsn_log_start_level = dsn_log_level_t::LOG_LEVEL_INFORMATION;
 
@@ -97,6 +98,66 @@ DSN_API dsn_log_level_t dsn_log_get_start_level()
     return dsn_log_start_level;
 }
 
+// shared, unified log-line header used by all logging providers (screen_logger,
+// simple_logger, ...) and by the no-provider fallback in dsn_logv below, so that
+// the on-screen log format stays consistent across all of them.
+void dsn::logging_provider::print_header(FILE* fp, dsn_log_level_t log_level)
+{
+    static char s_level_char[] = "IDWEF";
+
+    uint64_t ts = 0;
+    if (::dsn::tools::is_engine_ready())
+    {
+        ts = dsn_now_ns();
+    }
+
+    char str[24];
+    ::dsn::utils::time_ms_to_string(ts / 1000000, str, sizeof(str));
+
+    int tid = ::dsn::utils::get_current_tid();
+
+    fprintf(fp, "%c%s (%" PRIu64 " %04x) ", s_level_char[log_level], str, ts, tid);
+
+    auto t = ::dsn::task::get_current_task_id();
+    auto worker = ::dsn::task::get_current_worker2();
+    if (t)
+    {
+        if (nullptr != worker)
+        {
+            fprintf(fp, "%6s.%7s%d.%016" PRIx64 ": ",
+                ::dsn::task::get_current_node_name(),
+                worker->pool_spec().name.c_str(),
+                worker->index(),
+                t);
+        }
+        else
+        {
+            fprintf(fp, "%6s.%7s.%05d.%016" PRIx64 ": ",
+                ::dsn::task::get_current_node_name(),
+                "io-thrd",
+                tid,
+                t);
+        }
+    }
+    else
+    {
+        if (nullptr != worker)
+        {
+            fprintf(fp, "%6s.%7s%u: ",
+                ::dsn::task::get_current_node_name(),
+                worker->pool_spec().name.c_str(),
+                worker->index());
+        }
+        else
+        {
+            fprintf(fp, "%6s.%7s.%05d: ",
+                ::dsn::task::get_current_node_name(),
+                "io-thrd",
+                tid);
+        }
+    }
+}
+
 DSN_API void dsn_logv(const char *file, const char *function, const int line, dsn_log_level_t log_level, const char* title, const char* fmt, va_list args)
 {
     if (file == nullptr)
@@ -136,9 +197,14 @@ DSN_API void dsn_logv(const char *file, const char *function, const int line, ds
     }
     else
     {
-        printf("%s:%d:%s():", title, line, function);
-        vprintf(fmt, args);
-        printf("\n");
+        // no logging provider is installed yet (e.g. during early bootstrap before
+        // init_before_toollets creates it); write diagnostics to stderr so that stdout
+        // stays clean for machine-readable program output (metrics, cli results, etc.),
+        // reusing the shared provider header so the log format stays consistent.
+        ::dsn::logging_provider::print_header(stderr, log_level);
+        fprintf(stderr, "%s:%d:%s(): ", title, line, function);
+        vfprintf(stderr, fmt, args);
+        fprintf(stderr, "\n");
     }
 }
 
