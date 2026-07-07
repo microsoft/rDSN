@@ -72,7 +72,7 @@
     }\
     else {\
     if (!type::is_exist(v.c_str())) {\
-        fprintf(stderr, "invalid enum configuration '[%s] %s = %s'\n", section, #fld, v.c_str()); \
+        derror("invalid enum configuration '[%s] %s = %s'", section, #fld, v.c_str()); \
         return false; \
             }\
             else \
@@ -93,7 +93,7 @@
     else {\
     auto v2 = enum_from_string(v.c_str(), invalid_enum);\
     if (v2 == invalid_enum) {\
-        fprintf(stderr, "invalid enum configuration '[%s] %s = %s'\n", section, #fld, v.c_str()); \
+        derror("invalid enum configuration '[%s] %s = %s'", section, #fld, v.c_str()); \
         return false; \
             }\
             else \
@@ -110,7 +110,7 @@
     ::dsn::utils::split_args(vv.c_str(), lv, ','); \
     for (auto& v : lv) {\
         if (!type::is_exist(v.c_str())) {\
-            fprintf(stderr, "invalid enum configuration '[%s] %s = %s'\n", section, #fld, v.c_str()); \
+            derror("invalid enum configuration '[%s] %s = %s'", section, #fld, v.c_str()); \
             return false; \
                 } \
                 else \
@@ -149,7 +149,7 @@
         for (auto& s : lv) { \
             int parsed = 0; \
             if (!::dsn::utils::lexical_cast_integer<int>(s, parsed)) { \
-                fprintf(stderr, "invalid integer configuration '[%s] %s = %s'\n", section, #fld, s.c_str()); \
+                derror("invalid integer configuration '[%s] %s = %s'", section, #fld, s.c_str()); \
                 return false; \
             } \
             val.fld.push_back(parsed); \
