@@ -36,6 +36,7 @@
 # pragma once
 
 # include <dsn/utility/singleton_store.h>
+# include <dsn/utility/logging.h>
 # include <cstdio>
 # include <typeinfo>
 
@@ -169,11 +170,11 @@ namespace dsn {
     private:
         static void report_error(const char* name, ::dsn::provider_type type)
         {
-            fprintf(stderr, "cannot find factory '%s' with factory type %s\n", name, type == PROVIDER_TYPE_MAIN ? "provider" : "aspect");
+            dutil_error("cannot find factory '%s' with factory type %s", name, type == PROVIDER_TYPE_MAIN ? "provider" : "aspect");
 
             std::vector<std::string> keys;
             singleton_store<std::string, factory_entry>::instance().get_all_keys(keys);
-            fprintf(stderr, "\tthe following %u factories are registered for '%s':\n", 
+            dutil_error("\tthe following %u factories are registered for '%s':",
                 static_cast<int>(keys.size()),
                 typeid(TResult).name()
                 );
@@ -181,9 +182,9 @@ namespace dsn {
             {
                 factory_entry entry;
                 singleton_store<std::string, factory_entry>::instance().get(*it, entry);        
-                fprintf(stderr, "\t\t%s (type: %s)\n", it->c_str(), entry.type == PROVIDER_TYPE_MAIN ? "provider" : "aspect");
+                dutil_error("\t\t%s (type: %s)", it->c_str(), entry.type == PROVIDER_TYPE_MAIN ? "provider" : "aspect");
             }
-            fprintf(stderr, "\tPlease specify the correct factory name in your tool_app or in configuration file\n");
+            dutil_error("\tPlease specify the correct factory name in your tool_app or in configuration file");
         }
 
     private:

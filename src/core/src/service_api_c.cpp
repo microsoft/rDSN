@@ -1940,8 +1940,7 @@ err:
 
 NORETURN DSN_API void dsn_exit(int code)
 {
-    printf("dsn exit with code %d\n", code);
-    fflush(stdout);
+    dinfo("dsn exit with code %d", code);
     ::dsn::tools::sys_exit.execute(::dsn::SYS_EXIT_NORMAL);
 
 # if defined(_WIN32)

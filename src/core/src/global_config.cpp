@@ -61,7 +61,7 @@ static bool read_all_config_keys(const char* section, std::vector<const char*>& 
     int key_count = dsn_config_get_all_keys(section, nullptr, &key_capacity);
     if (key_count < 0)
     {
-        fprintf(stderr, "failed to read config keys from section [%s]\n", section);
+        derror("failed to read config keys from section [%s]", section);
         return false;
     }
 
@@ -77,7 +77,7 @@ static bool read_all_config_keys(const char* section, std::vector<const char*>& 
     }
     catch (const std::exception& ex)
     {
-        fprintf(stderr, "failed to allocate config keys for section [%s]: %s\n", section, ex.what());
+        derror("failed to allocate config keys for section [%s]: %s", section, ex.what());
         return false;
     }
 
@@ -85,15 +85,13 @@ static bool read_all_config_keys(const char* section, std::vector<const char*>& 
     int actual_key_count = dsn_config_get_all_keys(section, keys.data(), &key_capacity);
     if (actual_key_count < 0)
     {
-        fprintf(stderr, "failed to read config keys from section [%s]\n", section);
+        derror("failed to read config keys from section [%s]", section);
         return false;
     }
 
     if (actual_key_count > key_capacity)
     {
-        fprintf(stderr,
-                "config keys in section [%s] changed while reading: capacity = %d, actual = %d\n",
-                section,
+        derror("config keys in section [%s] changed while reading: capacity = %d, actual = %d", section,
                 key_capacity,
                 actual_key_count);
         return false;
@@ -120,7 +118,7 @@ static bool build_client_network_confs(
     {
         if (key == nullptr)
         {
-            fprintf(stderr, "config section [%s] has null key\n", section);
+            derror("config section [%s] has null key", section);
             return false;
         }
 
@@ -150,9 +148,7 @@ static bool build_client_network_confs(
 
             if (vs.size() != 2)
             {
-                fprintf(stderr, "invalid client network specification '%s', should be '$network-factory,$msg-buffer-size'\n",
-                    v.c_str()
-                    );
+                derror("invalid client network specification '%s', should be '$network-factory,$msg-buffer-size'", v.c_str());
                 return false;
             }
             
@@ -161,7 +157,7 @@ static bool build_client_network_confs(
             if (!::dsn::utils::lexical_cast_integer<int>(*vs.rbegin(), ns.message_buffer_block_size) ||
                 (ns.message_buffer_block_size <= 0))
             {
-                fprintf(stderr, "invalid message buffer size specified: '%s'\n", vs.rbegin()->c_str());
+                derror("invalid message buffer size specified: '%s'", vs.rbegin()->c_str());
                 return false;
             }
 
@@ -169,7 +165,7 @@ static bool build_client_network_confs(
         }
         else
         {
-            fprintf(stderr, "invalid rpc channel type: %s\n", k2.c_str());
+            derror("invalid rpc channel type: %s", k2.c_str());
             return false;
         }
     }
@@ -208,7 +204,7 @@ static bool build_server_network_confs(
     {
         if (key == nullptr)
         {
-            fprintf(stderr, "config section [%s] has null key\n", section);
+            derror("config section [%s] has null key", section);
             return false;
         }
 
@@ -224,14 +220,14 @@ static bool build_server_network_confs(
         utils::split_args(k2.c_str(), ks, '.');
         if (ks.size() != 2)
         {
-            fprintf(stderr, "invalid network server config '%s', should be like 'network.server.12345.RPC_CHANNEL_TCP' instead\n", k.c_str());
+            derror("invalid network server config '%s', should be like 'network.server.12345.RPC_CHANNEL_TCP' instead", k.c_str());
             return false;
         }
 
         uint16_t port = 0;
         if (!::dsn::utils::lexical_cast_integer<uint16_t>(*ks.begin(), port))
         {
-            fprintf(stderr, "invalid network server port specified: '%s'\n", ks.begin()->c_str());
+            derror("invalid network server port specified: '%s'", ks.begin()->c_str());
             return false;
         }
         auto k3 = *ks.rbegin();
@@ -240,9 +236,9 @@ static bool build_server_network_confs(
         {
             if (port != 0)
             {
-                fprintf(stderr, "invalid network server configuration '%s'\n", k.c_str());
-                fprintf(stderr, "port must be zero in [apps..default]\n");
-                fprintf(stderr, " e.g., network.server.0.RPC_CHANNEL_TCP = NET_HDR_DSN, dsn::tools::asio_network_provider,65536\n");
+                derror("invalid network server configuration '%s'", k.c_str());
+                derror("port must be zero in [apps..default]");
+                derror(" e.g., network.server.0.RPC_CHANNEL_TCP = NET_HDR_DSN, dsn::tools::asio_network_provider,65536");
                 return false;
             }
         }
@@ -273,9 +269,7 @@ static bool build_server_network_confs(
 
             if (vs.size() != 2)
             {
-                fprintf(stderr, "invalid server network specification '%s', should be '$network-factory,$msg-buffer-size'\n",
-                    v.c_str()
-                    );
+                derror("invalid server network specification '%s', should be '$network-factory,$msg-buffer-size'", v.c_str());
                 return false;
             }
 
@@ -284,7 +278,7 @@ static bool build_server_network_confs(
             if (!::dsn::utils::lexical_cast_integer<int>(*vs.rbegin(), ns.message_buffer_block_size) ||
                 (ns.message_buffer_block_size <= 0))
             {
-                fprintf(stderr, "invalid message buffer size specified: '%s'\n", vs.rbegin()->c_str());
+                derror("invalid message buffer size specified: '%s'", vs.rbegin()->c_str());
                 return false;
             }
 
@@ -292,7 +286,7 @@ static bool build_server_network_confs(
         }
         else
         {
-            fprintf(stderr, "invalid rpc channel type: %s\n", k3.c_str());
+            derror("invalid rpc channel type: %s", k3.c_str());
             return false;
         }
     }
@@ -462,7 +456,7 @@ bool service_spec::init_app_specs()
     int mimic_type_len = snprintf(dapp.type_name, sizeof(dapp.type_name), "%s", mimic_app_role_name);
     if (mimic_type_len < 0 || static_cast<size_t>(mimic_type_len) >= sizeof(dapp.type_name))
     {
-        fprintf(stderr, "mimic app type name is too long\n");
+        derror("mimic app type name is too long");
         return false;
     }
     dapp.layer1.create = mimic_app_create;
@@ -497,7 +491,7 @@ bool service_spec::init_app_specs()
             auto type = dsn_config_get_value_string("apps.mimic", "type", "", "app type, must be " mimic_app_role_name);
             if (strcmp(type, mimic_app_role_name) != 0)
             {
-                fprintf(stderr, "invalid config value '%s' for [apps.mimic] type", type);
+                derror("invalid config value '%s' for [apps.mimic] type", type);
                 return false;
             }
         }
@@ -540,7 +534,7 @@ bool service_spec::init_app_specs()
             dsn_app* role;
             if (!store.get(app.type.c_str(), role))
             {
-                fprintf(stderr, "service type '%s' not registered\n", app.type.c_str());
+                derror("service type '%s' not registered", app.type.c_str());
                 return false;
             }
 
@@ -554,7 +548,7 @@ bool service_spec::init_app_specs()
                 int len = snprintf(buf, sizeof(buf), "%u", i);
                 if (len < 0 || static_cast<size_t>(len) >= sizeof(buf))
                 {
-                    fprintf(stderr, "failed to format app index %d\n", i);
+                    derror("failed to format app index %d", i);
                     return false;
                 }
                 app.name = (app.count > 1 ? (app.role_name + buf) : app.role_name);

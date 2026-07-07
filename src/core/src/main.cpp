@@ -473,7 +473,7 @@ bool run(
 
     if (!dsn_all.config->load(config_file, config_arguments, config_overwrites))
     {
-        fprintf(stderr, "Fail to load config file %s\n", config_file);
+        derror("Fail to load config file %s", config_file);
         return false;
     }
     dwarn("load config file '%s' successfully", config_file);
@@ -483,10 +483,11 @@ bool run(
         "whether to pause at startup time for easier debugging"))
     {
 # if defined(_WIN32)
-        printf("\nPause for debugging (pid = %d)...\n", static_cast<int>(::GetCurrentProcessId()));
+        int debug_pid = static_cast<int>(::GetCurrentProcessId());
 # else
-        printf("\nPause for debugging (pid = %d)...\n", static_cast<int>(getpid()));
+        int debug_pid = static_cast<int>(getpid());
 # endif
+        dwarn("Pause for debugging (pid = %d)...", debug_pid);
         getchar();
     }
 
@@ -508,7 +509,7 @@ bool run(
     ::dsn::service_spec spec;
     if (!spec.init())
     {
-        fprintf(stderr, "error in config file %s, exit ...\n", config_file);
+        derror("error in config file %s, exit ...", config_file);
         return false;
     }
 
@@ -518,21 +519,21 @@ bool run(
     auto& data_dir = spec.data_dir;
     if (dsn::utils::filesystem::file_exists(data_dir.c_str()))
     {
-        fprintf(stderr, "%s should not be a file.\n", data_dir.c_str());
+        derror("%s should not be a file.", data_dir.c_str());
         return false;
     }
     if (!dsn::utils::filesystem::directory_exists(data_dir.c_str()))
     {
         if (!dsn::utils::filesystem::create_directory(data_dir.c_str()))
         {
-            fprintf(stderr, "Fail to create %s.\n", data_dir.c_str());
+            derror("Fail to create %s.", data_dir.c_str());
             return false;
         }
     }
     std::string cdir;
     if (!dsn::utils::filesystem::get_absolute_path(data_dir.c_str(), cdir))
     {
-        fprintf(stderr, "Fail to get absolute path from %s.\n", data_dir.c_str());
+        derror("Fail to get absolute path from %s.", data_dir.c_str());
         return false;
     }
     spec.data_dir = cdir.c_str();
@@ -542,12 +543,12 @@ bool run(
     if (!dsn::utils::filesystem::directory_exists(spec.dir_coredump.c_str()) &&
         !dsn::utils::filesystem::create_directory(spec.dir_coredump.c_str()))
     {
-        fprintf(stderr, "Fail to create %s.\n", spec.dir_coredump.c_str());
+        derror("Fail to create %s.", spec.dir_coredump.c_str());
         return false;
     }
     if (!::dsn::utils::coredump::init(spec.dir_coredump.c_str()))
     {
-        fprintf(stderr, "Fail to init coredump in %s.\n", spec.dir_coredump.c_str());
+        derror("Fail to init coredump in %s.", spec.dir_coredump.c_str());
         return false;
     }
 
@@ -556,7 +557,7 @@ bool run(
     if (!dsn::utils::filesystem::directory_exists(spec.dir_log.c_str()) &&
         !dsn::utils::filesystem::create_directory(spec.dir_log.c_str()))
     {
-        fprintf(stderr, "Fail to create %s.\n", spec.dir_log.c_str());
+        derror("Fail to create %s.", spec.dir_log.c_str());
         return false;
     }
     
@@ -564,8 +565,7 @@ bool run(
     dsn_all.tool = ::dsn::utils::factory_store< ::dsn::tools::tool_app>::create(spec.tool.c_str(), ::dsn::PROVIDER_TYPE_MAIN, spec.tool.c_str());
     if (dsn_all.tool == nullptr)
     {
-        fprintf(stderr, "cannot create tool '%s' specified by [core] tool, "
-                        "please check it is a valid and registered tool name\n", spec.tool.c_str());
+        derror("cannot create tool '%s' specified by [core] tool, please check it is a valid and registered tool name", spec.tool.c_str());
         return false;
     }
     dsn_all.tool->install(spec);
@@ -573,7 +573,7 @@ bool run(
     // init app specs
     if (!spec.init_app_specs())
     {
-        fprintf(stderr, "error in config file %s, exit ...\n", config_file);
+        derror("error in config file %s, exit ...", config_file);
         return false;
     }
 
@@ -649,9 +649,7 @@ bool run(
                         if (!::dsn::utils::lexical_cast_integer<int>(
                                 std::string(argskvs.back().c_str()), app_index))
                         {
-                            fprintf(stderr,
-                                "Invalid app index '%s' in app_list for %s, expected an integer.\n",
-                                argskvs.back().c_str(),
+                            derror("Invalid app index '%s' in app_list for %s, expected an integer.", argskvs.back().c_str(),
                                 sp.config_section.c_str());
                             return false;
                         }
@@ -666,7 +664,7 @@ bool run(
         {
             if (::dsn::service_engine::fast_instance().start_node(sp) == nullptr)
             {
-                fprintf(stderr, "Fail to start app %s.\n", sp.name.c_str());
+                derror("Fail to start app %s.", sp.name.c_str());
                 return false;
             }
         }
@@ -819,12 +817,12 @@ DSN_API void dsn_run(int argc, char** argv, bool sleep_after_init)
     }
     catch (const std::exception& err)
     {
-        fprintf(stderr, "run the system failed due to exception: %s\n", err.what());
+        derror("run the system failed due to exception: %s", err.what());
     }
 
     if (!run_succeeded)
     {
-        fprintf(stderr, "run the system failed\n");
+        derror("run the system failed");
         dsn_exit(-1);
         return;
     }
@@ -845,7 +843,7 @@ DSN_API bool dsn_run_config(const char* config, bool sleep_after_init)
     }
     catch (const std::exception& err)
     {
-        fprintf(stderr, "run the system failed due to exception: %s\n", err.what());
+        derror("run the system failed due to exception: %s", err.what());
     }
 
     return false;

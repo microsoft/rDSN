@@ -38,6 +38,7 @@
 
 # include <memory>
 # include <dsn/cpp/utils.h>
+# include <dsn/utility/logging.h>
 # include <vector>
 # include <map>
 # include <cerrno>
@@ -151,11 +152,9 @@ template<> inline double configuration::get_value<double>(const char* section, c
     {
         if (_warning)
         {
-            fprintf(stderr, "WARNING: configuration '[%s] %s' is not defined, default value is '%lf'\n",
-                section,
+            dutil_warn("configuration '[%s] %s' is not defined, default value is '%lf'", section,
                 key,
-                default_value
-                );
+                default_value);
         }
         
         return default_value;
@@ -168,9 +167,7 @@ template<> inline double configuration::get_value<double>(const char* section, c
             return result;
         }
 
-        fprintf(stderr,
-                "WARNING: configuration '[%s] %s' has invalid value '%s', default value is '%lf'\n",
-                section,
+        dutil_warn("configuration '[%s] %s' has invalid value '%s', default value is '%lf'", section,
                 key,
                 value,
                 default_value);
@@ -188,11 +185,9 @@ template<> inline long long configuration::get_value<long long>(const char* sect
     {
         if (_warning)
         {
-            fprintf(stderr, "WARNING: configuration '[%s] %s' is not defined, default value is '%lld'\n",
-                section,
+            dutil_warn("configuration '[%s] %s' is not defined, default value is '%lld'", section,
                 key,
-                default_value
-                );
+                default_value);
         }
 
         return default_value;
@@ -204,22 +199,18 @@ template<> inline long long configuration::get_value<long long>(const char* sect
             unsigned long long v = 0;
             if (sscanf(value, "0x%llx", &v) != 1)
             {
-                fprintf(stderr, "WARNING: configuration '[%s] %s' has invalid hex value '%s', default value is '%lld'\n",
-                    section,
+                dutil_warn("configuration '[%s] %s' has invalid hex value '%s', default value is '%lld'", section,
                     key,
                     value,
-                    default_value
-                    );
+                    default_value);
                 return default_value;
             }
             if (v > static_cast<unsigned long long>((std::numeric_limits<long long>::max)()))
             {
-                fprintf(stderr, "WARNING: configuration '[%s] %s' has out-of-range hex value '%s', default value is '%lld'\n",
-                    section,
+                dutil_warn("configuration '[%s] %s' has out-of-range hex value '%s', default value is '%lld'", section,
                     key,
                     value,
-                    default_value
-                    );
+                    default_value);
                 return default_value;
             }
             return static_cast<long long>(v);
@@ -229,12 +220,10 @@ template<> inline long long configuration::get_value<long long>(const char* sect
             long long v = 0;
             if (!::dsn::utils::lexical_cast_integer<long long>(value, v))
             {
-                fprintf(stderr, "WARNING: configuration '[%s] %s' has invalid integer value '%s', default value is '%lld'\n",
-                    section,
+                dutil_warn("configuration '[%s] %s' has invalid integer value '%s', default value is '%lld'", section,
                     key,
                     value,
-                    default_value
-                    );
+                    default_value);
                 return default_value;
             }
             return v;
@@ -251,11 +240,9 @@ template<> inline long configuration::get_value<long>(const char* section, const
     {
         if (_warning)
         {
-            fprintf(stderr, "WARNING: configuration '[%s] %s' is not defined, default value is '%ld'\n",
-                section,
+            dutil_warn("configuration '[%s] %s' is not defined, default value is '%ld'", section,
                 key,
-                default_value
-                );
+                default_value);
         }
         return default_value;
     }
@@ -266,22 +253,18 @@ template<> inline long configuration::get_value<long>(const char* section, const
             unsigned long v = 0;
             if (sscanf(value, "0x%lx", &v) != 1)
             {
-                fprintf(stderr, "WARNING: configuration '[%s] %s' has invalid hex value '%s', default value is '%ld'\n",
-                    section,
+                dutil_warn("configuration '[%s] %s' has invalid hex value '%s', default value is '%ld'", section,
                     key,
                     value,
-                    default_value
-                    );
+                    default_value);
                 return default_value;
             }
             if (v > static_cast<unsigned long>((std::numeric_limits<long>::max)()))
             {
-                fprintf(stderr, "WARNING: configuration '[%s] %s' has out-of-range hex value '%s', default value is '%ld'\n",
-                    section,
+                dutil_warn("configuration '[%s] %s' has out-of-range hex value '%s', default value is '%ld'", section,
                     key,
                     value,
-                    default_value
-                    );
+                    default_value);
                 return default_value;
             }
             return static_cast<long>(v);
@@ -291,12 +274,10 @@ template<> inline long configuration::get_value<long>(const char* section, const
             long v = 0;
             if (!::dsn::utils::lexical_cast_integer<long>(value, v))
             {
-                fprintf(stderr, "WARNING: configuration '[%s] %s' has invalid integer value '%s', default value is '%ld'\n",
-                    section,
+                dutil_warn("configuration '[%s] %s' has invalid integer value '%s', default value is '%ld'", section,
                     key,
                     value,
-                    default_value
-                    );
+                    default_value);
                 return default_value;
             }
             return v;
@@ -344,11 +325,9 @@ template<> inline bool configuration::get_value<bool>(const char* section, const
     {
         if (_warning)
         {
-            fprintf(stderr, "WARNING: configuration '[%s] %s' is not defined, default value is '%s'\n",
-                section,
+            dutil_warn("configuration '[%s] %s' is not defined, default value is '%s'", section,
                 key,
-                default_value ? "true" : "false"
-                );
+                default_value ? "true" : "false");
         }
         return default_value;
     }
