@@ -39,6 +39,10 @@
 # include <algorithm>
 # include <fstream>
 # include <cstring>
+# include <atomic>
+# include <string>
+# include <thread>
+# include <vector>
 
 using namespace ::dsn;
 
@@ -239,4 +243,102 @@ TEST(core, configuration_invalid_numeric_values)
     ASSERT_EQ(14, c.get_value<long>(section, "invalid_hex", 14, ""));
     ASSERT_EQ(15, c.get_value<long long>(section, "invalid_uppercase_hex", 15, ""));
     ASSERT_EQ(18, c.get_value<long long>(section, "overflow_hex", 18, ""));
+}
+
+TEST(core, configuration_circular_include)
+{
+    // A circular @include chain must be rejected gracefully (load returns false)
+    // instead of recursing through load()/load_include() until the stack
+    // overflows and the process crashes.
+
+    // a.ini -> b.ini -> a.ini
+    {
+        configuration c;
+        ASSERT_FALSE(c.load("config-include-cycle-a.ini"));
+    }
+
+    // self-include: a.ini -> a.ini
+    {
+        configuration c;
+        ASSERT_FALSE(c.load("config-include-self.ini"));
+    }
+
+    // 3-node cycle: a.ini -> b.ini -> c.ini -> a.ini
+    {
+        configuration c;
+        ASSERT_FALSE(c.load("config-include-cycle3-a.ini"));
+    }
+
+    // A diamond include (the same file reached via two different, non-cyclic
+    // paths) is NOT a cycle and must still load successfully.
+    {
+        configuration c;
+        ASSERT_TRUE(c.load("config-include-diamond-a.ini"));
+        ASSERT_STREQ("dv", c.get_string_value("diamond_test", "dk", "unknown", ""));
+    }
+
+    // A deep (non-cyclic) include chain must load successfully.
+    {
+        configuration c;
+        ASSERT_TRUE(c.load("config-include-deep-a.ini"));
+        ASSERT_STREQ("dv", c.get_string_value("deep_test", "dk", "unknown", ""));
+    }
+
+    // After a rejected circular load, the per-thread include-tracking state must
+    // be clean again, so a subsequent valid load on the same thread succeeds.
+    {
+        configuration c1;
+        ASSERT_FALSE(c1.load("config-include-cycle-a.ini"));
+        configuration c2;
+        ASSERT_TRUE(c2.load("config-include-diamond-a.ini"));
+        ASSERT_STREQ("dv", c2.get_string_value("diamond_test", "dk", "unknown", ""));
+    }
+}
+
+TEST(core, configuration_concurrent_include)
+{
+    // The include-tracking set is thread_local, so loading configurations
+    // concurrently on multiple threads is race-free: each thread tracks only its
+    // own @include ancestry, with no shared mutable state and no cross-thread
+    // false positive. No matter how the loads interleave, every valid (diamond)
+    // load must succeed and every circular load must be rejected.
+    const int thread_count = 8;
+    const int iterations = 50;
+
+    std::atomic<int> diamond_ok(0);
+    std::atomic<int> cycle_rejected(0);
+
+    std::vector<std::thread> threads;
+    for (int t = 0; t < thread_count; ++t)
+    {
+        threads.emplace_back([&diamond_ok, &cycle_rejected, iterations]() {
+            for (int i = 0; i < iterations; ++i)
+            {
+                {
+                    configuration c;
+                    if (c.load("config-include-diamond-a.ini")
+                        && std::string("dv")
+                               == c.get_string_value("diamond_test", "dk", "unknown", ""))
+                    {
+                        diamond_ok.fetch_add(1);
+                    }
+                }
+                {
+                    configuration c;
+                    if (!c.load("config-include-cycle-a.ini"))
+                    {
+                        cycle_rejected.fetch_add(1);
+                    }
+                }
+            }
+        });
+    }
+
+    for (auto& th : threads)
+    {
+        th.join();
+    }
+
+    ASSERT_EQ(thread_count * iterations, diamond_ok.load());
+    ASSERT_EQ(thread_count * iterations, cycle_rejected.load());
 }

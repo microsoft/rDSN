@@ -42,8 +42,23 @@
 # include <algorithm>
 # include <cstring>
 # include <utility>
+# include <set>
 
 namespace dsn {
+
+namespace {
+// Per-thread set of configuration files currently being loaded on this thread
+// (the active @include ancestry). The entire @include recursion runs
+// synchronously on one thread, so a thread-local set lets nested load() /
+// load_include() calls detect a circular @include chain -- which would
+// otherwise recurse until the stack overflows and the process crashes --
+// without exposing any state in configuration.h.
+std::set<std::string>& active_include_stack()
+{
+    static thread_local std::set<std::string> stack;
+    return stack;
+}
+}
 
 
 configuration::configuration()
@@ -121,6 +136,54 @@ bool configuration::load_include(const char* inc, const char* arguments)
 bool configuration::load(const char* file_name, const char* arguments, const char* overwrites)
 {
     _file_name = std::string(file_name);
+
+    // Detect circular @include chains (e.g. a.ini -> b.ini -> a.ini), which
+    // would otherwise recurse through load()/load_include() until the stack
+    // overflows and the process crashes. Track the files currently being loaded
+    // on this thread (the active include ancestry): if a file tries to include
+    // one of its own ancestors, reject it with a clear error. The canonical
+    // (realpath) form is used so different spellings of the same file (relative
+    // paths, symlinks, ..) are recognized as the same file.
+    std::string canonical_name;
+    if (!dsn::utils::filesystem::get_absolute_path(_file_name, canonical_name)
+        || canonical_name.empty())
+    {
+        canonical_name = _file_name;
+    }
+
+    std::set<std::string>& active_includes = active_include_stack();
+
+    // The outermost (root) load owns the per-thread set. Detecting the root
+    // here lets it clear the whole set when it finishes, guaranteeing the set
+    // is empty again after every top-level load -- whether it succeeded, failed,
+    // or unwound through an exception -- so no stale state can leak into a later
+    // load on the same thread. The root always inserts into an empty set, so it
+    // never triggers the cycle rejection below.
+    const bool is_root_load = active_includes.empty();
+
+    if (!active_includes.insert(canonical_name).second)
+    {
+        dutil_error("circular @include detected for configuration file '%s'", canonical_name.c_str());
+        return false;
+    }
+
+    // Remove this file from the active ancestry on every exit path, so the same
+    // file can still be included via a different, non-cyclic path (a diamond);
+    // the root load additionally clears the whole set as a safety net.
+    struct include_guard
+    {
+        std::set<std::string>& active;
+        const std::string& key;
+        bool is_root;
+        ~include_guard()
+        {
+            active.erase(key);
+            if (is_root)
+            {
+                active.clear();
+            }
+        }
+    } guard{active_includes, canonical_name, is_root_load};
 
     FILE* fd = ::fopen(file_name, "rb");
     if (fd == nullptr)
