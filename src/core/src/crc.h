@@ -272,29 +272,29 @@ template<typename uintxx_t, uintxx_t uPoly> struct crc_generator
 
         InitializeTables ();
 
-        printf ("%s %s::_uX2N[sizeof (%s::_uX2N) / sizeof (%s::_uX2N[0])] = {", pTypeName, pClassName, pClassName, pClassName);
+        fprintf(stdout, "%s %s::_uX2N[sizeof (%s::_uX2N) / sizeof (%s::_uX2N[0])] = {", pTypeName, pClassName, pClassName, pClassName);
         for (i = w = 0; i < sizeof (_uX2N) / sizeof (_uX2N[0]); ++i)
         {
             if (i != 0)
-                printf (",");
+                fprintf(stdout, ",");
             if (w == 0)
-                printf ("\n   ");
-            printf (" 0x%0*llx", static_cast<int> (sizeof (uintxx_t) * 2), (uint64_t) _uX2N[i]);
+                fprintf(stdout, "\n   ");
+            fprintf(stdout, " 0x%0*llx", static_cast<int> (sizeof (uintxx_t) * 2), (uint64_t) _uX2N[i]);
             w = (w + sizeof (uintxx_t)) & 31;
         }
-        printf ("\n};\n\n");
+        fprintf(stdout, "\n};\n\n");
 
-        printf ("%s %s::_crc_table[sizeof (%s::_crc_table) / sizeof (%s::_crc_table[0])] = {", pTypeName, pClassName, pClassName, pClassName);
+        fprintf(stdout, "%s %s::_crc_table[sizeof (%s::_crc_table) / sizeof (%s::_crc_table[0])] = {", pTypeName, pClassName, pClassName, pClassName);
         for (i = w = 0; i < sizeof (_crc_table) / sizeof (_crc_table[0]); ++i)
         {
             if (i != 0)
-                printf (",");
+                fprintf(stdout, ",");
             if (w == 0)
-                printf ("\n   ");
-            printf (" 0x%0*llx", static_cast<int> (sizeof (uintxx_t) * 2), (uint64_t) _crc_table[i]);
+                fprintf(stdout, "\n   ");
+            fprintf(stdout, " 0x%0*llx", static_cast<int> (sizeof (uintxx_t) * 2), (uint64_t) _crc_table[i]);
             w = (w + sizeof (uintxx_t)) & 31;
         }
-        printf ("\n};\n\n");
+        fprintf(stdout, "\n};\n\n");
     };
 };
 

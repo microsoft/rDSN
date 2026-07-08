@@ -46,48 +46,48 @@ TEST(core, configuration)
 {
     configuration_ptr c;
 
-    printf("load not_exist_config_file\n");
+    fprintf(stdout, "load not_exist_config_file\n");
     c.reset(new configuration());
     ASSERT_FALSE(c->load("not_exist_config_file"));
 
-    printf("load config-empty.ini\n");
+    fprintf(stdout, "load config-empty.ini\n");
     c.reset(new configuration());
     ASSERT_FALSE(c->load("config-empty.ini"));
 
-    printf("load config-sample.ini with bad arguments\n");
+    fprintf(stdout, "load config-sample.ini with bad arguments\n");
     c.reset(new configuration());
     ASSERT_FALSE(c->load("config-sample.ini", "a="));
 
-    printf("load config-no-section.ini\n");
+    fprintf(stdout, "load config-no-section.ini\n");
     c.reset(new configuration());
     ASSERT_FALSE(c->load("config-no-section.ini"));
 
-    printf("load config-null-section.ini\n");
+    fprintf(stdout, "load config-null-section.ini\n");
     c.reset(new configuration());
     ASSERT_FALSE(c->load("config-null-section.ini"));
 
-    printf("load config-dup-section.ini\n");
+    fprintf(stdout, "load config-dup-section.ini\n");
     c.reset(new configuration());
     // we now allow duplicated section (as for include and overwrite)
     ASSERT_TRUE(c->load("config-dup-section.ini"));
 
-    printf("load config-unmatch-section.ini\n");
+    fprintf(stdout, "load config-unmatch-section.ini\n");
     c.reset(new configuration());
     ASSERT_FALSE(c->load("config-unmatch-section.ini"));
 
-    printf("load config-bad-section.ini\n");
+    fprintf(stdout, "load config-bad-section.ini\n");
     c.reset(new configuration());
     ASSERT_FALSE(c->load("config-bad-section.ini"));
 
-    printf("load config-no-key.ini\n");
+    fprintf(stdout, "load config-no-key.ini\n");
     c.reset(new configuration());
     ASSERT_FALSE(c->load("config-no-key.ini"));
 
-    printf("load config-dup-key.ini\n");
+    fprintf(stdout, "load config-dup-key.ini\n");
     c.reset(new configuration());
     ASSERT_TRUE(c->load("config-dup-key.ini"));
 
-    printf("load config-sample.ini\n");
+    fprintf(stdout, "load config-sample.ini\n");
     c.reset(new configuration());
     ASSERT_TRUE(c->load("config-sample.ini", "replace=replace_value"));
     bool old = c->set_warning(true);
@@ -196,7 +196,7 @@ TEST(core, configuration)
     c->dump(out);
     out.close();
 
-    printf("load config-sample-dump.ini\n");
+    fprintf(stdout, "load config-sample-dump.ini\n");
     c.reset(new configuration());
     ASSERT_TRUE(c->load(dump_file.c_str()));
     c->get_all_sections(sections);

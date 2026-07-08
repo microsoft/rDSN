@@ -91,7 +91,7 @@ TEST(core, task_engine)
     safe_vector<safe_string> args;
     safe_sstream oss;
     engine->get_runtime_info("  ", args, oss);
-    printf("%s\n", oss.str().c_str());
+    fprintf(stdout, "%s\n", oss.str().c_str());
 
     std::vector<task_worker_pool*>& pools = engine->pools();
     for (size_t i = 0; i < pools.size(); ++i)
@@ -160,7 +160,7 @@ TEST(core, task_engine)
     std::vector<std::string> args;
     std::stringstream oss;
     engine.get_runtime_info("  ", args, oss);
-    printf("%s\n", oss.str().c_str());
+    fprintf(stdout, "%s\n", oss.str().c_str());
 
     std::vector<task_worker_pool*>& pools = engine.pools();
     for (size_t i = 0; i < pools.size(); ++i)
