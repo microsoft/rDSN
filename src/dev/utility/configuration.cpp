@@ -579,7 +579,7 @@ bool configuration::get_string_value_internal(const char* section, const char* k
     }
 
     *ov = default_value;
-    _lock.lock();
+    std::lock_guard<std::mutex> guard(_lock);
 
     std::map<std::string, conf*> *ps = nullptr;
     auto it = _configs.find(section);
@@ -604,7 +604,6 @@ bool configuration::get_string_value_internal(const char* section, const char* k
             *ov = it2->second->value.c_str();
             bool ret = it2->second->present ? true : false;
 
-            _lock.unlock();
             return ret;
         }
     }
@@ -628,7 +627,6 @@ bool configuration::get_string_value_internal(const char* section, const char* k
 
     *ov = cf->value.c_str();
 
-    _lock.unlock();
     return false;
 }
 
@@ -672,7 +670,7 @@ std::list<std::string> configuration::get_string_value_list(const char* section,
 
 void configuration::dump(std::ostream& os)
 {
-    _lock.lock();
+    std::lock_guard<std::mutex> guard(_lock);
 
     for (auto& s : _configs)
     {
@@ -692,16 +690,14 @@ void configuration::dump(std::ostream& os)
 
         os << std::endl;
     }
-
-    _lock.unlock();
 }
 
 void configuration::set(const char* section, const char* key, const char* value, const char* dsptr)
 {
     std::map<std::string, conf*>* psection;
 
-    _lock.lock();
-    
+    std::lock_guard<std::mutex> guard(_lock);
+
     auto it = _configs.find(section);
     if (it != _configs.end())
     {
@@ -734,8 +730,6 @@ void configuration::set(const char* section, const char* key, const char* value,
 
         it2->second->value = value;
     }
-
-    _lock.unlock();
 }
 
 void configuration::register_config_change_notification(config_file_change_notifier notifier)
