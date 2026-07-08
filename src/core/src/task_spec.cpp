@@ -212,7 +212,13 @@ bool task_spec::init()
 
         std::string section_name = std::string("task.") + std::string(dsn_task_code_to_string(code));
         task_spec* spec = task_spec::get(code);
-        dassert (spec != nullptr, "task_spec cannot be null");
+        if (spec == nullptr)
+        {
+            derror("task_spec for code %d (%s) is missing, likely because its "
+                   "registration failed under resource pressure; abort startup",
+                   code, dsn_task_code_to_string(code));
+            return false;
+        }
 
         if (!read_config(section_name.c_str(), *spec, &default_spec))
             return false;
