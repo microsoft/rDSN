@@ -311,7 +311,7 @@ TEST(core, configuration_concurrent_include)
     std::vector<std::thread> threads;
     for (int t = 0; t < thread_count; ++t)
     {
-        threads.emplace_back([&diamond_ok, &cycle_rejected, iterations]() {
+        threads.emplace_back([&diamond_ok, &cycle_rejected]() {
             for (int i = 0; i < iterations; ++i)
             {
                 {
