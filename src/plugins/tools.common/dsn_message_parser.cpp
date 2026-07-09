@@ -66,7 +66,7 @@ namespace dsn
             // on x86 but a real hazard on stricter ISAs such as arm64).
             // create_receive_message likewise stores the header in aligned storage.
             message_header hdr_copy;
-            memcpy(&hdr_copy, buf_ptr, sizeof(message_header));
+            memcpy(static_cast<void*>(&hdr_copy), buf_ptr, sizeof(message_header));
 
             if (!_header_checked)
             {
