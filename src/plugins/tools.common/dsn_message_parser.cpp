@@ -60,9 +60,17 @@ namespace dsn
 
         if (buf_len >= sizeof(message_header))
         {
+            // The header sits at an arbitrary offset inside the shared receive buffer,
+            // so buf_ptr is generally unaligned. Read its fields through a naturally
+            // aligned stack copy to avoid misaligned-access undefined behavior (benign
+            // on x86 but a real hazard on stricter ISAs such as arm64).
+            // create_receive_message likewise stores the header in aligned storage.
+            message_header hdr_copy;
+            memcpy(&hdr_copy, buf_ptr, sizeof(message_header));
+
             if (!_header_checked)
             {
-                if (!is_right_header(buf_ptr))
+                if (!is_right_header(reinterpret_cast<char*>(&hdr_copy)))
                 {
                     derror("dsn message header check failed");
                     read_next = -1;
@@ -74,7 +82,7 @@ namespace dsn
                 }
             }
 
-            unsigned int body_length = message_ex::get_body_length(buf_ptr);
+            unsigned int body_length = hdr_copy.body_length;
 
             // body_length comes from the wire; compute the total size in 64-bit and reject a
             // value that would overflow the 32-bit msg_sz and wrap to a small size (which would
@@ -93,11 +101,17 @@ namespace dsn
             {
                 dsn::blob msg_bb = buf.range(0, msg_sz);
                 message_ex* msg = message_ex::create_receive_message(msg_bb);
+                if (msg == nullptr)
+                {
+                    derror("dsn message creation failed, id = %" PRIu64 ", trace_id = %016" PRIx64 ", rpc_name = %s, from_addr = %s",
+                           hdr_copy.id, hdr_copy.trace_id, hdr_copy.rpc_name, hdr_copy.from_address.to_string());
+                    read_next = -1;
+                    return nullptr;
+                }
                 if (!is_right_body(msg))
                 {
-                    message_header* header = (message_header*)buf_ptr;
                     derror("dsn message body check failed, id = %" PRIu64 ", trace_id = %016" PRIx64 ", rpc_name = %s, from_addr = %s",
-                           header->id, header->trace_id, header->rpc_name, header->from_address.to_string());
+                           hdr_copy.id, hdr_copy.trace_id, hdr_copy.rpc_name, hdr_copy.from_address.to_string());
                     read_next = -1;
                     return nullptr;
                 }

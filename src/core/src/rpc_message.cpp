@@ -561,7 +561,27 @@ task_code message_ex::rpc_code()
 message_ex* message_ex::create_receive_message(const blob& data)
 {
     message_ex* msg = new message_ex();
-    msg->header = (message_header*)data.data();
+
+    // Copy the wire header into max_align_t-aligned storage and keep the body
+    // zero-copy. On the receive path the header sits at an arbitrary offset inside
+    // the shared socket buffer, so data.data() is generally unaligned; reading
+    // message_header fields (id, trace_id, the embedded rpc_address, ...) directly
+    // from there is misaligned-access undefined behavior -- benign on x86 but a real
+    // hazard on stricter ISAs such as arm64. dsn_transient_malloc returns
+    // max_align_t-aligned memory, so the copied header is safe to read in place.
+    char* header_ptr = static_cast<char*>(dsn_transient_malloc(sizeof(message_header)));
+    if (header_ptr == nullptr)
+    {
+        derror("message_ex::create_receive_message failed to allocate aligned header");
+        delete msg;
+        return nullptr;
+    }
+
+    std::shared_ptr<char> header_holder(header_ptr, [](char* c) { dsn_transient_free(c); });
+    memcpy(header_ptr, data.data(), sizeof(message_header));
+    msg->_received_header = blob(std::move(header_holder), sizeof(message_header));
+    msg->header = reinterpret_cast<message_header*>(header_ptr);
+
     msg->_is_read = true;
     // the message_header is hidden ahead of the buffer
     auto data2 = data.range((int)sizeof(message_header));
@@ -647,18 +667,20 @@ message_ex* message_ex::copy(bool clone_content, bool copy_for_receive)
     {
         msg->header = header; // header is within the buffer
         msg->buffers = buffers;
+        msg->_received_header = _received_header; // keep the aligned received header alive
     }
     else
     {
-        int total_length = body_size() + sizeof(dsn::message_header);
+        size_t total_length = body_size() + sizeof(dsn::message_header);
         std::shared_ptr<char> recv_buffer(dsn::make_shared_array<char>(total_length));
         char* ptr = recv_buffer.get();
-        int i=0;
+        size_t i = 0;
 
         if ((const char*)header != buffers[0].data())
         {
             memcpy(ptr, (const void*)header, sizeof(message_header));
             ptr += sizeof(message_header);
+            i += sizeof(message_header); // header copied separately; count it
         }
 
         for (dsn::blob& bb: buffers)
@@ -669,7 +691,7 @@ message_ex* message_ex::copy(bool clone_content, bool copy_for_receive)
         }
         dassert(i==total_length, "");
 
-        auto data = dsn::blob(recv_buffer, total_length);
+        auto data = dsn::blob(recv_buffer, (unsigned int)total_length);
         
         msg->header = (message_header*)data.data();
         if (msg->_is_read)
@@ -682,13 +704,19 @@ message_ex* message_ex::copy(bool clone_content, bool copy_for_receive)
 
 message_ex* message_ex::copy_and_prepare_send(bool clone_content)
 {
-    auto copy = this->copy(clone_content, false);
+    // A received message keeps its header in separate, max_align_t-aligned storage
+    // (see create_receive_message), so the header is no longer contiguous with the
+    // body buffer. Clone in that case: copy() rebuilds a single contiguous
+    // [header][body] buffer (it already handles a non-contiguous header), which we
+    // then expose as the send buffer below. Send messages keep the original path.
+    auto copy = this->copy(_is_read ? true : clone_content, false);
 
     if (_is_read)
     {
         // the message_header is hidden ahead of the buffer, expose it to buffer
-        dassert(buffers.size() == 1, "there must be only one buffer for read msg");
-        dassert((char*)header + sizeof(message_header) == (char*)buffers[0].data(), "header and content must be contigous");
+        dassert(copy->buffers.size() == 1, "there must be only one buffer for read msg");
+        dassert((char*)copy->header + sizeof(message_header) == (char*)copy->buffers[0].data(),
+            "header and content must be contigous");
 
         copy->buffers[0] = copy->buffers[0].range(-(int)sizeof(message_header));
 

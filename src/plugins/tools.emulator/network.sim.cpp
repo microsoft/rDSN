@@ -81,6 +81,10 @@ namespace dsn { namespace tools {
 
         blob bb(buffer, 0, msg->header->body_length + sizeof(message_header));
         message_ex* recv_msg = message_ex::create_receive_message(bb);
+        if (recv_msg == nullptr)
+        {
+            return nullptr;
+        }
         recv_msg->to_address = msg->to_address;
 
         msg->copy_to(*recv_msg); // extensible object state move
@@ -113,6 +117,10 @@ namespace dsn { namespace tools {
                 }
 
                 message_ex* recv_msg = virtual_send_message(msg);
+                if (recv_msg == nullptr)
+                {
+                    continue;
+                }
 
                 {
                     node_scoper ns(rnet->node());
@@ -145,6 +153,10 @@ namespace dsn { namespace tools {
         for (auto& msg : _sending_msgs)
         {
             message_ex* recv_msg = virtual_send_message(msg);
+            if (recv_msg == nullptr)
+            {
+                continue;
+            }
 
             {
                 node_scoper ns(_client->net().node());

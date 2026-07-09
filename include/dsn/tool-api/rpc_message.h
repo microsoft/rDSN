@@ -173,6 +173,13 @@ namespace dsn
         bool                   _rw_committed; // mark if it is in middle state of reading/writing
         bool                   _is_read;      // is for read(recv) or write(send)
 
+        // Lifetime holder for a received message's header. On the receive path the
+        // wire header is copied into max_align_t-aligned storage (see
+        // create_receive_message) so reads of message_header fields are aligned; this
+        // blob keeps that storage alive as long as the message does. It is empty for
+        // send messages, whose header lives inside buffers[0].
+        blob                   _received_header;
+
     public:
         static uint32_t s_local_hash;  // used by fast_rpc_name
     };
