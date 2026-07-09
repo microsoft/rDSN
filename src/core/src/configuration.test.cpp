@@ -303,7 +303,12 @@ TEST(core, configuration_concurrent_include)
     // false positive. No matter how the loads interleave, every valid (diamond)
     // load must succeed and every circular load must be rejected.
     const int thread_count = 8;
-    const int iterations = 50;
+    // Static storage so the thread lambda below can read it *without* capturing
+    // it: capturing this const int is flagged by clang (-Wunused-lambda-capture,
+    // it's a constant expression) while NOT capturing an automatic one is
+    // rejected by MSVC (C3493). A static local is never captured, which satisfies
+    // clang, gcc and MSVC alike.
+    static const int iterations = 50;
 
     std::atomic<int> diamond_ok(0);
     std::atomic<int> cycle_rejected(0);
