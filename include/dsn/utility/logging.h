@@ -28,37 +28,33 @@
  * Description:
  *     A very small logging facade for the foundational (utility) layer.
  *
- *     The utility layer sits *below* dsn.core in the library dependency graph
- *     (dsn.core links dsn.dev.utility, not the other way around), so utility
- *     code cannot call the real logger (dsn_logv / dinfo/dwarn/derror) directly
- *     without creating a reverse library dependency. Historically it therefore
- *     hard-wired diagnostics to fprintf(stderr), which both bypasses the
- *     configured logger and scatters an un-replaceable sink across the code.
+ *     Goal: give low-level modules a single, uniform, dlog-like logging API
+ *     (dutil_info / dutil_debug / dutil_warn / dutil_error / dutil_fatal) so
+ *     they stop scattering ad-hoc fprintf() calls. This is about a consistent
+ *     interface, not about the destination -- the utility layer sits *below*
+ *     dsn.core in the library dependency graph (dsn.core links dsn.dev.utility,
+ *     not the other way around), so utility code cannot route into the real
+ *     process logger (dsn_logv / dinfo/dwarn/derror) without creating a reverse
+ *     library dependency. The facade therefore writes to stderr. stderr (not
+ *     stdout) keeps stdout clean for machine-readable program output.
  *
- *     This facade fixes that: low-level components log through dutil_info /
- *     dutil_warn / dutil_error, which forward to a pluggable sink. dsn.core
- *     installs a sink (set_logging_sink) that routes everything to dsn_logv, so
- *     utility diagnostics flow through the same configurable, replaceable logger
- *     as the rest of rDSN. Until a sink is installed (very early bootstrap, or
- *     when the utility library is used standalone) the default is stderr, so
- *     stdout stays clean for machine-readable program output.
+ *     These helpers are internal plumbing for rDSN's foundational layer, not
+ *     part of the public API; they are intentionally not exported from any
+ *     shared library.
  *
  * Revision history:
  *     2026-07-07, unify rDSN diagnostics onto the logger, first version
+ *     2026-07-09, drop the pluggable sink; utility logs directly to stderr
  */
 
 # pragma once
-
-# include <dsn/utility/dlib.h>
-# include <cstdarg>
 
 namespace dsn {
 namespace utils {
 
 // Low-level logging severities. These deliberately mirror the core
-// dsn_log_level_t values one-to-one (INFORMATION=0 .. FATAL=4) so the core sink
-// can map them with a plain cast, while keeping the utility layer free of any
-// dependency on the C logging API header.
+// dsn_log_level_t values one-to-one (INFORMATION=0 .. FATAL=4), keeping the
+// utility layer free of any dependency on the C logging API header.
 enum log_level_t
 {
     LOG_LEVEL_UTIL_INFORMATION = 0,
@@ -68,21 +64,11 @@ enum log_level_t
     LOG_LEVEL_UTIL_FATAL
 };
 
-// A sink that dsn.core installs so utility-layer diagnostics are routed through
-// the real, replaceable process logger. The message is already formatted.
-typedef void (*logging_sink)(
-    log_level_t level, const char* file, const char* function, int line, const char* msg);
-
-// Install (or clear, with nullptr) the sink. Intended to be called once during
-// core initialization, before worker threads start; not synchronized against
-// concurrent logging.
-extern DSN_API void set_logging_sink(logging_sink sink);
-
-// Format and emit a single diagnostic. Routed to the installed sink, or to
-// stderr when none is installed.
-extern DSN_API void logv(
-    log_level_t level, const char* file, const char* function, int line, const char* fmt, va_list args);
-extern DSN_API void logf(
+// Format and emit a single diagnostic to stderr. This is the only entry point
+// the dutil_* macros use. It is internal to the foundational layer and
+// deliberately not exported from any shared library (utility code must not
+// depend on dsn.core, so it cannot route through the configured logger).
+extern void logf(
     log_level_t level, const char* file, const char* function, int line, const char* fmt, ...);
 
 }} // namespace dsn::utils

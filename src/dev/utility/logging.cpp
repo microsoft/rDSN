@@ -27,28 +27,24 @@
 /*
  * Description:
  *     Implementation of the low-level (utility-layer) logging facade.
+ *     Diagnostics are written to stderr; see logging.h for the rationale
+ *     (the utility layer sits below dsn.core and must not depend on it).
  *
  * Revision history:
  *     2026-07-07, unify rDSN diagnostics onto the logger, first version
+ *     2026-07-09, drop the pluggable sink; utility logs directly to stderr
  */
 
 # include <dsn/utility/logging.h>
 # include <cstdio>
+# include <cstdarg>
 
 namespace dsn {
 namespace utils {
 
-// The installed sink, or nullptr when none has been installed yet. Set once
-// during core initialization (before worker threads start); reads are plain
-// loads of a pointer that is constant for the rest of the process lifetime.
-static logging_sink s_logging_sink = nullptr;
-
-void set_logging_sink(logging_sink sink)
-{
-    s_logging_sink = sink;
-}
-
-void logv(log_level_t level, const char* file, const char* function, int line, const char* fmt, va_list args)
+// Internal formatter shared by logf; not declared in the header because nothing
+// outside this file calls it directly.
+static void logv(log_level_t level, const char* file, const char* function, int line, const char* fmt, va_list args)
 {
     char buffer[2048];
     int n = vsnprintf(buffer, sizeof(buffer), fmt, args);
@@ -57,21 +53,14 @@ void logv(log_level_t level, const char* file, const char* function, int line, c
         buffer[0] = '\0';
     }
 
-    logging_sink sink = s_logging_sink;
-    if (sink != nullptr)
-    {
-        sink(level, file, function, line, buffer);
-    }
-    else
-    {
-        // No sink installed yet (very early bootstrap before dsn.core wires one
-        // up, or the utility library used standalone). Diagnostics go to stderr
-        // so that stdout stays clean for machine-readable program output.
-        static const char s_level_char[] = "IDWEF";
-        char lc = (level >= LOG_LEVEL_UTIL_INFORMATION && level <= LOG_LEVEL_UTIL_FATAL)
-                    ? s_level_char[level] : '?';
-        fprintf(stderr, "%c %s:%d:%s(): %s\n", lc, file, line, function, buffer);
-    }
+    // The utility layer sits below dsn.core and cannot route into the configured
+    // process logger without a reverse library dependency, so its diagnostics go
+    // to stderr. stderr (not stdout) keeps stdout clean for machine-readable
+    // program output.
+    static const char s_level_char[] = "IDWEF";
+    char lc = (level >= LOG_LEVEL_UTIL_INFORMATION && level <= LOG_LEVEL_UTIL_FATAL)
+                ? s_level_char[level] : '?';
+    fprintf(stderr, "%c %s:%d:%s(): %s\n", lc, file, line, function, buffer);
 }
 
 void logf(log_level_t level, const char* file, const char* function, int line, const char* fmt, ...)

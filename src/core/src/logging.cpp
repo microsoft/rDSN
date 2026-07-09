@@ -38,47 +38,12 @@
 # include <dsn/tool-api/command.h>
 # include <dsn/tool-api/logging_provider.h>
 # include <dsn/tool_api.h>
-# include <dsn/utility/logging.h>
 # include "service_engine.h"
 # include <dsn/cpp/auto_codes.h>
 # include <cstdio>
 # include <cinttypes>
 
 DSN_API dsn_log_level_t dsn_log_start_level = dsn_log_level_t::LOG_LEVEL_INFORMATION;
-
-// route diagnostics emitted by the foundational (utility) layer through the real
-// process logger. The utility layer sits below dsn.core and cannot call dsn_logv
-// directly, so it logs via a pluggable sink (dsn::utils::logf); here we install
-// a sink that forwards to dsn_logv, honoring the same start-level gate as the
-// dlog macros. Installed at static-init so it is active before main() runs; any
-// utility diagnostics emitted before this point fall back to stderr, which is
-// where dsn_logv would route them during early bootstrap anyway.
-static void forward_utils_log_to_dsn(
-    ::dsn::utils::log_level_t level, const char* file, const char* function, int line, const char* msg)
-{
-    // dsn::utils::log_level_t mirrors dsn_log_level_t one-to-one (INFORMATION=0 .. FATAL=4).
-    dsn_log_level_t dlevel = static_cast<dsn_log_level_t>(level);
-    if (dlevel < LOG_LEVEL_INFORMATION || dlevel > LOG_LEVEL_FATAL)
-    {
-        dlevel = LOG_LEVEL_WARNING;
-    }
-    if (dlevel >= dsn_log_start_level)
-    {
-        // pass msg as an argument (not as the format) so any '%' in it is safe.
-        dsn_logf(file, function, line, dlevel, file, "%s", msg);
-    }
-}
-
-namespace {
-struct utils_log_sink_installer
-{
-    utils_log_sink_installer()
-    {
-        ::dsn::utils::set_logging_sink(forward_utils_log_to_dsn);
-    }
-};
-static utils_log_sink_installer s_utils_log_sink_installer;
-}
 
 static void log_on_sys_exit(::dsn::sys_exit_type)
 {
