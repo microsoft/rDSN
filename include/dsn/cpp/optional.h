@@ -46,7 +46,7 @@ template<typename T>
 class optional
 {
     bool _is_some;
-    char _data_placeholder[sizeof(T)];
+    alignas(T) char _data_placeholder[sizeof(T)];
    
 public:
     optional() : _is_some(false) {}
