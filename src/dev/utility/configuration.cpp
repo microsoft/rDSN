@@ -68,6 +68,21 @@ configuration::configuration()
 
 configuration::~configuration()
 {
+    // The parser (load / get_string_value_internal / set) allocates every
+    // `conf` entry with `new` and stores it as a raw pointer in `_configs`,
+    // which is its sole owner. Free them here; otherwise each configuration
+    // instance leaks all of its entries -- notably load_include(), which
+    // builds a temporary configuration per @include and then discards it.
+    // configuration holds a std::mutex, so it is non-copyable and no `conf`
+    // pointer is ever shared between instances (no double-free risk).
+    for (auto& section : _configs)
+    {
+        for (auto& kv : section.second)
+        {
+            delete kv.second;
+        }
+    }
+    _configs.clear();
 }
 
 static bool cfg_is_absolute_path(const char* path)
