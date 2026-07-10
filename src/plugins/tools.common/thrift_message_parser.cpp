@@ -43,6 +43,7 @@
 # include <dsn/utility/ports.h>
 # include <cstring>
 # include <utility>
+# include <limits>
 
 # ifdef __TITLE__
 # undef __TITLE__
@@ -288,6 +289,18 @@ namespace dsn
     dsn::message_ex* thrift_message_parser::parse_message(const thrift_message_header& thrift_header, dsn::blob& message_data)
     {
         dsn::blob body_data = message_data.range(thrift_header.hdr_length);
+
+        // A thrift RPC request always carries a non-empty message-begin envelope. An empty body
+        // produces a receive message with no readable segment, which would make the read stream
+        // constructor (dsn_msg_read_next) below throw std::out_of_range. Reject it up front through
+        // the parser error channel so that exception can never escape and terminate the process on
+        // a 48-byte header-only message from the network.
+        if (body_data.length() == 0)
+        {
+            derror("thrift message body is empty");
+            return nullptr;
+        }
+
         dsn::message_ex* msg = message_ex::create_receive_message_with_standalone_header(body_data);
         if (msg == nullptr)
         {
@@ -302,18 +315,33 @@ namespace dsn
         int32_t seqid = 0;
         bool parsed = false;
 
-        // The thrift message-begin envelope is decoded from untrusted network bytes. A corrupt
-        // length/string can make readMessageBegin throw (TProtocolException / out_of_range from
-        // the underlying binary_reader). Keep the read stream in an inner scope so it (and its
-        // dsn_msg_read_commit) is destroyed before we may free msg on the failure path.
+        // The thrift message-begin envelope is decoded from untrusted network bytes. Constructing
+        // the read stream and decoding can throw (out_of_range / bad_alloc from the read stream,
+        // TProtocolException / out_of_range from the underlying binary_reader). Keep the entire
+        // decode -- including the read stream setup -- inside the try/inner scope so any exception
+        // is contained and the stream (and its dsn_msg_read_commit) is destroyed before we may free
+        // msg on the failure path.
         {
-            dsn::rpc_read_stream stream(msg);
-            ::dsn::binary_reader_transport binary_transport(stream);
-            boost::shared_ptr< ::dsn::binary_reader_transport > trans_ptr(&binary_transport, [](::dsn::binary_reader_transport*) {});
-            ::apache::thrift::protocol::TBinaryProtocol iprot(trans_ptr);
-
             try
             {
+                dsn::rpc_read_stream stream(msg);
+                ::dsn::binary_reader_transport binary_transport(stream);
+                boost::shared_ptr< ::dsn::binary_reader_transport > trans_ptr(&binary_transport, [](::dsn::binary_reader_transport*) {});
+                ::apache::thrift::protocol::TBinaryProtocol iprot(trans_ptr);
+
+                // Bound the decoder to the bytes actually received: no rpc name / container inside
+                // the body can legitimately be longer than the message body itself. Thrift's string
+                // and container size limits default to 0 (unlimited), so without this a tiny message
+                // that claims a huge length makes TBinaryProtocol::readStringBody resize() to that
+                // attacker-controlled size (up to ~2GB) up front, before the short read is detected
+                // -- a memory-amplification DoS (a 56-byte message can force a multi-GB allocation).
+                int32_t read_limit =
+                    body_data.length() > static_cast<uint32_t>(std::numeric_limits<int32_t>::max())
+                        ? std::numeric_limits<int32_t>::max()
+                        : static_cast<int32_t>(body_data.length());
+                iprot.setStringSizeLimit(read_limit);
+                iprot.setContainerSizeLimit(read_limit);
+
                 iprot.readMessageBegin(fname, mtype, seqid);
                 parsed = true;
             }
