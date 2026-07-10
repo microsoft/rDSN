@@ -24,31 +24,37 @@ if ($idl_format == "binary")
 <?php
 function generate_request_helper($client, $func, $async, $serialization_fmt)
 {
+    $request_type = thelpers::resolve_type_aliases($func->get_request_type_name());
+    $return_type = thelpers::resolve_type_aliases($func->get_return_type());
 ?>
 <?=$client?>.prototype.internal_<?php if ($async) { echo "async_";} ?><?=$func->name?> = function(args, <?php if ($async) {echo "on_success, on_fail,";} ?> hash) {
     var self = this;
     var ret = null;
-    dsn_call(
+    <?php if ($async) { echo "var request = "; } ?>dsn_call(
         this.url,
         "<?php echo $func->get_rpc_code(); ?>",
         hash,
         "POST",
-<?php if ($func->params[0]->is_base_type()) { ?>
-        this.marshall(args, "<?=$func->get_request_type_name()?>"),
+<?php if (thelpers::is_base_type($request_type)) { ?>
+        this.marshall(args, "<?=$request_type?>"),
 <?php } else { ?>
         this.marshall(args, "struct"),
 <?php } ?>
         "<?=$serialization_fmt?>",
         <?php if($async) {echo "true";} else {echo "false";}?>,
         function(result) {
-<?php if (thelpers::is_base_type($func->ret)) { ?>
-            ret = self.unmarshall(result, null, "<?=$func->get_return_type()?>");
+<?php if ($func->is_one_way()) { ?>
+            ret = null;
+<?php } else if (thelpers::is_base_type($return_type)) { ?>
+            ret = self.unmarshall(result, null, "<?=$return_type?>");
 <?php } else { ?>
-            ret = new <?=$func->get_cpp_return_type()?>();
+            ret = new <?=thelpers::get_js_type_name($return_type)?>();
             self.unmarshall(result, ret, "struct");
 <?php } ?>
 <?php if ($async) { ?>
-            on_success(ret);
+            if (on_success) {
+                on_success(ret);
+            }
 <?php } ?>
         },
         function(xhr, textStatus, errorThrown) {
@@ -60,7 +66,7 @@ function generate_request_helper($client, $func, $async, $serialization_fmt)
 <?php } ?>
         }
     );
-    return ret;
+    return <?php if ($async) { echo "request || ret"; } else { echo "ret"; } ?>;
 }
 
 <?php
@@ -93,7 +99,7 @@ foreach ($_PROG->services as $svc)
     if (!obj.async) {
         return this.internal_<?=$func->name?>(obj.args, obj.hash);
     } else {
-        this.internal_async_<?=$func->name?>(obj.args, obj.on_success, obj.on_fail, obj.hash);
+        return this.internal_async_<?=$func->name?>(obj.args, obj.on_success, obj.on_fail, obj.hash);
     }
 }
 

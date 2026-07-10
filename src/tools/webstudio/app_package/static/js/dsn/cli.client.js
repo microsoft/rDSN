@@ -36,7 +36,7 @@ cliApp.prototype.internal_call = function(args,  hash) {
 cliApp.prototype.internal_async_call = function(args, on_success, on_fail, hash) {
     var self = this;
     var ret = null;
-    dsn_call(
+    var request = dsn_call(
         this.url,
         "RPC_CLI_CLI_CALL",
         hash,
@@ -46,7 +46,9 @@ cliApp.prototype.internal_async_call = function(args, on_success, on_fail, hash)
         true,
         function(result) {
             ret = self.unmarshall(result, null, "string");
-            on_success(ret);
+            if (on_success) {
+                on_success(ret);
+            }
         },
         function(xhr, textStatus, errorThrown) {
             ret = null;
@@ -55,14 +57,13 @@ cliApp.prototype.internal_async_call = function(args, on_success, on_fail, hash)
             }
         }
     );
-    return ret;
+    return request || ret;
 }
 
 cliApp.prototype.call = function(obj) {
     if (!obj.async) {
         return this.internal_call(obj.args, obj.hash);
     } else {
-        this.internal_async_call(obj.args, obj.on_success, obj.on_fail, obj.hash);
+        return this.internal_async_call(obj.args, obj.on_success, obj.on_fail, obj.hash);
     }
 }
-

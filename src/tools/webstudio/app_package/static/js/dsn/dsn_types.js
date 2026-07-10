@@ -6,14 +6,25 @@
 
 
 error_code = function(args) {
-  this.code = null;
-  if (args) {
+  this.code = 'ERR_OK';
+  if (typeof args === 'string') {
+    this.code = error_code._code(args);
+  } else if (args) {
     if (args.code !== undefined && args.code !== null) {
-      this.code = args.code;
+      this.code = error_code._code(args.code);
     }
   }
 };
 error_code.prototype = {};
+error_code._code = function(value) {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new TypeError('error_code must be a non-empty string');
+  }
+  return value;
+};
+error_code.prototype.toString = function() {
+  return this.code;
+};
 error_code.prototype.read = function(input) {
   input.readStructBegin();
   while (true)
@@ -29,7 +40,7 @@ error_code.prototype.read = function(input) {
     {
       case 1:
       if (ftype == Thrift.Type.STRING) {
-        this.code = input.readString().value;
+        this.code = error_code._code(input.readString().value);
       } else {
         input.skip(ftype);
       }
@@ -59,14 +70,25 @@ error_code.prototype.write = function(output) {
 };
 
 task_code = function(args) {
-  this.code = null;
-  if (args) {
+  this.code = 'TASK_CODE_INVALID';
+  if (typeof args === 'string') {
+    this.code = task_code._code(args);
+  } else if (args) {
     if (args.code !== undefined && args.code !== null) {
-      this.code = args.code;
+      this.code = task_code._code(args.code);
     }
   }
 };
 task_code.prototype = {};
+task_code._code = function(value) {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new TypeError('task_code must be a non-empty string');
+  }
+  return value;
+};
+task_code.prototype.toString = function() {
+  return this.code;
+};
 task_code.prototype.read = function(input) {
   input.readStructBegin();
   while (true)
@@ -82,7 +104,7 @@ task_code.prototype.read = function(input) {
     {
       case 1:
       if (ftype == Thrift.Type.STRING) {
-        this.code = input.readString().value;
+        this.code = task_code._code(input.readString().value);
       } else {
         input.skip(ftype);
       }
@@ -112,51 +134,68 @@ task_code.prototype.write = function(output) {
 };
 
 gpid = function(args) {
-  this.id = null;
-  if (args) {
+  this.id = 0;
+  if (args !== undefined && args !== null && typeof args !== 'object') {
+    this.id = Thrift.Int64.normalizeSigned(args, true);
+  } else if (args) {
     if (args.id !== undefined && args.id !== null) {
-      this.id = args.id;
+      this.id = Thrift.Int64.normalizeSigned(args.id, true);
+    } else if (args.app_id !== undefined || args.partition_index !== undefined) {
+      this.id = gpid.make_id(
+        args.app_id === undefined ? 0 : args.app_id,
+        args.partition_index === undefined ? 0 : args.partition_index);
     }
   }
 };
 gpid.prototype = {};
 
-gpid.prototype.app_id = function()
-{  
-    var idstr = this.id.toString(2); 
-    var idstr2 = ''; 
-    for (var i = 0; i < 64 - idstr.length; i++) {
-        idstr2 += '0'; 
-    }; 
+gpid._int32 = function(value, name) {
+  var number = Number(value);
+  if (!isFinite(number) || Math.floor(number) !== number ||
+      number < -2147483648 || number > 2147483647) {
+    throw new RangeError(name + ' must be a signed 32-bit integer');
+  }
+  return number;
+};
 
-    idstr2 += idstr;
-    return parseInt(idstr2.substring(32), 2);
-}
+gpid.make_id = function(app_id, partition_index) {
+  var appId = gpid._int32(app_id, 'app_id') >>> 0;
+  var partitionIndex = gpid._int32(partition_index, 'partition_index') >>> 0;
+  return Thrift.Int64.normalizeSigned(
+    Thrift.Int64.fromParts(partitionIndex, appId, true), false);
+};
 
-gpid.prototype.partition_index = function()
-{
-    var idstr = this.id.toString(2); 
-    var idstr2 = ''; 
-    for (var i = 0; i < 64 - idstr.length; i++) {
-        idstr2 += '0'; 
-    }; 
+gpid.from = function(app_id, partition_index) {
+  return new gpid({ app_id: app_id, partition_index: partition_index });
+};
 
-    idstr2 += idstr;
-    return parseInt(idstr2.substring(0, 32), 2);
-}
+gpid.prototype.app_id = function() {
+  return Thrift.Int64.toParts(this.id, true).low | 0;
+};
 
-gpid.prototype.toString = function()
-{
-    var idstr = this.id.toString(2); 
-    var idstr2 = ''; 
-    for (var i = 0; i < 64 - idstr.length; i++) {
-        idstr2 += '0'; 
-    }; 
+gpid.prototype.partition_index = function() {
+  return Thrift.Int64.toParts(this.id, true).high | 0;
+};
 
-    idstr2 += idstr;
-    
-    return parseInt(idstr2.substring(32), 2) + "." + parseInt(idstr2.substring(0, 32), 2);
-}
+gpid.prototype.get_app_id = function() {
+  return this.app_id();
+};
+
+gpid.prototype.get_partition_index = function() {
+  return this.partition_index();
+};
+
+gpid.prototype.set_app_id = function(value) {
+  this.id = gpid.make_id(value, this.partition_index());
+};
+
+gpid.prototype.set_partition_index = function(value) {
+  this.id = gpid.make_id(this.app_id(), value);
+};
+
+gpid.prototype.toString = function() {
+  return this.app_id() + "." + this.partition_index();
+};
 
 gpid.prototype.read = function(input) {
   input.readStructBegin();
@@ -173,7 +212,7 @@ gpid.prototype.read = function(input) {
     {
       case 1:
       if (ftype == Thrift.Type.I64) {
-        this.id = input.readI64().value;
+        this.id = Thrift.Int64.normalizeSigned(input.readI64().value, false);
       } else {
         input.skip(ftype);
       }
@@ -202,19 +241,78 @@ gpid.prototype.write = function(output) {
   return;
 };
 
+blob = function(args) {
+  this.data = '';
+  if (typeof args === 'string') {
+    this.data = args;
+  } else if (typeof Uint8Array !== 'undefined' && args instanceof Uint8Array) {
+    this.data = args;
+  } else if (typeof ArrayBuffer !== 'undefined' && args instanceof ArrayBuffer) {
+    this.data = new Uint8Array(args);
+  } else if (args) {
+    if (args.data !== undefined && args.data !== null) {
+      this.data = args.data;
+    }
+  }
+};
+blob.prototype = {};
+blob.prototype.read = function(input) {
+  this.data = input.readBinary().value;
+  return;
+};
+
+blob.prototype.write = function(output) {
+  output.writeBinary(this.data === null || this.data === undefined ? '' : this.data);
+  return;
+};
+
+blob.prototype.toString = function() {
+  return this.data === null || this.data === undefined ? '' : this.data;
+};
+
 rpc_address = function(args) {
-  this.host = null;
-  this.port = null;
-  if (args) {
+  this.host = 'invalid address';
+  this.port = 0;
+  if (typeof args === 'string') {
+    var index = args.lastIndexOf(':');
+    if (index >= 0) {
+      this.host = rpc_address._host(args.substring(0, index));
+      this.port = rpc_address._port(args.substring(index + 1));
+    } else {
+      this.host = rpc_address._host(args);
+    }
+  } else if (args) {
     if (args.host !== undefined && args.host !== null) {
-      this.host = args.host;
+      this.host = rpc_address._host(args.host);
     }
     if (args.port !== undefined && args.port !== null) {
-      this.port = args.port;
+      this.port = rpc_address._port(args.port);
     }
   }
 };
 rpc_address.prototype = {};
+rpc_address._host = function(value) {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new TypeError('host must be a non-empty string');
+  }
+  return value;
+};
+rpc_address._port = function(value) {
+  var port = Number(value);
+  if (!isFinite(port) || Math.floor(port) !== port || port < 0 || port > 65535) {
+    throw new RangeError('port must be an unsigned 16-bit integer');
+  }
+  return port;
+};
+rpc_address.prototype.toString = function() {
+  if (this.host === 'invalid address' && this.port === 0) {
+    return this.host;
+  }
+  return this.host + ':' + this.port;
+};
+rpc_address.prototype.is_invalid = function() {
+  return this.host === 'invalid address' && this.port === 0;
+};
 rpc_address.prototype.read = function(input) {
   input.readStructBegin();
   while (true)
@@ -230,14 +328,14 @@ rpc_address.prototype.read = function(input) {
     {
       case 1:
       if (ftype == Thrift.Type.STRING) {
-        this.host = input.readString().value;
+        this.host = rpc_address._host(input.readString().value);
       } else {
         input.skip(ftype);
       }
       break;
       case 2:
       if (ftype == Thrift.Type.I32) {
-        this.port = input.readI32().value;
+        this.port = rpc_address._port(input.readI32().value);
       } else {
         input.skip(ftype);
       }
@@ -267,4 +365,3 @@ rpc_address.prototype.write = function(output) {
   output.writeStructEnd();
   return;
 };
-

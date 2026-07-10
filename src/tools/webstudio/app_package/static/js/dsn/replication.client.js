@@ -37,7 +37,7 @@ meta_sApp.prototype.internal_create_app = function(args,  hash) {
 meta_sApp.prototype.internal_async_create_app = function(args, on_success, on_fail, hash) {
     var self = this;
     var ret = null;
-    dsn_call(
+    var request = dsn_call(
         this.url,
         "RPC_CM_CREATE_APP",
         hash,
@@ -48,7 +48,9 @@ meta_sApp.prototype.internal_async_create_app = function(args, on_success, on_fa
         function(result) {
             ret = new configuration_create_app_response();
             self.unmarshall(result, ret, "struct");
-            on_success(ret);
+            if (on_success) {
+                on_success(ret);
+            }
         },
         function(xhr, textStatus, errorThrown) {
             ret = null;
@@ -57,14 +59,14 @@ meta_sApp.prototype.internal_async_create_app = function(args, on_success, on_fa
             }
         }
     );
-    return ret;
+    return request || ret;
 }
 
 meta_sApp.prototype.create_app = function(obj) {
     if (!obj.async) {
         return this.internal_create_app(obj.args, obj.hash);
     } else {
-        this.internal_async_create_app(obj.args, obj.on_success, obj.on_fail, obj.hash);
+        return this.internal_async_create_app(obj.args, obj.on_success, obj.on_fail, obj.hash);
     }
 }
 
@@ -93,7 +95,7 @@ meta_sApp.prototype.internal_drop_app = function(args,  hash) {
 meta_sApp.prototype.internal_async_drop_app = function(args, on_success, on_fail, hash) {
     var self = this;
     var ret = null;
-    dsn_call(
+    var request = dsn_call(
         this.url,
         "RPC_CM_DROP_APP",
         hash,
@@ -104,7 +106,9 @@ meta_sApp.prototype.internal_async_drop_app = function(args, on_success, on_fail
         function(result) {
             ret = new configuration_drop_app_response();
             self.unmarshall(result, ret, "struct");
-            on_success(ret);
+            if (on_success) {
+                on_success(ret);
+            }
         },
         function(xhr, textStatus, errorThrown) {
             ret = null;
@@ -113,14 +117,14 @@ meta_sApp.prototype.internal_async_drop_app = function(args, on_success, on_fail
             }
         }
     );
-    return ret;
+    return request || ret;
 }
 
 meta_sApp.prototype.drop_app = function(obj) {
     if (!obj.async) {
         return this.internal_drop_app(obj.args, obj.hash);
     } else {
-        this.internal_async_drop_app(obj.args, obj.on_success, obj.on_fail, obj.hash);
+        return this.internal_async_drop_app(obj.args, obj.on_success, obj.on_fail, obj.hash);
     }
 }
 
@@ -149,7 +153,7 @@ meta_sApp.prototype.internal_list_nodes = function(args,  hash) {
 meta_sApp.prototype.internal_async_list_nodes = function(args, on_success, on_fail, hash) {
     var self = this;
     var ret = null;
-    dsn_call(
+    var request = dsn_call(
         this.url,
         "RPC_CM_LIST_NODES",
         hash,
@@ -160,7 +164,9 @@ meta_sApp.prototype.internal_async_list_nodes = function(args, on_success, on_fa
         function(result) {
             ret = new configuration_list_nodes_response();
             self.unmarshall(result, ret, "struct");
-            on_success(ret);
+            if (on_success) {
+                on_success(ret);
+            }
         },
         function(xhr, textStatus, errorThrown) {
             ret = null;
@@ -169,14 +175,14 @@ meta_sApp.prototype.internal_async_list_nodes = function(args, on_success, on_fa
             }
         }
     );
-    return ret;
+    return request || ret;
 }
 
 meta_sApp.prototype.list_nodes = function(obj) {
     if (!obj.async) {
         return this.internal_list_nodes(obj.args, obj.hash);
     } else {
-        this.internal_async_list_nodes(obj.args, obj.on_success, obj.on_fail, obj.hash);
+        return this.internal_async_list_nodes(obj.args, obj.on_success, obj.on_fail, obj.hash);
     }
 }
 
@@ -205,7 +211,7 @@ meta_sApp.prototype.internal_list_apps = function(args,  hash) {
 meta_sApp.prototype.internal_async_list_apps = function(args, on_success, on_fail, hash) {
     var self = this;
     var ret = null;
-    dsn_call(
+    var request = dsn_call(
         this.url,
         "RPC_CM_LIST_APPS",
         hash,
@@ -216,7 +222,9 @@ meta_sApp.prototype.internal_async_list_apps = function(args, on_success, on_fai
         function(result) {
             ret = new configuration_list_apps_response();
             self.unmarshall(result, ret, "struct");
-            on_success(ret);
+            if (on_success) {
+                on_success(ret);
+            }
         },
         function(xhr, textStatus, errorThrown) {
             ret = null;
@@ -225,14 +233,14 @@ meta_sApp.prototype.internal_async_list_apps = function(args, on_success, on_fai
             }
         }
     );
-    return ret;
+    return request || ret;
 }
 
 meta_sApp.prototype.list_apps = function(obj) {
     if (!obj.async) {
         return this.internal_list_apps(obj.args, obj.hash);
     } else {
-        this.internal_async_list_apps(obj.args, obj.on_success, obj.on_fail, obj.hash);
+        return this.internal_async_list_apps(obj.args, obj.on_success, obj.on_fail, obj.hash);
     }
 }
 
@@ -261,7 +269,7 @@ meta_sApp.prototype.internal_query_configuration_by_node = function(args,  hash)
 meta_sApp.prototype.internal_async_query_configuration_by_node = function(args, on_success, on_fail, hash) {
     var self = this;
     var ret = null;
-    dsn_call(
+    var request = dsn_call(
         this.url,
         "RPC_CM_QUERY_NODE_PARTITIONS",
         hash,
@@ -272,7 +280,9 @@ meta_sApp.prototype.internal_async_query_configuration_by_node = function(args, 
         function(result) {
             ret = new configuration_query_by_node_response();
             self.unmarshall(result, ret, "struct");
-            on_success(ret);
+            if (on_success) {
+                on_success(ret);
+            }
         },
         function(xhr, textStatus, errorThrown) {
             ret = null;
@@ -281,14 +291,14 @@ meta_sApp.prototype.internal_async_query_configuration_by_node = function(args, 
             }
         }
     );
-    return ret;
+    return request || ret;
 }
 
 meta_sApp.prototype.query_configuration_by_node = function(obj) {
     if (!obj.async) {
         return this.internal_query_configuration_by_node(obj.args, obj.hash);
     } else {
-        this.internal_async_query_configuration_by_node(obj.args, obj.on_success, obj.on_fail, obj.hash);
+        return this.internal_async_query_configuration_by_node(obj.args, obj.on_success, obj.on_fail, obj.hash);
     }
 }
 
@@ -317,7 +327,7 @@ meta_sApp.prototype.internal_query_configuration_by_index = function(args,  hash
 meta_sApp.prototype.internal_async_query_configuration_by_index = function(args, on_success, on_fail, hash) {
     var self = this;
     var ret = null;
-    dsn_call(
+    var request = dsn_call(
         this.url,
         "RPC_CM_QUERY_PARTITION_CONFIG_BY_INDEX",
         hash,
@@ -328,7 +338,9 @@ meta_sApp.prototype.internal_async_query_configuration_by_index = function(args,
         function(result) {
             ret = new configuration_query_by_index_response();
             self.unmarshall(result, ret, "struct");
-            on_success(ret);
+            if (on_success) {
+                on_success(ret);
+            }
         },
         function(xhr, textStatus, errorThrown) {
             ret = null;
@@ -337,14 +349,13 @@ meta_sApp.prototype.internal_async_query_configuration_by_index = function(args,
             }
         }
     );
-    return ret;
+    return request || ret;
 }
 
 meta_sApp.prototype.query_configuration_by_index = function(obj) {
     if (!obj.async) {
         return this.internal_query_configuration_by_index(obj.args, obj.hash);
     } else {
-        this.internal_async_query_configuration_by_index(obj.args, obj.on_success, obj.on_fail, obj.hash);
+        return this.internal_async_query_configuration_by_index(obj.args, obj.on_success, obj.on_fail, obj.hash);
     }
 }
-

@@ -77,6 +77,18 @@ class thelpers
         case "ui64": return "uint64_t";
         case "uint64": return "uint64_t";
         case "uint64_t": return "uint64_t";
+        case "i16": return "int16_t";
+        case "int16": return "int16_t";
+        case "int16_t": return "int16_t";
+        case "ui16": return "uint16_t";
+        case "uint16": return "uint16_t";
+        case "uint16_t": return "uint16_t";
+        case "i8": return "int8_t";
+        case "int8": return "int8_t";
+        case "int8_t": return "int8_t";
+        case "ui8": return "uint8_t";
+        case "uint8": return "uint8_t";
+        case "uint8_t": return "uint8_t";
         case "i32": return "int32_t";
         case "int32": return "int32_t";
         case "int32_t": return "int32_t";
@@ -118,6 +130,18 @@ class thelpers
         case "ui64": return "UInt64";
         case "uint64": return "UInt64";
         case "uint64_t": return "UInt64";
+        case "i16": return "Int16";
+        case "int16": return "Int16";
+        case "int16_t": return "Int16";
+        case "ui16": return "UInt16";
+        case "uint16": return "UInt16";
+        case "uint16_t": return "UInt16";
+        case "i8": return "SByte";
+        case "int8": return "SByte";
+        case "int8_t": return "SByte";
+        case "ui8": return "Byte";
+        case "uint8": return "Byte";
+        case "uint8_t": return "Byte";
         case "i32": return "Int32";
         case "int32": return "Int32";
         case "int32_t": return "Int32";
@@ -143,6 +167,9 @@ class thelpers
 
     public static function is_base_type($type)
     {
+        if (thelpers::is_container_type($type))
+            return true;
+
         static $base_types = array(
             "list",
             "map",
@@ -154,11 +181,27 @@ class thelpers
             "i64",
             "int64",
             "int64_t",
+            "ui64",
             "uint64",
             "uint64_t",
             "i32",
             "int32",
+            "int32_t",
+            "ui32",
+            "uint32",
             "uint32_t",
+            "i16",
+            "int16",
+            "int16_t",
+            "ui16",
+            "uint16",
+            "uint16_t",
+            "i8",
+            "int8",
+            "int8_t",
+            "ui8",
+            "uint8",
+            "uint8_t",
             "byte",
             "BYTE",
             "Byte",
@@ -173,6 +216,61 @@ class thelpers
             "sfixed64"
         );
         return in_array($type, $base_types);
+    }
+
+    public static function get_js_type_name($full_name)
+    {
+        $normalized = str_replace("::", ".", $full_name);
+        $pos = strrpos($normalized, ".");
+        return $pos === FALSE ? $normalized : substr($normalized, $pos + 1);
+    }
+
+    public static function resolve_type_aliases($type)
+    {
+        global $_PROG;
+
+        $resolved = $type;
+        for ($depth = 0; $depth < 64; ++$depth)
+        {
+            $next = preg_replace_callback(
+                '/[A-Za-z_][A-Za-z0-9_.]*/',
+                function($matches) use ($_PROG)
+                {
+                    $token = $matches[0];
+                    $local_name = $token;
+                    $program_prefix = $_PROG->name.".";
+                    $cpp_namespace = $_PROG->get_namespace("cpp");
+                    if (thelpers::begin_with($local_name, $program_prefix))
+                    {
+                        $local_name = substr($local_name, strlen($program_prefix));
+                    }
+                    else if ($cpp_namespace !== FALSE &&
+                             thelpers::begin_with($local_name, $cpp_namespace."."))
+                    {
+                        $local_name = substr($local_name, strlen($cpp_namespace) + 1);
+                    }
+                    else if (strpos($local_name, ".") !== FALSE)
+                    {
+                        return $token;
+                    }
+
+                    foreach ($_PROG->typedefs as $typedef)
+                    {
+                        if ($typedef->name === $local_name)
+                        {
+                            return $typedef->type;
+                        }
+                    }
+                    return $token;
+                },
+                $resolved);
+            if ($next === $resolved)
+            {
+                return $resolved;
+            }
+            $resolved = $next;
+        }
+        throw new Exception("cyclic or excessively deep typedef: ".$type);
     }
 
     public static function get_cpp_type_name($full_name)
