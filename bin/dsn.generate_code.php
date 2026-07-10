@@ -244,7 +244,9 @@ case "thrift":
         {
             $lang_with_options = $g_lang.":moveable_types";
         }
-        $command = $thrift." --gen ".$lang_with_options." -out ".$g_out_dir." ".$g_idl;
+        $recursive = $g_lang == "js" ? " -r" : "";
+        $command = $thrift.$recursive." --gen ".$lang_with_options.
+            " -out ".$g_out_dir." ".$g_idl;
         echo "exec: ".$command.PHP_EOL;
         system($command);
     }

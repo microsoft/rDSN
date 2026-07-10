@@ -455,9 +455,25 @@ bool test_code_generation(Language lang, IDL idl, Format format)
     {
         const std::string client = scratch_file("src/counter.client.js");
         require_file(client, "counter JavaScript client", result);
+        require_file(
+            scratch_file("src/counter.client.cjs"), "counter CommonJS client", result);
+        require_file(
+            scratch_file("src/counter.client.mjs"), "counter ES module client", result);
+        require_file(
+            scratch_file("src/counter.types.cjs"), "counter CommonJS types", result);
         require_file(scratch_file("src/counter.test.html"), "counter JavaScript test page", result);
         require_file_contains(
-            client, "counterApp.prototype.addAsync", "counter JavaScript client", result);
+            client, "root.DSN.create_client_class", "counter JavaScript client", result);
+        require_file_contains(
+            scratch_file("src/counter.client.cjs"),
+            "createClientClass",
+            "counter CommonJS client",
+            result);
+        require_file_contains(
+            scratch_file("src/counter.client.mjs"),
+            "export const counterApp",
+            "counter ES module client",
+            result);
         dump_log_on_failure(result);
         return result;
     }

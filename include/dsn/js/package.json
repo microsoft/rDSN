@@ -1,0 +1,48 @@
+{
+  "name": "rdsn-client",
+  "version": "0.1.0",
+  "description": "JavaScript RPC client runtime for rDSN Thrift JSON services",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "./index.cjs",
+  "module": "./index.mjs",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "require": "./index.cjs",
+      "default": "./index.cjs"
+    },
+    "./node": {
+      "types": "./node.d.ts",
+      "import": "./node.mjs",
+      "require": "./node.cjs",
+      "default": "./node.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "THRIFT_UPSTREAM.md",
+    "dsn.thrift",
+    "dsn_transport.js",
+    "dsn_types.js",
+    "index.cjs",
+    "index.d.ts",
+    "index.mjs",
+    "node.cjs",
+    "node.d.ts",
+    "node.mjs",
+    "thrift.js"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "rdsn",
+    "rpc",
+    "thrift"
+  ]
+}

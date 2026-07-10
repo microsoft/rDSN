@@ -17,6 +17,11 @@
  * under the License.
  */
 
+/*
+ * Upstream baseline: Apache Thrift 0.9.3, lib/js/src/thrift.js.
+ * See THRIFT_UPSTREAM.md for the rDSN compatibility patch inventory.
+ */
+
 /*jshint evil:true*/
 
 /**
@@ -47,6 +52,8 @@ var Thrift = {
      * @memberof Thrift
      */
     Version: '0.9.3',
+    UpstreamVersion: '0.9.3',
+    RdsnPatchLevel: 2,
 
     /**
      * Thrift IDL type string to Id mapping.
@@ -1892,3 +1899,13 @@ Thrift.checkSetUniqueness = function(values) {
         }
     }
 };
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = Thrift;
+} else if (typeof globalThis !== 'undefined') {
+    globalThis.Thrift = Thrift;
+} else if (typeof window !== 'undefined') {
+    window.Thrift = Thrift;
+} else if (typeof self !== 'undefined') {
+    self.Thrift = Thrift;
+}
