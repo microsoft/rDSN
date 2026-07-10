@@ -444,15 +444,30 @@ namespace dsn {
         ::dsn::command cmd;
         safe_string result;
 
-        ::dsn::unmarshall(req, cmd);
-
-        safe_vector<safe_string> args;
-        for (auto& e : cmd.arguments)
+        // The request body is untrusted network input. unmarshall() throws (std::out_of_range /
+        // std::bad_alloc / thrift TProtocolException) on an empty, truncated, or otherwise
+        // malformed body, and RPC request handlers are executed with no surrounding exception
+        // handler (task_worker::loop does not catch), so a raw unmarshall() here would let a
+        // single malformed dsn.cli message escape as an uncaught exception and terminate the whole
+        // process -- a remote, unauthenticated denial of service, reachable by default because
+        // [core] cli_remote defaults to true. Decode defensively and reply with an error instead
+        // of crashing (the typed serverlet handlers already do this via try_unmarshall; this raw
+        // system handler must do the same).
+        if (::dsn::try_unmarshall(req, cmd) != ERR_OK)
         {
-            args.emplace_back(e.c_str());
+            derror("received a malformed remote cli request, ignore it");
+            result = "invalid command request";
         }
+        else
+        {
+            safe_vector<safe_string> args;
+            for (auto& e : cmd.arguments)
+            {
+                args.emplace_back(e.c_str());
+            }
 
-        run_command(cmd.cmd.c_str(), args, result);
+            run_command(cmd.cmd.c_str(), args, result);
+        }
 
         auto resp = dsn_msg_create_response(req);
 
