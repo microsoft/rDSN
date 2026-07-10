@@ -27,8 +27,44 @@ if(DEFINED GTEST_LIB_DIR AND NOT "${GTEST_LIB_DIR}" STREQUAL "")
 endif()
 find_program(DSN_NODE_EXECUTABLE_PATH NAMES node nodejs)
 if(DSN_NODE_EXECUTABLE_PATH)
-    file(TO_CMAKE_PATH "${DSN_NODE_EXECUTABLE_PATH}" DSN_NODE_EXECUTABLE_FOR_CPP)
-    add_definitions(-DDSN_NODE_EXECUTABLE="${DSN_NODE_EXECUTABLE_FOR_CPP}")
+    # The Node-driven test (thrift_helper.js_runtime_compatibility) exercises the
+    # generated JavaScript runtime, which uses ES modules and dynamic import() and
+    # therefore needs a modern Node.js. The minimum is declared in
+    # include/dsn/js/package.json ("engines": { "node": ">=N" }). Only enable the
+    # test when the installed runtime satisfies that minimum; otherwise skip it so
+    # older systems (e.g. the distro Node.js 10 on Ubuntu 16.04) do not fail on
+    # unsupported syntax.
+    set(DSN_JS_MIN_NODE_MAJOR 18)
+    set(DSN_JS_PACKAGE_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../../../include/dsn/js/package.json")
+    if(EXISTS "${DSN_JS_PACKAGE_JSON}")
+        file(READ "${DSN_JS_PACKAGE_JSON}" DSN_JS_PACKAGE_JSON_CONTENT)
+        string(REGEX MATCH "\"node\"[ \t]*:[ \t]*\"[^\"0-9]*([0-9]+)" DSN_JS_ENGINE_MATCH "${DSN_JS_PACKAGE_JSON_CONTENT}")
+        if(DSN_JS_ENGINE_MATCH)
+            set(DSN_JS_MIN_NODE_MAJOR ${CMAKE_MATCH_1})
+        endif()
+    endif()
+
+    execute_process(
+        COMMAND "${DSN_NODE_EXECUTABLE_PATH}" --version
+        OUTPUT_VARIABLE DSN_NODE_VERSION_OUTPUT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+        RESULT_VARIABLE DSN_NODE_VERSION_RESULT)
+    set(DSN_NODE_MAJOR_VERSION 0)
+    if(DSN_NODE_VERSION_RESULT EQUAL 0)
+        string(REGEX MATCH "([0-9]+)" DSN_NODE_MAJOR_MATCH "${DSN_NODE_VERSION_OUTPUT}")
+        if(DSN_NODE_MAJOR_MATCH)
+            set(DSN_NODE_MAJOR_VERSION ${DSN_NODE_MAJOR_MATCH})
+        endif()
+    endif()
+
+    if(DSN_NODE_MAJOR_VERSION LESS DSN_JS_MIN_NODE_MAJOR)
+        message(STATUS "dsn.idl.tests: skipping the JS runtime test; Node.js '${DSN_NODE_VERSION_OUTPUT}' at ${DSN_NODE_EXECUTABLE_PATH} is older than the required v${DSN_JS_MIN_NODE_MAJOR}")
+    else()
+        file(TO_CMAKE_PATH "${DSN_NODE_EXECUTABLE_PATH}" DSN_NODE_EXECUTABLE_FOR_CPP)
+        add_definitions(-DDSN_NODE_EXECUTABLE="${DSN_NODE_EXECUTABLE_FOR_CPP}")
+        message(STATUS "dsn.idl.tests: enabling the JS runtime test with Node.js '${DSN_NODE_VERSION_OUTPUT}' at ${DSN_NODE_EXECUTABLE_PATH}")
+    endif()
 endif()
 
 set(MY_PROJ_NAME dsn.idl.tests)
