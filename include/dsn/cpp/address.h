@@ -69,6 +69,9 @@ namespace dsn
 
         void assign_ipv4(uint32_t ip, uint16_t port);
         void assign_ipv4(const char* host, uint16_t port);
+        // Parse a numeric dotted-quad "a.b.c.d" into a host-order IPv4 (no DNS lookup).
+        // Returns true and sets `ip` on success; false for any non-numeric/malformed host.
+        static bool try_parse_ipv4(const char* host, uint32_t& ip);
         void assign_ipv4_local_address(const char* card_interface, uint16_t port);
         void assign_uri(dsn_uri_t uri);
         void assign_group(dsn_group_t g);        
@@ -151,9 +154,75 @@ namespace dsn
             return;
         }
 
+        uint32_t ip = 0;
+        if (try_parse_ipv4(host, ip))
+        {
+            // A numeric dotted-quad address needs no name resolution.
+            assign_ipv4(ip, port);
+            return;
+        }
+
+        // Not a numeric address: fall back to (possibly blocking) host name
+        // resolution. Do NOT reach this path with untrusted input -- see try_parse_ipv4.
         _addr.u.v4.type = HOST_TYPE_IPV4;
         _addr.u.v4.ip = dsn_ipv4_from_host(host);
         _addr.u.v4.port = port;
+    }
+
+    // Parse a numeric dotted-quad IPv4 string ("a.b.c.d") into a host-order 32-bit
+    // address WITHOUT any DNS lookup. Returns true and sets `ip` on success; returns
+    // false (leaving `ip` unchanged) for any malformed / non-numeric input.
+    //
+    // Callers handling untrusted input (e.g. network message parsing) must use this
+    // and reject a false result rather than assign_ipv4(const char*, ...): that path
+    // resolves a non-numeric host via gethostbyname(), which a remote peer could abuse
+    // to block the caller's thread with a slow/hung DNS lookup (a denial of service).
+    inline bool rpc_address::try_parse_ipv4(const char* host, uint32_t& ip)
+    {
+        if (host == nullptr)
+        {
+            return false;
+        }
+
+        uint32_t value = 0;
+        const char* p = host;
+        for (int octet_index = 0; octet_index < 4; ++octet_index)
+        {
+            if (*p < '0' || *p > '9')
+            {
+                return false;
+            }
+
+            uint32_t octet = 0;
+            int digits = 0;
+            while (*p >= '0' && *p <= '9')
+            {
+                octet = octet * 10 + (uint32_t)(*p - '0');
+                if (octet > 255 || ++digits > 3)
+                {
+                    return false;
+                }
+                ++p;
+            }
+
+            value = (value << 8) | octet;
+            if (octet_index < 3)
+            {
+                if (*p != '.')
+                {
+                    return false;
+                }
+                ++p;
+            }
+        }
+
+        if (*p != '\0')
+        {
+            return false;
+        }
+
+        ip = value;
+        return true;
     }
 
     inline void rpc_address::assign_ipv4_local_address(const char* network_interface, uint16_t port)

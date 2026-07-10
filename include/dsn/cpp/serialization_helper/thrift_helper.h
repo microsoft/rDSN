@@ -285,7 +285,9 @@ namespace dsn {
         {
             //the protocol is json protocol
             std::string host;
-            int port;
+            // Default port to 0 so a malformed message that omits field 2 does not
+            // read uninitialized stack memory.
+            int port = 0;
 
             uint32_t xfer = 0;
             std::string fname;
@@ -330,9 +332,20 @@ namespace dsn {
 
             xfer += iprot->readStructEnd();
 
-            //currently only support ipv4 format
-            this->assign_ipv4(host.c_str(), port);
-            
+            // currently only support ipv4 format; parse the host as a numeric dotted-quad
+            // WITHOUT any DNS lookup. assign_ipv4(const char*, ...) would funnel this
+            // untrusted host string into gethostbyname(), letting a peer block the
+            // deserializing thread with a slow/hung DNS lookup (a denial of service). A
+            // legitimate peer always writes the numeric to_string() form (see write()).
+            uint32_t ip = 0;
+            if (!try_parse_ipv4(host.c_str(), ip))
+            {
+                throw ::apache::thrift::protocol::TProtocolException(
+                    ::apache::thrift::protocol::TProtocolException::INVALID_DATA,
+                    "rpc_address host must be a numeric ipv4 address");
+            }
+            this->assign_ipv4(ip, (uint16_t)port);
+
             return xfer;
         }
     }

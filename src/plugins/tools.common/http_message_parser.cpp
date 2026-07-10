@@ -280,7 +280,18 @@ http_message_parser::http_message_parser()
                 return 1;
             }
             std::string host(at, pos);
-            header->from_address.assign_ipv4(host.c_str(), port);
+            // from_address must be a numeric dotted-quad IPv4. Parse it with the numeric-only
+            // helper and never call assign_ipv4(const char*, ...) on this untrusted value:
+            // that path funnels into gethostbyname(), so a remote peer could supply a
+            // non-numeric host and wedge the server with a slow/blocking DNS lookup on the
+            // network IO thread (a denial of service).
+            uint32_t from_ip = 0;
+            if (!rpc_address::try_parse_ipv4(host.c_str(), from_ip))
+            {
+                derror("invalid header.from_address '%.*s'", static_cast<int>(length), at);
+                return 1;
+            }
+            header->from_address.assign_ipv4(from_ip, port);
             break;
         }
         case parsing_client_timeout:
