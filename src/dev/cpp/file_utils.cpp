@@ -104,9 +104,9 @@ namespace dsn {
 # define _FS_QUESTION   '?'
 # define _FS_NULL       '\0'
 # define _FS_ISSEP(x)   ((x) == _FS_SLASH || (x) == _FS_BSLASH)
+# define TLS_PATH_BUFFER_SIZE PATH_MAX
 
-            static __thread char tls_path_buffer[PATH_MAX];
-            # define TLS_PATH_BUFFER_SIZE PATH_MAX
+            static __thread char tls_path_buffer[TLS_PATH_BUFFER_SIZE];
 
             // npath need to be a normalized path
             static inline int get_stat_internal(const std::string& npath, struct stat_& st)
@@ -143,6 +143,22 @@ namespace dsn {
                 }
 
                 len = path.length();
+
+                // The normalized path is assembled into the fixed-size
+                // thread-local tls_path_buffer[TLS_PATH_BUFFER_SIZE]. Separators
+                // only ever shrink the result, so len < TLS_PATH_BUFFER_SIZE
+                // guarantees the assembled characters plus the trailing NUL fit.
+                // Reject an over-long path (reachable from the public
+                // path_combine()/get_normalized_path() with a possibly
+                // remote-supplied name) instead of overflowing the buffer.
+                if (len >= TLS_PATH_BUFFER_SIZE)
+                {
+                    derror("path length %zu exceeds the maximum allowed %zu",
+                           len,
+                           static_cast<size_t>(TLS_PATH_BUFFER_SIZE - 1));
+                    npath = "";
+                    return -1;
+                }
 
 #ifdef _WIN32
                 sep = _FS_BSLASH;

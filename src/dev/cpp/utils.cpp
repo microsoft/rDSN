@@ -279,6 +279,19 @@ namespace dsn {
         
         std::string replace_string(std::string subject, const std::string& search, const std::string& replace) 
         {
+            // Fast path for inputs that cannot change the result. An empty
+            // `search` matches at every position, so the loop below would never
+            // terminate (empty `replace` -> infinite loop; non-empty `replace`
+            // -> unbounded growth / memory exhaustion). An empty `subject` has
+            // nothing to scan. In both cases the answer is `subject` unchanged.
+            // NOTE: an empty `replace` is deliberately NOT short-circuited here
+            // -- it means "delete every occurrence of search", so it must still
+            // go through the loop.
+            if (search.empty() || subject.empty())
+            {
+                return subject;
+            }
+
             size_t pos = 0;
             while ((pos = subject.find(search, pos)) != std::string::npos) {
                 subject.replace(pos, search.length(), replace);
