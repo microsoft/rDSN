@@ -544,9 +544,19 @@ task_code message_ex::rpc_code()
     }
 
     auto binary_hash = header->rpc_code.local_hash;
-    if (binary_hash != 0 && binary_hash == ::dsn::message_ex::s_local_hash)
+    // Fast path: an identical local_hash means the peer registered rpc codes in the same order,
+    // so the numeric local_code maps to the same task_code here and we can skip the name lookup.
+    // However local_hash is echoed in every outgoing message header (see prepare_send), so it is
+    // not a secret: a malicious or corrupt peer can forge a matching hash together with an
+    // arbitrary local_code. That code is later used to index the per-code handler/spec vectors
+    // (e.g. rpc_server_dispatcher::_vhandlers, sized dsn_task_code_max() + 1) with an unchecked
+    // operator[], so an out-of-range value would be an out-of-bounds read/dereference. Only trust
+    // an in-range code; anything else falls back to the always-bounded name-based resolution.
+    int wire_code = static_cast<int>(header->rpc_code.local_code);
+    if (binary_hash != 0 && binary_hash == ::dsn::message_ex::s_local_hash && wire_code >= 0 &&
+        wire_code <= dsn_task_code_max())
     {
-        local_rpc_code = header->rpc_code.local_code;
+        local_rpc_code = wire_code;
     }
     else
     {
