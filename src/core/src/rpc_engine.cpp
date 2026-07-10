@@ -550,7 +550,18 @@ namespace dsn {
         }
         else
         {
-            dassert(false, "msg not handled at all");
+            // The rpc code / rpc_name of an inbound request is attacker-controlled: a peer can
+            // route an arbitrary request to a hosted app (e.g. by gpid on the layer2 replication
+            // path) whose code has no registered handler in this app. The original
+            // dassert(false, "msg not handled at all") turned that into a remote, unauthenticated
+            // whole-process abort. Mirror the non-inline sibling on_request(), which simply
+            // reports "no handler" without crashing. Ownership of msg is unchanged (the caller
+            // still owns it, exactly as when the assertion fired), so we must not free it here.
+            derror("no rpc handler for message with rpc name %s from %s, trace_id = %016" PRIx64,
+                msg->header->rpc_name,
+                msg->header->from_address.to_string(),
+                msg->header->trace_id
+                );
         }
     }
 
