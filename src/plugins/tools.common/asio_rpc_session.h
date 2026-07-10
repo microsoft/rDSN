@@ -39,6 +39,7 @@
 # include <dsn/utility/priority_queue.h>
 # include <dsn/tool-api/message_parser.h>
 # include <boost/asio.hpp>
+# include <mutex>
 # include "asio_net_provider.h"
 
 namespace dsn {
@@ -78,7 +79,16 @@ namespace dsn {
             void safe_close();
 
         private:
-            std::shared_ptr<boost::asio::ip::tcp::socket> _socket;            
+            std::shared_ptr<boost::asio::ip::tcp::socket> _socket;
+            // Serializes socket operations that start a new async op (read/write/
+            // connect) against socket close/shutdown. Boost.Asio's epoll reactor is
+            // not safe when one io thread starts an operation on a descriptor while
+            // another io thread is closing the same descriptor: the descriptor's
+            // reactor state can be torn down concurrently, leading to a null
+            // descriptor_state dereference (SIGSEGV). This per-session lock is held
+            // only around the (non-blocking) op initiation, never across a completion
+            // handler, so it cannot deadlock.
+            std::mutex _socket_op_lock;
         };
     }
 }

@@ -112,6 +112,7 @@ namespace dsn {
                 return;
             }
 
+            std::lock_guard<std::mutex> lock(_socket_op_lock);
             _socket->async_read_some(boost::asio::buffer(ptr, remaining),
                 [this](boost::system::error_code ec, std::size_t length)
             {
@@ -177,6 +178,7 @@ namespace dsn {
             }
 
             add_ref();
+            std::lock_guard<std::mutex> lock(_socket_op_lock);
             boost::asio::async_write(*_socket, buffers2,
                 [this, signature](boost::system::error_code ec, std::size_t length)
             {
@@ -219,6 +221,7 @@ namespace dsn {
 
         void asio_rpc_session::safe_close()
         {
+            std::lock_guard<std::mutex> lock(_socket_op_lock);
             try {
                 _socket->shutdown(boost::asio::socket_base::shutdown_type::shutdown_both);
                 _socket->close();
@@ -241,6 +244,7 @@ namespace dsn {
                     boost::asio::ip::address_v4(_remote_addr.ip()), _remote_addr.port());
 
                 add_ref();
+                std::lock_guard<std::mutex> lock(_socket_op_lock);
                 _socket->async_connect(ep, [this](boost::system::error_code ec)
                 {
                     if (!ec)

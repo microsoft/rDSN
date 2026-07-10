@@ -1147,8 +1147,24 @@ namespace dsn {
             // so use client session to send response.
             else
             {
-                dbg_dassert(response->to_address.port() > MAX_CLIENT_PORT, 
-                    "target address must have named port in this case");
+                // a forwarded request is answered by replying directly to the original
+                // client recorded in to_address, which must therefore be a reachable
+                // server address with a named port (legitimate forwarding only sets
+                // is_forwarded when from_address.port() > MAX_CLIENT_PORT, see forward()).
+                // a message from an untrusted peer may set is_forwarded while carrying a
+                // client-only address; we cannot route the reply in that case, so drop it
+                // gracefully instead of aborting the whole process.
+                if (response->to_address.port() <= MAX_CLIENT_PORT)
+                {
+                    derror("drop forwarded reply %s: target %s has no named port, trace_id = %016" PRIx64,
+                        response->header->rpc_name,
+                        response->to_address.to_string(),
+                        response->header->trace_id
+                        );
+                    response->add_ref();
+                    response->release_ref();
+                    return;
+                }
 
                 // use the header format recorded in the message
                 network* net = _client_nets[response->hdr_format][sp->rpc_call_channel];
@@ -1172,8 +1188,20 @@ namespace dsn {
         // not connection oriented network, we always use the named network to send msgs
         else
         {
-            dbg_dassert(response->to_address.port() > MAX_CLIENT_PORT,
-                "target address must have named port in this case");
+            // see the forwarded-reply note above: a connectionless reply is likewise
+            // routed to a named server address, so drop it gracefully if an untrusted
+            // peer supplied a client-only target instead of aborting the process.
+            if (response->to_address.port() <= MAX_CLIENT_PORT)
+            {
+                derror("drop reply %s: target %s has no named port, trace_id = %016" PRIx64,
+                    response->header->rpc_name,
+                    response->to_address.to_string(),
+                    response->header->trace_id
+                    );
+                response->add_ref();
+                response->release_ref();
+                return;
+            }
 
             network* net = _server_nets[response->header->from_address.port()][sp->rpc_call_channel];
 

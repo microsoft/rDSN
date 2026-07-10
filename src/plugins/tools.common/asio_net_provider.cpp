@@ -136,15 +136,30 @@ namespace dsn {
             {
                 if (!ec)
                 {
-                    auto ip = socket->remote_endpoint().address().to_v4().to_ulong();
-                    auto port = socket->remote_endpoint().port();
-                    ::dsn::rpc_address client_addr(ip, port);
+                    // The peer may have already reset the just-accepted connection. Query the
+                    // remote endpoint with an error_code so a disconnected socket returns an
+                    // error instead of throwing boost::system::system_error, which would be
+                    // uncaught on this io thread and abort the whole process. On failure, drop
+                    // this connection and keep accepting.
+                    boost::system::error_code ep_ec;
+                    auto endpoint = socket->remote_endpoint(ep_ec);
+                    if (ep_ec)
+                    {
+                        derror("failed to get the remote endpoint of an accepted connection, drop it: %s",
+                            ep_ec.message().c_str());
+                    }
+                    else
+                    {
+                        auto ip = endpoint.address().to_v4().to_ulong();
+                        auto port = endpoint.port();
+                        ::dsn::rpc_address client_addr(ip, port);
 
-                    message_parser_ptr null_parser;
-                    rpc_session_ptr s = new asio_rpc_session(*this, client_addr, 
-                        (std::shared_ptr<boost::asio::ip::tcp::socket>&)socket,
-                        null_parser, false);
-                    this->on_server_session_accepted(s);
+                        message_parser_ptr null_parser;
+                        rpc_session_ptr s = new asio_rpc_session(*this, client_addr, 
+                            (std::shared_ptr<boost::asio::ip::tcp::socket>&)socket,
+                            null_parser, false);
+                        this->on_server_session_accepted(s);
+                    }
                 }
 
                 do_accept();

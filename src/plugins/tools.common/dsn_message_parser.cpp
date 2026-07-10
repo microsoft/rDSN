@@ -236,6 +236,19 @@ namespace dsn
             return false;
         }
 
+        // from_address is carried on the wire and, by contract, is always a plain ipv4
+        // address (or the INVALID sentinel that the network layer later replaces with the
+        // peer's real address). GROUP/URI addresses hold process-local heap pointers whose
+        // values are meaningless -- and unsafe to dereference -- when they arrive from an
+        // untrusted peer. Reject them here at the trust boundary before any downstream code
+        // (e.g. from_address.to_string() logging, or dispatch) dereferences a bogus pointer.
+        dsn_host_type_t from_type = header->from_address.type();
+        if (from_type != HOST_TYPE_INVALID && from_type != HOST_TYPE_IPV4)
+        {
+            derror("dsn message header check failed: invalid from_address type %d", (int)from_type);
+            return false;
+        }
+
         uint32_t* pcrc = reinterpret_cast<uint32_t*>(hdr + FIELD_OFFSET(message_header, hdr_crc32));
         uint32_t crc32 = *pcrc;
         if (crc32 != CRC_INVALID)
