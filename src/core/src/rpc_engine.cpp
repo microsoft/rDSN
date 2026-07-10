@@ -192,8 +192,23 @@ namespace dsn {
                 }
                 break;
             default:
-                dassert(false, "not implemented");
-                break;
+                // ERR_FORWARD_TO_OTHERS is only expected when we are a pure client
+                // sending to a group leader (see the assertion note above); the fake
+                // forwarding that follows redirects the request to the group's new
+                // leader. reply->error() is attacker-controlled, so an untrusted peer
+                // can also return ERR_FORWARD_TO_OTHERS for a request we sent directly
+                // to a named (non-group) server address. Honoring it would let the peer
+                // redirect the request to an arbitrary address, and the original
+                // "not implemented" assertion here aborted the whole process. Neither is
+                // acceptable: report a network failure to the caller instead of crashing.
+                derror("drop unexpected forward reply for non-group request %s, trace_id = %016" PRIx64,
+                    reply->header->rpc_name,
+                    reply->header->trace_id
+                    );
+                call->set_delay(delay_ms);
+                call->enqueue(ERR_NETWORK_FAILURE, reply);
+                call->release_ref(); // added in on_call
+                return true;
             }
 
             // do fake forwarding, reset request_id
@@ -226,7 +241,12 @@ namespace dsn {
                     }
                     break;
                 default:
-                    dassert(false, "not implemented");
+                    // A non-group request has no leader to update. context.u.is_forwarded
+                    // is attacker-controlled, so an untrusted peer can set it on a reply
+                    // to a direct (non-group) send; the original "not implemented"
+                    // assertion here aborted the whole process. There is simply no leader
+                    // side effect to apply, so ignore the bit and deliver the reply
+                    // normally below.
                     break;
                 }
             }
