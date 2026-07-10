@@ -56,15 +56,13 @@ function generate_request_helper($client, $func, $async, $serialization_fmt)
                 on_success(ret);
             }
 <?php } ?>
+            return ret;
         },
-        function(xhr, textStatus, errorThrown) {
-            ret = null;
 <?php if ($async) { ?>
-            if (on_fail) {
-                on_fail(xhr, textStatus, errorThrown);
-            }
+        on_fail
+<?php } else { ?>
+        null
 <?php } ?>
-        }
     );
     return <?php if ($async) { echo "request || ret"; } else { echo "ret"; } ?>;
 }
@@ -103,9 +101,20 @@ foreach ($_PROG->services as $svc)
     }
 }
 
+<?=$client?>.prototype.<?=$func->name?>Async = function(args, hash) {
+    var self = this;
+    if (typeof Promise === 'undefined') {
+        throw new Error('Promises are not supported by this JavaScript environment');
+    }
+    return new Promise(function(resolve, reject) {
+        self.internal_async_<?=$func->name?>(args, resolve, function(xhr, textStatus, errorThrown) {
+            reject(errorThrown);
+        }, hash);
+    });
+}
 <?php
     }
-?>
+    ?>
 <?php 
 }
 ?>

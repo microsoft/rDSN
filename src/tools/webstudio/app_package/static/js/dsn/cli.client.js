@@ -25,10 +25,9 @@ cliApp.prototype.internal_call = function(args,  hash) {
         false,
         function(result) {
             ret = self.unmarshall(result, null, "string");
+            return ret;
         },
-        function(xhr, textStatus, errorThrown) {
-            ret = null;
-        }
+        null
     );
     return ret;
 }
@@ -49,13 +48,9 @@ cliApp.prototype.internal_async_call = function(args, on_success, on_fail, hash)
             if (on_success) {
                 on_success(ret);
             }
+            return ret;
         },
-        function(xhr, textStatus, errorThrown) {
-            ret = null;
-            if (on_fail) {
-                on_fail(xhr, textStatus, errorThrown);
-            }
-        }
+        on_fail
     );
     return request || ret;
 }
@@ -66,4 +61,16 @@ cliApp.prototype.call = function(obj) {
     } else {
         return this.internal_async_call(obj.args, obj.on_success, obj.on_fail, obj.hash);
     }
+}
+
+cliApp.prototype.callAsync = function(args, hash) {
+    var self = this;
+    if (typeof Promise === 'undefined') {
+        throw new Error('Promises are not supported by this JavaScript environment');
+    }
+    return new Promise(function(resolve, reject) {
+        self.internal_async_call(args, resolve, function(xhr, textStatus, errorThrown) {
+            reject(errorThrown);
+        }, hash);
+    });
 }

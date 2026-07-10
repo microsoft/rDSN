@@ -146,6 +146,94 @@ DSN.base_type = {
     "struct": { kind: "struct", thrift_type: Thrift.Type.STRUCT }
 };
 
+DSN.RpcError = function(code, message, response, responseText, cause) {
+    this.name = "DsnRpcError";
+    this.code = code || "TRANSPORT_ERROR";
+    this.message = message || this.code;
+    this.response = response || null;
+    this.responseText = responseText === undefined ? null : responseText;
+    this.status = response && typeof response.status === "number" ? response.status : 0;
+    if (cause !== undefined && cause !== null) {
+        this.cause = cause;
+    }
+    if (Error.captureStackTrace) {
+        Error.captureStackTrace(this, DSN.RpcError);
+    }
+};
+
+DSN.RpcError.prototype = Object.create(Error.prototype);
+DSN.RpcError.prototype.constructor = DSN.RpcError;
+
+DSN.get_response_header = function(response, name) {
+    if (!response) {
+        return null;
+    }
+    if (response.headers && typeof response.headers.get === "function") {
+        return response.headers.get(name);
+    }
+    if (typeof response.getResponseHeader === "function") {
+        return response.getResponseHeader(name);
+    }
+    return null;
+};
+
+DSN.get_response_error = function(response, responseText) {
+    var status = response && typeof response.status === "number" ? response.status : 0;
+    if (response && response.readyState === 4 && status === 0) {
+        return new DSN.RpcError(
+            "TRANSPORT_ERROR",
+            "rDSN RPC transport failed",
+            response,
+            responseText);
+    }
+    if ((response && response.ok === false) || (status !== 0 && (status < 200 || status >= 300))) {
+        return new DSN.RpcError(
+            status === 0 ? "HTTP_ERROR" : "HTTP_" + status,
+            status === 0 ? "rDSN RPC HTTP request failed" :
+                "rDSN RPC failed with HTTP status " + status,
+            response,
+            responseText);
+    }
+
+    var serverError = DSN.get_response_header(response, "server_error");
+    if (serverError !== null && serverError !== undefined) {
+        serverError = String(serverError).replace(/^\s+|\s+$/g, "");
+        if (serverError !== "" && serverError !== "ERR_OK") {
+            return new DSN.RpcError(
+                serverError,
+                "rDSN RPC failed with " + serverError,
+                response,
+                responseText);
+        }
+    }
+    return null;
+};
+
+DSN.normalize_rpc_error = function(response, textStatus, errorThrown) {
+    if (errorThrown instanceof DSN.RpcError) {
+        return errorThrown;
+    }
+
+    var status = response && typeof response.status === "number" ? response.status : 0;
+    var code = status === 0 ? "TRANSPORT_ERROR" : "HTTP_" + status;
+    var message;
+    if (errorThrown && errorThrown.message) {
+        message = errorThrown.message;
+    } else if (errorThrown) {
+        message = String(errorThrown);
+    } else if (textStatus) {
+        message = "rDSN RPC failed: " + textStatus;
+    } else {
+        message = "rDSN RPC transport failed";
+    }
+    return new DSN.RpcError(
+        code,
+        message,
+        response,
+        response && response.responseText,
+        errorThrown);
+};
+
 DSN.resolve_type = function(name) {
     var root;
     if (typeof globalThis !== 'undefined') {
@@ -438,32 +526,31 @@ DSN.read_value = function(protocol, descriptor, target) {
 };
 
 function dsn_call(url, rpc_code, hash, method, send_data, payload_format, is_async, on_success, on_fail) {
-    if (url === undefined || url === '') {
-        return null;
-    }    
+    if (typeof url !== "string" || url.length === 0) {
+        throw new TypeError("rDSN RPC URL must be a non-empty string");
+    }
     if (hash == undefined)
         hash = 0;        
     if (!method)
         method = "POST";
-    
+
+    url = url.replace(/\/+$/, "");
     url = url + "/" + payload_format + "/" + hash + "/" + rpc_code;
 
     var handle_success = function(response) {
         if (on_success) {
-            on_success(response);
+            return on_success(response);
         }
         return response;
     };
 
     var handle_fail = function(xhr, textStatus, errorThrown) {
+        var error = DSN.normalize_rpc_error(xhr, textStatus, errorThrown);
         if (on_fail) {
-            on_fail(xhr, textStatus, errorThrown);
+            on_fail(xhr, textStatus, error);
             return null;
         }
-        if (is_async) {
-            throw (errorThrown || new Error(textStatus || 'dsn_call failed'));
-        }
-        return null;
+        throw error;
     };
 
     var jq = (typeof $ !== 'undefined' && $.ajax) ? $ :
@@ -485,8 +572,17 @@ function dsn_call(url, rpc_code, hash, method, send_data, payload_format, is_asy
             }, */
             data: send_data,
             async: is_async,
-            success: function(response) {
-                handle_success(response);
+            success: function(response, textStatus, jqXHR) {
+                var responseError = DSN.get_response_error(jqXHR, response);
+                if (responseError) {
+                    handle_fail(jqXHR, "server_error", responseError);
+                    return;
+                }
+                try {
+                    handle_success(response);
+                } catch (error) {
+                    handle_fail(jqXHR, "parsererror", error);
+                }
             },
             error: function(xhr, textStatus, errorThrown){
                 handle_fail(xhr, textStatus, errorThrown);
@@ -503,18 +599,15 @@ function dsn_call(url, rpc_code, hash, method, send_data, payload_format, is_asy
             },
             body: send_data
         }).then(function(response) {
-            if (!response.ok) {
-                var error = new Error('dsn_call failed with HTTP status ' + response.status);
-                error.response = response;
-                throw error;
-            }
-            return response.text();
-        }).then(handle_success, function(error) {
-            if (on_fail) {
-                on_fail(null, 'error', error);
-                return null;
-            }
-            throw error;
+            return response.text().then(function(responseText) {
+                var responseError = DSN.get_response_error(response, responseText);
+                if (responseError) {
+                    throw responseError;
+                }
+                return responseText;
+            });
+        }).then(handle_success).catch(function(error) {
+            return handle_fail(error.response || null, "error", error);
         });
     }
 
@@ -524,26 +617,31 @@ function dsn_call(url, rpc_code, hash, method, send_data, payload_format, is_asy
         xhr.setRequestHeader("Accept", "text/plain, application/json, */*");
         xhr.setRequestHeader("Content-Type", "application/vnd.apache.thrift.json; charset=utf-8");
 
+        var complete_xhr = function() {
+            var responseError = DSN.get_response_error(xhr, xhr.responseText);
+            if (responseError) {
+                return handle_fail(xhr, "server_error", responseError);
+            }
+            try {
+                return handle_success(xhr.responseText);
+            } catch (error) {
+                return handle_fail(xhr, "parsererror", error);
+            }
+        };
+
         if (is_async) {
             xhr.onreadystatechange = function() {
                 if (xhr.readyState !== 4) {
                     return;
                 }
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    handle_success(xhr.responseText);
-                } else {
-                    handle_fail(xhr, xhr.statusText, new Error('dsn_call failed with HTTP status ' + xhr.status));
-                }
+                complete_xhr();
             };
             xhr.send(send_data);
             return xhr;
         }
 
         xhr.send(send_data);
-        if (xhr.status >= 200 && xhr.status < 300) {
-            return handle_success(xhr.responseText);
-        }
-        return handle_fail(xhr, xhr.statusText, new Error('dsn_call failed with HTTP status ' + xhr.status));
+        return complete_xhr();
     }
 
     throw new Error('No HTTP transport available for dsn_call');

@@ -26,10 +26,9 @@ meta_sApp.prototype.internal_create_app = function(args,  hash) {
         function(result) {
             ret = new configuration_create_app_response();
             self.unmarshall(result, ret, "struct");
+            return ret;
         },
-        function(xhr, textStatus, errorThrown) {
-            ret = null;
-        }
+        null
     );
     return ret;
 }
@@ -51,13 +50,9 @@ meta_sApp.prototype.internal_async_create_app = function(args, on_success, on_fa
             if (on_success) {
                 on_success(ret);
             }
+            return ret;
         },
-        function(xhr, textStatus, errorThrown) {
-            ret = null;
-            if (on_fail) {
-                on_fail(xhr, textStatus, errorThrown);
-            }
-        }
+        on_fail
     );
     return request || ret;
 }
@@ -68,6 +63,18 @@ meta_sApp.prototype.create_app = function(obj) {
     } else {
         return this.internal_async_create_app(obj.args, obj.on_success, obj.on_fail, obj.hash);
     }
+}
+
+meta_sApp.prototype.create_appAsync = function(args, hash) {
+    var self = this;
+    if (typeof Promise === 'undefined') {
+        throw new Error('Promises are not supported by this JavaScript environment');
+    }
+    return new Promise(function(resolve, reject) {
+        self.internal_async_create_app(args, resolve, function(xhr, textStatus, errorThrown) {
+            reject(errorThrown);
+        }, hash);
+    });
 }
 
 meta_sApp.prototype.internal_drop_app = function(args,  hash) {
@@ -84,10 +91,9 @@ meta_sApp.prototype.internal_drop_app = function(args,  hash) {
         function(result) {
             ret = new configuration_drop_app_response();
             self.unmarshall(result, ret, "struct");
+            return ret;
         },
-        function(xhr, textStatus, errorThrown) {
-            ret = null;
-        }
+        null
     );
     return ret;
 }
@@ -109,13 +115,9 @@ meta_sApp.prototype.internal_async_drop_app = function(args, on_success, on_fail
             if (on_success) {
                 on_success(ret);
             }
+            return ret;
         },
-        function(xhr, textStatus, errorThrown) {
-            ret = null;
-            if (on_fail) {
-                on_fail(xhr, textStatus, errorThrown);
-            }
-        }
+        on_fail
     );
     return request || ret;
 }
@@ -126,6 +128,18 @@ meta_sApp.prototype.drop_app = function(obj) {
     } else {
         return this.internal_async_drop_app(obj.args, obj.on_success, obj.on_fail, obj.hash);
     }
+}
+
+meta_sApp.prototype.drop_appAsync = function(args, hash) {
+    var self = this;
+    if (typeof Promise === 'undefined') {
+        throw new Error('Promises are not supported by this JavaScript environment');
+    }
+    return new Promise(function(resolve, reject) {
+        self.internal_async_drop_app(args, resolve, function(xhr, textStatus, errorThrown) {
+            reject(errorThrown);
+        }, hash);
+    });
 }
 
 meta_sApp.prototype.internal_list_nodes = function(args,  hash) {
@@ -142,10 +156,9 @@ meta_sApp.prototype.internal_list_nodes = function(args,  hash) {
         function(result) {
             ret = new configuration_list_nodes_response();
             self.unmarshall(result, ret, "struct");
+            return ret;
         },
-        function(xhr, textStatus, errorThrown) {
-            ret = null;
-        }
+        null
     );
     return ret;
 }
@@ -167,13 +180,9 @@ meta_sApp.prototype.internal_async_list_nodes = function(args, on_success, on_fa
             if (on_success) {
                 on_success(ret);
             }
+            return ret;
         },
-        function(xhr, textStatus, errorThrown) {
-            ret = null;
-            if (on_fail) {
-                on_fail(xhr, textStatus, errorThrown);
-            }
-        }
+        on_fail
     );
     return request || ret;
 }
@@ -184,6 +193,18 @@ meta_sApp.prototype.list_nodes = function(obj) {
     } else {
         return this.internal_async_list_nodes(obj.args, obj.on_success, obj.on_fail, obj.hash);
     }
+}
+
+meta_sApp.prototype.list_nodesAsync = function(args, hash) {
+    var self = this;
+    if (typeof Promise === 'undefined') {
+        throw new Error('Promises are not supported by this JavaScript environment');
+    }
+    return new Promise(function(resolve, reject) {
+        self.internal_async_list_nodes(args, resolve, function(xhr, textStatus, errorThrown) {
+            reject(errorThrown);
+        }, hash);
+    });
 }
 
 meta_sApp.prototype.internal_list_apps = function(args,  hash) {
@@ -200,10 +221,9 @@ meta_sApp.prototype.internal_list_apps = function(args,  hash) {
         function(result) {
             ret = new configuration_list_apps_response();
             self.unmarshall(result, ret, "struct");
+            return ret;
         },
-        function(xhr, textStatus, errorThrown) {
-            ret = null;
-        }
+        null
     );
     return ret;
 }
@@ -225,13 +245,9 @@ meta_sApp.prototype.internal_async_list_apps = function(args, on_success, on_fai
             if (on_success) {
                 on_success(ret);
             }
+            return ret;
         },
-        function(xhr, textStatus, errorThrown) {
-            ret = null;
-            if (on_fail) {
-                on_fail(xhr, textStatus, errorThrown);
-            }
-        }
+        on_fail
     );
     return request || ret;
 }
@@ -242,6 +258,18 @@ meta_sApp.prototype.list_apps = function(obj) {
     } else {
         return this.internal_async_list_apps(obj.args, obj.on_success, obj.on_fail, obj.hash);
     }
+}
+
+meta_sApp.prototype.list_appsAsync = function(args, hash) {
+    var self = this;
+    if (typeof Promise === 'undefined') {
+        throw new Error('Promises are not supported by this JavaScript environment');
+    }
+    return new Promise(function(resolve, reject) {
+        self.internal_async_list_apps(args, resolve, function(xhr, textStatus, errorThrown) {
+            reject(errorThrown);
+        }, hash);
+    });
 }
 
 meta_sApp.prototype.internal_query_configuration_by_node = function(args,  hash) {
@@ -258,10 +286,9 @@ meta_sApp.prototype.internal_query_configuration_by_node = function(args,  hash)
         function(result) {
             ret = new configuration_query_by_node_response();
             self.unmarshall(result, ret, "struct");
+            return ret;
         },
-        function(xhr, textStatus, errorThrown) {
-            ret = null;
-        }
+        null
     );
     return ret;
 }
@@ -283,13 +310,9 @@ meta_sApp.prototype.internal_async_query_configuration_by_node = function(args, 
             if (on_success) {
                 on_success(ret);
             }
+            return ret;
         },
-        function(xhr, textStatus, errorThrown) {
-            ret = null;
-            if (on_fail) {
-                on_fail(xhr, textStatus, errorThrown);
-            }
-        }
+        on_fail
     );
     return request || ret;
 }
@@ -300,6 +323,18 @@ meta_sApp.prototype.query_configuration_by_node = function(obj) {
     } else {
         return this.internal_async_query_configuration_by_node(obj.args, obj.on_success, obj.on_fail, obj.hash);
     }
+}
+
+meta_sApp.prototype.query_configuration_by_nodeAsync = function(args, hash) {
+    var self = this;
+    if (typeof Promise === 'undefined') {
+        throw new Error('Promises are not supported by this JavaScript environment');
+    }
+    return new Promise(function(resolve, reject) {
+        self.internal_async_query_configuration_by_node(args, resolve, function(xhr, textStatus, errorThrown) {
+            reject(errorThrown);
+        }, hash);
+    });
 }
 
 meta_sApp.prototype.internal_query_configuration_by_index = function(args,  hash) {
@@ -316,10 +351,9 @@ meta_sApp.prototype.internal_query_configuration_by_index = function(args,  hash
         function(result) {
             ret = new configuration_query_by_index_response();
             self.unmarshall(result, ret, "struct");
+            return ret;
         },
-        function(xhr, textStatus, errorThrown) {
-            ret = null;
-        }
+        null
     );
     return ret;
 }
@@ -341,13 +375,9 @@ meta_sApp.prototype.internal_async_query_configuration_by_index = function(args,
             if (on_success) {
                 on_success(ret);
             }
+            return ret;
         },
-        function(xhr, textStatus, errorThrown) {
-            ret = null;
-            if (on_fail) {
-                on_fail(xhr, textStatus, errorThrown);
-            }
-        }
+        on_fail
     );
     return request || ret;
 }
@@ -358,4 +388,16 @@ meta_sApp.prototype.query_configuration_by_index = function(obj) {
     } else {
         return this.internal_async_query_configuration_by_index(obj.args, obj.on_success, obj.on_fail, obj.hash);
     }
+}
+
+meta_sApp.prototype.query_configuration_by_indexAsync = function(args, hash) {
+    var self = this;
+    if (typeof Promise === 'undefined') {
+        throw new Error('Promises are not supported by this JavaScript environment');
+    }
+    return new Promise(function(resolve, reject) {
+        self.internal_async_query_configuration_by_index(args, resolve, function(xhr, textStatus, errorThrown) {
+            reject(errorThrown);
+        }, hash);
+    });
 }
