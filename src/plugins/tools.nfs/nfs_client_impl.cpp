@@ -291,6 +291,29 @@ namespace dsn {
                 return;
             }
 
+            // offset and size are echoed back by the (untrusted) remote server, but this client
+            // already knows exactly which block it asked for (reqc->copy_req): the honest server
+            // always echoes the request's offset/size unchanged. The local write in
+            // continue_write() uses response.offset as the destination file offset and
+            // response.size as the byte count, so a malicious or compromised server that returns
+            // a different offset could make the client write the block at an arbitrary position
+            // in the destination file -- e.g. a huge offset inflates it into a multi-terabyte
+            // sparse file (local disk-exhaustion DoS), and a wrong offset/size scrambles the file
+            // layout. Since the client controls the requested block, require the response to
+            // describe exactly that block and reject any mismatch.
+            if (resp.offset != reqc->copy_req.offset || resp.size != reqc->copy_req.size)
+            {
+                derror("nfs: copy response for file %s does not match the requested block: "
+                       "requested offset=%lld size=%d, got offset=%lld size=%d",
+                       reqc->file_ctx->file_name.c_str(),
+                       (long long)reqc->copy_req.offset,
+                       (int)reqc->copy_req.size,
+                       (long long)resp.offset,
+                       (int)resp.size);
+                handle_completion(reqc->file_ctx->user_req, ERR_INVALID_DATA);
+                return;
+            }
+
             reqc->response = resp;
             reqc->response.error.end_tracking(); // always ERR_OK
             reqc->is_ready_for_write = true;
