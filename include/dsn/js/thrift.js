@@ -17,6 +17,11 @@
  * under the License.
  */
 
+/*
+ * Upstream baseline: Apache Thrift 0.9.3, lib/js/src/thrift.js.
+ * See THRIFT_UPSTREAM.md for the rDSN compatibility patch inventory.
+ */
+
 /*jshint evil:true*/
 
 /**
@@ -47,6 +52,8 @@ var Thrift = {
      * @memberof Thrift
      */
     Version: '0.9.3',
+    UpstreamVersion: '0.9.3',
+    RdsnPatchLevel: 2,
 
     /**
      * Thrift IDL type string to Id mapping.
@@ -131,6 +138,292 @@ var Thrift = {
       F.prototype = superConstructor.prototype;
       constructor.prototype = new F();
       constructor.prototype.name = name || "";
+    }
+};
+
+Thrift.Int64 = {
+    MAX_SAFE_VALUE: '9007199254740991',
+    MAX_VALUE: '9223372036854775807',
+    MIN_VALUE_MAGNITUDE: '9223372036854775808',
+    MAX_UNSIGNED_VALUE: '18446744073709551615',
+
+    _compareUnsigned: function(left, right) {
+        if (left.length !== right.length) {
+            return left.length < right.length ? -1 : 1;
+        }
+        if (left === right) {
+            return 0;
+        }
+        return left < right ? -1 : 1;
+    },
+
+    _inputToString: function(value) {
+        if (value === null || value === undefined) {
+            throw new TypeError('Invalid i64 value: ' + value);
+        }
+        if (typeof value === 'number') {
+            var isSafe = typeof Number.isSafeInteger === 'function' ?
+                Number.isSafeInteger(value) :
+                isFinite(value) && Math.floor(value) === value &&
+                    Math.abs(value) <= 9007199254740991;
+            if (!isSafe) {
+                throw new RangeError('i64 numbers must be safe integers; use a string or BigInt');
+            }
+            return String(value);
+        }
+        if (typeof value === 'bigint' || typeof value === 'string') {
+            return value.toString();
+        }
+        if (typeof value.toString === 'function') {
+            return Thrift.Int64._inputToString(value.toString());
+        }
+        throw new TypeError('Invalid i64 value: ' + value);
+    },
+
+    _validate: function(value, allowUnsigned) {
+        var text = Thrift.Int64._inputToString(value);
+        if (!/^-?(0|[1-9]\d*)$/.test(text)) {
+            throw new TypeError('Invalid i64 value: ' + value);
+        }
+        if (text === '-0') {
+            return '0';
+        }
+
+        var negative = text.charAt(0) === '-';
+        var magnitude = negative ? text.substring(1) : text;
+        var limit = negative ? Thrift.Int64.MIN_VALUE_MAGNITUDE :
+            (allowUnsigned ? Thrift.Int64.MAX_UNSIGNED_VALUE : Thrift.Int64.MAX_VALUE);
+        if (Thrift.Int64._compareUnsigned(magnitude, limit) > 0) {
+            throw new RangeError('i64 value is out of range: ' + value);
+        }
+        return text;
+    },
+
+    _decimalToParts: function(value) {
+        var low = 0;
+        var high = 0;
+        for (var i = 0; i < value.length; ++i) {
+            var lowProduct = low * 10 + Number(value.charAt(i));
+            var carry = Math.floor(lowProduct / 4294967296);
+            low = lowProduct % 4294967296;
+            high = (high * 10 + carry) % 4294967296;
+        }
+        return { low: low >>> 0, high: high >>> 0 };
+    },
+
+    _partsToDecimal: function(high, low) {
+        var words = [high >>> 16, high & 65535, low >>> 16, low & 65535];
+        var digits = [0];
+        for (var i = 0; i < words.length; ++i) {
+            var carry = words[i];
+            for (var j = 0; j < digits.length; ++j) {
+                var value = digits[j] * 65536 + carry;
+                digits[j] = value % 10;
+                carry = Math.floor(value / 10);
+            }
+            while (carry > 0) {
+                digits.push(carry % 10);
+                carry = Math.floor(carry / 10);
+            }
+        }
+        return digits.reverse().join('');
+    },
+
+    _negateParts: function(parts) {
+        var low = (4294967296 - parts.low) % 4294967296;
+        var high = (4294967295 - parts.high + (low === 0 ? 1 : 0)) % 4294967296;
+        return { low: low >>> 0, high: high >>> 0 };
+    },
+
+    fromParts: function(high, low, signed) {
+        var parts = { high: high >>> 0, low: low >>> 0 };
+        if (signed && parts.high >= 2147483648) {
+            parts = Thrift.Int64._negateParts(parts);
+            return '-' + Thrift.Int64._partsToDecimal(parts.high, parts.low);
+        }
+        return Thrift.Int64._partsToDecimal(parts.high, parts.low);
+    },
+
+    toParts: function(value, allowUnsigned) {
+        var text = Thrift.Int64._validate(value, !!allowUnsigned);
+        var negative = text.charAt(0) === '-';
+        var parts = Thrift.Int64._decimalToParts(negative ? text.substring(1) : text);
+        return negative ? Thrift.Int64._negateParts(parts) : parts;
+    },
+
+    toDecimalString: function(value) {
+        return Thrift.Int64._validate(value, false);
+    },
+
+    toSignedDecimalString: function(value, allowUnsigned) {
+        var text = Thrift.Int64._validate(value, !!allowUnsigned);
+        if (text.charAt(0) === '-' ||
+            Thrift.Int64._compareUnsigned(text, Thrift.Int64.MAX_VALUE) <= 0) {
+            return text;
+        }
+        var parts = Thrift.Int64._decimalToParts(text);
+        return Thrift.Int64.fromParts(parts.high, parts.low, true);
+    },
+
+    toUnsignedDecimalString: function(value) {
+        var text = Thrift.Int64._validate(value, true);
+        if (text.charAt(0) !== '-') {
+            return text;
+        }
+        var parts = Thrift.Int64.toParts(text, false);
+        return Thrift.Int64.fromParts(parts.high, parts.low, false);
+    },
+
+    normalize: function(value) {
+        var text = Thrift.Int64.toDecimalString(value);
+        var number = Number(text);
+        var isSafe = typeof Number.isSafeInteger === 'function' ?
+            Number.isSafeInteger(number) :
+            Math.abs(number) <= 9007199254740991;
+        return isSafe ? number : text;
+    },
+
+    normalizeSigned: function(value, allowUnsigned) {
+        var text = Thrift.Int64.toSignedDecimalString(value, allowUnsigned);
+        var number = Number(text);
+        var isSafe = typeof Number.isSafeInteger === 'function' ?
+            Number.isSafeInteger(number) :
+            Math.abs(number) <= 9007199254740991;
+        return isSafe ? number : text;
+    },
+
+    normalizeUnsigned: function(value) {
+        var text = Thrift.Int64.toUnsignedDecimalString(value);
+        var number = Number(text);
+        var isSafe = typeof Number.isSafeInteger === 'function' ?
+            Number.isSafeInteger(number) :
+            number <= 9007199254740991;
+        return isSafe ? number : text;
+    },
+
+    _quoteUnsafeIntegers: function(text) {
+        var result = '';
+        var i = 0;
+        while (i < text.length) {
+            if (text.charAt(i) === '"') {
+                var start = i++;
+                var escaped = false;
+                while (i < text.length) {
+                    var ch = text.charAt(i++);
+                    if (escaped) {
+                        escaped = false;
+                    } else if (ch === '\\') {
+                        escaped = true;
+                    } else if (ch === '"') {
+                        break;
+                    }
+                }
+                result += text.substring(start, i);
+                continue;
+            }
+
+            var number = text.substring(i).match(
+                /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);
+            if (number !== null) {
+                var token = number[0];
+                var magnitude = token.charAt(0) === '-' ? token.substring(1) : token;
+                var isInteger = token.indexOf('.') < 0 &&
+                    token.indexOf('e') < 0 && token.indexOf('E') < 0;
+                if (isInteger &&
+                    Thrift.Int64._compareUnsigned(magnitude, Thrift.Int64.MAX_SAFE_VALUE) > 0) {
+                    result += '"' + token + '"';
+                } else {
+                    result += token;
+                }
+                i += token.length;
+                continue;
+            }
+
+            result += text.charAt(i++);
+        }
+        return result;
+    },
+
+    parseJSON: function(text) {
+        var safeText = Thrift.Int64._quoteUnsafeIntegers(text);
+        if (typeof JSON !== 'undefined' && typeof JSON.parse === 'function') {
+            return JSON.parse(safeText);
+        }
+        if (typeof jQuery !== 'undefined' && typeof jQuery.parseJSON === 'function') {
+            return jQuery.parseJSON(safeText);
+        }
+        return eval('(' + safeText + ')');
+    }
+};
+
+Thrift.Binary = {
+    _toBinaryString: function(binary) {
+        if (typeof binary === 'string') {
+            for (var i = 0; i < binary.length; ++i) {
+                if (binary.charCodeAt(i) > 255) {
+                    throw new TypeError('Binary strings may only contain byte values');
+                }
+            }
+            return binary;
+        }
+
+        var bytes = null;
+        if (typeof Uint8Array !== 'undefined' && binary instanceof Uint8Array) {
+            bytes = binary;
+        } else if (typeof ArrayBuffer !== 'undefined' && binary instanceof ArrayBuffer) {
+            bytes = new Uint8Array(binary);
+        }
+        if (bytes === null) {
+            throw new TypeError('Binary values must be strings, Uint8Array, or ArrayBuffer');
+        }
+
+        var result = '';
+        var chunkSize = 8192;
+        for (var offset = 0; offset < bytes.length; offset += chunkSize) {
+            var chunk = bytes.subarray(offset, Math.min(offset + chunkSize, bytes.length));
+            for (var j = 0; j < chunk.length; ++j) {
+                result += String.fromCharCode(chunk[j]);
+            }
+        }
+        return result;
+    },
+
+    encode: function(binary) {
+        var value = Thrift.Binary._toBinaryString(binary);
+        var encoded;
+        if (typeof btoa === 'function') {
+            encoded = btoa(value);
+        } else if (typeof Buffer !== 'undefined') {
+            encoded = Buffer.from(value, 'latin1').toString('base64');
+        } else {
+            throw new Error('No base64 encoder is available');
+        }
+        return encoded.replace(/=+$/, '');
+    },
+
+    decode: function(encoded) {
+        if (typeof encoded !== 'string') {
+            throw new TypeError('Invalid base64 data');
+        }
+        var unpadded = encoded.replace(/=+$/, '');
+        var suppliedPadding = encoded.length - unpadded.length;
+        if (suppliedPadding > 2 ||
+            (suppliedPadding > 0 && encoded.length % 4 !== 0) ||
+            !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2,3})?$/.test(unpadded)) {
+            throw new TypeError('Invalid base64 data');
+        }
+        var padding = unpadded.length % 4;
+        if (padding === 1) {
+            throw new TypeError('Invalid base64 data');
+        }
+        var padded = unpadded + (padding === 2 ? '==' : padding === 3 ? '=' : '');
+        if (typeof atob === 'function') {
+            return atob(padded);
+        }
+        if (typeof Buffer !== 'undefined') {
+            return Buffer.from(padded, 'base64').toString('latin1');
+        }
+        throw new Error('No base64 decoder is available');
     }
 };
 
@@ -271,6 +564,29 @@ Thrift.TApplicationException.prototype.write = function(output) {
 Thrift.TApplicationException.prototype.getCode = function() {
     return this.code;
 };
+
+Thrift.TProtocolExceptionType = {
+    UNKNOWN: 0,
+    INVALID_DATA: 1,
+    NEGATIVE_SIZE: 2,
+    SIZE_LIMIT: 3,
+    BAD_VERSION: 4,
+    NOT_IMPLEMENTED: 5,
+    DEPTH_LIMIT: 6
+};
+
+Thrift.DEFAULT_RECURSION_DEPTH = 64;
+
+Thrift.TProtocolException = function(type, message) {
+    Error.call(this);
+    if (Error.captureStackTrace !== undefined) {
+        Error.captureStackTrace(this, this.constructor);
+    }
+    this.name = this.constructor.name;
+    this.type = type;
+    this.message = message;
+};
+Thrift.inherits(Thrift.TProtocolException, Thrift.TException, 'TProtocolException');
 
 /**
  * Constructor Function for the XHR transport.
@@ -458,7 +774,7 @@ Thrift.TXHRTransport.prototype = {
             give = avail;
         }
 
-        var ret = this.read_buf.substr(this.rpos, give);
+        var ret = this.recv_buf.substr(this.rpos, give);
         this.rpos += give;
 
         //clear buf when complete?
@@ -693,6 +1009,7 @@ Thrift.TJSONProtocol = Thrift.Protocol = function(transport) {
     this.tstack = [];
     this.tpos = [];
     this.transport = transport;
+    this._recursion_depth = 0;
 };
 
 /**
@@ -965,12 +1282,23 @@ Thrift.Protocol.prototype = {
 
     /** Serializes a number */
     writeI64: function(i64) {
-        this.tstack.push(i64);
+        this.tstack.push(Thrift.Int64.toDecimalString(i64));
     },
 
     /** Serializes a number */
     writeDouble: function(dbl) {
-        this.tstack.push(dbl);
+        if (typeof dbl !== 'number') {
+            throw new TypeError('writeDouble only accepts numbers');
+        }
+        if (isNaN(dbl)) {
+            this.tstack.push('"NaN"');
+        } else if (dbl === Infinity) {
+            this.tstack.push('"Infinity"');
+        } else if (dbl === -Infinity) {
+            this.tstack.push('"-Infinity"');
+        } else {
+            this.tstack.push(dbl);
+        }
     },
 
     /** Serializes a string */
@@ -979,6 +1307,9 @@ Thrift.Protocol.prototype = {
         if (str === null) {
             this.tstack.push(null);
         } else {
+            if (typeof str !== 'string') {
+                throw new TypeError('writeString only accepts strings');
+            }
             // concat may be slower than building a byte buffer
             var escapedString = '';
             for (var i = 0; i < str.length; i++) {
@@ -997,6 +1328,9 @@ Thrift.Protocol.prototype = {
                     escapedString += '\\r';  // write out as: \r"
                 } else if (ch === '\t') {    // a single tab: invisible
                     escapedString += '\\t';  // write out as: \t"
+                } else if (ch.charCodeAt(0) < 32) {
+                    var hex = ch.charCodeAt(0).toString(16);
+                    escapedString += '\\u' + ('0000' + hex).slice(-4);
                 } else {
                     escapedString += ch;     // Else it need not be escaped
                 }
@@ -1005,9 +1339,9 @@ Thrift.Protocol.prototype = {
         }
     },
 
-    /** Serializes a string */
-    writeBinary: function(str) {
-        this.writeString(str);
+    /** Serializes binary data as unpadded base64, matching rDSN's C++ Thrift runtime. */
+    writeBinary: function(binary) {
+        this.writeString(Thrift.Binary.encode(binary));
     },
 
     /**
@@ -1025,13 +1359,7 @@ Thrift.Protocol.prototype = {
         this.rstack = [];
         this.rpos = [];
 
-        if (typeof JSON !== 'undefined' && typeof JSON.parse === 'function') {
-            this.robj = JSON.parse(this.transport.readAll());
-        } else if (typeof jQuery !== 'undefined') {
-            this.robj = jQuery.parseJSON(this.transport.readAll());
-        } else {
-            this.robj = eval(this.transport.readAll());
-        }
+        this.robj = Thrift.Int64.parseJSON(this.transport.readAll());
 
         var r = {};
         var version = this.robj.shift();
@@ -1172,7 +1500,10 @@ Thrift.Protocol.prototype = {
         r.ktype = Thrift.Protocol.RType[first];
         r.vtype = Thrift.Protocol.RType[map.shift()];
         r.size = map.shift();
-
+        if (r.size < 0) {
+            throw new Thrift.TProtocolException(
+                Thrift.TProtocolExceptionType.NEGATIVE_SIZE, 'Negative map size');
+        }
 
         this.rpos.push(this.rstack.length);
         this.rstack.push(map.shift());
@@ -1201,6 +1532,10 @@ Thrift.Protocol.prototype = {
         var r = {};
         r.etype = Thrift.Protocol.RType[list.shift()];
         r.size = list.shift();
+        if (r.size < 0) {
+            throw new Thrift.TProtocolException(
+                Thrift.TProtocolExceptionType.NEGATIVE_SIZE, 'Negative list size');
+        }
 
         this.rpos.push(this.rstack.length);
         this.rstack.push(list.shift());
@@ -1210,7 +1545,12 @@ Thrift.Protocol.prototype = {
 
     /** Deserializes the end of a list. */
     readListEnd: function() {
-        this.readFieldEnd();
+        var pos = this.rpos.pop() - 2;
+        var stack = this.rstack;
+        stack.pop();
+        if (stack instanceof Array && stack.length > pos && stack[pos].length > 0) {
+            stack.push(stack[pos].shift());
+        }
     },
 
     /** 
@@ -1266,7 +1606,11 @@ Thrift.Protocol.prototype = {
             if (f.length === 0) {
                 r.value = undefined;
             } else {
-                r.value = f.shift();
+                if (!f.isReversed) {
+                    f.reverse();
+                    f.isReversed = true;
+                }
+                r.value = f.pop();
             }
         } else if (f instanceof Object) {
            for (var i in f) {
@@ -1289,14 +1633,28 @@ Thrift.Protocol.prototype = {
 
     /** Returns the an object with a value property set to the 
         next value found in the protocol buffer */
-    readI64: function() {
-        return this.readI32();
+    readI64: function(f) {
+        var r = this.readI32(f);
+        r.value = Thrift.Int64.normalize(r.value);
+        return r;
     },
 
     /** Returns the an object with a value property set to the 
         next value found in the protocol buffer */
     readDouble: function() {
-        return this.readI32();
+        var r = this.readI32();
+        if (typeof r.value === 'string') {
+            if (r.value === 'NaN') {
+                r.value = NaN;
+            } else if (r.value === 'Infinity') {
+                r.value = Infinity;
+            } else if (r.value === '-Infinity') {
+                r.value = -Infinity;
+            } else if (/^-?\d+$/.test(r.value)) {
+                r.value = Number(r.value);
+            }
+        }
+        return r;
     },
 
     /** Returns the an object with a value property set to the 
@@ -1309,17 +1667,22 @@ Thrift.Protocol.prototype = {
     /** Returns the an object with a value property set to the 
         next value found in the protocol buffer */
     readBinary: function() {
-        return this.readString();
+        var r = this.readString();
+        r.value = Thrift.Binary.decode(r.value);
+        return r;
     },
 
     /** 
      * Method to arbitrarily skip over data */
-    skip: function(type) {
+    skip: function(type, depth) {
+        depth = (depth || 0) + 1;
+        if (depth > Thrift.DEFAULT_RECURSION_DEPTH) {
+            throw new Thrift.TProtocolException(
+                Thrift.TProtocolExceptionType.DEPTH_LIMIT,
+                'Maximum skip depth exceeded');
+        }
         var ret, i;
         switch (type) {
-            case Thrift.Type.STOP:
-                return null;
-
             case Thrift.Type.BOOL:
                 return this.readBool();
 
@@ -1348,7 +1711,7 @@ Thrift.Protocol.prototype = {
                     if (ret.ftype == Thrift.Type.STOP) {
                         break;
                     }
-                    this.skip(ret.ftype);
+                    this.skip(ret.ftype, depth);
                     this.readFieldEnd();
                 }
                 this.readStructEnd();
@@ -1362,8 +1725,8 @@ Thrift.Protocol.prototype = {
                             this.rstack.pop();
                         }
                     }
-                    this.skip(ret.ktype);
-                    this.skip(ret.vtype);
+                    this.skip(ret.ktype, depth);
+                    this.skip(ret.vtype, depth);
                 }
                 this.readMapEnd();
                 return null;
@@ -1371,7 +1734,7 @@ Thrift.Protocol.prototype = {
             case Thrift.Type.SET:
                 ret = this.readSetBegin();
                 for (i = 0; i < ret.size; i++) {
-                    this.skip(ret.etype);
+                    this.skip(ret.etype, depth);
                 }
                 this.readSetEnd();
                 return null;
@@ -1379,12 +1742,31 @@ Thrift.Protocol.prototype = {
             case Thrift.Type.LIST:
                 ret = this.readListBegin();
                 for (i = 0; i < ret.size; i++) {
-                    this.skip(ret.etype);
+                    this.skip(ret.etype, depth);
                 }
                 this.readListEnd();
                 return null;
+
+            default:
+                throw new Thrift.TProtocolException(
+                    Thrift.TProtocolExceptionType.INVALID_DATA,
+                    'Unknown Thrift type: ' + type);
         }
     }
+};
+
+Thrift.Protocol.prototype.incrementRecursionDepth = function() {
+    this._recursion_depth += 1;
+    if (this._recursion_depth > Thrift.DEFAULT_RECURSION_DEPTH) {
+        this._recursion_depth -= 1;
+        throw new Thrift.TProtocolException(
+            Thrift.TProtocolExceptionType.DEPTH_LIMIT,
+            'Maximum recursion depth exceeded');
+    }
+};
+
+Thrift.Protocol.prototype.decrementRecursionDepth = function() {
+    this._recursion_depth -= 1;
 };
 
 
@@ -1505,3 +1887,25 @@ copyMap = function(obj, types){
 
 Thrift.copyMap = copyMap;
 Thrift.copyList = copyList;
+
+Thrift.checkSetUniqueness = function(values) {
+    for (var i = 0; i < values.length; ++i) {
+        for (var j = i + 1; j < values.length; ++j) {
+            if (values[i] === values[j]) {
+                throw new Thrift.TProtocolException(
+                    Thrift.TProtocolExceptionType.INVALID_DATA,
+                    'Set contains duplicate values');
+            }
+        }
+    }
+};
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = Thrift;
+} else if (typeof globalThis !== 'undefined') {
+    globalThis.Thrift = Thrift;
+} else if (typeof window !== 'undefined') {
+    window.Thrift = Thrift;
+} else if (typeof self !== 'undefined') {
+    self.Thrift = Thrift;
+}

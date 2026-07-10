@@ -9,11 +9,10 @@ This directory contains the header files in rDSN
 * cpp - C++ langugae wrapper atop of the C service API
 * dist - header files exposed and used by dsn.dist.xxx modules
 * ext - header files from external projects
-* js - javascript utilities for connecting to rDSN services (via code generator in rDSN)
+* js - [JavaScript utilities](js/README.md) for connecting to rDSN services (via code generator in rDSN)
 * utility - utility header files, used by rDSN and others 
 * idl - adaptor for rDSN to fit with existing interface definition languages and tools (e.g., Thrift and GProto)  
 
    
  
-
 

@@ -498,6 +498,7 @@ void http_message_parser::prepare_on_send(message_ex *msg)
         std::stringstream ss;
         ss << "HTTP/1.1 200 OK\r\n";
         ss << "Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Access-Control-Allow-Origin\r\n";
+        ss << "Access-Control-Expose-Headers: server_error\r\n";
         ss << "Content-Type: text/plain\r\n";
         ss << "Access-Control-Allow-Origin: *\r\n";
         ss << "Access-Control-Allow-Methods: POST, GET, OPTIONS\r\n";

@@ -5,6 +5,24 @@ $file_prefix = $argv[3];
 $idl_type = $argv[4];
 $idl_format = $argv[5];
 $dsn_root = getenv("DSN_ROOT");
+
+function collect_js_test_type_programs($program, &$programs, &$seen)
+{
+    foreach ($program->includes as $included)
+    {
+        collect_js_test_type_programs($included, $programs, $seen);
+    }
+    if ($program->name === "dsn" || array_key_exists($program->name, $seen))
+    {
+        return;
+    }
+    $seen[$program->name] = true;
+    $programs[] = $program->name;
+}
+
+$type_programs = array();
+$seen_programs = array();
+collect_js_test_type_programs($_PROG, $type_programs, $seen_programs);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -20,8 +38,10 @@ $dsn_root = getenv("DSN_ROOT");
 <script src="<?=$dsn_root?>/include/dsn/js/thrift.js"></script>
 <script src="<?=$dsn_root?>/include/dsn/js/dsn_transport.js"></script>
 <script src="<?=$dsn_root?>/include/dsn/js/dsn_types.js"></script>
+<?php foreach ($type_programs as $type_program) { ?>
+<script src="<?=$type_program?>_types.js"></script>
+<?php } ?>
 <script src="<?=$file_prefix?>.client.js"></script>
-<script src="thrift/<?=$_PROG->name?>_types.js"></script>
 </head>
 <body>
 <div class="container" style="margin-top:20px;">

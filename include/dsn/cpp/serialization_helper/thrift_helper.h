@@ -746,18 +746,38 @@ namespace dsn {
         return ::apache::thrift::protocol::T_STRUCT;
     }
 
+    inline ::apache::thrift::protocol::TType get_json_thrift_type(const uint64_t&)
+    {
+        // Thrift JSON has no "u64" type name. Preserve the bits through its signed i64 value.
+        return ::apache::thrift::protocol::T_I64;
+    }
+
     template<typename T>
-    inline void marshall_thrift_internal(const T &val, ::apache::thrift::protocol::TProtocol *proto)
+    inline ::apache::thrift::protocol::TType get_json_thrift_type(const T& val)
+    {
+        return get_thrift_type(val);
+    }
+
+    template<typename T>
+    inline void marshall_thrift_internal(const T &val,
+                                         ::apache::thrift::protocol::TProtocol *proto,
+                                         ::apache::thrift::protocol::TType thrift_type)
     {
         /* 
          * we treat every element as a whole struct
          */
         proto->writeStructBegin("thrift_rpc_result");
-        proto->writeFieldBegin("success", get_thrift_type(val), 0);
+        proto->writeFieldBegin("success", thrift_type, 0);
         marshall_base<T>(proto, val);
         proto->writeFieldEnd();
         proto->writeFieldStop();
         proto->writeStructEnd();
+    }
+
+    template<typename T>
+    inline void marshall_thrift_internal(const T &val, ::apache::thrift::protocol::TProtocol *proto)
+    {
+        marshall_thrift_internal(val, proto, get_thrift_type(val));
     }
 
     template<typename T>
@@ -795,7 +815,7 @@ namespace dsn {
         ::dsn::binary_writer_transport trans(writer);
         boost::shared_ptr< ::dsn::binary_writer_transport> transport(&trans, [](::dsn::binary_writer_transport*) {});
         ::apache::thrift::protocol::TJSONProtocol proto(transport);
-        marshall_thrift_internal(val, &proto);
+        marshall_thrift_internal(val, &proto, get_json_thrift_type(val));
         proto.getTransport()->flush();
     }
 

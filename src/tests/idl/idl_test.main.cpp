@@ -42,12 +42,13 @@
 # include <fstream>
 # include <iostream>
 # include <iterator>
+# include <limits>
 # include <vector>
 # include "stdlib.h"
 
 //#define DSN_IDL_TESTS_DEBUG
 
-enum Language {lang_cpp, lang_csharp};
+enum Language {lang_cpp, lang_csharp, lang_js};
 enum IDL{idl_protobuf, idl_thrift};
 enum Format{format_binary, format_json};
 const char* kGeneratedProjectScratchBuildDir = "generated_build";
@@ -166,6 +167,28 @@ void require_file(const std::string& path, const char* description, bool &result
     if (!::dsn::utils::filesystem::file_exists(file(path)))
     {
         std::cerr << "Failed to generate " << description << ": " << file(path) << std::endl;
+        result = false;
+    }
+}
+
+void require_file_contains(const std::string &path,
+                           const std::string &expected,
+                           const char *description,
+                           bool &result)
+{
+    std::ifstream input(file(path).c_str(), std::ios::in | std::ios::binary);
+    if (!input.is_open())
+    {
+        std::cerr << "Failed to read " << description << ": " << file(path) << std::endl;
+        result = false;
+        return;
+    }
+
+    const std::string content((std::istreambuf_iterator<char>(input)),
+                              std::istreambuf_iterator<char>());
+    if (content.find(expected) == std::string::npos)
+    {
+        std::cerr << "Generated " << description << " does not contain: " << expected << std::endl;
         result = false;
     }
 }
@@ -379,10 +402,11 @@ void cmake(Language lang, bool &result)
 bool test_code_generation(Language lang, IDL idl, Format format)
 {
     bool result = true;
+    const char *language = lang == lang_cpp ? "cpp" : (lang == lang_csharp ? "csharp" : "js");
     std::string codegen_cmd = get_codegen_command()
         + std::string(" counter.")
         + (idl == idl_protobuf ? "proto" : "thrift")
-        + (lang == lang_cpp ? " cpp" : " csharp")
+        + " " + language
         + " src "
         + (format == format_binary ? "binary" : "json")
         + " single";
@@ -426,6 +450,32 @@ bool test_code_generation(Language lang, IDL idl, Format format)
         std::cerr << "Failed to run IDL codegen command: " << codegen_cmd << std::endl;
         dump_log_on_failure(result);
         return false;
+    }
+    if (lang == lang_js)
+    {
+        const std::string client = scratch_file("src/counter.client.js");
+        require_file(client, "counter JavaScript client", result);
+        require_file(
+            scratch_file("src/counter.client.cjs"), "counter CommonJS client", result);
+        require_file(
+            scratch_file("src/counter.client.mjs"), "counter ES module client", result);
+        require_file(
+            scratch_file("src/counter.types.cjs"), "counter CommonJS types", result);
+        require_file(scratch_file("src/counter.test.html"), "counter JavaScript test page", result);
+        require_file_contains(
+            client, "root.DSN.create_client_class", "counter JavaScript client", result);
+        require_file_contains(
+            scratch_file("src/counter.client.cjs"),
+            "createClientClass",
+            "counter CommonJS client",
+            result);
+        require_file_contains(
+            scratch_file("src/counter.client.mjs"),
+            "export const counterApp",
+            "counter ES module client",
+            result);
+        dump_log_on_failure(result);
+        return result;
     }
     require_file(scratch_file("src/CMakeLists.txt"), "counter project CMakeLists.txt", result);
     dump_log_on_failure(result);
@@ -513,7 +563,19 @@ void test_thrift_basic_type_serialization(Format fmt)
     thrift_basic_type_serialization_checker(data_int32_t, fmt);
 
     std::vector<int64_t> data_int64_t{(std::numeric_limits<int64_t>::min)(), (std::numeric_limits<int64_t>::max)(), 0, 1 , -1, 13, -13};
-    thrift_basic_type_serialization_checker(data_int32_t, fmt);
+    thrift_basic_type_serialization_checker(data_int64_t, fmt);
+
+    std::vector<uint8_t> data_uint8_t{(std::numeric_limits<uint8_t>::min)(), (std::numeric_limits<uint8_t>::max)(), 0, 1, 13};
+    thrift_basic_type_serialization_checker(data_uint8_t, fmt);
+
+    std::vector<uint16_t> data_uint16_t{(std::numeric_limits<uint16_t>::min)(), (std::numeric_limits<uint16_t>::max)(), 0, 1, 13};
+    thrift_basic_type_serialization_checker(data_uint16_t, fmt);
+
+    std::vector<uint32_t> data_uint32_t{(std::numeric_limits<uint32_t>::min)(), (std::numeric_limits<uint32_t>::max)(), 0, 1, 13};
+    thrift_basic_type_serialization_checker(data_uint32_t, fmt);
+
+    std::vector<uint64_t> data_uint64_t{(std::numeric_limits<uint64_t>::min)(), (std::numeric_limits<uint64_t>::max)(), 0, 1, 13};
+    thrift_basic_type_serialization_checker(data_uint64_t, fmt);
 
     std::vector<std::string> data_string_t{std::string("hello"), std::string("world"), std::string("")};
     thrift_basic_type_serialization_checker(data_string_t, fmt);
@@ -530,6 +592,15 @@ void test_thrift_basic_type_serialization(Format fmt)
     std::map<int, std::string> m2;
     std::vector<std::map<int, std::string> > data_map_int32_str_t{m1, m2};
     thrift_basic_type_serialization_checker(data_map_int32_str_t, fmt);
+}
+
+template<typename T>
+std::string thrift_json_string(const T &value)
+{
+    dsn::binary_writer writer(256);
+    dsn::marshall_thrift_json(writer, value);
+    const dsn::blob output = writer.get_buffer();
+    return std::string(output.data(), output.length());
 }
 
 void check_thrift_generated_type_serialization(const dsn::idl::test::test_thrift_item &input, Format fmt)
@@ -719,6 +790,28 @@ TEST(thrift_helper, cpp_json_generated_type_serialization)
     test_thrift_generated_type_serialization(format_json);
 }
 
+TEST(thrift_helper, cpp_json_javascript_compatibility)
+{
+    const uint64_t uint64_max = (std::numeric_limits<uint64_t>::max)();
+    EXPECT_EQ(::apache::thrift::protocol::T_U64, dsn::get_thrift_type(uint64_max));
+    EXPECT_EQ(::apache::thrift::protocol::T_I64, dsn::get_json_thrift_type(uint64_max));
+    EXPECT_EQ(R"({"0":{"i64":-1}})",
+              thrift_json_string(uint64_max));
+    EXPECT_EQ(R"({"0":{"rec":{"1":{"i64":8589934593}}}})",
+              thrift_json_string(dsn::gpid(1, 2)));
+    EXPECT_EQ(R"({"0":{"rec":{"1":{"str":"ERR_OK"}}}})",
+              thrift_json_string(dsn::error_code()));
+    EXPECT_EQ(R"({"0":{"rec":{"1":{"str":"TASK_CODE_INVALID"}}}})",
+              thrift_json_string(dsn::task_code()));
+    EXPECT_EQ(R"({"0":{"rec":{"1":{"str":"invalid address"},"2":{"i32":0}}}})",
+              thrift_json_string(dsn::rpc_address()));
+
+    const std::string bytes("\0\xff", 2);
+    EXPECT_EQ(R"({"0":{"rec":"AP8"}})",
+              thrift_json_string(
+                  dsn::blob(bytes.data(), 0, static_cast<unsigned int>(bytes.length()))));
+}
+
 TEST(thrift_helper, cpp_binary_code_generation)
 {
     EXPECT_TRUE(test_code_generation(lang_cpp, idl_thrift, format_binary));
@@ -728,6 +821,25 @@ TEST(thrift_helper, cpp_json_code_generation)
 {
     EXPECT_TRUE(test_code_generation(lang_cpp, idl_thrift, format_json));
 }
+
+TEST(thrift_helper, js_json_code_generation)
+{
+    EXPECT_TRUE(test_code_generation(lang_js, idl_thrift, format_json));
+}
+
+#ifdef DSN_NODE_EXECUTABLE
+TEST(thrift_helper, js_runtime_compatibility)
+{
+    bool result = true;
+    const std::string command =
+        std::string("\"") + DSN_NODE_EXECUTABLE + "\" \"" +
+        file(DSN_ROOT_DIR "/src/tests/idl/js_binding.test.js") + "\" \"" +
+        file(DSN_ROOT_DIR) + "\"";
+    execute(command, result);
+    dump_log_on_failure(result);
+    EXPECT_TRUE(result);
+}
+#endif
 
 TEST(protobuf_helper, cpp_binary_generated_type_serialization)
 {

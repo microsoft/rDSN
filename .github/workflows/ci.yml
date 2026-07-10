@@ -23,12 +23,18 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Set up Node.js
+        if: runner.os == 'Linux'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends build-essential git cmake php-cli wget mono-xbuild libaio-dev libboost-all-dev
+          sudo apt-get install -y --no-install-recommends build-essential bison flex git cmake php-cli wget mono-xbuild libaio-dev libboost-all-dev
 
       - name: Format check on Linux
         if: runner.os == 'Linux'
