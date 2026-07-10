@@ -111,6 +111,23 @@ namespace dsn {
                 return;
             }
 
+            // file_list comes from the (untrusted) remote server and is combined with the local
+            // dst_dir below to form the path this client creates and writes. Reject any name that
+            // escapes dst_dir (see nfs_path_has_parent_ref) up front -- before any file_context is
+            // allocated -- so a malicious server cannot make the client create or overwrite files
+            // outside the destination directory.
+            for (size_t i = 0; i < resp.file_list.size(); i++)
+            {
+                if (nfs_path_has_parent_ref(resp.file_list[i]))
+                {
+                    derror("nfs: rejecting get_file_size response with parent-directory reference in file name '%s'",
+                        resp.file_list[i].c_str());
+                    ureq->nfs_task->enqueue(ERR_INVALID_DATA, 0);
+                    delete ureq;
+                    return;
+                }
+            }
+
             for (size_t i = 0; i < resp.size_list.size(); i++) // file list
             {
                 file_context *filec;

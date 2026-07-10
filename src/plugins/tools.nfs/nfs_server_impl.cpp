@@ -44,35 +44,6 @@
 namespace dsn {
     namespace service {
 
-        // A copy / get-file-size request carries a source directory and file name(s) straight
-        // from an untrusted peer. path_combine() -> get_normalized_path() only collapses
-        // redundant separators; it does NOT resolve ".." components. Without this check a name
-        // such as "../../../etc/passwd" would make the NFS server open and stream back a file
-        // outside the intended source directory -- arbitrary file disclosure to any peer that
-        // can reach the RPC port (CWE-22 path traversal). Legitimate replication file names and
-        // source directories never contain a ".." path component, so reject any request whose
-        // (separator-delimited) path walks up the tree.
-        static bool nfs_path_has_parent_ref(const std::string& path)
-        {
-            size_t start = 0;
-            const size_t len = path.length();
-            while (start <= len)
-            {
-                size_t sep = path.find_first_of("/\\", start);
-                size_t end = (sep == std::string::npos) ? len : sep;
-                if ((end - start) == 2 && path[start] == '.' && path[start + 1] == '.')
-                {
-                    return true;
-                }
-                if (sep == std::string::npos)
-                {
-                    break;
-                }
-                start = sep + 1;
-            }
-            return false;
-        }
-
         void nfs_service_impl::on_copy(const ::dsn::service::copy_request& request, ::dsn::rpc_replier< ::dsn::service::copy_response>& reply)
         {
             //dinfo(">>> on call RPC_COPY end, exec RPC_NFS_COPY");

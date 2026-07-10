@@ -35,10 +35,42 @@
 # pragma once
 # include "nfs_client.h"
 # include <queue>
+# include <string>
 # include <dsn/tool-api/nfs.h>
 
 namespace dsn {
     namespace service {
+
+        // A copy / get-file-size RPC carries a source directory and file name(s) supplied by a
+        // remote peer on BOTH sides of the transfer: the server opens source_dir/file_name to
+        // read, and the client opens dst_dir/<name-from-the-server-response> to (create and)
+        // write. path_combine() -> get_normalized_path() only collapses redundant separators; it
+        // does NOT resolve ".." components, so a name such as "../../../etc/passwd" walks out of
+        // the intended directory -- arbitrary file disclosure on the server, or arbitrary file
+        // creation/overwrite on the client (CWE-22 path traversal), for any peer that can reach
+        // the RPC port. Legitimate replication names never contain a ".." path component, so
+        // reject any request whose (separator-delimited) path walks up the tree. Only a component
+        // that is exactly ".." is flagged, so real names such as "...", "a..b" are still allowed.
+        inline bool nfs_path_has_parent_ref(const std::string& path)
+        {
+            size_t start = 0;
+            const size_t len = path.length();
+            while (start <= len)
+            {
+                size_t sep = path.find_first_of("/\\", start);
+                size_t end = (sep == std::string::npos) ? len : sep;
+                if ((end - start) == 2 && path[start] == '.' && path[start + 1] == '.')
+                {
+                    return true;
+                }
+                if (sep == std::string::npos)
+                {
+                    break;
+                }
+                start = sep + 1;
+            }
+            return false;
+        }
 
         struct nfs_opts
         {
