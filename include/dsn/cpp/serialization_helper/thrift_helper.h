@@ -825,6 +825,21 @@ namespace dsn {
         ::dsn::binary_reader_transport trans(reader);
         boost::shared_ptr< ::dsn::binary_reader_transport> transport(&trans, [](::dsn::binary_reader_transport*) {});
         ::apache::thrift::protocol::TBinaryProtocol proto(transport);
+
+        // Bound the decoder to the bytes actually available in the message body: no string,
+        // binary field, or container inside the body can legitimately be longer than the body
+        // that contains it. Thrift's string and container size limits default to 0 (unlimited),
+        // so without this a tiny body that claims a huge string/container length makes
+        // TBinaryProtocol resize()/allocate to that attacker-controlled size (up to ~2GB) up
+        // front, before the short read is detected -- a memory-amplification DoS on the RPC
+        // receive path (a 7-byte body can force a multi-GB allocation). A claimed size larger
+        // than the body now raises TProtocolException::SIZE_LIMIT immediately, before any
+        // allocation, and is caught by the caller (try_unmarshall) exactly as other corrupt
+        // input is.
+        int32_t read_limit = reader.get_remaining_size();
+        proto.setStringSizeLimit(read_limit);
+        proto.setContainerSizeLimit(read_limit);
+
         unmarshall_thrift_internal(val, &proto);
     }
 
