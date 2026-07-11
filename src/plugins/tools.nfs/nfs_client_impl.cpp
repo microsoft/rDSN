@@ -126,6 +126,39 @@ namespace dsn {
                     delete ureq;
                     return;
                 }
+
+                // size_list is a list<i64> filled in by the (untrusted) remote server. Below it is
+                // assigned to an unsigned counter (uint64_t size = resp.size_list[i]) that drives a
+                // loop pre-creating one copy_request_ex per nfs_copy_block_bytes block. A negative
+                // size wraps to a huge unsigned value, and an absurdly large positive size needs an
+                // enormous number of blocks, so either would make the client allocate an unbounded
+                // number of request objects (bad_alloc -> std::terminate) from a single small
+                // response. Reject a negative size, or one that would exceed the configured
+                // per-file block-count limit, through the existing nfs_task error channel.
+                int64_t fsize = resp.size_list[i];
+                if (fsize < 0)
+                {
+                    derror("nfs: rejecting get_file_size response with negative size %lld for file '%s'",
+                        (long long)fsize, resp.file_list[i].c_str());
+                    ureq->nfs_task->enqueue(ERR_INVALID_DATA, 0);
+                    delete ureq;
+                    return;
+                }
+                if (_opts.nfs_copy_block_bytes > 0)
+                {
+                    uint64_t block = _opts.nfs_copy_block_bytes;
+                    uint64_t req_count = (static_cast<uint64_t>(fsize) + block - 1) / block;
+                    if (req_count > static_cast<uint64_t>(_opts.max_copy_request_count_per_file))
+                    {
+                        derror("nfs: rejecting get_file_size response: file '%s' size %lld needs %llu "
+                               "copy blocks, exceeding the limit of %d",
+                            resp.file_list[i].c_str(), (long long)fsize, (unsigned long long)req_count,
+                            _opts.max_copy_request_count_per_file);
+                        ureq->nfs_task->enqueue(ERR_INVALID_DATA, 0);
+                        delete ureq;
+                        return;
+                    }
+                }
             }
 
             for (size_t i = 0; i < resp.size_list.size(); i++) // file list

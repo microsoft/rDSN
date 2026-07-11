@@ -81,6 +81,7 @@ namespace dsn {
             int file_close_expire_time_ms;
             int file_close_timer_interval_ms_on_server;
             int max_file_copy_request_count_per_file;
+            int max_copy_request_count_per_file;
 
             void init()
             {
@@ -96,6 +97,8 @@ namespace dsn {
                     30 * 1000, "time interval for checking whether cached file handles need to be closed");
                 max_file_copy_request_count_per_file = (int)dsn_config_get_value_uint64("nfs", "max_file_copy_request_count_per_file", 
                     10, "maximum concurrent remote copy requests for the same file on nfs client"); // limit each file copy speed
+                max_copy_request_count_per_file = (int)dsn_config_get_value_uint64("nfs", "max_copy_request_count_per_file",
+                    1000000, "maximum number of block copy requests generated for a single file on nfs client; bounds client memory when a remote server reports an oversized or invalid file size");
             }
         };
 
