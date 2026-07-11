@@ -186,7 +186,19 @@ namespace dsn {
 
             ::dsn::service::copy_response resp;
             resp.error = err;
-            resp.file_content = cp.bb;
+            // cp.bb is a full nfs_copy_block_bytes block allocated with make_shared_array<char>,
+            // i.e. default-initialized (uninitialized) heap. Only the first cp.size bytes are
+            // filled by file::read, so shipping the whole buffer would disclose the uninitialized
+            // tail [cp.size, nfs_copy_block_bytes) to the (untrusted) client -- every file's last
+            // (partial) block, and any deliberately small copy request, would leak server heap
+            // memory into the reply. After the short-read check above, sz == cp.size on the ERR_OK
+            // path, so the first cp.size bytes are fully initialized; send exactly those. On an
+            // error the client ignores the content, so leave it empty rather than transmitting the
+            // uninitialized buffer.
+            if (err == ERR_OK)
+            {
+                resp.file_content = cp.bb.range(0, cp.size);
+            }
             resp.offset = cp.offset;
             resp.size = cp.size;
 
