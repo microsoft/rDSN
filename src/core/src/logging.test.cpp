@@ -34,6 +34,7 @@
  */
 
 # include <dsn/service_api_c.h>
+# include <dsn/cpp/test_utils.h>
 # include <dsn/tool-api/task_spec.h>
 # include <dsn/utility/configuration.h>
 # include <gtest/gtest.h>
@@ -58,6 +59,7 @@ TEST(core, logging_big_log)
 
 TEST(core, dsn_log_init_invalid_start_level)
 {
+    scoped_test_stderr stderr_capture;
     dsn_log_level_t old_start_level = dsn_log_get_start_level();
     std::string old_start_level_config =
         dsn_config_get_value_string("core", "logging_start_level", enum_to_string(old_start_level), "");

@@ -266,6 +266,7 @@ TEST(core, dsn_config_get_all_keys_reports_total_count)
 
 TEST(core, dsn_config_invalid_numeric_values)
 {
+    scoped_test_stderr stderr_capture;
     get_main_config()->set("core.invalid_config", "bad_uint64", "12bad", "");
     get_main_config()->set("core.invalid_config", "overflow_uint64",
                            "999999999999999999999999999999999999", "");
