@@ -135,7 +135,14 @@ namespace dsn
                 owner_delete_commit();
                 break;
             case OWNER_DELETE_LOCKED:
-                while (OWNER_DELETE_LOCKED == _deleting_owner.load(std::memory_order_consume))
+                // Acquire pairs with the release store in owner_delete_commit().
+                // Once we observe OWNER_DELETE_FINISHED, all of the committing
+                // thread's writes (the list unlink and its _owner access) are
+                // visible before we go on to clear _owner and destroy the task.
+                // memory_order_consume is insufficient: the subsequent
+                // "_owner = nullptr" write carries no data dependency from the
+                // loaded value, so it would not be ordered by a consume load.
+                while (OWNER_DELETE_LOCKED == _deleting_owner.load(std::memory_order_acquire))
                 {
                 }
                 break;
@@ -158,6 +165,9 @@ namespace dsn
             _dl.remove();
         }
 
-        _deleting_owner.store(OWNER_DELETE_FINISHED, std::memory_order_relaxed);
+        // Release so a waiter spinning on OWNER_DELETE_FINISHED in unset_tracker()
+        // synchronizes-with this commit and safely observes the completed unlink
+        // (and our access to _owner) instead of racing on _owner / _dl.
+        _deleting_owner.store(OWNER_DELETE_FINISHED, std::memory_order_release);
     }
 }
