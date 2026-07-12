@@ -43,7 +43,12 @@ namespace dsn
 {
     namespace dist
     {
-#pragma pack(push, 4)
+// Disabled: pack(4) clamps every member of this runtime-only class to <=4-byte
+// alignment, so the embedded partition_configuration (thrift type with int64_t
+// fields) and STL members (unordered_map/deque/std::function/zlock, all holding
+// 8-byte pointers) end up misaligned -> UB flagged by UBSan (SIGBUS on arm64).
+// These structs are private and never wire-serialized, so packing has no benefit.
+// #pragma pack(push, 4)
         class partition_resolver_simple
             : public partition_resolver,
               public virtual clientlet
@@ -125,6 +130,7 @@ namespace dsn
             task_ptr query_config(int partition_index);
             void query_config_reply(error_code err, dsn_message_t request, dsn_message_t response, int partition_index);
         };
-#pragma pack(pop)
+// Disabled together with the matching pack(push, 4) above.
+// #pragma pack(pop)
     }
 }
