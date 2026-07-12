@@ -61,7 +61,13 @@ namespace dsn
     // response format:
     //     <total_len(int32)> <thrift_string> <thrift_message_begin> <body_data(bytes)> <thrift_message_end>
 
-# define THRIFT_HDR_SIG (*(uint32_t*)"THFT")
+    // "THFT" magic packed as a host-order uint32_t. Composing it from its bytes avoids the
+    // misaligned load of *(uint32_t*)"THFT" (reading a 1-byte-aligned string literal as a
+    // uint32_t is undefined behavior: UBSan flags it and it can SIGBUS on strict-alignment
+    // ISAs such as arm64). On the little-endian hosts rDSN targets this is exactly the value
+    // the old cast produced, so the same "THFT" bytes go on the wire.
+    static const uint32_t THRIFT_HDR_SIG =
+        (uint32_t)'T' | ((uint32_t)'H' << 8) | ((uint32_t)'F' << 16) | ((uint32_t)'T' << 24);
 
     DEFINE_CUSTOMIZED_ID(network_header_format, NET_HDR_THRIFT)       
 

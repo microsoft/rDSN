@@ -760,7 +760,13 @@ message_ex* message_ex::create_request(dsn_task_code_t rpc_code, int timeout_mil
     // init header
     auto& hdr = *msg->header;
     memset(reinterpret_cast<void*>(&hdr), 0, sizeof(hdr));
-    hdr.hdr_type = *(uint32_t*)"RDSN";
+    // Set the 4-byte "RDSN" magic without a misaligned load. Reading *(uint32_t*)"RDSN"
+    // dereferences a 1-byte-aligned string literal as a uint32_t, which is undefined
+    // behavior (UBSan's alignment check flags it, and it is a SIGBUS hazard on
+    // strict-alignment ISAs such as arm64). memcpy is byte-for-byte identical and
+    // alignment-safe -- the same idiom header_type uses to build a signature from a
+    // 4-char string.
+    memcpy(&hdr.hdr_type, "RDSN", sizeof(uint32_t));
     hdr.hdr_length = sizeof(message_header);
     hdr.hdr_crc32 = hdr.body_crc32 = CRC_INVALID;
 

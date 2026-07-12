@@ -349,24 +349,28 @@ http_message_parser::http_message_parser()
     {
         auto owner = static_cast<http_message_parser*>(parser->data);
         message_header* header = owner->_current_message->header;
+        // Set the 4-byte magic without a misaligned load: reading *(uint32_t*)"GET " etc.
+        // dereferences a 1-byte-aligned string literal as a uint32_t, which is undefined
+        // behavior (UBSan flags it; a SIGBUS hazard on strict-alignment ISAs such as arm64).
+        // memcpy is byte-for-byte identical and alignment-safe.
         if (parser->type == HTTP_REQUEST && parser->method == HTTP_GET)
         {
-            header->hdr_type = *(uint32_t*)"GET ";
+            memcpy(&header->hdr_type, "GET ", sizeof(uint32_t));
             header->context.u.is_request = 1;
         }
         else if (parser->type == HTTP_REQUEST && parser->method == HTTP_POST)
         {
-            header->hdr_type = *(uint32_t*)"POST";
+            memcpy(&header->hdr_type, "POST", sizeof(uint32_t));
             header->context.u.is_request = 1;
         }
         else if (parser->type == HTTP_REQUEST && parser->method == HTTP_OPTIONS)
         {
-            header->hdr_type = *(uint32_t*)"OPTI";
+            memcpy(&header->hdr_type, "OPTI", sizeof(uint32_t));
             header->context.u.is_request = 1;
         }        
         else if (parser->type == HTTP_RESPONSE)
         {
-            header->hdr_type = *(uint32_t*)"HTTP";
+            memcpy(&header->hdr_type, "HTTP", sizeof(uint32_t));
             header->context.u.is_request = 0;
         }        
         else
