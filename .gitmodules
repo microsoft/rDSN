@@ -9,7 +9,7 @@
 [submodule "src/plugins_ext/rDSN.dist.service"]
 	path = src/plugins_ext/rDSN.dist.service
 	url = https://github.com/linmajia/rDSN.dist.service.git
-	branch = fix
+	branch = master
 [submodule "src/plugins_ext/rDSN.dist.deployment"]
 	path = src/plugins_ext/rDSN.dist.deployment
 	url = https://github.com/linmajia/rDSN.dist.deployment.git
