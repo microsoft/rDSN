@@ -240,27 +240,29 @@ namespace dsn
 
     void thrift_message_parser::read_thrift_header(const char* buffer, /*out*/ thrift_message_header& header)
     {
-        header.hdr_type = *(uint32_t*)(buffer);
-        buffer += sizeof(int32_t);
-        header.hdr_version = be32toh( *(int32_t*)(buffer) );
-        buffer += sizeof(int32_t);
-        header.hdr_length = be32toh( *(int32_t*)(buffer) );
-        buffer += sizeof(int32_t);
-        header.hdr_crc32 = be32toh( *(int32_t*)(buffer) );
-        buffer += sizeof(int32_t);
-        header.body_length = be32toh( *(int32_t*)(buffer) );
-        buffer += sizeof(int32_t);
-        header.body_crc32 = be32toh( *(int32_t*)(buffer) );
-        buffer += sizeof(int32_t);
-        header.app_id = be32toh( *(int32_t*)(buffer) );
-        buffer += sizeof(int32_t);
-        header.partition_index = be32toh( *(int32_t*)(buffer) );
-        buffer += sizeof(int32_t);
-        header.client_timeout = be32toh( *(int32_t*)(buffer) );
-        buffer += sizeof(int32_t);
-        header.client_thread_hash = be32toh( *(int32_t*)(buffer) );
-        buffer += sizeof(int32_t);
-        header.client_partition_hash = be64toh( *(int64_t*)(buffer) );
+        // The header sits at an arbitrary offset inside the shared receive buffer: after a
+        // message is consumed get_message_on_receive advances _buffer by msg_sz (an
+        // attacker-controlled amount, since it includes body_length), so the header of a
+        // following pipelined message generally starts at an unaligned address. Reading the
+        // multi-byte fields directly through `*(uint32_t*)buffer` / `*(int64_t*)buffer` is
+        // misaligned-access undefined behavior -- benign on x86 but a real hazard (SIGBUS) on
+        // stricter ISAs such as arm64, and flagged by UBSan. Copy the fixed-size header into a
+        // naturally aligned local first (the struct layout matches the on-wire layout and its
+        // size is validated in check_thrift_header), mirroring dsn_message_parser.
+        thrift_message_header raw;
+        memcpy(static_cast<void*>(&raw), buffer, sizeof(thrift_message_header));
+
+        header.hdr_type = raw.hdr_type;
+        header.hdr_version = be32toh(raw.hdr_version);
+        header.hdr_length = be32toh(raw.hdr_length);
+        header.hdr_crc32 = be32toh(raw.hdr_crc32);
+        header.body_length = be32toh(raw.body_length);
+        header.body_crc32 = be32toh(raw.body_crc32);
+        header.app_id = be32toh(raw.app_id);
+        header.partition_index = be32toh(raw.partition_index);
+        header.client_timeout = be32toh(raw.client_timeout);
+        header.client_thread_hash = be32toh(raw.client_thread_hash);
+        header.client_partition_hash = be64toh(raw.client_partition_hash);
     }
 
     bool thrift_message_parser::check_thrift_header(const thrift_message_header& header)
