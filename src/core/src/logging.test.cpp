@@ -34,7 +34,7 @@
  */
 
 # include <dsn/service_api_c.h>
-# include <dsn/cpp/test_utils.h>
+# include <dsn/cpp/test_output_utils.h>
 # include <dsn/tool-api/task_spec.h>
 # include <dsn/utility/configuration.h>
 # include <gtest/gtest.h>

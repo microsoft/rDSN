@@ -34,6 +34,7 @@
  */
 
 #include "simple_logger.h"
+#include <dsn/cpp/test_output_utils.h>
 #include <gtest/gtest.h>
 #include <dsn/cpp/utils.h>
 #include <cerrno>
@@ -93,6 +94,7 @@ void log_print(logging_provider* logger, const char* fmt, ...) {
 
 TEST(tools_common, simple_logger)
 {
+    scoped_test_stderr stderr_capture;
     //cases for print_header
     screen_logger* logger = new screen_logger("./", nullptr);
     log_print(logger, "%s", "test_print");

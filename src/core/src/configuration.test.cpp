@@ -34,7 +34,7 @@
  */
 
 # include <dsn/utility/configuration.h>
-# include <dsn/cpp/test_utils.h>
+# include <dsn/cpp/test_output_utils.h>
 # include <dsn/cpp/utils.h>
 # include <gtest/gtest.h>
 # include <algorithm>
