@@ -34,6 +34,7 @@
  */
 
 # include <dsn/utility/configuration.h>
+# include <dsn/cpp/test_utils.h>
 # include <dsn/cpp/utils.h>
 # include <gtest/gtest.h>
 # include <algorithm>
@@ -48,6 +49,7 @@ using namespace ::dsn;
 
 TEST(core, configuration)
 {
+    scoped_test_stderr stderr_capture;
     configuration_ptr c;
 
     fprintf(stdout, "load not_exist_config_file\n");
@@ -223,6 +225,7 @@ TEST(core, configuration)
 
 TEST(core, configuration_invalid_numeric_values)
 {
+    scoped_test_stderr stderr_capture;
     configuration c;
     const char* section = "invalid_numbers";
 
@@ -247,6 +250,7 @@ TEST(core, configuration_invalid_numeric_values)
 
 TEST(core, configuration_circular_include)
 {
+    scoped_test_stderr stderr_capture;
     // A circular @include chain must be rejected gracefully (load returns false)
     // instead of recursing through load()/load_include() until the stack
     // overflows and the process crashes.
@@ -297,6 +301,7 @@ TEST(core, configuration_circular_include)
 
 TEST(core, configuration_concurrent_include)
 {
+    scoped_test_stderr stderr_capture;
     // The include-tracking set is thread_local, so loading configurations
     // concurrently on multiple threads is race-free: each thread tracks only its
     // own @include ancestry, with no shared mutable state and no cross-thread
@@ -312,13 +317,6 @@ TEST(core, configuration_concurrent_include)
 
     std::atomic<int> diamond_ok(0);
     std::atomic<int> cycle_rejected(0);
-
-    // The stress loop intentionally exercises hundreds of successful includes
-    // and rejected cycles. Capture only those expected utility diagnostics so
-    // they do not flood test output; restore stderr before the assertions.
-#if GTEST_HAS_STREAM_REDIRECTION
-    ::testing::internal::CaptureStderr();
-#endif
 
     std::vector<std::thread> threads;
     for (int t = 0; t < thread_count; ++t)
@@ -350,10 +348,6 @@ TEST(core, configuration_concurrent_include)
     {
         th.join();
     }
-
-#if GTEST_HAS_STREAM_REDIRECTION
-    (void)::testing::internal::GetCapturedStderr();
-#endif
 
     ASSERT_EQ(thread_count * iterations, diamond_ok.load());
     ASSERT_EQ(thread_count * iterations, cycle_rejected.load());

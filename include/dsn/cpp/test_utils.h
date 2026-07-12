@@ -40,9 +40,37 @@
 # include <dsn/tool-api/task.h>
 # include <dsn/tool-api/task_worker.h>
 # include <gtest/gtest.h>
+# include <cstdio>
 # include <iostream>
 
 using namespace ::dsn;
+
+// Keep expected diagnostics out of successful test output, but replay them when
+// GoogleTest records a failure in the current test.
+class scoped_test_stderr
+{
+public:
+    scoped_test_stderr()
+    {
+#if GTEST_HAS_STREAM_REDIRECTION
+        ::testing::internal::CaptureStderr();
+#endif
+    }
+
+    ~scoped_test_stderr()
+    {
+#if GTEST_HAS_STREAM_REDIRECTION
+        const auto output = ::testing::internal::GetCapturedStderr();
+        if (::testing::Test::HasFailure())
+        {
+            fprintf(stderr, "%s", output.c_str());
+        }
+#endif
+    }
+
+    scoped_test_stderr(const scoped_test_stderr&) = delete;
+    scoped_test_stderr& operator=(const scoped_test_stderr&) = delete;
+};
 
 #ifndef TEST_PORT_BEGIN
 #define TEST_PORT_BEGIN 20201
