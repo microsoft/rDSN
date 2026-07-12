@@ -42,6 +42,8 @@
 # include <iomanip>
 # include <cstring>
 # include <utility>
+# include <limits>
+# include <new>
 # include "http_message_parser.h"
 # include <dsn/cpp/serialization.h>
 
@@ -390,7 +392,22 @@ http_message_parser::http_message_parser()
         // a moved-from (null) _current_message and crashed. Accumulate here instead and only
         // finalize the message in on_message_complete.
         auto& body_buf = *owner->_current_message->buffers.rbegin();
-        if (body_buf.length() == 0)
+        unsigned int old_len = body_buf.length();
+
+        // http_parser reports each body segment's size as a size_t, but a blob's length is a
+        // 32-bit unsigned int. A body whose accumulated size would exceed that (one huge segment
+        // or many smaller ones) previously either truncated via static_cast (mis-sizing the blob
+        // on the fast path) or under-allocated the destination and heap-overflowed in memcpy (slow
+        // path). Reject it by closing the connection, the same graceful failure the parser already
+        // uses for other malformed input.
+        if (length > static_cast<size_t>(std::numeric_limits<unsigned int>::max()) - old_len)
+        {
+            derror("http message body too large (already %u bytes, +%zu more), closing connection",
+                   old_len, static_cast<size_t>(length));
+            return 1;
+        }
+
+        if (old_len == 0)
         {
             // fast path: first (and usually only) segment references the read buffer directly.
             body_buf.assign(owner->_current_buffer.buffer(),
@@ -401,9 +418,21 @@ http_message_parser::http_message_parser()
         {
             // more than one segment: concatenate into a fresh contiguous buffer so no earlier
             // segment is lost (a single blob slice cannot span non-contiguous segments).
-            unsigned int old_len = body_buf.length();
             unsigned int new_len = old_len + static_cast<unsigned int>(length);
-            std::shared_ptr<char> holder = make_shared_array<char>(new_len);
+            std::shared_ptr<char> holder;
+            try
+            {
+                holder = make_shared_array<char>(new_len);
+            }
+            catch (const std::bad_alloc&)
+            {
+                // A hostile or buggy client can declare a body big enough that this allocation
+                // fails. make_shared_array uses new[], which throws std::bad_alloc; this callback
+                // runs on the network IO thread with no surrounding try/catch, so an escaping
+                // exception would abort the whole process. Fail just this connection instead.
+                derror("http message body allocation failed (%u bytes), closing connection", new_len);
+                return 1;
+            }
             memcpy(holder.get(), body_buf.data(), old_len);
             memcpy(holder.get() + old_len, at, length);
             body_buf.assign(std::move(holder), 0, new_len);
