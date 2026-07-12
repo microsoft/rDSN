@@ -308,7 +308,7 @@ namespace dsn
             dassert(name != nullptr && name[0] != '\0', "name for an error code cannot be null or empty");
             _internal_code = dsn_error_register(name);
     # ifdef TRACK_ERROR_CODE
-            _used = true;
+            _used.store(true, std::memory_order_relaxed);
     # endif
         }
 
@@ -317,7 +317,7 @@ namespace dsn
             _internal_code = 0;
 
     # ifdef TRACK_ERROR_CODE
-            _used = true;
+            _used.store(true, std::memory_order_relaxed);
     # endif
         }
 
@@ -326,7 +326,7 @@ namespace dsn
             _internal_code = err;
 
 # ifdef TRACK_ERROR_CODE
-            _used = false;
+            _used.store(false, std::memory_order_relaxed);
 # endif
         }
 
@@ -334,15 +334,15 @@ namespace dsn
         {
             _internal_code = err._internal_code;
     # ifdef TRACK_ERROR_CODE
-            _used = false;
-            err._used = true;
+            _used.store(false, std::memory_order_relaxed);
+            err._used.store(true, std::memory_order_relaxed);
     # endif
         }
 
         const char* to_string() const
         {
     # ifdef TRACK_ERROR_CODE
-            _used = true;
+            _used.store(true, std::memory_order_relaxed);
     # endif
             return dsn_error_to_string(_internal_code);
         }
@@ -351,8 +351,8 @@ namespace dsn
         {
             _internal_code = source._internal_code;
     # ifdef TRACK_ERROR_CODE
-            _used = false;
-            source._used = true;
+            _used.store(false, std::memory_order_relaxed);
+            source._used.store(true, std::memory_order_relaxed);
     # endif
             return *this;
         }
@@ -360,8 +360,8 @@ namespace dsn
         bool operator == (const error_code& r)
         {
     # ifdef TRACK_ERROR_CODE
-            _used = true;
-            r._used = true;
+            _used.store(true, std::memory_order_relaxed);
+            r._used.store(true, std::memory_order_relaxed);
     # endif
             return _internal_code == r._internal_code;
         }
@@ -377,7 +377,7 @@ namespace dsn
             // in cases where error code is std::bind-ed as task callbacks,
             // and when tasks are cancelled, it is difficult to end track them on cancel
             // therefore we change derror to dwarn
-            if (!_used)
+            if (!_used.load(std::memory_order_relaxed))
             {
                 if (_internal_code != 0)
                 {
@@ -391,7 +391,7 @@ namespace dsn
         dsn_error_t get() const
         {
     # ifdef TRACK_ERROR_CODE
-            _used = true;
+            _used.store(true, std::memory_order_relaxed);
     # endif
             return _internal_code;
         }
@@ -399,7 +399,7 @@ namespace dsn
         operator dsn_error_t() const
         {
     # ifdef TRACK_ERROR_CODE
-            _used = true;
+            _used.store(true, std::memory_order_relaxed);
     # endif
             return _internal_code;
         }
@@ -407,7 +407,7 @@ namespace dsn
         void end_tracking() const
         {
     # ifdef TRACK_ERROR_CODE
-            _used = true;
+            _used.store(true, std::memory_order_relaxed);
     # endif
         }
 
@@ -417,7 +417,7 @@ namespace dsn
 #endif
     private:
     # ifdef TRACK_ERROR_CODE
-        mutable bool _used;
+        mutable std::atomic<bool> _used;
     # endif
         dsn_error_t _internal_code;
     };
