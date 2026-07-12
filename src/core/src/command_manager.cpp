@@ -41,6 +41,7 @@
 # include <sstream>
 # include <cstring>
 # include <chrono>
+# include <exception>
 # include <dsn/cpp/utils.h>
 # include <dsn/cpp/rpc_stream.h>
 # include "service_engine.h"
@@ -364,7 +365,34 @@ namespace dsn {
         {
             if (h->address.is_invalid() || h->address == dsn::task::get_current_rpc()->primary_address())
             {
-                output = h->handler(args);
+                // Command handlers run here with fully caller-controlled args. Via the remote CLI
+                // (RPC_CLI_CLI_CALL, unauthenticated and enabled by default because [core] cli_remote
+                // defaults to true) both the args and the surrounding memory pressure are
+                // attacker-influenced, and RPC handlers execute with no enclosing exception handler
+                // (on_remote_cli / task_worker::loop do not catch). A handler that throws -- e.g.
+                // std::bad_alloc while building an arbitrarily large result string (the "info"/"dump"
+                // handlers serialize the whole server state), or any exception raised by an
+                // app-registered handler -- would otherwise escape and abort the whole process, a
+                // remote denial of service. on_remote_cli already decodes defensively via
+                // try_unmarshall; contain the handler invocation the same way and report the failure
+                // through the normal command-output channel. Honest handlers never throw, so this is
+                // transparent on the success path.
+                try
+                {
+                    output = h->handler(args);
+                }
+                catch (const std::exception& ex)
+                {
+                    derror("command '%s' handler threw an exception: %s", cmd.c_str(), ex.what());
+                    output = safe_string("command failed: ") + ex.what();
+                    return false;
+                }
+                catch (...)
+                {
+                    derror("command '%s' handler threw an unknown exception", cmd.c_str());
+                    output = "command failed: unknown exception";
+                    return false;
+                }
                 return true;
             }
             else
