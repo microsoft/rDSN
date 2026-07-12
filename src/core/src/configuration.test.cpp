@@ -313,6 +313,13 @@ TEST(core, configuration_concurrent_include)
     std::atomic<int> diamond_ok(0);
     std::atomic<int> cycle_rejected(0);
 
+    // The stress loop intentionally exercises hundreds of successful includes
+    // and rejected cycles. Capture only those expected utility diagnostics so
+    // they do not flood test output; restore stderr before the assertions.
+#if GTEST_HAS_STREAM_REDIRECTION
+    ::testing::internal::CaptureStderr();
+#endif
+
     std::vector<std::thread> threads;
     for (int t = 0; t < thread_count; ++t)
     {
@@ -343,6 +350,10 @@ TEST(core, configuration_concurrent_include)
     {
         th.join();
     }
+
+#if GTEST_HAS_STREAM_REDIRECTION
+    (void)::testing::internal::GetCapturedStderr();
+#endif
 
     ASSERT_EQ(thread_count * iterations, diamond_ok.load());
     ASSERT_EQ(thread_count * iterations, cycle_rejected.load());
