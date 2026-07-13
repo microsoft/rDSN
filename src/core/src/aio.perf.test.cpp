@@ -96,14 +96,14 @@ void aio_testcase(uint64_t block_size, size_t concurrency, bool is_write, bool s
     
     std::atomic<uint64_t> io_count(0);
     std::atomic<uint64_t> cb_flying_count(0);
-    volatile bool exit = false;
+    std::atomic<bool> exit(false);
     std::function<void(int)> cb;
     std::vector<uint64_t> offsets;
     offsets.resize(concurrency);
     
     cb = [&](int index)
     {
-        if (!exit)
+        if (!exit.load(std::memory_order_relaxed))
         {
             auto ioc = io_count++;
             uint64_t offset;
@@ -165,7 +165,7 @@ void aio_testcase(uint64_t block_size, size_t concurrency, bool is_write, bool s
         << std::endl;
 
     // safe exit
-    exit = true;
+    exit.store(true, std::memory_order_relaxed);
 
     while (cb_flying_count.load() > 0)
     {

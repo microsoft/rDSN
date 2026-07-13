@@ -115,7 +115,6 @@ __thread bool scheduler::_is_scheduling = false;
 scheduler::scheduler(void)
 {
     _time_ns = 0;
-    _running = false;
     _running_thread = nullptr;
     task_worker::on_create.put_back(on_task_worker_create, "emulation.on_task_worker_create");
     task_worker::on_start.put_back(on_task_worker_start, "emulation.on_task_worker_start");
@@ -137,7 +136,7 @@ scheduler::~scheduler(void)
 
 /*static*/ void scheduler::on_task_worker_start(task_worker* worker)
 {
-    while (!scheduler::instance()._running)
+    while (!scheduler::instance()._running.load(std::memory_order_acquire))
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
@@ -148,7 +147,6 @@ scheduler::~scheduler(void)
     auto s = task_worker_ext::get_inited(worker);    
     s->worker = worker;
     s->first_time_schedule = true;
-    s->in_continuation = false;
     s->index = static_cast<int>(scheduler::instance()._threads.size());    
     scheduler::instance()._threads.push_back(s);
 }
@@ -179,7 +177,7 @@ scheduler::~scheduler(void)
     {
         for (auto& w : ts->wait_threads)
         {
-            w->is_continuation_ready = true;
+            w->is_continuation_ready.store(true, std::memory_order_release);
         }
     }
 }
@@ -199,7 +197,7 @@ void scheduler::add_system_event(uint64_t ts_ns, std::function<void()> t)
     _wheel.add_system_event(ts_ns, t);
 }
 
-void scheduler::start()
+void scheduler::initialize()
 {
     // init all checkers
     dsn_app_info apps[DSN_MAX_APP_COUNT_IN_SAME_PROCESS]; // maximum apps
@@ -208,9 +206,11 @@ void scheduler::start()
     {
         c->checker_ptr = c->create(c->name.c_str(), apps, count);
     }
+}
 
-    // set flag
-    _running = true;
+void scheduler::start()
+{
+    _running.store(true, std::memory_order_release);
 }
 
 void scheduler::add_checker(const char* name, dsn_checker_create create, dsn_checker_apply apply)
@@ -236,8 +236,8 @@ void scheduler::check()
 void scheduler::wait_schedule(bool in_continue, bool is_continue_ready /*= false*/)
 {
     auto s = task_worker_ext::get(task::get_current_worker());
-    s->in_continuation = in_continue;
-    s->is_continuation_ready = is_continue_ready;
+    s->in_continuation.store(in_continue, std::memory_order_release);
+    s->is_continuation_ready.store(is_continue_ready, std::memory_order_release);
 
     if (s->first_time_schedule)
     {
@@ -264,9 +264,10 @@ void scheduler::schedule()
         std::vector<int> ready_workers;
         for (auto& s : _threads)
         {
-            if ((s->in_continuation && s->is_continuation_ready)
-                || (!s->in_continuation && s->worker->queue()->count() > 0)
-                )
+            const bool in_continuation = s->in_continuation.load(std::memory_order_acquire);
+            if ((in_continuation &&
+                 s->is_continuation_ready.load(std::memory_order_acquire)) ||
+                (!in_continuation && s->worker->queue()->count() > 0))
             {
                 ready_workers.push_back(s->index);
             }

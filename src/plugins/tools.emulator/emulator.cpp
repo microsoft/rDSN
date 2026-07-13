@@ -148,8 +148,9 @@ void emulator::add_checker(const char* name, dsn_checker_create create, dsn_chec
 
 void emulator::run()
 {
-    scheduler::instance().start();
+    scheduler::instance().initialize();
     tool_app::run();
+    scheduler::instance().start();
 }
 
 }} // end namespace dsn::tools

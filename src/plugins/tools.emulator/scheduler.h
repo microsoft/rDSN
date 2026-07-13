@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <dsn/tool_api.h>
 #include <dsn/utility/synchronize.h>
 
@@ -69,8 +70,8 @@ struct sim_worker_state
     int               index;
     task_worker       *worker;
     bool              first_time_schedule;
-    bool              in_continuation;
-    bool              is_continuation_ready;
+    std::atomic<bool>  in_continuation{false};
+    std::atomic<bool>  is_continuation_ready{false};
 
     static void deletor(void* p)
     {
@@ -85,6 +86,7 @@ public:
     scheduler(void);
     ~scheduler(void);
 
+    void initialize();
     void start();
     uint64_t now_ns() const { utils::auto_lock< ::dsn::utils::ex_lock> l(_lock); return _time_ns; }
 
@@ -120,7 +122,7 @@ private:
     event_wheel                    _wheel;
     mutable ::dsn::utils::ex_lock  _lock;
     uint64_t                       _time_ns;
-    bool                           _running;
+    std::atomic<bool>              _running{false};
     std::vector<sim_worker_state*> _threads;
     sim_worker_state*              _running_thread;
     static __thread bool           _is_scheduling;

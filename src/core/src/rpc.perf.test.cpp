@@ -41,7 +41,7 @@ void rpc_testcase(uint64_t block_size, size_t concurrency)
 {
     std::atomic<uint64_t> io_count(0);
     std::atomic<uint64_t> cb_flying_count(0);
-    volatile bool exit = false;
+    std::atomic<bool> exit(false);
     std::function<void(int)> cb;    
     std::string req;
     req.resize(block_size, 'x');
@@ -58,7 +58,7 @@ void rpc_testcase(uint64_t block_size, size_t concurrency)
 
     cb = [&](int index)
     {
-        if (!exit)
+        if (!exit.load(std::memory_order_relaxed))
         {
             io_count++;            
             cb_flying_count++;
@@ -100,7 +100,7 @@ void rpc_testcase(uint64_t block_size, size_t concurrency)
         << std::endl;
 
     // safe exit
-    exit = true;
+    exit.store(true, std::memory_order_relaxed);
 
     while (cb_flying_count.load() > 0)
     {
@@ -120,12 +120,12 @@ void lpc_testcase(size_t concurrency)
 {
     std::atomic<uint64_t> io_count(0);
     std::atomic<uint64_t> cb_flying_count(0);
-    volatile bool exit = false;
+    std::atomic<bool> exit(false);
     std::function<void(int)> cb;
 
     cb = [&](int index)
     {
-        if (!exit)
+        if (!exit.load(std::memory_order_relaxed))
         {
             io_count++;
             cb_flying_count++;
@@ -161,7 +161,7 @@ void lpc_testcase(size_t concurrency)
         << std::endl;
 
     // safe exit
-    exit = true;
+    exit.store(true, std::memory_order_relaxed);
 
     while (cb_flying_count.load() > 0)
     {

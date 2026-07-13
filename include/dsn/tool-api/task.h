@@ -183,7 +183,7 @@ private:
     std::atomic<void*>     _wait_event;
     int                    _hash;
     int                    _delay_milliseconds;
-    bool                   _wait_for_cancel;
+    std::atomic<bool>      _wait_for_cancel;
     task_spec              *_spec;
     service_node           *_node;
     trackable_task         _context_tracker; // when tracker is gone, the task is cancelled automatically

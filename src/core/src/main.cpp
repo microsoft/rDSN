@@ -62,6 +62,7 @@
 # include <fstream>
 # include <cstring>
 # include <chrono>
+# include <atomic>
 
 # if defined(_WIN32)
 # include <tlhelp32.h>
@@ -82,7 +83,7 @@
 static struct _all_info_
 {
     unsigned int                                              magic;
-    bool                                                      engine_ready;
+    std::atomic<bool>                                         engine_ready{false};
     bool                                                      config_completed;
     ::dsn::tools::tool_app                                    *tool;
     ::dsn::configuration_ptr                                  config;
@@ -95,7 +96,7 @@ static struct _all_info_
     }
 
     bool is_engine_ready() const {
-        return magic == 0xdeadbeef && engine_ready;
+        return magic == 0xdeadbeef && engine_ready.load(std::memory_order_acquire);
     }
 
 } dsn_all;
@@ -463,7 +464,7 @@ bool run(
 
     ::dsn::task::set_tls_dsn_context(nullptr, nullptr, nullptr);
 
-    dsn_all.engine_ready = false;
+    dsn_all.engine_ready.store(false, std::memory_order_relaxed);
     dsn_all.config_completed = false;
     dsn_all.tool = nullptr;
     dsn_all.engine = &::dsn::service_engine::instance();
@@ -613,7 +614,7 @@ bool run(
     // init runtime
     ::dsn::service_engine::fast_instance().init_after_toollets();
 
-    dsn_all.engine_ready = true;
+    dsn_all.engine_ready.store(true, std::memory_order_release);
 
     // split app_name and app_index
     std::list<std::string> applistkvs;

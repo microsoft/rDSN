@@ -103,7 +103,7 @@ void sim_semaphore_provider::signal(int count)
 
         sim_worker_state* thread = _wait_threads.front();
         _wait_threads.pop_front();
-        thread->is_continuation_ready = true;
+        thread->is_continuation_ready.store(true, std::memory_order_release);
     }
 }
 

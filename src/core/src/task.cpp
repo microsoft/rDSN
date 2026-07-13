@@ -142,14 +142,13 @@ __thread uint16_t tls_dsn_lower32_task_id_mask = 0;
 }
 
 task::task(dsn_task_code_t code, void* context, dsn_task_cancelled_handler_t on_cancel, int hash, service_node* node)
-    : _state(TASK_STATE_READY), _wait_event(nullptr)
+    : _state(TASK_STATE_READY), _wait_event(nullptr), _wait_for_cancel(false)
 {
     _spec = task_spec::get(code);
     _context = context;
     _on_cancel = on_cancel;
     _hash = hash;
     _delay_milliseconds = 0;
-    _wait_for_cancel = false;
     _is_null = false;
     next = nullptr;
     
@@ -188,7 +187,9 @@ task::~task()
 bool task::set_retry(bool enqueue_immediately /*= true*/)
 {
     task_state RUNNING_STATE = TASK_STATE_RUNNING;
-    if (_state.compare_exchange_strong(RUNNING_STATE, TASK_STATE_READY, std::memory_order_relaxed))
+    if (_state.compare_exchange_strong(RUNNING_STATE,
+                                       TASK_STATE_READY,
+                                       std::memory_order_seq_cst))
     {
         _error = enqueue_immediately ? ERR_OK : ERR_IO_PENDING;
         return true;
@@ -219,7 +220,10 @@ void task::exec_internal()
         }
         else
         {
-            if (!_wait_for_cancel)
+            // This load and set_retry()'s state transition form one side of the
+            // handshake with cancel(true): cancellation must either win the
+            // state transition or be observed here before the task is retried.
+            if (!_wait_for_cancel.load(std::memory_order_seq_cst))
             {
                 // for retried tasks such as timer or rpc_response_task
                 notify_if_necessary = false;
@@ -343,20 +347,30 @@ bool task::cancel(bool wait_until_finished, /*out*/ bool* finished /*= nullptr*/
     task *current_tsk = get_current_task();
     bool finish = false;
     bool succ = false;
+
+    if (wait_until_finished)
+    {
+        _wait_for_cancel.store(true, std::memory_order_seq_cst);
+    }
     
     if (current_tsk == this)
     {
-        // make sure timers are cancelled
-        _wait_for_cancel = true;
+        // A recurring timer cancels itself with cancel(false). Publish the
+        // intent so exec_internal() suppresses the retry after this callback.
+        _wait_for_cancel.store(true, std::memory_order_seq_cst);
 
         if (finished)
+        {
             *finished = false;
+        }
 
         return false;
     }
     
     task_state old_state = READY_STATE;
-    if (_state.compare_exchange_strong(old_state, TASK_STATE_CANCELLED, std::memory_order_relaxed))
+    if (_state.compare_exchange_strong(old_state,
+                                       TASK_STATE_CANCELLED,
+                                       std::memory_order_seq_cst))
     {
         succ = true;
         finish = true;
@@ -375,7 +389,6 @@ bool task::cancel(bool wait_until_finished, /*out*/ bool* finished /*= nullptr*/
         }
         else if (wait_until_finished)
         {
-            _wait_for_cancel = true;
             bool r  = wait(TIME_MS_MAX, true);
             dassert(r, "wait failed, it is only possible when task runs for more than 0x0fffffff ms");
 
