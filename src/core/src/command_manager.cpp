@@ -34,6 +34,7 @@
  */
 
 # include "command_manager.h"
+# include <algorithm>
 # include <climits>
 # include <cstdlib>
 # include <iostream>
@@ -42,6 +43,7 @@
 # include <cstring>
 # include <chrono>
 # include <exception>
+# include <stdexcept>
 # include <dsn/cpp/utils.h>
 # include <dsn/cpp/rpc_stream.h>
 # include "service_engine.h"
@@ -122,9 +124,35 @@ DSN_API dsn_handle_t dsn_cli_register(
             {
                 c_args.push_back(s.c_str());
             }
-            dsn_cli_reply reply;
+            dsn_cli_reply reply{};
             cmd_handler(context, (int)c_args.size(), c_args.empty() ? nullptr : (const char**)&c_args[0], &reply);
-            auto cpp_output = dsn::safe_string(reply.message, reply.message + reply.size);
+
+            dsn::safe_string cpp_output;
+            try
+            {
+                if (reply.message == nullptr && reply.size != 0)
+                {
+                    throw std::invalid_argument(
+                        "cli command handler returned a null message with a non-zero size");
+                }
+
+                if (reply.size >
+                    static_cast<uint64_t>((std::numeric_limits<size_t>::max)()))
+                {
+                    throw std::length_error("cli command handler returned an oversized message");
+                }
+
+                if (reply.size != 0)
+                {
+                    cpp_output.assign(reply.message, static_cast<size_t>(reply.size));
+                }
+            }
+            catch (...)
+            {
+                output_freer(reply);
+                throw;
+            }
+
             output_freer(reply);
             return cpp_output;
         }
@@ -266,53 +294,118 @@ namespace dsn {
 
     dsn_handle_t command_manager::register_command(const safe_vector<const char*>& commands, const char* help_one_line, const char* help_long, command_handler handler)
     {
-        utils::auto_write_lock l(_lock);
-
-        for (auto cmd : commands)
+        std::shared_ptr<command> c;
+        try
         {
-            if (cmd != nullptr)
+            c = std::make_shared<command>();
+            c->address.set_invalid();
+            c->commands.reserve(commands.size());
+            for (const char* cmd : commands)
             {
-                auto it = _handlers.find(cmd);
-                dassert(it == _handlers.end(), "command '%s' already regisered", cmd);
+                if (cmd == nullptr || cmd[0] == '\0')
+                {
+                    derror("cannot register a null or empty command");
+                    return nullptr;
+                }
+                c->commands.emplace_back(cmd);
+            }
+            c->help_long = help_long;
+            c->help_short = help_one_line;
+            c->handler = std::move(handler);
+        }
+        catch (const std::exception& ex)
+        {
+            derror("failed to allocate command registration: %s", ex.what());
+            return nullptr;
+        }
+        catch (...)
+        {
+            derror("failed to allocate command registration");
+            return nullptr;
+        }
+
+        utils::auto_write_lock l(_lock);
+        for (const auto& cmd : c->commands)
+        {
+            auto it = _handlers.find(cmd);
+            if (it != _handlers.end())
+            {
+                derror("command '%s' is already registered", cmd.c_str());
+                return nullptr;
             }
         }
 
-        command* c = new command;
-        c->address.set_invalid();
-        c->commands = commands;
-        c->help_long = help_long;
-        c->help_short = help_one_line;
-        c->handler = handler;
-        _commands.push_back(c);
-        
-        for (auto cmd : commands)
+        auto rollback = [&]()
         {
-            if (cmd != nullptr)
-            {
-                _handlers[cmd] = c;
-            }
-        }
-        return c;
-    }
-    
-    void command_manager::deregister_command(dsn_handle_t handle)
-    {
-        auto c = reinterpret_cast<command*>(handle);
-        dassert(c != nullptr, "cannot deregister a null handle");
-        utils::auto_write_lock l(_lock);
-        for (auto cmd : c->commands)
-        {
-            if (cmd != nullptr)
+            for (const auto& cmd : c->commands)
             {
                 auto it = _handlers.find(cmd);
-                if (it != _handlers.end())
+                if (it != _handlers.end() && it->second == c)
                 {
                     _handlers.erase(it);
                 }
             }
-        }
-        delete c;
 
+            auto command_it = std::find(_commands.begin(), _commands.end(), c);
+            if (command_it != _commands.end())
+            {
+                _commands.erase(command_it);
+            }
+        };
+
+        try
+        {
+            _commands.push_back(c);
+            for (const auto& cmd : c->commands)
+            {
+                if (!_handlers.emplace(cmd, c).second)
+                {
+                    rollback();
+                    derror("command '%s' is already registered", cmd.c_str());
+                    return nullptr;
+                }
+            }
+        }
+        catch (const std::exception& ex)
+        {
+            rollback();
+            derror("failed to publish command registration: %s", ex.what());
+            return nullptr;
+        }
+        catch (...)
+        {
+            rollback();
+            derror("failed to publish command registration");
+            return nullptr;
+        }
+
+        return c.get();
+    }
+    
+    void command_manager::deregister_command(dsn_handle_t handle)
+    {
+        utils::auto_write_lock l(_lock);
+        auto command_it = std::find_if(
+            _commands.begin(),
+            _commands.end(),
+            [handle](const std::shared_ptr<command>& c) { return c.get() == handle; });
+        if (command_it == _commands.end())
+        {
+            derror("cannot deregister an unknown command handle");
+            return;
+        }
+
+        auto c = *command_it;
+        for (const auto& cmd : c->commands)
+        {
+            auto it = _handlers.find(cmd);
+            if (it != _handlers.end() && it->second == c)
+            {
+                _handlers.erase(it);
+            }
+        }
+
+        _commands.erase(command_it);
     }
 
     bool command_manager::run_command(const safe_string& cmdline, /*out*/ safe_string& output)
@@ -348,12 +441,16 @@ namespace dsn {
 
     bool command_manager::run_command(const safe_string& cmd, const safe_vector<safe_string>& args, /*out*/ safe_string& output)
     {
-        command* h = nullptr;
+        std::shared_ptr<command> h;
+        dsn::rpc_address address;
         {
             utils::auto_read_lock l(_lock);
             auto it = _handlers.find(cmd);
             if (it != _handlers.end())
+            {
                 h = it->second;
+                address = h->address;
+            }
         }
 
         if (h == nullptr)
@@ -363,7 +460,8 @@ namespace dsn {
         }
         else
         {
-            if (h->address.is_invalid() || h->address == dsn::task::get_current_rpc()->primary_address())
+            if (address.is_invalid() ||
+                address == dsn::task::get_current_rpc()->primary_address())
             {
                 // Command handlers run here with fully caller-controlled args. Via the remote CLI
                 // (RPC_CLI_CLI_CALL, unauthenticated and enabled by default because [core] cli_remote
@@ -397,8 +495,6 @@ namespace dsn {
             }
             else
             {
-                ::dsn::rpc_read_stream response;
-                
                 dsn_message_t msg = dsn_msg_create_request(RPC_CLI_CLI_CALL);
                 ::dsn::command rcmd;
                 rcmd.cmd = cmd.c_str();
@@ -408,13 +504,30 @@ namespace dsn {
                 }
 
                 ::dsn::marshall(msg, rcmd);
-                auto resp = dsn_rpc_call_wait(h->address.c_addr(), msg);
+                auto resp = dsn_rpc_call_wait(address.c_addr(), msg);
                 if (resp != nullptr)
                 {
-                    std::string o2 = output.c_str();
+                    ::dsn::safe_handle<dsn_msg_release_ref> response_guard(resp, true);
+                    std::string o2;
                     if (::dsn::try_unmarshall(resp, o2) != ERR_OK)
                     {
                         dwarn("cli run for %s failed: invalid response", cmd.c_str());
+                        return false;
+                    }
+                    try
+                    {
+                        output.assign(o2.data(), o2.size());
+                    }
+                    catch (const std::exception& ex)
+                    {
+                        derror("cli run for %s failed to copy the response: %s",
+                               cmd.c_str(),
+                               ex.what());
+                        return false;
+                    }
+                    catch (...)
+                    {
+                        derror("cli run for %s failed to copy the response", cmd.c_str());
                         return false;
                     }
                     return true;
@@ -454,7 +567,7 @@ namespace dsn {
 
     void command_manager::start_local_cli()
     {
-        new std::thread(std::bind(&command_manager::run_console, this));
+        std::thread(std::bind(&command_manager::run_console, this)).detach();
     }
 
     void remote_cli_handler(dsn_message_t req, void*)
@@ -507,7 +620,18 @@ namespace dsn {
 
     void command_manager::set_cli_target_address(dsn_handle_t handle, dsn::rpc_address address)
     {
-        reinterpret_cast<command*>(handle)->address = address;
+        utils::auto_write_lock l(_lock);
+        auto command_it = std::find_if(
+            _commands.begin(),
+            _commands.end(),
+            [handle](const std::shared_ptr<command>& c) { return c.get() == handle; });
+        if (command_it == _commands.end())
+        {
+            derror("cannot set target address for an unknown command handle");
+            return;
+        }
+
+        (*command_it)->address = address;
     }
 
     command_manager::command_manager()

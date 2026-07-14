@@ -38,16 +38,53 @@
 # include <dsn/utility/singleton_store.h>
 # include "service_engine.h"
 # include "message_parser_manager.h"
+# include <condition_variable>
+# include <memory>
+# include <mutex>
+# include <vector>
 
 namespace dsn { 
 
     DEFINE_TASK_CODE(LPC_CONTROL_SERVICE_APP, TASK_PRIORITY_HIGH, THREAD_POOL_DEFAULT)
 
+    namespace tools {
+
+    class service_control_completion
+    {
+    public:
+        void signal()
+        {
+            {
+                std::lock_guard<std::mutex> guard(_lock);
+                _finished = true;
+            }
+            _cv.notify_one();
+        }
+
+        void wait()
+        {
+            std::unique_lock<std::mutex> guard(_lock);
+            _cv.wait(guard, [this] { return _finished; });
+        }
+
+    private:
+        std::mutex _lock;
+        std::condition_variable _cv;
+        bool _finished = false;
+    };
+
     class service_control_task : public task
     {
     public:
-        service_control_task(service_node* node, bool start, bool cleanup = false)
-            : task(LPC_CONTROL_SERVICE_APP, nullptr, nullptr, 0, node), _node(node), _start(start), _cleanup(cleanup)
+        service_control_task(service_node* node,
+                             bool start,
+                             const std::shared_ptr<service_control_completion>& completion,
+                             bool cleanup = false)
+            : task(LPC_CONTROL_SERVICE_APP, nullptr, nullptr, 0, node),
+              _node(node),
+              _start(start),
+              _cleanup(cleanup),
+              _completion(completion)
         {
         }
 
@@ -78,16 +115,17 @@ namespace dsn {
             {
                 sp.role->layer1.destroy(_node->get_app_context_ptr(), _cleanup);
             }
+
+            _completion->signal();
         }
 
     private:
         service_node* _node;
         bool          _start; // false for stop
         bool          _cleanup; // for stop
+        std::shared_ptr<service_control_completion> _completion;
     };
 
-
-    namespace tools {
 
         tool_base::tool_base(const char* name)
         {
@@ -107,9 +145,12 @@ namespace dsn {
         void tool_app::start_all_apps()
         {
             auto apps = service_engine::fast_instance().get_all_nodes();
+            _app_start_completions.reserve(apps.size());
             for (auto& kv : apps)
             {
-                task* t = new service_control_task(kv.second, true);
+                auto completion = std::make_shared<service_control_completion>();
+                _app_start_completions.push_back(completion);
+                task* t = new service_control_task(kv.second, true, completion);
                 t->set_delay(1000 * kv.second->spec().delay_seconds);
                 t->enqueue();
             }
@@ -118,11 +159,26 @@ namespace dsn {
 
         void tool_app::stop_all_apps(bool cleanup)
         {
+            for (const auto& completion : _app_start_completions)
+            {
+                completion->wait();
+            }
+            _app_start_completions.clear();
+
             auto apps = service_engine::fast_instance().get_all_nodes();
+            std::vector<std::shared_ptr<service_control_completion>> completions;
+            completions.reserve(apps.size());
             for (auto& kv : apps)
             {
-                task* t = new service_control_task(kv.second, false, cleanup);
+                auto completion = std::make_shared<service_control_completion>();
+                completions.push_back(completion);
+                task* t = new service_control_task(kv.second, false, completion, cleanup);
                 t->enqueue();
+            }
+
+            for (const auto& completion : completions)
+            {
+                completion->wait();
             }
         }
 

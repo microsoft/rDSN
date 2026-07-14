@@ -53,18 +53,17 @@ sim_task_queue::sim_task_queue(task_worker_pool* pool, int index, task_queue* in
 void sim_task_queue::enqueue(task* t)
 {
     dassert(0 == t->delay_milliseconds(), "delay time must be zero");
-    if (_tasks.size() > 0)
     {
-        do {
+        std::lock_guard<std::mutex> guard(_tasks_lock);
+        do
+        {
             int random_pos = dsn_random32(0, 1000000);
             auto pr = _tasks.insert(std::map<uint32_t, task*>::value_type(random_pos, t));
-            if (pr.second) break;
+            if (pr.second)
+            {
+                break;
+            }
         } while (true);
-    }
-    else
-    {
-        int random_pos = dsn_random32(0, 1000000);
-        _tasks.insert(std::map<uint32_t, task*>::value_type(random_pos, t));
     }
 
     // for scheduling
@@ -79,7 +78,8 @@ task* sim_task_queue::dequeue(/*inout*/int& batch_size)
 {
     scheduler::instance().wait_schedule(false);
 
-    if (_tasks.size() > 0)
+    std::lock_guard<std::mutex> guard(_tasks_lock);
+    if (!_tasks.empty())
     {
         auto t = _tasks.begin()->second;
         _tasks.erase(_tasks.begin());

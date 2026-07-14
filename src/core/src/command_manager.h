@@ -40,6 +40,7 @@
 # include <dsn/utility/singleton.h>
 # include <dsn/tool-api/rpc_message.h>
 # include <map>
+# include <memory>
 
 namespace dsn {
 
@@ -64,15 +65,15 @@ namespace dsn {
         struct command
         {
             dsn::rpc_address address;
-            safe_vector<const char*> commands;
+            safe_vector<safe_string> commands;
             std::string     help_short;
             std::string     help_long;
             command_handler handler;
         };
 
         ::dsn::utils::rw_lock_nr        _lock;
-        std::map<safe_string, command*> _handlers;
-        std::vector<command*>           _commands;
+        std::map<safe_string, std::shared_ptr<command>> _handlers;
+        std::vector<std::shared_ptr<command>>           _commands;
     };
 
 }

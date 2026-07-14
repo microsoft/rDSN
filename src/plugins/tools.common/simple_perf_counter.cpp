@@ -49,6 +49,7 @@
 # include <functional>
 # include <utility>
 # include <atomic>
+# include <mutex>
 
 namespace dsn {
     namespace tools {
@@ -80,9 +81,17 @@ namespace dsn {
         {
         public:
             perf_counter_rate(const char* app, const char *section, const char *name, dsn_perf_counter_type_t type, const char *dsptr)
-                : perf_counter(app, section, name, type, dsptr), _val(0)
+                : perf_counter(app, section, name, type, dsptr),
+                  _val(0),
+                  _rate(0),
+                  _last_time(0),
+                  _clock_initialized(false)
             {
-                qts = 0;
+                if (::dsn::tools::is_engine_ready())
+                {
+                    _last_time = dsn_now_ns();
+                    _clock_initialized = true;
+                }
             }
             ~perf_counter_rate(void) {}
 
@@ -92,23 +101,37 @@ namespace dsn {
             virtual void   set(uint64_t val) override { dassert(false, "invalid execution flow"); }
             virtual double get_value() override
             {
+                std::lock_guard<std::mutex> guard(_sample_lock);
                 uint64_t now = dsn_now_ns();
-                uint64_t interval = now - qts;
-                if (interval == 0)
+                if (!_clock_initialized)
                 {
-                    return 0.0;
+                    _last_time = now;
+                    _clock_initialized = true;
+                    _val.exchange(0, std::memory_order_relaxed);
+                    return _rate;
                 }
-                double val = static_cast<double>(_val.load(std::memory_order_relaxed));
-                qts = now;
-                _val = 0;
-                return val / interval * 1000 * 1000 * 1000;
+
+                if (now <= _last_time)
+                {
+                    return _rate;
+                }
+
+                uint64_t interval = now - _last_time;
+                double val =
+                    static_cast<double>(_val.exchange(0, std::memory_order_relaxed));
+                _last_time = now;
+                _rate = val / interval * 1000 * 1000 * 1000;
+                return _rate;
             }
             virtual uint64_t get_integer_value() override { return (uint64_t)get_value(); }
             virtual double get_percentile(dsn_perf_counter_percentile_type_t type) override { dassert(false, "invalid execution flow"); return 0.0; }
 
         private:
             std::atomic<uint64_t> _val;
-            std::atomic<uint64_t> qts;
+            double _rate;
+            uint64_t _last_time;
+            bool _clock_initialized;
+            std::mutex _sample_lock;
         };
 
         // -----------   NUMBER_PERCENTILE perf counter ---------------------------------
@@ -135,13 +158,14 @@ namespace dsn {
                     _counter_computation_interval_seconds = 1;
                 }
 
+                memset(_samples, 0, sizeof(_samples));
+                memset(_results, 0, sizeof(_results));
+
                 _timer.reset(new boost::asio::deadline_timer(shared_io_service::instance().ios));
                 _timer->expires_from_now(boost::posix_time::seconds(rand() % _counter_computation_interval_seconds + 1));
 
                 this->add_ref();
                 _timer->async_wait(std::bind(&perf_counter_number_percentile::on_timer, this, _timer, std::placeholders::_1));
-
-                memset(_samples, 0, sizeof(_samples));
             }
             
             ~perf_counter_number_percentile(void) 
@@ -153,6 +177,7 @@ namespace dsn {
             virtual void   add(uint64_t val) override { dassert(false, "invalid execution flow"); }
             virtual void   set(uint64_t val) override
             {
+                std::lock_guard<std::mutex> guard(_samples_lock);
                 auto idx = _tail.fetch_add(1, std::memory_order_relaxed);
                 _samples[idx % MAX_QUEUE_LENGTH] = val;
             }
@@ -162,43 +187,60 @@ namespace dsn {
 
             virtual double get_percentile(dsn_perf_counter_percentile_type_t type) override
             {
-                if (_tail == 0)
-                    return -1.0;
                 if ((type < 0) || (type >= COUNTER_PERCENTILE_COUNT))
                 {
                     dassert(false, "send a wrong counter percentile type");
                     return -1;
                 }
+
+                std::lock_guard<std::mutex> guard(_samples_lock);
+                if (_tail.load(std::memory_order_relaxed) == 0)
+                    return -1.0;
                 return (double)_results[type];
             }
 
             virtual int get_latest_samples(int required_sample_count, /*out*/ samples_t& samples) const override
-            { 
+            {
                 dassert(required_sample_count <= MAX_QUEUE_LENGTH, "");
 
-                int count = _tail.load();
-                int return_count = count >= required_sample_count ? required_sample_count : count;
-
                 samples.clear();
-                int end_index = (count + MAX_QUEUE_LENGTH - 1) % MAX_QUEUE_LENGTH;
-                int start_index = (end_index + MAX_QUEUE_LENGTH - return_count) % MAX_QUEUE_LENGTH;
+                if (required_sample_count <= 0)
+                {
+                    return 0;
+                }
 
-                if (end_index >= start_index)
+                static thread_local uint64_t snapshot[MAX_QUEUE_LENGTH];
+                std::lock_guard<std::mutex> guard(_samples_lock);
+                uint64_t count = _tail.load(std::memory_order_relaxed);
+                int return_count =
+                    count >= static_cast<uint64_t>(required_sample_count)
+                        ? required_sample_count
+                        : static_cast<int>(count);
+
+                if (return_count <= 0)
                 {
-                    samples.push_back(std::make_pair((uint64_t*)_samples + start_index, return_count));
+                    return 0;
                 }
-                else
+
+                int end_index =
+                    static_cast<int>((count + MAX_QUEUE_LENGTH - 1) % MAX_QUEUE_LENGTH);
+                int start_index =
+                    (end_index + MAX_QUEUE_LENGTH - return_count + 1) % MAX_QUEUE_LENGTH;
+                for (int i = 0; i < return_count; ++i)
                 {
-                    samples.push_back(std::make_pair((uint64_t*)_samples + start_index, MAX_QUEUE_LENGTH - start_index));
-                    samples.push_back(std::make_pair((uint64_t*)_samples, return_count - (MAX_QUEUE_LENGTH - start_index)));
+                    snapshot[i] = _samples[(start_index + i) % MAX_QUEUE_LENGTH];
                 }
+                samples.push_back(std::make_pair(snapshot, return_count));
 
                 return return_count;
             }
 
             virtual uint64_t get_latest_sample() const override
             {
-                int idx = (_tail + MAX_QUEUE_LENGTH - 1) % MAX_QUEUE_LENGTH;
+                std::lock_guard<std::mutex> guard(_samples_lock);
+                int idx = static_cast<int>(
+                    (_tail.load(std::memory_order_relaxed) + MAX_QUEUE_LENGTH - 1) %
+                    MAX_QUEUE_LENGTH);
                 return _samples[idx];
             }
 
@@ -209,6 +251,7 @@ namespace dsn {
                 uint64_t tmp[MAX_QUEUE_LENGTH];
                 uint64_t mid_tmp[MAX_QUEUE_LENGTH];
                 int      calc_queue[MAX_QUEUE_LENGTH][4];
+                uint64_t results[COUNTER_PERCENTILE_COUNT];
             };
 
         private:
@@ -257,7 +300,7 @@ namespace dsn {
                 {
                     for (i = qleft; i <= qright; i++)
                     if (ctx->ask[i] == 1)
-                        _results[i] = ctx->tmp[left];
+                        ctx->results[i] = ctx->tmp[left];
                     else
                         dassert(false, "select percentail wrong!!!");
                     return;
@@ -294,12 +337,18 @@ namespace dsn {
 
             void   calc(std::shared_ptr<compute_context>& ctx)
             {
-                if (_tail == 0)
-                    return;
+                int tmp_num;
+                {
+                    std::lock_guard<std::mutex> guard(_samples_lock);
+                    uint64_t count = _tail.load(std::memory_order_relaxed);
+                    if (count == 0)
+                        return;
 
-                int tmp_num = _tail > MAX_QUEUE_LENGTH ? MAX_QUEUE_LENGTH : _tail.load();
-                for (int i = 0; i < tmp_num; i++)
-                    ctx->tmp[i] = _samples[i];
+                    tmp_num = count > MAX_QUEUE_LENGTH ? MAX_QUEUE_LENGTH
+                                                       : static_cast<int>(count);
+                    for (int i = 0; i < tmp_num; i++)
+                        ctx->tmp[i] = _samples[i];
+                }
 
                 ctx->ask[COUNTER_PERCENTILE_50] = (int)(tmp_num * 0.5) + 1;
                 ctx->ask[COUNTER_PERCENTILE_90] = (int)(tmp_num * 0.90) + 1;
@@ -315,7 +364,9 @@ namespace dsn {
                 for (l = 1; l <= r; l++)
                     select(ctx, ctx->calc_queue[l][_LEFT], ctx->calc_queue[l][_RIGHT], ctx->calc_queue[l][_QLEFT], ctx->calc_queue[l][_QRIGHT], r);
 
-                return;
+                std::lock_guard<std::mutex> guard(_samples_lock);
+                for (int i = 0; i < COUNTER_PERCENTILE_COUNT; ++i)
+                    _results[i] = ctx->results[i];
             }
 
             void on_timer(std::shared_ptr<boost::asio::deadline_timer> timer, const boost::system::error_code& ec)
@@ -348,10 +399,11 @@ namespace dsn {
             }
 
             std::shared_ptr<boost::asio::deadline_timer> _timer;
-            std::atomic<int> _tail;
+            std::atomic<uint64_t> _tail;
             uint64_t _samples[MAX_QUEUE_LENGTH];
             uint64_t _results[COUNTER_PERCENTILE_COUNT];
             int      _counter_computation_interval_seconds;
+            mutable std::mutex _samples_lock;
         };
 
         // ---------------------- perf counter dispatcher ---------------------

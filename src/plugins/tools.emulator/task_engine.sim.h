@@ -37,6 +37,7 @@
 
 #include <dsn/tool_api.h>
 #include <dsn/utility/priority_queue.h>
+#include <mutex>
 
 namespace dsn { namespace tools {
 
@@ -63,6 +64,7 @@ public:
     virtual task*    dequeue(/*inout*/int& batch_size) override;
 
 private:
+    std::mutex _tasks_lock;
     std::map<uint32_t, task*> _tasks;
 };
 

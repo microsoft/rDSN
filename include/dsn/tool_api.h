@@ -71,6 +71,8 @@
 
 namespace dsn { namespace tools {
 
+class service_control_completion;
+
 /*!
 @addtogroup tool-api-providers
 @{  
@@ -132,6 +134,9 @@ public:
     DSN_API virtual void stop_all_apps(bool cleanup);
     
     DSN_API static const service_spec& get_service_spec();
+
+private:
+    std::vector<std::shared_ptr<service_control_completion>> _app_start_completions;
 };
 
 namespace internal_use_only
@@ -190,4 +195,3 @@ template <typename T> bool register_message_header_parser(network_header_format 
 }
 
 }} // end namespace dsn::tools
-

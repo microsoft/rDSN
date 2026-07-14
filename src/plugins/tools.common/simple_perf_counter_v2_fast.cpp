@@ -45,6 +45,7 @@
 # include <functional>
 # include <utility>
 # include <atomic>
+# include <mutex>
 
 namespace dsn {
     namespace tools {
@@ -63,7 +64,7 @@ namespace dsn {
             {
                 for (int i = 0; i < DIVIDE_CONTAINER; i++)
                 {
-                    _val[i] = 0;
+                    _val[i].store(0, std::memory_order_relaxed);
                 }
             }
             ~perf_counter_number_v2_fast(void) {}
@@ -71,29 +72,29 @@ namespace dsn {
             virtual void   increment() override
             {
                 uint64_t task_id = static_cast<uint64_t>(::dsn::utils::get_current_tid());
-                _val[task_id % DIVIDE_CONTAINER]++;
+                _val[task_id % DIVIDE_CONTAINER].fetch_add(1, std::memory_order_relaxed);
             }
             virtual void   decrement() override
             {
                 uint64_t task_id = static_cast<uint64_t>(::dsn::utils::get_current_tid());
-                _val[task_id % DIVIDE_CONTAINER]--;
+                _val[task_id % DIVIDE_CONTAINER].fetch_sub(1, std::memory_order_relaxed);
             }
             virtual void   add(uint64_t val) override
             {
                 uint64_t task_id = static_cast<uint64_t>(::dsn::utils::get_current_tid());
-                _val[task_id % DIVIDE_CONTAINER] += val;
+                _val[task_id % DIVIDE_CONTAINER].fetch_add(val, std::memory_order_relaxed);
             }
             virtual void   set(uint64_t val) override
             {
                 uint64_t task_id = static_cast<uint64_t>(::dsn::utils::get_current_tid());
-                _val[task_id % DIVIDE_CONTAINER] = val;
+                _val[task_id % DIVIDE_CONTAINER].store(val, std::memory_order_relaxed);
             }
             virtual double get_value() override
             {
                 double val = 0;
                 for (int i = 0; i < DIVIDE_CONTAINER; i++)
                 {
-                    val += (double)_val[i];
+                    val += static_cast<double>(_val[i].load(std::memory_order_relaxed));
                 }
                 return val;
             }
@@ -102,14 +103,14 @@ namespace dsn {
                 uint64_t val = 0;
                 for (int i = 0; i < DIVIDE_CONTAINER; i++)
                 {
-                    val += _val[i];
+                    val += _val[i].load(std::memory_order_relaxed);
                 }
                 return val;
             }
             virtual double get_percentile(dsn_perf_counter_percentile_type_t type) override { dassert(false, "invalid execution flow"); return 0.0; }
 
         private:
-            uint64_t              _val[DIVIDE_CONTAINER];
+            std::atomic<uint64_t> _val[DIVIDE_CONTAINER];
         };
 
         // -----------   RATE perf counter ---------------------------------
@@ -123,48 +124,50 @@ namespace dsn {
                 _last_time = ::dsn::utils::get_current_physical_time_ns();
                 for (int i = 0; i < DIVIDE_CONTAINER; i++)
                 {
-                    _val[i] = 0;
+                    _val[i].store(0, std::memory_order_relaxed);
                 }
             }
             ~perf_counter_rate_v2_fast(void) {}
 
             virtual void   increment() override
             {
-                uint64_t task_id = static_cast<int>(::dsn::utils::get_current_tid());
-                _val[task_id % DIVIDE_CONTAINER]++;
+                uint64_t task_id = static_cast<uint64_t>(::dsn::utils::get_current_tid());
+                _val[task_id % DIVIDE_CONTAINER].fetch_add(1, std::memory_order_relaxed);
             }
             virtual void   decrement() override
             {
-                uint64_t task_id = static_cast<int>(::dsn::utils::get_current_tid());
-                _val[task_id % DIVIDE_CONTAINER]--;
+                uint64_t task_id = static_cast<uint64_t>(::dsn::utils::get_current_tid());
+                _val[task_id % DIVIDE_CONTAINER].fetch_sub(1, std::memory_order_relaxed);
             }
             virtual void   add(uint64_t val) override
             {
-                uint64_t task_id = static_cast<int>(::dsn::utils::get_current_tid());
-                _val[task_id % DIVIDE_CONTAINER] += val;
+                uint64_t task_id = static_cast<uint64_t>(::dsn::utils::get_current_tid());
+                _val[task_id % DIVIDE_CONTAINER].fetch_add(val, std::memory_order_relaxed);
             }
             virtual void   set(uint64_t val) override { dassert(false, "invalid execution flow"); }
             virtual double get_value() override
             {
+                std::lock_guard<std::mutex> guard(_sample_lock);
+                uint64_t now = ::dsn::utils::get_current_physical_time_ns();
+                if (now <= _last_time)
+                {
+                    return _rate;
+                }
+
+                double interval = (now - _last_time) / 1e9;
+                if (interval <= 0.1)
+                {
+                    return _rate;
+                }
+
                 double val = 0;
                 for (int i = 0; i < DIVIDE_CONTAINER; i++)
                 {
-                    val += _val[i];
+                    val += static_cast<double>(
+                        _val[i].exchange(0, std::memory_order_relaxed));
                 }
-
-                uint64_t now = ::dsn::utils::get_current_physical_time_ns();
-                double interval = (now - _last_time) / 1e9;
-                if (interval <= 0.0)
-                    return _rate;
-                if (interval <= 0.1)
-                    return _rate;
 
                 _last_time = now;
-                for (int i = 0; i < DIVIDE_CONTAINER; i++)
-                {
-                    _val[i] = 0;
-                }
-
                 _rate = val / interval;
                 return _rate;
             }
@@ -172,9 +175,10 @@ namespace dsn {
             virtual double get_percentile(dsn_perf_counter_percentile_type_t type) override { dassert(false, "invalid execution flow"); return 0.0; }
 
         private:
-            std::atomic<double> _rate;
-            std::atomic<uint64_t> _last_time;
-            uint64_t              _val[DIVIDE_CONTAINER];
+            double _rate;
+            uint64_t _last_time;
+            std::atomic<uint64_t> _val[DIVIDE_CONTAINER];
+            std::mutex _sample_lock;
         };
 
         // -----------   NUMBER_PERCENTILE perf counter ---------------------------------
@@ -197,6 +201,10 @@ namespace dsn {
                 _results[COUNTER_PERCENTILE_99] = 0;
                 _results[COUNTER_PERCENTILE_999] = 0;
                 _tail = 0;
+                for (uint64_t& sample : _samples)
+                {
+                    sample = 0;
+                }
 
                 _counter_computation_interval_seconds = (int)dsn_config_get_value_uint64(
                     "components.simple_perf_counter_v2_fast",
@@ -219,6 +227,7 @@ namespace dsn {
             virtual void   add(uint64_t val) override { dassert(false, "invalid execution flow"); }
             virtual void   set(uint64_t val) override
             {
+                std::lock_guard<std::mutex> guard(_samples_lock);
                 auto idx = _tail++;
                 _samples[idx % MAX_QUEUE_LENGTH] = val;
             }
@@ -233,6 +242,7 @@ namespace dsn {
                     dassert(false, "send a wrong counter percentile type");
                     return 0.0;
                 }
+                std::lock_guard<std::mutex> guard(_samples_lock);
                 return (double)_results[type];
             }
 
@@ -240,29 +250,43 @@ namespace dsn {
             {
                 dassert(required_sample_count <= MAX_QUEUE_LENGTH, "");
 
-                int count = _tail;
-                int return_count = count >= required_sample_count ? required_sample_count : count;
-
                 samples.clear();
-                int end_index = (count + MAX_QUEUE_LENGTH - 1) % MAX_QUEUE_LENGTH;
-                int start_index = (end_index + MAX_QUEUE_LENGTH - return_count) % MAX_QUEUE_LENGTH;
+                if (required_sample_count <= 0)
+                {
+                    return 0;
+                }
 
-                if (end_index >= start_index)
+                static thread_local uint64_t snapshot[MAX_QUEUE_LENGTH];
+                std::lock_guard<std::mutex> guard(_samples_lock);
+                uint64_t count = _tail;
+                int return_count =
+                    count >= static_cast<uint64_t>(required_sample_count)
+                        ? required_sample_count
+                        : static_cast<int>(count);
+
+                if (return_count <= 0)
                 {
-                    samples.push_back(std::make_pair((uint64_t*)_samples + start_index, return_count));
+                    return 0;
                 }
-                else
+
+                int end_index =
+                    static_cast<int>((count + MAX_QUEUE_LENGTH - 1) % MAX_QUEUE_LENGTH);
+                int start_index =
+                    (end_index + MAX_QUEUE_LENGTH - return_count + 1) % MAX_QUEUE_LENGTH;
+                for (int i = 0; i < return_count; ++i)
                 {
-                    samples.push_back(std::make_pair((uint64_t*)_samples + start_index, MAX_QUEUE_LENGTH - start_index));
-                    samples.push_back(std::make_pair((uint64_t*)_samples, return_count - (MAX_QUEUE_LENGTH - start_index)));
+                    snapshot[i] = _samples[(start_index + i) % MAX_QUEUE_LENGTH];
                 }
+                samples.push_back(std::make_pair(snapshot, return_count));
 
                 return return_count;
             }
 
             virtual uint64_t get_latest_sample() const override
             {
-                int idx = (_tail + MAX_QUEUE_LENGTH - 1) % MAX_QUEUE_LENGTH;
+                std::lock_guard<std::mutex> guard(_samples_lock);
+                int idx =
+                    static_cast<int>((_tail + MAX_QUEUE_LENGTH - 1) % MAX_QUEUE_LENGTH);
                 return _samples[idx];
             }
 
@@ -273,6 +297,7 @@ namespace dsn {
                 uint64_t tmp[MAX_QUEUE_LENGTH];
                 uint64_t mid_tmp[MAX_QUEUE_LENGTH];
                 int      calc_queue[MAX_QUEUE_LENGTH][4];
+                uint64_t results[COUNTER_PERCENTILE_COUNT];
             };
 
             inline void insert_calc_queue(std::shared_ptr<compute_context>& ctx, int left, int right, int qleft, int qright, int &calc_tail)
@@ -319,7 +344,7 @@ namespace dsn {
                 {
                     for (i = qleft; i <= qright; i++)
                     if (ctx->ask[i] == 1)
-                        _results[i] = ctx->tmp[left];
+                        ctx->results[i] = ctx->tmp[left];
                     else
                         dassert(false, "select percentail wrong!!!");
                     return;
@@ -356,12 +381,17 @@ namespace dsn {
 
             void   calc(std::shared_ptr<compute_context>& ctx)
             {
-                int _num = _tail > MAX_QUEUE_LENGTH ? MAX_QUEUE_LENGTH : _tail;
+                int _num;
+                {
+                    std::lock_guard<std::mutex> guard(_samples_lock);
+                    _num = _tail > MAX_QUEUE_LENGTH ? MAX_QUEUE_LENGTH
+                                                    : static_cast<int>(_tail);
 
-                if (_num == 0)
-                    return;
-                for (int i = 0; i < _num; i++)
-                    ctx->tmp[i] = _samples[i];
+                    if (_num == 0)
+                        return;
+                    for (int i = 0; i < _num; i++)
+                        ctx->tmp[i] = _samples[i];
+                }
 
                 ctx->ask[COUNTER_PERCENTILE_50] = (int)(_num * 0.5) + 1;
                 ctx->ask[COUNTER_PERCENTILE_90] = (int)(_num * 0.90) + 1;
@@ -377,7 +407,9 @@ namespace dsn {
                 for (l = 1; l <= r; l++)
                     select(ctx, ctx->calc_queue[l][_LEFT], ctx->calc_queue[l][_RIGHT], ctx->calc_queue[l][_QLEFT], ctx->calc_queue[l][_QRIGHT], r);
 
-                return;
+                std::lock_guard<std::mutex> guard(_samples_lock);
+                for (int i = 0; i < COUNTER_PERCENTILE_COUNT; ++i)
+                    _results[i] = ctx->results[i];
             }
 
             void on_timer(std::shared_ptr<boost::asio::deadline_timer> timer, const boost::system::error_code& ec)
@@ -404,10 +436,11 @@ namespace dsn {
             }
 
             std::shared_ptr<boost::asio::deadline_timer> _timer;
-            int _tail;
+            uint64_t _tail;
             uint64_t _samples[MAX_QUEUE_LENGTH];
             uint64_t _results[COUNTER_PERCENTILE_COUNT];
             int      _counter_computation_interval_seconds;
+            mutable std::mutex _samples_lock;
         };
 
         // ---------------------- perf counter dispatcher ---------------------
