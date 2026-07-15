@@ -338,8 +338,9 @@ namespace dsn
                 // attacker-controlled size (up to ~2GB) up front, before the short read is detected
                 // -- a memory-amplification DoS (a 56-byte message can force a multi-GB allocation).
                 int32_t read_limit =
-                    body_data.length() > static_cast<uint32_t>(std::numeric_limits<int32_t>::max())
-                        ? std::numeric_limits<int32_t>::max()
+                    body_data.length() >
+                            static_cast<uint32_t>((std::numeric_limits<int32_t>::max)())
+                        ? (std::numeric_limits<int32_t>::max)()
                         : static_cast<int32_t>(body_data.length());
                 iprot.setStringSizeLimit(read_limit);
                 iprot.setContainerSizeLimit(read_limit);

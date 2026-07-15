@@ -404,7 +404,7 @@ http_message_parser::http_message_parser()
         // on the fast path) or under-allocated the destination and heap-overflowed in memcpy (slow
         // path). Reject it by closing the connection, the same graceful failure the parser already
         // uses for other malformed input.
-        if (length > static_cast<size_t>(std::numeric_limits<unsigned int>::max()) - old_len)
+        if (length > static_cast<size_t>((std::numeric_limits<unsigned int>::max)()) - old_len)
         {
             derror("http message body too large (already %u bytes, +%zu more), closing connection",
                    old_len, static_cast<size_t>(length));
