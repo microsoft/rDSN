@@ -118,6 +118,40 @@ namespace dsn {
                 std::atomic<queue_state> _queue_state;
             };
 
+            inline bool try_get_timestamp(const task_state* state, uint64_t& timestamp)
+            {
+                if (state == nullptr)
+                {
+                    return false;
+                }
+
+                timestamp = state->timestamp();
+                return true;
+            }
+
+            inline void set_timestamp(task_state* state, uint64_t timestamp)
+            {
+                if (state != nullptr)
+                {
+                    state->set_timestamp(timestamp);
+                }
+            }
+
+            inline bool mark_in_queue(task_state* state)
+            {
+                return state != nullptr && state->mark_in_queue();
+            }
+
+            inline bool begin_execution(task_state* state)
+            {
+                return state != nullptr && state->begin_execution();
+            }
+
+            inline bool cancel(task_state* state)
+            {
+                return state != nullptr && state->cancel();
+            }
+
         } // namespace profiler_detail
 
         class profiler : public toollet
@@ -128,4 +162,3 @@ namespace dsn {
         };
     }
 }
-

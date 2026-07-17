@@ -87,14 +87,6 @@ namespace dsn
                 if (f < s_default_delay_points[DELAY_COUNT - 1])
                 {
                     int idx = static_cast<int>((f - 1.0) / 0.2);
-                    if (idx < 0)
-                    {
-                        idx = 0;
-                    }
-                    else if (idx >= DELAY_COUNT)
-                    {
-                        idx = DELAY_COUNT - 1;
-                    }
                     delay_milliseconds = _delay[idx];
                 }
                 else
@@ -149,14 +141,6 @@ namespace dsn
                 if (f < s_default_delay_points[DELAY_COUNT - 1])
                 {
                     int idx = static_cast<int>((f - 1.0) / 0.2);
-                    if (idx < 0)
-                    {
-                        idx = 0;
-                    }
-                    else if (idx >= DELAY_COUNT)
-                    {
-                        idx = DELAY_COUNT - 1;
-                    }
                     delay_milliseconds = _delay[idx];
                 }
                 else

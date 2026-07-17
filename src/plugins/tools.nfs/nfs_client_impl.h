@@ -58,6 +58,9 @@ namespace dsn {
 
             inline int destination_open_flags(bool overwrite)
             {
+                // The public API defines overwrite=false as preserving an existing
+                // destination. O_EXCL enforces that contract atomically instead of
+                // checking first and racing another creator.
                 return O_RDWR | O_CREAT | O_BINARY | (overwrite ? O_TRUNC : O_EXCL);
             }
 

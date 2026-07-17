@@ -92,33 +92,34 @@ namespace dsn {
             delete static_cast<profiler_detail::task_state*>(state);
         }
 
-        static uint64_t profiler_timestamp(task* t)
+        static profiler_detail::task_state* profiler_state(task* t)
         {
-            return task_ext_for_profiler::get(t)->timestamp();
+            return t == nullptr ? nullptr : task_ext_for_profiler::get(t);
+        }
+
+        static bool profiler_timestamp(task* t, uint64_t& timestamp)
+        {
+            return profiler_detail::try_get_timestamp(profiler_state(t), timestamp);
         }
 
         static void set_profiler_timestamp(task* t, uint64_t timestamp)
         {
-            auto *state = task_ext_for_profiler::get(t);
-            if (state != nullptr)
-            {
-                state->set_timestamp(timestamp);
-            }
+            profiler_detail::set_timestamp(profiler_state(t), timestamp);
         }
 
         static bool mark_task_in_queue(task* t)
         {
-            return task_ext_for_profiler::get(t)->mark_in_queue();
+            return profiler_detail::mark_in_queue(profiler_state(t));
         }
 
         static bool unmark_task_in_queue(task* t)
         {
-            return task_ext_for_profiler::get(t)->begin_execution();
+            return profiler_detail::begin_execution(profiler_state(t));
         }
 
         static bool cancel_task_in_queue(task* t)
         {
-            return task_ext_for_profiler::get(t)->cancel();
+            return profiler_detail::cancel(profiler_state(t));
         }
 
         task_spec_profiler* s_spec_profilers = nullptr;
@@ -164,11 +165,13 @@ namespace dsn {
 
         static void profiler_on_task_begin(task* this_)
         {
-            uint64_t qts = profiler_timestamp(this_);
+            uint64_t qts;
             uint64_t now = dsn_now_ns();
             auto ptr = s_spec_profilers[this_->spec().code].ptr[TASK_QUEUEING_TIME_NS];
-            if(ptr !=nullptr)
+            if (ptr != nullptr && profiler_timestamp(this_, qts))
+            {
                 ptr->set(now - qts);
+            }
             set_profiler_timestamp(this_, now);
 
             ptr = s_spec_profilers[this_->spec().code].ptr[TASK_IN_QUEUE];
@@ -182,11 +185,13 @@ namespace dsn {
 
         static void profiler_on_task_end(task* this_)
         {
-            uint64_t qts = profiler_timestamp(this_);
+            uint64_t qts;
             uint64_t now = dsn_now_ns();
             auto ptr = s_spec_profilers[this_->spec().code].ptr[TASK_EXEC_TIME_NS];
-            if (ptr != nullptr)
+            if (ptr != nullptr && profiler_timestamp(this_, qts))
+            {
                 ptr->set(now - qts);
+            }
 
             ptr = s_spec_profilers[this_->spec().code].ptr[TASK_THROUGHPUT];
             if (ptr != nullptr)
@@ -237,12 +242,14 @@ namespace dsn {
 
         static void profiler_on_aio_enqueue(aio_task* this_)
         {
-            uint64_t ats = profiler_timestamp(this_);
+            uint64_t ats;
             uint64_t now = dsn_now_ns();
 
             auto ptr = s_spec_profilers[this_->spec().code].ptr[AIO_LATENCY_NS];
-            if (ptr != nullptr)
+            if (ptr != nullptr && profiler_timestamp(this_, ats))
+            {
                 ptr->set(now - ats);
+            }
             set_profiler_timestamp(this_, now);
 
             ptr = s_spec_profilers[this_->spec().code].ptr[TASK_IN_QUEUE];
@@ -322,14 +329,14 @@ namespace dsn {
 
         static void profiler_on_rpc_response_enqueue(rpc_response_task* resp)
         {
-            uint64_t cts = profiler_timestamp(resp);
+            uint64_t cts;
             uint64_t now = dsn_now_ns();
             auto& spp = s_spec_profilers[resp->spec().code];
 
             if (resp->get_response() != nullptr)
             {
                 auto ptr = spp.ptr[RPC_CLIENT_NON_TIMEOUT_LATENCY_NS];
-                if (ptr != nullptr)
+                if (ptr != nullptr && profiler_timestamp(resp, cts))
                 {
                     auto latency = now - cts;
                     ptr->set(latency);

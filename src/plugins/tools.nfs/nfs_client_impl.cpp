@@ -469,12 +469,12 @@ namespace dsn {
                 }
 
                 // An empty source file yields a copy request with response.size == 0. The
-                // destination file has just been created (or already exists) via the
-                // O_RDWR | O_CREAT open above, so there is nothing to write: a zero-length
-                // file::write would complete with ERR_HANDLE_EOF and be reported as a
-                // failure. Finalize this segment as a success inline -- mirroring the
-                // success bookkeeping in local_write_callback -- and continue the loop
-                // (no recursion) instead of issuing the zero-length write.
+                // destination file has already been opened with the requested creation
+                // policy, so there is nothing to write: a zero-length file::write would
+                // complete with ERR_HANDLE_EOF and be reported as a failure. Finalize this
+                // segment as a success inline -- mirroring the success bookkeeping in
+                // local_write_callback -- and continue the loop (no recursion) instead of
+                // issuing the zero-length write.
                 if (reqc->response.size == 0)
                 {
                     reqc->response.file_content = blob();
@@ -621,12 +621,19 @@ namespace dsn {
 
                     f.second->file = nullptr;
 
-                    if (f.second->finished_segments != (int)f.second->copy_requests.size())
+                    const bool is_incomplete =
+                        f.second->finished_segments != (int)f.second->copy_requests.size();
+                    const bool rollback_preserving_copy =
+                        err != ERR_OK && !req->file_size_req.overwrite;
+                    if (is_incomplete || rollback_preserving_copy)
                     {
-                        std::string path = f.second->user_req->file_size_req.dst_dir + f.second->file_name;
+                        // A preserving copy creates files with O_EXCL, so every opened file
+                        // belongs to this request. Roll all of them back when any file fails;
+                        // otherwise completed siblings would make a retry fail with O_EXCL.
+                        const std::string& path = f.first;
                         if (!::dsn::utils::filesystem::remove_path(path))
                         {
-                            dwarn("failed to remove incomplete transfer file %s", path.c_str());
+                            dwarn("failed to remove transfer file %s during cleanup", path.c_str());
                         }
                     }
 

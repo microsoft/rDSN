@@ -28,6 +28,18 @@ TEST(tools_common, profiler_task_state_transitions)
     EXPECT_FALSE(cancelled.cancel());
 }
 
+TEST(tools_common, profiler_missing_task_state_is_ignored)
+{
+    uint64_t timestamp = 123;
+    EXPECT_FALSE(profiler_detail::try_get_timestamp(nullptr, timestamp));
+    EXPECT_EQ(123u, timestamp);
+
+    profiler_detail::set_timestamp(nullptr, 456);
+    EXPECT_FALSE(profiler_detail::mark_in_queue(nullptr));
+    EXPECT_FALSE(profiler_detail::begin_execution(nullptr));
+    EXPECT_FALSE(profiler_detail::cancel(nullptr));
+}
+
 TEST(tools_common, profiler_task_state_enqueue_cancel_race)
 {
     constexpr size_t state_count = 10000;

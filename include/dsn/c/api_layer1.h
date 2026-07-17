@@ -1106,7 +1106,8 @@ extern DSN_API dsn_error_t  dsn_file_write_vector(
  \param remote     address of the remote nfs server
  \param source_dir source dir on remote server
  \param dest_dir   destination dir on local server
- \param overwrite  true to overwrite, false to preserve.
+ \param overwrite  true to replace existing destination files; false to fail
+                   the copy if any destination file exists, preserving it unchanged.
  \param cb         callback aio task to be executed on completion
  \return ERR_OK if the copy request is submitted, otherwise the submission error code.
  */
@@ -1126,7 +1127,8 @@ extern DSN_API dsn_error_t  dsn_file_copy_remote_directory(
  \param source_files zero-ended file string array within the source dir on remote server,
     when it contains no files, all files within source_dir are copied
  \param dest_dir     destination dir on local server
- \param overwrite    true to overwrite, false to preserve.
+ \param overwrite    true to replace existing destination files; false to fail
+                     the copy if any destination file exists, preserving it unchanged.
  \param cb           callback aio task to be executed on completion
  \return ERR_OK if the copy request is submitted, otherwise the submission error code.
  */

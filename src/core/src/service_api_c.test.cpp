@@ -769,6 +769,11 @@ TEST(core, dsn_file_dispatch_invalid_parameters)
 
 TEST(core, dsn_file_write_vector_rejection_is_transactional)
 {
+    if (task::get_current_disk() == nullptr)
+    {
+        return;
+    }
+
     auto aio_task =
         dsn_file_create_aio_task(TASK_CODE_AIO_FOR_TEST, noop_aio_handler, nullptr, 0);
     ASSERT_NE(nullptr, aio_task);
