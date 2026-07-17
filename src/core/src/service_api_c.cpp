@@ -60,6 +60,7 @@
 # include "c_api_guard.h"
 # include <fstream>
 # include <cstring>
+# include <limits>
 
 # if defined(_WIN32)
 # include <tlhelp32.h>
@@ -1655,6 +1656,7 @@ DSN_API dsn_error_t dsn_file_write_vector(dsn_handle_t file, const dsn_file_buff
         return ::dsn::ERR_INVALID_STATE.get();
     }
 
+    uint64_t total_buffer_size = 0;
     for (int i = 0; i < buffer_count; i++)
     {
         if (buffers[i].size < 0)
@@ -1670,19 +1672,24 @@ DSN_API dsn_error_t dsn_file_write_vector(dsn_handle_t file, const dsn_file_buff
             derror("dsn_file_write_vector got null buffer at index = %d", i);
             return ::dsn::ERR_INVALID_PARAMETERS.get();
         }
+
+        total_buffer_size += static_cast<uint32_t>(buffers[i].size);
+        if (total_buffer_size > (std::numeric_limits<uint32_t>::max)())
+        {
+            derror("dsn_file_write_vector total buffer size exceeds %u bytes",
+                   static_cast<unsigned int>((std::numeric_limits<uint32_t>::max)()));
+            return ::dsn::ERR_INVALID_PARAMETERS.get();
+        }
     }
 
+    std::vector<dsn_file_buffer_t> write_buffers(buffers, buffers + buffer_count);
     callback->aio()->buffer = nullptr;
-    callback->aio()->buffer_size = 0;
+    callback->aio()->buffer_size = static_cast<uint32_t>(total_buffer_size);
     callback->aio()->engine = nullptr;
     callback->aio()->file = file;
     callback->aio()->file_offset = offset;
     callback->aio()->type = ::dsn::AIO_Write;
-    for (int i = 0; i < buffer_count; i++)
-    {
-        callback->_unmerged_write_buffers.push_back(buffers[i]);
-        callback->aio()->buffer_size += buffers[i].size;
-    }
+    callback->_unmerged_write_buffers = std::move(write_buffers);
 
     disk->write(callback);
     return ::dsn::ERR_OK.get();

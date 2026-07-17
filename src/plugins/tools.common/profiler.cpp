@@ -71,6 +71,7 @@ START<======== queue(server) ======ENQUEUE <===================== net(reply) ===
 #include <dsn/tool-api/command.h>
 #include <dsn/tool-api/perf_counter.h>
 #include <algorithm>
+#include <atomic>
 #include <cinttypes>
 #include <iomanip>
 
@@ -83,8 +84,42 @@ using namespace dsn::service;
 namespace dsn {
     namespace tools {
 
-        typedef uint64_extension_helper<task_spec_profiler, task> task_ext_for_profiler;
+        typedef object_extension_helper<profiler_detail::task_state, task> task_ext_for_profiler;
         typedef uint64_extension_helper<task_spec_profiler, message_ex> message_ext_for_profiler;
+
+        static void delete_task_profiler_state(void* state)
+        {
+            delete static_cast<profiler_detail::task_state*>(state);
+        }
+
+        static uint64_t profiler_timestamp(task* t)
+        {
+            return task_ext_for_profiler::get(t)->timestamp();
+        }
+
+        static void set_profiler_timestamp(task* t, uint64_t timestamp)
+        {
+            auto *state = task_ext_for_profiler::get(t);
+            if (state != nullptr)
+            {
+                state->set_timestamp(timestamp);
+            }
+        }
+
+        static bool mark_task_in_queue(task* t)
+        {
+            return task_ext_for_profiler::get(t)->mark_in_queue();
+        }
+
+        static bool unmark_task_in_queue(task* t)
+        {
+            return task_ext_for_profiler::get(t)->begin_execution();
+        }
+
+        static bool cancel_task_in_queue(task* t)
+        {
+            return task_ext_for_profiler::get(t)->cancel();
+        }
 
         task_spec_profiler* s_spec_profilers = nullptr;
         std::map<std::string, perf_counter_ptr_type> counter_info::pointer_type;
@@ -104,7 +139,7 @@ namespace dsn {
         // call normal task
         static void profiler_on_task_create(task* caller, task* callee)
         {
-            task_ext_for_profiler::get(callee) = dsn_now_ns();
+            task_ext_for_profiler::set(callee, new profiler_detail::task_state(dsn_now_ns()));
         }
 
         static void profiler_on_task_enqueue(task* caller, task* callee)
@@ -118,26 +153,26 @@ namespace dsn {
                 }
             }
 
-            task_ext_for_profiler::get(callee) = dsn_now_ns();
+            set_profiler_timestamp(callee, dsn_now_ns());
             if (callee->delay_milliseconds() == 0)
             {
                 auto ptr = s_spec_profilers[callee->spec().code].ptr[TASK_IN_QUEUE];
-                if (ptr != nullptr)
+                if (ptr != nullptr && mark_task_in_queue(callee))
                     ptr->increment();
             }
         }
 
         static void profiler_on_task_begin(task* this_)
         {
-            uint64_t& qts = task_ext_for_profiler::get(this_);
+            uint64_t qts = profiler_timestamp(this_);
             uint64_t now = dsn_now_ns();
             auto ptr = s_spec_profilers[this_->spec().code].ptr[TASK_QUEUEING_TIME_NS];
             if(ptr !=nullptr)
                 ptr->set(now - qts);
-            qts = now;
+            set_profiler_timestamp(this_, now);
 
             ptr = s_spec_profilers[this_->spec().code].ptr[TASK_IN_QUEUE];
-            if (ptr != nullptr)
+            if (ptr != nullptr && unmark_task_in_queue(this_))
                 ptr->decrement();
 
             ptr = s_spec_profilers[this_->spec().code].ptr[TASK_EXEC_COUNT];
@@ -147,7 +182,7 @@ namespace dsn {
 
         static void profiler_on_task_end(task* this_)
         {
-            uint64_t qts = task_ext_for_profiler::get(this_);
+            uint64_t qts = profiler_timestamp(this_);
             uint64_t now = dsn_now_ns();
             auto ptr = s_spec_profilers[this_->spec().code].ptr[TASK_EXEC_TIME_NS];
             if (ptr != nullptr)
@@ -163,6 +198,10 @@ namespace dsn {
             auto ptr = s_spec_profilers[this_->spec().code].ptr[TASK_CANCELLED];
             if (ptr != nullptr)
                 ptr->increment();
+
+            ptr = s_spec_profilers[this_->spec().code].ptr[TASK_IN_QUEUE];
+            if (ptr != nullptr && cancel_task_in_queue(this_))
+                ptr->decrement();
         }
 
         static void profiler_on_task_wait_pre(task* caller, task* callee, uint32_t timeout_ms)
@@ -193,21 +232,21 @@ namespace dsn {
             }
 
             // time disk io starts
-            task_ext_for_profiler::get(callee) = dsn_now_ns();
+            set_profiler_timestamp(callee, dsn_now_ns());
         }
 
         static void profiler_on_aio_enqueue(aio_task* this_)
         {
-            uint64_t& ats = task_ext_for_profiler::get(this_);
+            uint64_t ats = profiler_timestamp(this_);
             uint64_t now = dsn_now_ns();
 
             auto ptr = s_spec_profilers[this_->spec().code].ptr[AIO_LATENCY_NS];
             if (ptr != nullptr)
                 ptr->set(now - ats);
-            ats = now;
+            set_profiler_timestamp(this_, now);
 
             ptr = s_spec_profilers[this_->spec().code].ptr[TASK_IN_QUEUE];
-            if (ptr != nullptr)
+            if (ptr != nullptr && mark_task_in_queue(this_))
                 ptr->increment();
         }
 
@@ -226,18 +265,18 @@ namespace dsn {
             // time rpc starts
             if (nullptr != callee)
             {
-                task_ext_for_profiler::get(callee) = dsn_now_ns();
+                set_profiler_timestamp(callee, dsn_now_ns());
             }
         }
 
         static void profiler_on_rpc_request_enqueue(rpc_request_task* callee)
         {
             uint64_t now = dsn_now_ns();
-            task_ext_for_profiler::get(callee) = now;
+            set_profiler_timestamp(callee, now);
             message_ext_for_profiler::get(callee->get_request()) = now;
 
             auto ptr = s_spec_profilers[callee->spec().code].ptr[TASK_IN_QUEUE];
-            if (ptr != nullptr)
+            if (ptr != nullptr && mark_task_in_queue(callee))
                 ptr->increment();
         }
 
@@ -283,7 +322,7 @@ namespace dsn {
 
         static void profiler_on_rpc_response_enqueue(rpc_response_task* resp)
         {
-            uint64_t& cts = task_ext_for_profiler::get(resp);
+            uint64_t cts = profiler_timestamp(resp);
             uint64_t now = dsn_now_ns();
             auto& spp = s_spec_profilers[resp->spec().code];
 
@@ -316,10 +355,10 @@ namespace dsn {
                 if (ptr != nullptr)
                     ptr->increment();
             }
-            cts = now;
+            set_profiler_timestamp(resp, now);
 
             auto ptr = spp.ptr[TASK_IN_QUEUE];
-            if (ptr != nullptr)
+            if (ptr != nullptr && mark_task_in_queue(resp))
                 ptr->increment();
         }
 
@@ -403,7 +442,7 @@ namespace dsn {
         void profiler::install(service_spec& spec)
         {
             s_spec_profilers = new task_spec_profiler[dsn_task_code_max() + 1];
-            task_ext_for_profiler::register_ext();
+            task_ext_for_profiler::register_ext(delete_task_profiler_state);
             message_ext_for_profiler::register_ext();
             dassert(sizeof(counter_info_ptr) / sizeof(counter_info*) == PREF_COUNTER_COUNT, "PREF COUNTER ERROR");
 

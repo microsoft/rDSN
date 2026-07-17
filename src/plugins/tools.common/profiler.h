@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <dsn/tool_api.h>
 
 /*!
@@ -64,6 +65,61 @@ is_profile = false
 namespace dsn {
     namespace tools {
 
+        namespace profiler_detail {
+
+            enum class queue_state
+            {
+                not_in_queue,
+                in_queue,
+                cancelled
+            };
+
+            class task_state
+            {
+            public:
+                explicit task_state(uint64_t timestamp)
+                    : _timestamp(timestamp), _queue_state(queue_state::not_in_queue)
+                {
+                }
+
+                uint64_t timestamp() const
+                {
+                    return _timestamp.load(std::memory_order_relaxed);
+                }
+
+                void set_timestamp(uint64_t timestamp)
+                {
+                    _timestamp.store(timestamp, std::memory_order_relaxed);
+                }
+
+                bool mark_in_queue()
+                {
+                    auto expected = queue_state::not_in_queue;
+                    return _queue_state.compare_exchange_strong(
+                        expected, queue_state::in_queue, std::memory_order_relaxed);
+                }
+
+                bool begin_execution()
+                {
+                    auto expected = queue_state::in_queue;
+                    return _queue_state.compare_exchange_strong(
+                        expected, queue_state::not_in_queue, std::memory_order_relaxed);
+                }
+
+                bool cancel()
+                {
+                    return _queue_state.exchange(queue_state::cancelled,
+                                                 std::memory_order_relaxed) ==
+                           queue_state::in_queue;
+                }
+
+            private:
+                std::atomic<uint64_t> _timestamp;
+                std::atomic<queue_state> _queue_state;
+            };
+
+        } // namespace profiler_detail
+
         class profiler : public toollet
         {
         public:
@@ -72,5 +128,4 @@ namespace dsn {
         };
     }
 }
-
 

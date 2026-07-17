@@ -190,22 +190,28 @@ namespace dsn {
                 return;
             }
 
-            std::unique_ptr<char[]> packet_buffer(new char[tlen]);
+            auto packet_buffer = std::make_shared<std::vector<char>>(tlen);
             for (int i = 0; i < rcount; i ++)
             {
-                memcpy(&packet_buffer[offset], bufs[i].buf, bufs[i].sz);
+                memcpy(packet_buffer->data() + offset, bufs[i].buf, bufs[i].sz);
                 offset += bufs[i].sz;
             };
 
             ::boost::asio::ip::udp::endpoint ep(::boost::asio::ip::address_v4(request->to_address.ip()), request->to_address.port());
-            _socket->async_send_to(::boost::asio::buffer(packet_buffer.get(), tlen), ep,
-                [=](const boost::system::error_code& error, std::size_t bytes_transferred)
+            auto completion = detail::retain_udp_packet_until_send_complete(
+                packet_buffer,
+                [ep](const boost::system::error_code& error, std::size_t bytes_transferred)
                 {
+                    (void)bytes_transferred;
                     if (error) {
                         dwarn("send udp packet to ep %s:%d failed, message = %s", ep.address().to_string().c_str(), ep.port(), error.message().c_str());
                         //we do not handle failure here, rpc matcher would handle timeouts
                     }
                 });
+            _socket->async_send_to(
+                ::boost::asio::buffer(packet_buffer->data(), packet_buffer->size()),
+                ep,
+                std::move(completion));
         }
 
         asio_udp_provider::asio_udp_provider(rpc_engine* srv, network* inner_provider)

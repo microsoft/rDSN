@@ -35,11 +35,42 @@
 # pragma once
 # include "nfs_client.h"
 # include <queue>
+# include <limits>
 # include <string>
 # include <dsn/tool-api/nfs.h>
 
 namespace dsn {
     namespace service {
+
+        namespace nfs_client_detail {
+
+            static const uint32_t default_copy_block_bytes = 4 * 1024 * 1024;
+
+            inline uint32_t normalize_copy_block_bytes(uint64_t configured)
+            {
+                if (configured == 0 ||
+                    configured > static_cast<uint64_t>((std::numeric_limits<int32_t>::max)()))
+                {
+                    return default_copy_block_bytes;
+                }
+                return static_cast<uint32_t>(configured);
+            }
+
+            inline int destination_open_flags(bool overwrite)
+            {
+                return O_RDWR | O_CREAT | O_BINARY | (overwrite ? O_TRUNC : O_EXCL);
+            }
+
+            inline error_code local_write_result(error_code err,
+                                                 size_t actual_size,
+                                                 uint32_t expected_size)
+            {
+                return err == ERR_OK && actual_size != expected_size
+                           ? ERR_FILE_OPERATION_FAILED
+                           : err;
+            }
+
+        } // namespace nfs_client_detail
 
         // A copy / get-file-size RPC carries a source directory and file name(s) supplied by a
         // remote peer on BOTH sides of the transfer: the server opens source_dir/file_name to
@@ -85,8 +116,19 @@ namespace dsn {
 
             void init()
             {
-                nfs_copy_block_bytes = (uint32_t)dsn_config_get_value_uint64("nfs", "nfs_copy_block_bytes", 
-                    4*1024*1024, "maximum block size (bytes) for each network copy");
+                uint64_t configured_copy_block_bytes = dsn_config_get_value_uint64(
+                    "nfs",
+                    "nfs_copy_block_bytes",
+                    nfs_client_detail::default_copy_block_bytes,
+                    "maximum block size (bytes) for each network copy");
+                nfs_copy_block_bytes =
+                    nfs_client_detail::normalize_copy_block_bytes(configured_copy_block_bytes);
+                if (nfs_copy_block_bytes != configured_copy_block_bytes)
+                {
+                    derror("invalid nfs_copy_block_bytes = %llu; using default %u",
+                           static_cast<unsigned long long>(configured_copy_block_bytes),
+                           nfs_client_detail::default_copy_block_bytes);
+                }
                 max_concurrent_remote_copy_requests = (int)dsn_config_get_value_uint64("nfs", "max_concurrent_remote_copy_requests", 
                     50, "maximum concurrent remote copy to the same server on nfs client");
                 max_concurrent_local_writes = (int)dsn_config_get_value_uint64("nfs", "max_concurrent_local_writes", 

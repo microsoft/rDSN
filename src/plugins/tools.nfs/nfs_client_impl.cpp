@@ -111,6 +111,12 @@ namespace dsn {
                 return;
             }
 
+            if (resp.file_list.empty())
+            {
+                handle_completion(ureq, ERR_OK);
+                return;
+            }
+
             // file_list comes from the (untrusted) remote server and is combined with the local
             // dst_dir below to form the path this client creates and writes. Reject any name that
             // escapes dst_dir (see nfs_path_has_parent_ref) up front -- before any file_context is
@@ -446,7 +452,10 @@ namespace dsn {
                     hfile = reqc->file_ctx->file.load();
                     if (!hfile)
                     {
-                        hfile = dsn_file_open(file_path.c_str(), O_RDWR | O_CREAT | O_BINARY, 0666);
+                        int open_flags =
+                            nfs_client_detail::destination_open_flags(
+                                reqc->copy_req.overwrite);
+                        hfile = dsn_file_open(file_path.c_str(), open_flags, 0666);
                         reqc->file_ctx->file = hfile;
                     }
                 }
@@ -513,6 +522,17 @@ namespace dsn {
         {
             //dassert(reqc->local_write_task == task::get_current_task(), "");
             --_concurrent_local_write_count;
+
+            auto write_err =
+                nfs_client_detail::local_write_result(err, sz, reqc->response.size);
+            if (err == ERR_OK && write_err != ERR_OK)
+            {
+                derror("short write for nfs file '%s': expected %u bytes, wrote %zu",
+                       reqc->file_ctx->file_name.c_str(),
+                       static_cast<unsigned int>(reqc->response.size),
+                       sz);
+            }
+            err = write_err;
 
             // clear all content to release memory quickly
             reqc->response.file_content = blob();

@@ -36,6 +36,7 @@
 # pragma once
 
 # include <dsn/utility/singleton.h>
+# include <mutex>
 # include <vector>
 
 namespace dsn { namespace utils {
@@ -49,6 +50,7 @@ public:
 
     bool contains(int index) const
     {
+        std::lock_guard<std::mutex> l(_lock);
         if (index < 0 || index >= static_cast<int>(_contains.size()))
             return false;
         else
@@ -57,6 +59,7 @@ public:
 
     T get(int index) const
     {
+        std::lock_guard<std::mutex> l(_lock);
         if (index < 0 || index >= static_cast<int>(_contains.size()))
             return default_value;
         else
@@ -65,6 +68,7 @@ public:
 
     bool put(int index, T value)
     {
+        std::lock_guard<std::mutex> l(_lock);
         if (index < 0)
             return false;
 
@@ -91,6 +95,7 @@ public:
     }
 
 private:
+    mutable std::mutex _lock;
     std::vector<bool> _contains;
     std::vector<T>    _values;
 };

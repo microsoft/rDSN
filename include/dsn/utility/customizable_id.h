@@ -39,8 +39,9 @@
 # include <dsn/utility/singleton.h>
 # include <dsn/utility/ports.h>
 # include <string>
+# include <deque>
+# include <mutex>
 # include <unordered_map>
-# include <vector>
 
 namespace dsn { namespace utils {
 
@@ -57,11 +58,12 @@ public:
     int get_id(const char* name) const;    
     const char* get_name(int id) const;
     int register_id(const char* name);
-    int max_value() const { return static_cast<int>(_names2.size()) - 1; }
+    int max_value() const;
 
 private:
+    mutable std::mutex _lock;
     std::unordered_map<std::string, int> _names;
-    std::vector<std::string>   _names2;
+    std::deque<std::string> _names2;
 };
 
 template<typename T>
@@ -174,6 +176,7 @@ int customized_id_mgr<T>::get_id(const char* name) const
         return -1;
     }
 
+    std::lock_guard<std::mutex> l(_lock);
     auto it = _names.find(std::string(name));
     if (it == _names.end())
     {
@@ -188,6 +191,7 @@ int customized_id_mgr<T>::get_id(const char* name) const
 template<typename T>
 const char* customized_id_mgr<T>::get_name(int id) const
 {
+    std::lock_guard<std::mutex> l(_lock);
     if (id >= 0 && id < static_cast<int>(_names2.size()))
     {
         return _names2[id].c_str();
@@ -196,6 +200,13 @@ const char* customized_id_mgr<T>::get_name(int id) const
     {
         return "unknown";
     }
+}
+
+template<typename T>
+int customized_id_mgr<T>::max_value() const
+{
+    std::lock_guard<std::mutex> l(_lock);
+    return static_cast<int>(_names2.size()) - 1;
 }
 
 template<typename T>
@@ -208,15 +219,29 @@ int customized_id_mgr<T>::register_id(const char* name)
 
     try
     {
-        int id = get_id(name);
-        if (-1 != id)
+        std::lock_guard<std::mutex> l(_lock);
+        auto found = _names.find(std::string(name));
+        if (found != _names.end())
         {
-            return id;
+            return found->second;
         }
 
-        int code = static_cast<int>(_names.size());
-        _names[std::string(name)] = code;
-        _names2.push_back(std::string(name));
+        int code = static_cast<int>(_names2.size());
+        auto inserted = _names.emplace(std::string(name), code);
+        if (!inserted.second)
+        {
+            return inserted.first->second;
+        }
+
+        try
+        {
+            _names2.push_back(inserted.first->first);
+        }
+        catch (...)
+        {
+            _names.erase(inserted.first);
+            throw;
+        }
         return code;
     }
     catch (...)

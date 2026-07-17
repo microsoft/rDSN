@@ -130,6 +130,7 @@ bool join_point_base::put_replace(const char* base, void* fn, const char* name)
     {
         e0->func = fn;
         e0->name = name;
+        e0->is_native = false;
         return true;
     }
 }

@@ -104,8 +104,24 @@ std::vector<event_entry>* event_wheel::pop_next_events(/*out*/ uint64_t& ts)
 
 void event_wheel::clear()
 {
-    utils::auto_lock< ::dsn::utils::ex_lock> l(_lock);
-    _events.clear();
+    Events events;
+    {
+        utils::auto_lock< ::dsn::utils::ex_lock> l(_lock);
+        events.swap(_events);
+    }
+
+    for (auto& event_batch : events)
+    {
+        for (auto& event : *event_batch.second)
+        {
+            if (event.app_task != nullptr)
+            {
+                event.app_task->cancel(false);
+                event.app_task->release_ref();
+            }
+        }
+        delete event_batch.second;
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////

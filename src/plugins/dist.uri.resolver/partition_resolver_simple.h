@@ -70,9 +70,11 @@ namespace dsn
 
             virtual int get_partition_index(int partition_count, uint64_t partition_hash) override;
 
-            int get_partition_count() const { return _app_partition_count; }
+            int get_partition_count() const;
 
         private:
+            friend class partition_resolver_simple_test;
+
             struct partition_info
             {
                 int timeout_count;
@@ -115,15 +117,23 @@ namespace dsn
             task_ptr                         _query_config_task;
 
             // local routines
-            rpc_address get_address(const partition_configuration& config) const;
-            error_code get_address(int partition_index, /*out*/ rpc_address& addr);
+            int get_app_id() const;
+            rpc_address get_address(const partition_configuration& config,
+                                    bool app_is_stateful) const;
+            error_code get_address(int partition_index,
+                                   /*out*/ rpc_address& addr,
+                                   /*out*/ int* app_id = nullptr);
             void handle_pending_requests(std::deque<request_context_ptr>& reqs, error_code err);
             void clear_all_pending_requests();
 
             // with replica
             void call(request_context_ptr&& request, bool from_meta_ack = false);
             //void replica_rw_reply(error_code err, dsn_message_t request, dsn_message_t response, request_context_ptr rc);
-            void end_request(request_context_ptr&& request, error_code err, rpc_address addr, bool called_by_timer = false) const;
+            void end_request(request_context_ptr&& request,
+                             error_code err,
+                             rpc_address addr,
+                             bool called_by_timer = false,
+                             int app_id = -1) const;
             void on_timeout(request_context_ptr&& rc) const;
 
             // with meta server

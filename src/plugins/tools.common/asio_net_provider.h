@@ -37,10 +37,30 @@
 
 # include <dsn/tool_api.h>
 # include <boost/asio.hpp>
+# include <memory>
+# include <utility>
+# include <vector>
 
 namespace dsn {
     namespace tools {
-        
+
+        namespace detail {
+
+            template <typename TCompletion>
+            inline auto retain_udp_packet_until_send_complete(
+                std::shared_ptr<std::vector<char>> packet, TCompletion completion)
+            {
+                return [packet = std::move(packet), completion = std::move(completion)](
+                           const boost::system::error_code& error,
+                           std::size_t bytes_transferred)
+                {
+                    (void)packet;
+                    completion(error, bytes_transferred);
+                };
+            }
+
+        } // namespace detail
+
         class asio_network_provider : public connection_oriented_network
         {
         public:

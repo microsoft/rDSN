@@ -269,18 +269,18 @@ void disk_engine::read(aio_task* aio)
         return;
     }
 
+    auto dio = aio->aio();
+    dio->type = AIO_Read;
     if (!aio->spec().on_aio_call.execute(task::get_current_task(), aio, true))
     {
         aio->enqueue(ERR_FILE_OPERATION_FAILED, 0);
         return;
     }
 
-    auto dio = aio->aio();
     auto df = (disk_file*)dio->file;
     dio->file = df->native_handle();
     dio->file_object = df;
     dio->engine = this;
-    dio->type = AIO_Read;
 
     auto wk = df->read(aio);
     if (wk)
@@ -323,18 +323,18 @@ void disk_engine::write(aio_task* aio)
         return;
     }
 
+    auto dio = aio->aio();
+    dio->type = AIO_Write;
     if (!aio->spec().on_aio_call.execute(task::get_current_task(), aio, true))
     {
         aio->enqueue(ERR_FILE_OPERATION_FAILED, 0);
         return;
     }
 
-    auto dio = aio->aio();
     auto df = (disk_file*)dio->file;
     dio->file = df->native_handle();
     dio->file_object = df;
     dio->engine = this;
-    dio->type = AIO_Write;    
 
     uint32_t sz;
     auto wk = df->write(aio, &sz);

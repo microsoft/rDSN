@@ -66,19 +66,33 @@ namespace dsn
             )
         {
             int idx = -1;
-            if (_app_partition_count != -1)
+            int app_id = -1;
+            rpc_address target;
             {
-                idx = get_partition_index(_app_partition_count, partition_hash);
-                rpc_address target;
-                if (ERR_OK == get_address(idx, target))
+                zauto_read_lock l(_config_lock);
+                if (_app_partition_count != -1)
                 {
-                    callback(resolve_result{
-                        ERR_OK,
-                        target,
-                        {{_app_id, idx}}
-                    });
-                    return;
+                    idx = get_partition_index(_app_partition_count, partition_hash);
+                    auto it = _config_cache.find(idx);
+                    if (it != _config_cache.end())
+                    {
+                        target = get_address(it->second->config, _app_is_stateful);
+                        if (!target.is_invalid())
+                        {
+                            app_id = _app_id;
+                        }
+                    }
                 }
+            }
+
+            if (!target.is_invalid())
+            {
+                callback(resolve_result{
+                    ERR_OK,
+                    target,
+                    {{app_id, idx}}
+                });
+                return;
             }
 
             auto rc = new request_context();
@@ -100,18 +114,28 @@ namespace dsn
                 && err != ERR_NOT_ENOUGH_MEMBER // primary won't change and we only r/w on primary in this provider
                 )
             {
+                zauto_write_lock l(_config_lock);
                 ddebug("clear partition configuration cache %d.%d due to access failure %s",
                        _app_id, partition_index, err.to_string());
 
+                auto it = _config_cache.find(partition_index);
+                if (it != _config_cache.end())
                 {
-                    zauto_write_lock l(_config_lock);
-                    auto it = _config_cache.find(partition_index);
-                    if (it != _config_cache.end())
-                    {
-                        _config_cache.erase(it);
-                    }
+                    _config_cache.erase(it);
                 }
             }
+        }
+
+        int partition_resolver_simple::get_partition_count() const
+        {
+            zauto_read_lock l(_config_lock);
+            return _app_partition_count;
+        }
+
+        int partition_resolver_simple::get_app_id() const
+        {
+            zauto_read_lock l(_config_lock);
+            return _app_id;
         }
 
         partition_resolver_simple::~partition_resolver_simple()
@@ -144,7 +168,11 @@ namespace dsn
             end_request(std::move(rc), ERR_TIMEOUT, rpc_address(), true);
         }
 
-        void partition_resolver_simple::end_request(request_context_ptr&& request, error_code err, rpc_address addr, bool called_by_timer) const
+        void partition_resolver_simple::end_request(request_context_ptr&& request,
+                                                    error_code err,
+                                                    rpc_address addr,
+                                                    bool called_by_timer,
+                                                    int app_id) const
         {
             zauto_lock l(request->lock);
             if (request->completed)
@@ -156,10 +184,15 @@ namespace dsn
             if (!called_by_timer && request->timeout_timer != nullptr)
                 request->timeout_timer->cancel(false);
 
+            if (app_id == -1)
+            {
+                app_id = get_app_id();
+            }
+
             request->callback(resolve_result{
                 err, 
                 addr, 
-                {{_app_id, request->partition_index}}
+                {{app_id, request->partition_index}}
             });
             request->completed = true;
         }
@@ -174,12 +207,13 @@ namespace dsn
             {
                 // fill target address if possible
                 rpc_address addr;
-                auto err = get_address(pindex, addr);
+                int app_id = -1;
+                auto err = get_address(pindex, addr, &app_id);
 
                 // target address known
                 if (err == ERR_OK)
                 {
-                    end_request(std::move(request), ERR_OK, addr);
+                    end_request(std::move(request), ERR_OK, addr, false, app_id);
                     return;
                 }
             }
@@ -269,7 +303,10 @@ namespace dsn
 
         task_ptr partition_resolver_simple::query_config(int partition_index)
         {
-            dinfo("%s.client: start query config, gpid = %d.%d", _app_path.c_str(), _app_id, partition_index);
+            dinfo("%s.client: start query config, gpid = %d.%d",
+                  _app_path.c_str(),
+                  get_app_id(),
+                  partition_index);
             auto msg = dsn_msg_create_request(RPC_CM_QUERY_PARTITION_CONFIG_BY_INDEX);
 
             configuration_query_by_index_request req;
@@ -303,7 +340,7 @@ namespace dsn
                 {
                     derror("%s.client: query config reply, gpid = %d.%d, invalid response: %s",
                         _app_path.c_str(),
-                        _app_id,
+                        get_app_id(),
                         partition_index,
                         decode_err.to_string()
                         );
@@ -319,7 +356,7 @@ namespace dsn
                         // division-by-zero crash in get_partition_index().
                         derror("%s.client: query config reply, gpid = %d.%d, invalid config: app_id = %d, partition_count = %d",
                             _app_path.c_str(),
-                            _app_id,
+                            get_app_id(),
                             partition_index,
                             resp.app_id,
                             resp.partition_count
@@ -392,7 +429,7 @@ namespace dsn
                 {
                     derror("%s.client: query config reply, gpid = %d.%d, err = %s",
                         _app_path.c_str(),
-                        _app_id,
+                        get_app_id(),
                         partition_index,
                         resp.err.to_string()
                         );
@@ -403,7 +440,7 @@ namespace dsn
                 {
                     derror("%s.client: query config reply, gpid = %d.%d, err = %s",
                         _app_path.c_str(),
-                        _app_id,
+                        get_app_id(),
                         partition_index,
                         resp.err.to_string()
                         );
@@ -415,7 +452,7 @@ namespace dsn
             {
                 derror("%s.client: query config reply, gpid = %d.%d, err = %s",
                     _app_path.c_str(),
-                    _app_id,
+                    get_app_id(),
                     partition_index,
                     err.to_string()
                     );
@@ -455,12 +492,14 @@ namespace dsn
              
                 if (!reqs2.empty())
                 {
-                    if (_app_partition_count != -1)
+                    int partition_count = get_partition_count();
+                    if (partition_count != -1)
                     {
                         for (auto& req : reqs2)
                         {
                             dassert(req->partition_index == -1, "");
-                            req->partition_index = get_partition_index(_app_partition_count, req->partition_hash);
+                            req->partition_index =
+                                get_partition_index(partition_count, req->partition_hash);
                         }
                     }
                     handle_pending_requests(reqs2, client_err);
@@ -484,10 +523,11 @@ namespace dsn
                 if (err == ERR_OK)
                 {
                     rpc_address addr;
-                    err = get_address(req->partition_index, addr);
+                    int app_id = -1;
+                    err = get_address(req->partition_index, addr, &app_id);
                     if (err == ERR_OK)
                     {
-                        end_request(std::move(req), err, addr);
+                        end_request(std::move(req), err, addr, false, app_id);
                     }
                     else
                     {
@@ -507,9 +547,10 @@ namespace dsn
         }
 
         /*search in cache*/
-        rpc_address partition_resolver_simple::get_address(const partition_configuration& config) const
+        rpc_address partition_resolver_simple::get_address(
+            const partition_configuration& config, bool app_is_stateful) const
         {
-            if (_app_is_stateful)
+            if (app_is_stateful)
             {
                 return config.primary;
             }
@@ -552,16 +593,22 @@ namespace dsn
         //ERR_OBJECT_NOT_FOUND  not in cache.
         //ERR_IO_PENDING        in cache but invalid, remove from cache.
         //ERR_OK                in cache and valid
-        error_code partition_resolver_simple::get_address(int partition_index, /*out*/ rpc_address& addr)
+        error_code partition_resolver_simple::get_address(int partition_index,
+                                                          /*out*/ rpc_address& addr,
+                                                          /*out*/ int* app_id)
         {
             //partition_configuration config;
             {
                 zauto_read_lock l(_config_lock);
+                if (app_id != nullptr)
+                {
+                    *app_id = _app_id;
+                }
                 auto it = _config_cache.find(partition_index);
                 if (it != _config_cache.end())
                 {
                     //config = it->second->config;
-                    addr = get_address(it->second->config);
+                    addr = get_address(it->second->config, _app_is_stateful);
                     if (addr.is_invalid())
                     {
                         return ERR_IO_PENDING;
