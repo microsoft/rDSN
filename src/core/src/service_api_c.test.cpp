@@ -38,6 +38,7 @@
 # include <dsn/tool_api.h>
 # include <dsn/utility/configuration.h>
 # include <gtest/gtest.h>
+# include <climits>
 # include <string>
 # include <thread>
 # include <cstring>
@@ -762,6 +763,43 @@ TEST(core, dsn_file_dispatch_invalid_parameters)
     dsn_task_add_ref(compute_task);
     ASSERT_EQ(ERR_INVALID_PARAMETERS, dsn_file_task_enqueue(compute_task, ERR_OK, 0));
     dsn_task_release_ref(compute_task);
+
+    dsn_task_release_ref(aio_task);
+}
+
+TEST(core, dsn_file_write_vector_rejection_is_transactional)
+{
+    auto aio_task =
+        dsn_file_create_aio_task(TASK_CODE_AIO_FOR_TEST, noop_aio_handler, nullptr, 0);
+    ASSERT_NE(nullptr, aio_task);
+    dsn_task_add_ref(aio_task);
+
+    auto *callback_task = static_cast<::dsn::aio_task *>(aio_task);
+    char sentinel = 0;
+    const auto original_file = reinterpret_cast<dsn_handle_t>(1);
+    callback_task->aio()->file = original_file;
+    callback_task->aio()->engine = task::get_current_disk();
+    callback_task->aio()->buffer = &sentinel;
+    callback_task->aio()->buffer_size = 17;
+    callback_task->aio()->file_offset = 99;
+    callback_task->aio()->type = AIO_Read;
+    callback_task->_unmerged_write_buffers.push_back({&sentinel, 1});
+
+    dsn_file_buffer_t buffers[] = {
+        {&sentinel, INT_MAX}, {&sentinel, INT_MAX}, {&sentinel, INT_MAX}};
+    EXPECT_EQ(ERR_INVALID_PARAMETERS,
+              dsn_file_write_vector(
+                  reinterpret_cast<dsn_handle_t>(2), buffers, 3, 123, aio_task));
+
+    EXPECT_EQ(original_file, callback_task->aio()->file);
+    EXPECT_EQ(task::get_current_disk(), callback_task->aio()->engine);
+    EXPECT_EQ(&sentinel, callback_task->aio()->buffer);
+    EXPECT_EQ(17u, callback_task->aio()->buffer_size);
+    EXPECT_EQ(99u, callback_task->aio()->file_offset);
+    EXPECT_EQ(AIO_Read, callback_task->aio()->type);
+    ASSERT_EQ(1u, callback_task->_unmerged_write_buffers.size());
+    EXPECT_EQ(&sentinel, callback_task->_unmerged_write_buffers[0].buffer);
+    EXPECT_EQ(1u, callback_task->_unmerged_write_buffers[0].size);
 
     dsn_task_release_ref(aio_task);
 }

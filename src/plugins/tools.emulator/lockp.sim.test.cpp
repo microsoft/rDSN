@@ -40,10 +40,14 @@
 # include <dsn/cpp/utils.h>
 # include <dsn/utility/synchronize.h>
 # include <gtest/gtest.h>
+# include <memory>
 # include <thread>
 
 # include "task_engine.sim.h"
 # include "scheduler.h"
+
+DEFINE_TASK_CODE(
+    LPC_EVENT_WHEEL_CLEAR_TEST, TASK_PRIORITY_COMMON, dsn::THREAD_POOL_DEFAULT)
 
 TEST(tools_emulator, dsn_semaphore)
 {
@@ -115,4 +119,31 @@ TEST(tools_emulator, scheduler)
     dsn::tools::scheduler::instance().add_system_event(100, callback);
     dsn::tools::scheduler::instance().wait_schedule(true,false);
     evt->wait();
+}
+
+TEST(tools_emulator, event_wheel_clear_cancels_and_releases_events)
+{
+    dsn::tools::event_wheel wheel;
+    auto retained_state = std::make_shared<int>(1);
+    std::weak_ptr<int> retained_state_lifetime(retained_state);
+    auto task_handle = dsn_task_create(
+        LPC_EVENT_WHEEL_CLEAR_TEST, [](void *) {}, nullptr, 0, nullptr);
+    ASSERT_NE(nullptr, task_handle);
+
+    auto *pending_task = static_cast<dsn::task *>(task_handle);
+    pending_task->add_ref();
+    pending_task->add_ref();
+    wheel.add_event(1, pending_task);
+    wheel.add_system_event(1, [retained_state]() {});
+    retained_state.reset();
+
+    ASSERT_EQ(2, pending_task->get_count());
+    EXPECT_FALSE(retained_state_lifetime.expired());
+    wheel.clear();
+
+    EXPECT_EQ(dsn::TASK_STATE_CANCELLED, pending_task->state());
+    EXPECT_EQ(1, pending_task->get_count());
+    EXPECT_TRUE(retained_state_lifetime.expired());
+    EXPECT_FALSE(wheel.has_more_events());
+    pending_task->release_ref();
 }

@@ -139,6 +139,32 @@
 //
 //    TEST_PORT++;
 //}
+
+TEST(tools_common, udp_completion_keeps_packet_alive)
+{
+    std::weak_ptr<std::vector<char>> packet_lifetime;
+    bool callback_called = false;
+
+    {
+        auto packet = std::make_shared<std::vector<char>>(16, 'x');
+        packet_lifetime = packet;
+        auto completion = dsn::tools::detail::retain_udp_packet_until_send_complete(
+            packet,
+            [&callback_called](const boost::system::error_code &ec, size_t transferred) {
+                EXPECT_FALSE(ec);
+                EXPECT_EQ(16u, transferred);
+                callback_called = true;
+            });
+
+        packet.reset();
+        EXPECT_FALSE(packet_lifetime.expired());
+        completion(boost::system::error_code(), 16);
+        EXPECT_TRUE(callback_called);
+        EXPECT_FALSE(packet_lifetime.expired());
+    }
+
+    EXPECT_TRUE(packet_lifetime.expired());
+}
 //
 //TEST(tools_common, asio_udp_provider)
 //{

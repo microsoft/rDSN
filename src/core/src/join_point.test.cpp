@@ -157,3 +157,18 @@ TEST(core, join_point)
     ASSERT_EQ(check_vec, jp_vec);
     }
 }
+
+TEST(core, join_point_replace_native_with_non_native)
+{
+    join_point_for_test jp;
+    std::vector<entry> entries;
+
+    ASSERT_TRUE(jp.put_front((void *)1, "native", true));
+    ASSERT_TRUE(jp.put_replace("native", (void *)2, "replacement"));
+
+    jp.get_all(entries);
+    ASSERT_EQ(1u, entries.size());
+    EXPECT_EQ("replacement", entries[0].name);
+    EXPECT_EQ((void *)2, entries[0].func);
+    EXPECT_FALSE(entries[0].is_native);
+}

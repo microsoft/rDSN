@@ -38,9 +38,39 @@
 # include <dsn/cpp/utils.h>
 # include <gtest/gtest.h>
 # include <dsn/cpp/test_utils.h>
+# include <atomic>
 # include <cstring>
 
+# include "disk_engine.h"
+
 using namespace ::dsn;
+
+namespace
+{
+
+std::atomic<aio_task *> s_aio_type_target(nullptr);
+std::atomic<int> s_observed_aio_type(AIO_Invalid);
+
+void observe_aio_type(task *, aio_task *aio)
+{
+    if (aio == s_aio_type_target.load(std::memory_order_relaxed))
+    {
+        s_observed_aio_type.store(aio->aio()->type, std::memory_order_relaxed);
+    }
+}
+
+class aio_hook_guard
+{
+public:
+    explicit aio_hook_guard(task_spec *spec) : _spec(spec) {}
+
+    ~aio_hook_guard() { _spec->on_aio_call.remove("observe_aio_type"); }
+
+private:
+    task_spec *_spec;
+};
+
+} // anonymous namespace
 
 TEST(core, aio)
 {
@@ -295,5 +325,59 @@ TEST(core, aio_zero_length)
     EXPECT_EQ(0u, rcount);
     dsn_file_close(fp2);
 
+    EXPECT_TRUE(utils::filesystem::remove_path(tmp_file));
+}
+
+TEST(core, aio_type_is_published_before_hooks)
+{
+    auto *disk = task::get_current_disk();
+    if (disk == nullptr)
+    {
+        return;
+    }
+
+    ASSERT_TRUE(::dsn::utils::test::prepare_test_tmp_dir("dsn.core.aio_hook_type"));
+    const std::string tmp_file =
+        ::dsn::utils::test::test_tmp_path("dsn.core.aio_hook_type", "tmp");
+    auto hfile = dsn_file_open(tmp_file.c_str(), O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0666);
+    ASSERT_NE(nullptr, hfile);
+
+    auto *spec = task_spec::get(LPC_AIO_TEST);
+    ASSERT_NE(nullptr, spec);
+    ASSERT_TRUE(spec->on_aio_call.put_front(&observe_aio_type, "observe_aio_type"));
+    aio_hook_guard hook_guard(spec);
+
+    auto read_task = file::create_aio_task(LPC_AIO_TEST, nullptr, empty_callback, 0);
+    ASSERT_NE(nullptr, read_task);
+    auto *read_aio = static_cast<aio_task *>(read_task->native_handle());
+    char read_buffer = 0;
+    read_aio->aio()->file = hfile;
+    read_aio->aio()->buffer = &read_buffer;
+    read_aio->aio()->buffer_size = 1;
+    read_aio->aio()->file_offset = 0;
+    read_aio->aio()->type = AIO_Invalid;
+    s_aio_type_target.store(read_aio, std::memory_order_relaxed);
+    s_observed_aio_type.store(AIO_Invalid, std::memory_order_relaxed);
+    disk->read(read_aio);
+    EXPECT_EQ(AIO_Read, s_observed_aio_type.load(std::memory_order_relaxed));
+    read_task->wait();
+
+    auto write_task = file::create_aio_task(LPC_AIO_TEST, nullptr, empty_callback, 0);
+    ASSERT_NE(nullptr, write_task);
+    auto *write_aio = static_cast<aio_task *>(write_task->native_handle());
+    char write_buffer = 'x';
+    write_aio->aio()->file = hfile;
+    write_aio->aio()->buffer = &write_buffer;
+    write_aio->aio()->buffer_size = 1;
+    write_aio->aio()->file_offset = 0;
+    write_aio->aio()->type = AIO_Invalid;
+    s_aio_type_target.store(write_aio, std::memory_order_relaxed);
+    s_observed_aio_type.store(AIO_Invalid, std::memory_order_relaxed);
+    disk->write(write_aio);
+    EXPECT_EQ(AIO_Write, s_observed_aio_type.load(std::memory_order_relaxed));
+    write_task->wait();
+
+    s_aio_type_target.store(nullptr, std::memory_order_relaxed);
+    EXPECT_EQ(ERR_OK, dsn_file_close(hfile));
     EXPECT_TRUE(utils::filesystem::remove_path(tmp_file));
 }
