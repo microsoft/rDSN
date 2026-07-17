@@ -779,7 +779,7 @@ TEST(core, dsn_file_write_vector_rejection_is_transactional)
     ASSERT_NE(nullptr, aio_task);
     dsn_task_add_ref(aio_task);
 
-    auto *callback_task = static_cast<::dsn::aio_task *>(aio_task);
+    auto *callback_task = static_cast< ::dsn::aio_task *>(aio_task);
     char sentinel = 0;
     const auto original_file = reinterpret_cast<dsn_handle_t>(1);
     callback_task->aio()->file = original_file;
