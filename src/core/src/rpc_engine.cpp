@@ -547,6 +547,10 @@ namespace dsn {
         if (handler)
         {
             handler->c_handler(msg, handler->parameter);
+            if (1 == handler->release_ref())
+            {
+                delete handler;
+            }
         }
         else
         {

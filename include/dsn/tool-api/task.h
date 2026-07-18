@@ -307,6 +307,28 @@ public:
             static_cast<uint64_t>(_request->header->client.timeout_ms) * 1000000ULL)
         {
             _handler->run(_request);
+            // rpc_handler_info::run() consumes the dispatch reference.
+            _handler = nullptr;
+        }
+        else
+        {
+            release_handler();
+        }
+    }
+
+private:
+    void release_handler()
+    {
+        rpc_handler_info* handler = _handler;
+        if (handler == nullptr)
+        {
+            return;
+        }
+
+        _handler = nullptr;
+        if (1 == handler->release_ref())
+        {
+            delete handler;
         }
     }
 

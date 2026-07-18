@@ -37,6 +37,7 @@
 #include <dsn/service_api_cpp.h>
 #include <dsn/utility/priority_queue.h>
 #include "group_address.h"
+#include "rpc_engine.h"
 #include <dsn/cpp/test_utils.h>
 #include <vector>
 #include <string>
@@ -44,6 +45,23 @@
 #include <chrono>
 
 typedef std::function<void(error_code, dsn_message_t, dsn_message_t)> rpc_reply_handler;
+
+namespace {
+
+class expired_rpc_request_task : public ::dsn::rpc_request_task
+{
+public:
+    expired_rpc_request_task(::dsn::message_ex* request,
+                             ::dsn::rpc_handler_info* handler,
+                             ::dsn::service_node* node)
+        : rpc_request_task(request, handler, node)
+    {
+    }
+
+    void expire() { _enqueue_ts_ns = 1; }
+};
+
+} // anonymous namespace
 
 static ::dsn::rpc_address build_group() {
     ::dsn::rpc_address server_group;
@@ -91,6 +109,82 @@ TEST(core, rpc)
     EXPECT_TRUE(result.first == ERR_OK);
 
     EXPECT_TRUE(result.second == "server");
+}
+
+TEST(core, rpc_inline_dispatch_releases_handler_reference)
+{
+    ::dsn::rpc_server_dispatcher dispatcher;
+    ::dsn::rpc_handler_info handler(RPC_TEST_HASH);
+    int call_count = 0;
+
+    handler.name = "rpc.inline.reference";
+    handler.c_handler = [](dsn_message_t, void* context) {
+        ++*static_cast<int*>(context);
+    };
+    handler.parameter = &call_count;
+    handler.add_ref();
+    ASSERT_TRUE(dispatcher.register_rpc_handler(&handler));
+
+    auto request = ::dsn::message_ex::create_request(RPC_TEST_HASH, 100, 0, 0);
+    ASSERT_NE(nullptr, request);
+    request->add_ref();
+
+    dispatcher.on_request_with_inline_execution(request, nullptr);
+
+    EXPECT_EQ(1, call_count);
+    EXPECT_EQ(1, handler.running_count.load(std::memory_order_relaxed));
+    EXPECT_EQ(&handler, dispatcher.unregister_rpc_handler(RPC_TEST_HASH));
+
+    while (handler.running_count.load(std::memory_order_relaxed) > 0)
+    {
+        handler.release_ref();
+    }
+    request->release_ref();
+}
+
+TEST(core, rpc_expired_dispatch_releases_handler_reference)
+{
+    ::dsn::rpc_handler_info handler(RPC_TEST_HASH);
+    int call_count = 0;
+
+    handler.c_handler = [](dsn_message_t, void* context) {
+        ++*static_cast<int*>(context);
+    };
+    handler.parameter = &call_count;
+    handler.add_ref();
+    handler.add_ref();
+
+    auto request = ::dsn::message_ex::create_request(RPC_TEST_HASH, 0, 0, 0);
+    ASSERT_NE(nullptr, request);
+    {
+        expired_rpc_request_task task(request, &handler, nullptr);
+        task.expire();
+        task.exec();
+    }
+
+    EXPECT_EQ(0, call_count);
+    EXPECT_EQ(1, handler.running_count.load(std::memory_order_relaxed));
+    while (handler.running_count.load(std::memory_order_relaxed) > 0)
+    {
+        handler.release_ref();
+    }
+}
+
+TEST(core, rpc_discarded_dispatch_releases_handler_reference)
+{
+    ::dsn::rpc_handler_info handler(RPC_TEST_HASH);
+    handler.add_ref();
+    handler.add_ref();
+
+    auto request = ::dsn::message_ex::create_request(RPC_TEST_HASH, 100, 0, 0);
+    ASSERT_NE(nullptr, request);
+    { ::dsn::rpc_request_task task(request, &handler, nullptr); }
+
+    EXPECT_EQ(1, handler.running_count.load(std::memory_order_relaxed));
+    while (handler.running_count.load(std::memory_order_relaxed) > 0)
+    {
+        handler.release_ref();
+    }
 }
 
 TEST(core, group_address_talk_to_others)

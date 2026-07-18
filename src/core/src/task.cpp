@@ -591,6 +591,7 @@ rpc_request_task::rpc_request_task(message_ex* request, rpc_handler_info* h, ser
 
 rpc_request_task::~rpc_request_task()
 {
+    release_handler();
     _request->release_ref(); // added in ctor
 }
 
