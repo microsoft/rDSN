@@ -666,12 +666,17 @@ service_node* service_engine::start_node(service_app_spec& app_spec)
             {
                 service_node* n = _nodes_by_app_port[p];
 
-                dassert(false, "network port %d usage confliction for %s vs %s, "
+                // A port collision between two configured apps is an operator
+                // misconfiguration, not an internal invariant violation. Report it and
+                // fail node creation gracefully (callers below already handle a nullptr
+                // return) instead of aborting the whole process.
+                derror("network port %d usage confliction for %s vs %s, "
                     "please reconfig",
                     p,
                     n->name(),
                     app_spec.name.c_str()
                     );
+                return nullptr;
             }
         }
                 

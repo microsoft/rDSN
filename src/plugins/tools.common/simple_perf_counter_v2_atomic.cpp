@@ -213,6 +213,13 @@ namespace dsn {
                     "counter_computation_interval_seconds",
                     30,
                     "period (seconds) the system computes the percentiles of the counters");
+                if (_counter_computation_interval_seconds < 1)
+                {
+                    // A configured value of 0 (or one that truncates to 0 through the (int)
+                    // cast) makes "rand() % _counter_computation_interval_seconds" a division
+                    // by zero (SIGFPE). Match the guard the base simple_perf_counter uses.
+                    _counter_computation_interval_seconds = 1;
+                }
                 _timer.reset(new boost::asio::deadline_timer(shared_io_service::instance().ios));
                 _timer->expires_from_now(boost::posix_time::seconds(rand() % _counter_computation_interval_seconds + 1));
                 this->add_ref();

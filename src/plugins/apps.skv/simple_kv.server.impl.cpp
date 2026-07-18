@@ -191,7 +191,10 @@ namespace dsn {
 
                         if (!dsn::utils::filesystem::remove_path(data_dir()))
                         {
-                            dassert(false, "Fail to delete directory %s.", data_dir());
+                            // A cleanup failure (directory busy, permission, transient FS
+                            // error) must not abort the process during shutdown; log and
+                            // continue so stop() completes.
+                            derror("Fail to delete directory %s.", data_dir());
                         }
                     }
                 }
@@ -448,7 +451,27 @@ namespace dsn {
                 else
                 {
                     dassert(DSN_CHKPT_COPY == mode, "invalid mode %d", (int)mode);
-                    dassert(state.to_decree_included > last_durable_decree(), "checkpoint's decree is smaller than current");
+
+                    // The COPY branch dereferences state.files[0] below. The sibling LEARN
+                    // branch above guards file_state_count <= 0 before touching files[0];
+                    // do the same here so an empty/malformed learn state is rejected instead
+                    // of indexing a null/absent file entry (out-of-bounds / null deref).
+                    if (state.file_state_count <= 0)
+                    {
+                        derror("simple_kv_service_impl copy checkpoint failed: no checkpoint files provided");
+                        return ERR_CHECKPOINT_FAILED;
+                    }
+
+                    // A checkpoint whose decree is not newer than the current durable state
+                    // is a recoverable protocol/ordering condition, not an internal invariant.
+                    // Reject it gracefully rather than aborting the whole process.
+                    if (state.to_decree_included <= last_durable_decree())
+                    {
+                        derror("simple_kv_service_impl copy checkpoint failed: checkpoint decree %" PRId64
+                               " is not greater than current durable decree %" PRId64,
+                               state.to_decree_included, last_durable_decree());
+                        return ERR_CHECKPOINT_FAILED;
+                    }
 
                     char name[256];
                     int len = snprintf(name, sizeof(name), "%s/checkpoint.%" PRId64,

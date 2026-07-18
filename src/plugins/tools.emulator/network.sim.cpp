@@ -190,11 +190,25 @@ namespace dsn { namespace tools {
 
     error_code sim_network_provider::start(rpc_channel channel, int port, bool client_only, io_modifer& ctx)
     { 
-        dassert(channel == RPC_CHANNEL_TCP || channel == RPC_CHANNEL_UDP, "invalid given channel %s", channel.to_string());
+        if (channel != RPC_CHANNEL_TCP && channel != RPC_CHANNEL_UDP)
+        {
+            // channel is a customizable_id that can be set from configuration; an
+            // unsupported value is an operator error, not an internal invariant. Reject
+            // it gracefully instead of aborting.
+            derror("invalid channel %s for emulator network, only TCP and UDP are supported",
+                   channel.to_string());
+            return ERR_NOT_IMPLEMENTED;
+        }
 
         _address = ::dsn::rpc_address("localhost", port);
         auto hostname = ::dsn::utils::asio::host_name();
-        dassert(!hostname.empty(), "fail to get local hostname");
+        if (hostname.empty())
+        {
+            // Resolving the local hostname can fail on a misconfigured host; fail network
+            // startup gracefully rather than aborting the process.
+            derror("fail to get local hostname");
+            return ERR_NETWORK_INIT_FAILED;
+        }
         if (!client_only)
         {
             for (int i = NET_HDR_INVALID + 1; i <= network_header_format::max_value(); i++)

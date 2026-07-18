@@ -135,6 +135,13 @@ namespace dsn {
                         c.seconds = opt.perf_test_seconds;
                         c.payload_bytes = bytes;
                         c.key_space_size = opt.perf_test_key_space_size;
+                        if (c.key_space_size < 1)
+                        {
+                            // Perf clients derive keys with "random % key_space_size"; a
+                            // configured value of 0 (or negative) would divide by zero
+                            // (SIGFPE). Clamp centrally so every client is protected.
+                            c.key_space_size = 1;
+                        }
                         c.timeout_ms = opt.perf_test_timeouts_ms[i];
                         c.concurrency = cc;                        
                         c.ratios.resize(max_request_kind_count_for_hybrid_test, 0.0);

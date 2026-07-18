@@ -65,7 +65,17 @@ void env_provider::set_thread_local_random_seed(int s)
 
 uint64_t env_provider::random64(uint64_t min, uint64_t max)
 {
-    dassert(min <= max, "invalid random range");
+    if (min > max)
+    {
+        // Callers may derive min/max from independent configuration values (e.g. the
+        // emulator's min/max message delay). An inverted range aborts here via the
+        // assert and, once asserts are compiled out, feeds an invalid range to
+        // uniform_int_distribution (undefined behavior). Degrade to a deterministic
+        // in-range value instead of crashing.
+        dwarn("invalid random range [%llu, %llu], returning %llu",
+              (unsigned long long)min, (unsigned long long)max, (unsigned long long)min);
+        return min;
+    }
     if (env_provider__tls_magic != 0xdeadbeef)
     {
         env_provider__rng = new std::remove_pointer<decltype(env_provider__rng)>::type(std::random_device{}());

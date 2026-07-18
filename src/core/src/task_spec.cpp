@@ -324,6 +324,18 @@ bool threadpool_spec::init(/*out*/ safe_vector<threadpool_spec>& specs)
         if ("" == spec.name) 
             spec.name = dsn_threadpool_code_to_string(code);
 
+        if (spec.worker_count < 1)
+        {
+            // A partitioned pool with worker_count == 0 creates empty worker/queue
+            // vectors, so task_worker_pool::enqueue() and shared_same_worker_with_current_task()
+            // divide by _queues.size()/_workers.size() == 0 (SIGFPE); a non-partitioned pool
+            // with 0 workers silently hangs (tasks enqueued but never processed). Every pool
+            // needs at least one worker, so reject the misconfiguration up front.
+            derror("invalid worker_count %d for thread pool %s (%s); worker_count must be >= 1",
+                   spec.worker_count, spec.name.c_str(), dsn_threadpool_code_to_string(code));
+            return false;
+        }
+
         if (false == spec.worker_share_core && 0 == spec.worker_affinity_mask)
         {
             // worker_affinity_mask is a 64-bit mask. Shifting the literal int 1 by
