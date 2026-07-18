@@ -943,7 +943,18 @@ namespace dsn {
 
                                 // still got time, retry
                                 uint64_t nms = dsn_now_ms();
-                                uint64_t gap = 8 << req2->send_retry_count;
+                                // Bound the shift width: 8 << 7 (1024) already exceeds the
+                                // 1000ms ceiling below, so clamping the exponent leaves the
+                                // exponential backoff identical while avoiding the signed
+                                // overflow / oversized-shift undefined behavior that occurs
+                                // once send_retry_count grows large during long-timeout
+                                // retries against a persistently failing partition.
+                                int retry_shift = req2->send_retry_count;
+                                if (retry_shift > 10)
+                                {
+                                    retry_shift = 10;
+                                }
+                                uint64_t gap = 8ull << retry_shift;
                                 if (gap > 1000)
                                     gap = 1000;
                                 if (nms + gap < timeout_ts_ms)
