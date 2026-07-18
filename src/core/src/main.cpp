@@ -638,6 +638,14 @@ bool run(
             {
                 ::dsn::safe_list< ::dsn::safe_string> argskvs;
                 ::dsn::utils::split_args(kv.c_str(), argskvs, '@');
+                // split_args drops empty/whitespace-only tokens, so a malformed app_list
+                // entry consisting only of '@' separators (e.g. -app_list "@") yields an
+                // empty list. front() on an empty std::list is undefined behavior, so skip
+                // such an entry: it names no app and cannot match any config section.
+                if (argskvs.empty())
+                {
+                    continue;
+                }
                 if (::dsn::safe_string("apps.") + argskvs.front() == sp.config_section)
                 {
                     if (argskvs.size() < 2)
