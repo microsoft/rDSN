@@ -103,8 +103,16 @@ namespace dsn {
                             "copy log messages at or above this level to stderr in addition to logfiles"),
                         LOG_LEVEL_INVALID
                         );
-            dassert(_stderr_start_level != LOG_LEVEL_INVALID,
-                    "invalid [tools.simple_logger] stderr_start_level specified");
+            if (_stderr_start_level == LOG_LEVEL_INVALID)
+            {
+                // Do not abort logger initialization on an invalid config value: fall back to the
+                // default level. Use stderr directly because the logging system is not fully
+                // initialized at this point.
+                fprintf(stderr,
+                        "invalid [tools.simple_logger] stderr_start_level specified, "
+                        "falling back to WARNING\n");
+                _stderr_start_level = LOG_LEVEL_WARNING;
+            }
 
             _max_number_of_log_files_on_disk = dsn_config_get_value_uint64(
                 "tools.simple_logger",

@@ -55,7 +55,12 @@ namespace dsn {
 
             if (!read_config("task..default", _default_opts))
             {
-                dassert(false, "read configuration failed for section [task..default]");
+                // A malformed value in [task..default] (e.g. a non-integer in one of
+                // the INT_LIST fields) makes read_config return false. Report it and
+                // continue with defaults instead of aborting the whole process; the
+                // empty-list checks below fill in sensible defaults for any field that
+                // was not parsed.
+                derror("read configuration failed for section [task..default], using defaults");
             }
 
             if (_default_opts.perf_test_concurrency.size() == 0)
@@ -110,7 +115,13 @@ namespace dsn {
             perf_test_opts opt;
             if (!read_config(s.config_section, opt, &_default_opts))
             {
-                dassert(false, "read configuration failed for section [%s]", s.config_section);
+                // A malformed value in this perf-test section (e.g. a non-integer in one
+                // of the INT_LIST fields) makes read_config return false. Report it and
+                // skip this suite instead of aborting the whole benchmark process; the
+                // suite is left with no cases (its cases were cleared by the caller).
+                derror("read configuration failed for section [%s], skipping this suite",
+                       s.config_section);
+                return;
             }
 
             double ratio_sum = 0.0;

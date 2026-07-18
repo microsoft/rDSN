@@ -640,13 +640,26 @@ namespace dsn {
         const service_spec& spec = service_engine::fast_instance().spec();
         network* net = utils::factory_store<network>::create(
             netcs.factory_name.c_str(), ::dsn::PROVIDER_TYPE_MAIN, this, nullptr);
+        if (net == nullptr)
+        {
+            derror("cannot create network provider '%s', please check the factory registration and configuration",
+                netcs.factory_name.c_str());
+            return nullptr;
+        }
         net->reset_parser_attr(client_hdr_format, netcs.message_buffer_block_size);
 
         for (auto it = spec.network_aspects.begin();
             it != spec.network_aspects.end();
             it++)
         {
-            net = utils::factory_store<network>::create(it->c_str(), ::dsn::PROVIDER_TYPE_ASPECT, this, net);
+            network* net2 = utils::factory_store<network>::create(it->c_str(), ::dsn::PROVIDER_TYPE_ASPECT, this, net);
+            if (net2 == nullptr)
+            {
+                derror("cannot create network aspect provider '%s', please check the factory registration and configuration",
+                    it->c_str());
+                return nullptr;
+            }
+            net = net2;
         }
 
         // start the net

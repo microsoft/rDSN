@@ -69,6 +69,13 @@ void task_worker_pool::create()
         {
             q = factory_store<task_queue>::create(it->c_str(), PROVIDER_TYPE_ASPECT, this, i, q);
         }
+        if (nullptr == q)
+        {
+            derror("cannot create task queue (or a queue aspect) for thread pool '%s', "
+                   "please check the [threadpool.%s] queue_factory_name / queue_aspects configuration",
+                   _spec.name.c_str(), _spec.name.c_str());
+            dsn_exit(1);
+        }
         _queues.push_back(q);
 
         if (_spec.admission_controller_factory_name != "")
@@ -102,6 +109,13 @@ void task_worker_pool::create()
              ++it)
         {
             worker = factory_store<task_worker>::create(it->c_str(), PROVIDER_TYPE_ASPECT, this, q, i, worker);
+        }
+        if (nullptr == worker)
+        {
+            derror("cannot create task worker (or a worker aspect) for thread pool '%s', "
+                   "please check the [threadpool.%s] worker_factory_name / worker_aspects configuration",
+                   _spec.name.c_str(), _spec.name.c_str());
+            dsn_exit(1);
         }
         task_worker::on_create.execute(worker);
         q->set_owner_worker(spec().partitioned ? worker : nullptr);

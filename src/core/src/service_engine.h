@@ -155,7 +155,7 @@ public:
     static safe_string get_queue_info(const safe_vector<safe_string>& args);
 
     void init_before_toollets(const service_spec& spec);
-    void init_after_toollets();
+    error_code init_after_toollets();
     void configuration_changed();
 
     service_node* start_node(service_app_spec& app_spec);

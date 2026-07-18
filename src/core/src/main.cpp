@@ -602,7 +602,11 @@ bool run(
     for (auto it = spec.toollets.begin(); it != spec.toollets.end(); ++it)
     {
         auto tlet = dsn::tools::internal_use_only::get_toollet(it->c_str(), ::dsn::PROVIDER_TYPE_MAIN);
-        dassert(tlet, "toolet not found");
+        if (nullptr == tlet)
+        {
+            derror("toollet '%s' is not found, please check the [core] toollets configuration", it->c_str());
+            return false;
+        }
         tlet->install(spec);
     }
 
@@ -612,7 +616,12 @@ bool run(
     // TODO: register sys_exit execution
 
     // init runtime
-    ::dsn::service_engine::fast_instance().init_after_toollets();
+    auto err = ::dsn::service_engine::fast_instance().init_after_toollets();
+    if (err != ::dsn::ERR_OK)
+    {
+        derror("service engine init failed, err = %s", err.to_string());
+        return false;
+    }
 
     dsn_all.engine_ready.store(true, std::memory_order_release);
 

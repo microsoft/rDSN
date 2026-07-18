@@ -223,9 +223,15 @@ bool task_spec::init()
         if (!read_config(section_name.c_str(), *spec, &default_spec))
             return false;
 
-        dassert(spec->rpc_request_delays_milliseconds.size() == 0
-            || spec->rpc_request_delays_milliseconds.size() == 6,
-            "invalid length of rpc_request_delays_milliseconds, must be of length 6");
+        if (spec->rpc_request_delays_milliseconds.size() != 0
+            && spec->rpc_request_delays_milliseconds.size() != 6)
+        {
+            derror("%s: invalid length (%d) of rpc_request_delays_milliseconds, "
+                   "must be 0 or 6",
+                   spec->name.c_str(),
+                   (int)spec->rpc_request_delays_milliseconds.size());
+            return false;
+        }
         if (spec->rpc_request_delays_milliseconds.size() > 0)
         {
             std::vector<int> mss{ spec->rpc_request_delays_milliseconds.begin(),

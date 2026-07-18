@@ -201,6 +201,12 @@ error_code service_node::init_io_engine(io_engine& io, ioe_mode mode)
             aio = factory_store<aio_provider>::create(it->c_str(),
                 PROVIDER_TYPE_ASPECT, io.disk, aio);
         }
+        if (nullptr == aio)
+        {
+            derror("cannot create aio provider '%s', please check [core] aio_factory_name and aio_aspects",
+                spec.aio_factory_name.c_str());
+            return ERR_SERVICE_NOT_FOUND;
+        }
         io.aio = aio;
     }
     else
@@ -580,7 +586,7 @@ void service_engine::init_before_toollets(const service_spec& spec)
         );
 }
 
-void service_engine::init_after_toollets()
+error_code service_engine::init_after_toollets()
 {
     // init common providers (second half)
     _env = factory_store<env_provider>::create(_spec.env_factory_name.c_str(), 
@@ -592,7 +598,14 @@ void service_engine::init_after_toollets()
         _env = factory_store<env_provider>::create(it->c_str(), 
             PROVIDER_TYPE_ASPECT, _env);
     }
+    if (nullptr == _env)
+    {
+        derror("cannot create env provider '%s', please check [core] env_factory_name and env_aspects",
+            _spec.env_factory_name.c_str());
+        return ERR_SERVICE_NOT_FOUND;
+    }
     tls_dsn.env = _env;
+    return ERR_OK;
 }
 
 void service_engine::register_system_rpc_handler(
