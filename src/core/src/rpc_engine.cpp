@@ -455,7 +455,7 @@ namespace dsn {
         }
         else
         {
-            dassert(false, "rpc registration confliction for '%s'", name.c_str());
+            derror("rpc registration confliction for '%s'", name.c_str());
             return false;
         }
     }

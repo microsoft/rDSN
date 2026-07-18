@@ -526,6 +526,24 @@ TEST(core, dsn_rpc_registration_invalid_parameters)
     ASSERT_EQ(nullptr, dsn_rpc_unregiser_handler(TASK_CODE_INVALID, dsn_gpid()));
 }
 
+TEST(core, dsn_rpc_registration_conflict)
+{
+    int first_context = 1;
+    int second_context = 2;
+
+    ASSERT_TRUE(dsn_rpc_register_handler(TASK_CODE_RPC_FOR_TEST,
+                                         "first_handler",
+                                         noop_rpc_request_handler,
+                                         &first_context,
+                                         dsn_gpid()));
+    ASSERT_FALSE(dsn_rpc_register_handler(TASK_CODE_RPC_FOR_TEST,
+                                          "second_handler",
+                                          noop_rpc_request_handler,
+                                          &second_context,
+                                          dsn_gpid()));
+    ASSERT_EQ(&first_context, dsn_rpc_unregiser_handler(TASK_CODE_RPC_FOR_TEST, dsn_gpid()));
+}
+
 TEST(core, dsn_rpc_dispatch_invalid_parameters)
 {
     const dsn_address_t invalid_address = {};
