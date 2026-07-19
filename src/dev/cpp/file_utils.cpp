@@ -1070,13 +1070,23 @@ out_error:
                     }
                 }
 
-                if (::QueryFullProcessImageNameA(
+                BOOL query_ok = ::QueryFullProcessImageNameA(
                         hProcess,
                         0,
                         tls_path_buffer,
                         &dwSize
-                        ) == FALSE
-                    )
+                        );
+
+                // OpenProcess() (pid != -1) returns a real handle that must be closed on every
+                // exit path; GetCurrentProcess() (pid == -1) returns a pseudo-handle that must
+                // not be closed. Previously the handle was leaked when QueryFullProcessImageNameA
+                // failed.
+                if (pid != -1)
+                {
+                    ::CloseHandle(hProcess);
+                }
+
+                if (query_ok == FALSE)
                 {
                     return ERR_PATH_NOT_FOUND;
                 }
@@ -1096,6 +1106,15 @@ out_error:
                     return ERR_PATH_NOT_FOUND;
                 }
 
+                // readlink() does not null-terminate and returns up to TLS_PATH_BUFFER_SIZE
+                // bytes. When the target path length >= TLS_PATH_BUFFER_SIZE it returns exactly
+                // TLS_PATH_BUFFER_SIZE, so writing the NUL at tls_path_buffer[err] would be one
+                // byte past the end of the buffer. Clamp to the last valid index (the path is
+                // truncated in that case), mirroring the FreeBSD/Apple branches below.
+                if (err >= TLS_PATH_BUFFER_SIZE)
+                {
+                    err = TLS_PATH_BUFFER_SIZE - 1;
+                }
                 tls_path_buffer[err] = 0;
                 path = tls_path_buffer;
 # elif defined(__FreeBSD__)

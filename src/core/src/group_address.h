@@ -131,7 +131,23 @@ namespace dsn
 
     inline rpc_address rpc_group_address::possible_leader()
     {
-        alr_t l(_lock);
+        {
+            // Fast path: a leader has already been chosen, so a shared read lock
+            // is enough here (we only read _members/_leader_index).
+            alr_t l(_lock);
+            if (_members.empty())
+                return _invalid;
+            if (_leader_index != -1)
+                return _members[_leader_index];
+        }
+
+        // Slow path: no leader yet, so we must assign _leader_index, which requires
+        // the exclusive write lock (writing it under the shared read lock would be a
+        // data race; the sibling writers leader_forward()/set_leader() also take the
+        // write lock). Re-check under the write lock because another thread may have
+        // chosen the leader (or emptied _members) between releasing the read lock and
+        // acquiring the write lock.
+        alw_t l(_lock);
         if (_members.empty())
             return _invalid;
         if (_leader_index == -1)
