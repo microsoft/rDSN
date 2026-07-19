@@ -95,7 +95,11 @@ namespace dsn {
 
             _acceptor = nullptr;
                         
-            dassert(channel == RPC_CHANNEL_TCP || channel == RPC_CHANNEL_UDP, "invalid given channel %s", channel.to_string());
+            if (channel != RPC_CHANNEL_TCP && channel != RPC_CHANNEL_UDP)
+            {
+                derror("invalid given channel %s", channel.to_string());
+                return ERR_NOT_IMPLEMENTED;
+            }
 
             _address.assign_ipv4(get_local_ipv4(), port);
 
@@ -330,7 +334,11 @@ namespace dsn {
             int io_service_worker_count = (int)dsn_config_get_value_uint64("network", "io_service_worker_count", 1,
                                                                    "thread number for io service (timer and boost network)");
            
-            dassert(channel == RPC_CHANNEL_UDP, "invalid given channel %s", channel.to_string());
+            if (channel != RPC_CHANNEL_UDP)
+            {
+                derror("invalid given channel %s", channel.to_string());
+                return ERR_NOT_IMPLEMENTED;
+            }
 
             if (client_only)
             {
