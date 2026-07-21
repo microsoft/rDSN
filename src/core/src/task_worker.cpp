@@ -38,6 +38,7 @@
 # include <sstream>
 # include <errno.h>
 # include <cstring>
+# include <cinttypes>
 # include <chrono>
 
 # ifdef _WIN32
@@ -252,13 +253,40 @@ void task_worker::set_priority(worker_priority_t pri)
 
 void task_worker::set_affinity(uint64_t affinity)
 {
-    dassert(affinity > 0, "affinity cannot be 0.");
+    if (affinity == 0)
+    {
+        dwarn("task_worker::set_affinity got an empty affinity mask, skip setting affinity");
+        return;
+    }
 
     int nr_cpu = static_cast<int>(std::thread::hardware_concurrency());
-    if (nr_cpu < 64) 
+
+    // worker_affinity_mask is operator-supplied. A mask that references a nonexistent cpu used to
+    // abort the whole process here; and when hardware_concurrency() cannot determine the cpu count
+    // (returns 0) the old ((1<<0)-1)==0 bound rejected every nonzero mask. Clamp the mask to the
+    // available cpus with a warning when the count is known, and otherwise defer to the OS call
+    // below (which already warns, not aborts, on failure).
+    //
+    // The upper bound (nr_cpu < 64) is intentional: the mask is a uint64_t, so it can only ever
+    // address cpus 0..63. When the machine has 64 or more cpus every bit of the mask already maps
+    // to a real cpu, so there is nothing to clamp and we pass it through unchanged. Restricting the
+    // clamp to nr_cpu < 64 is also required for correctness -- computing (1 << nr_cpu) when
+    // nr_cpu >= 64 would be a shift by >= the operand width, which is undefined behavior.
+    if (nr_cpu > 0 && nr_cpu < 64)
     {
-        dassert(affinity <= (((uint64_t)1 << nr_cpu) - 1),
-            "There are %d cpus in total, while setting thread affinity to a nonexistent one.", nr_cpu);
+        uint64_t valid_mask = (((uint64_t)1 << nr_cpu) - 1);
+        if ((affinity & ~valid_mask) != 0)
+        {
+            uint64_t clamped = affinity & valid_mask;
+            dwarn("affinity mask 0x%" PRIx64 " references cpu(s) beyond the %d available, "
+                "clamping to 0x%" PRIx64, affinity, nr_cpu, clamped);
+            affinity = clamped;
+            if (affinity == 0)
+            {
+                dwarn("no valid cpu left in affinity mask after clamping, skip setting affinity");
+                return;
+            }
+        }
     }
 
     int err = 0;

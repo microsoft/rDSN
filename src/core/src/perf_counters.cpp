@@ -73,7 +73,11 @@ DSN_API dsn_handle_t dsn_perf_counter_create(const char* section, const char* na
     }
 
     auto cnode = dsn::task::get_current_node2();
-    dassert(cnode != nullptr, "cannot get current service node!");
+    if (cnode == nullptr)
+    {
+        derror("dsn_perf_counter_create must be called within a service node context");
+        return nullptr;
+    }
     auto c = dsn::perf_counters::instance().get_counter(cnode->name(), section, name, type, description, true);
     c->add_ref();
     return c.get();
@@ -186,10 +190,15 @@ perf_counters::perf_counters(void)
         "maximum number of performance counters"
         );
 
-    dassert(_max_counter_count > 0 && _max_counter_count < 1000000,
-        "invalid given perf_counter_max_count value %" PRIu64, 
-        _max_counter_count
-        );
+    // perf_counter_max_count is operator-supplied. A value of 0 or an unreasonably large one used
+    // to abort the whole process here; a huge value would also overflow / OOM the _quick_counters
+    // allocation below. Fall back to the default with a warning instead of crashing on bad config.
+    if (_max_counter_count == 0 || _max_counter_count >= 1000000)
+    {
+        dwarn("invalid [core] perf_counter_max_count value %" PRIu64 ", reset to default 10000",
+            _max_counter_count);
+        _max_counter_count = 10000;
+    }
     _quick_counters = new perf_counter*[_max_counter_count];
     memset((void*)_quick_counters, 0, sizeof(perf_counter*) * _max_counter_count);
 
